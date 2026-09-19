@@ -50,6 +50,7 @@ OP_REQUIRED_CAPABILITY: dict[str, NodeCapability] = {
     "assign_role": NodeCapability.REMOTE_MANAGEMENT,
     "renew_coordinator_lease": NodeCapability.REMOTE_MANAGEMENT,
     "revoke_member": NodeCapability.REMOTE_MANAGEMENT,
+    "capability_request": NodeCapability.READ_STATE,
 }
 
 OP_REQUIRED_PERMISSION: dict[str, NodePermission] = {
@@ -592,6 +593,16 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
         if params:
             raise RemoteProtocolError(f"{op} accepts no parameters")
         return
+    if op == "capability_request":
+        capability = params.get("capability")
+        request_params = params.get("params", {})
+        if not isinstance(capability, str) or not capability:
+            raise RemoteProtocolError("capability_request requires a capability")
+        if not isinstance(request_params, dict):
+            raise RemoteProtocolError("capability_request params must be an object")
+        if set(params) != {"capability", "params"}:
+            raise RemoteProtocolError("capability_request has unexpected parameters")
+        return
     if op == "component_summary":
         key = params.get("key")
         if not isinstance(key, str) or not key:
@@ -671,7 +682,7 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
             ):
                 raise RemoteProtocolError("role list is invalid")
             return
-        if op in {"pause_worker", "resume_worker", "revoke_worker"}:
+        if op in {"pause_worker", "resume_worker", "revoke_worker", "revoke_member"}:
             if not isinstance(params.get("target_node_id"), str):
                 raise RemoteProtocolError("role target is invalid")
             return

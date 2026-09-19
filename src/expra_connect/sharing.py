@@ -24,6 +24,16 @@ class CapabilityShare:
             raise ValueError("unknown capability")
         self._allowed.setdefault(peer_id, set()).add(capability)
 
+    def revoke(self, peer_id: NodeId, capability: str) -> None:
+        """Remove one target-side grant without affecting other capabilities."""
+
+        allowed = self._allowed.get(peer_id)
+        if allowed is None:
+            return
+        allowed.discard(capability)
+        if not allowed:
+            self._allowed.pop(peer_id, None)
+
     def request(
         self, peer_id: NodeId, capability: str, params: dict[str, object] | None = None
     ) -> object:

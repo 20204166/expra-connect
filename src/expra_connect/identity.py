@@ -73,4 +73,5 @@ class NodeIdentity:
 
 def node_identity_fingerprint(node_id: NodeId | str) -> str:
     value = node_id.value if isinstance(node_id, NodeId) else node_id
-    return sha256(value.encode("utf-8")).hexdigest()
+    digest = sha256(f"system-analyzer-node:{value}".encode()).hexdigest()
+    return ":".join(digest[index : index + 4] for index in range(0, 64, 4))

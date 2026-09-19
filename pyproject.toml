@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expra-connect"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Headless identity, discovery, pairing, transport, sharing, and cluster primitives"
 requires-python = ">=3.10"
-dependencies = ["cryptography>=41", "zeroconf>=0.132"]
+dependencies = ["cryptography>=41", "typing-extensions>=4.6", "zeroconf>=0.132"]
 
 [project.optional-dependencies]
 dev = ["mypy>=1.10", "pyright>=1.1.350", "ruff>=0.6"]
@@ -17,6 +17,9 @@ expra-peer = "expra_connect.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "expra_connect._version.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

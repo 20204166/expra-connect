@@ -12,9 +12,11 @@ from expra_connect.remote_service import (
     AuthenticatedNodeProvider,
     MemoryRemoteTransport,
     RemoteAuthError,
+    RemoteAuthorizationError,
     RemoteService,
 )
 from expra_connect.server import RemoteSocketServer
+from expra_connect.sharing import CapabilityShare
 from expra_connect.socket_transport import SocketRemoteTransport
 from expra_connect.wire_protocol import PeerGrant
 
@@ -75,6 +77,44 @@ class RemoteServiceTests(unittest.TestCase):
             frozenset({NodeCapability.READ_STATE}),
             READ_CAPABILITIES,
         )
+
+    def test_shared_capability_requires_target_grant_and_round_trips(self) -> None:
+        share = CapabilityShare()
+        share.register(
+            "demo.read_state",
+            lambda peer, params: {"peer": peer.value, "value": params["value"]},
+        )
+        caller = NodeId("caller")
+        share.allow(caller, "demo.read_state")
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            grants={
+                caller: PeerGrant(
+                    caller, SECRET, frozenset({NodePermission.READ_STATE})
+                )
+            },
+            capability_share=share,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            caller_node_id=caller,
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+        )
+        self.assertEqual(
+            client.request_shared("demo.read_state", {"value": "ready"}),
+            {"peer": "caller", "value": "ready"},
+        )
+        share.revoke(caller, "demo.read_state")
+        with self.assertRaises(RemoteAuthorizationError):
+            client.request_shared("demo.read_state")
 
     def test_authenticated_provider_round_trips_over_loopback_socket(self) -> None:
         service = RemoteService(

@@ -59,6 +59,7 @@ from .remote_models import (
     resource_summary_from_dict,
     resource_summary_to_dict,
 )
+from .remote_role_operations import RemoteRoleOperations
 from .server import (
     PEER_SERVICE_DEFAULT_PORT,
     RemoteSocketServer,
@@ -197,6 +198,7 @@ class RemoteService:
         role_handler: Callable[[RemoteRequest], dict[str, Any]] | None = None,
         trust_revoke_handler: Callable[[NodeId], dict[str, Any]] | None = None,
         require_dashboard_share: bool = False,
+        capability_share: Any | None = None,
     ) -> None:
         self._node_id = node_id
         self._display_name = display_name
@@ -249,6 +251,7 @@ class RemoteService:
         self._trust_revoke_handler = trust_revoke_handler
         self._require_dashboard_share = require_dashboard_share
         self._dashboard_shares: dict[NodeId, float] = {}
+        self._capability_share = capability_share
 
     @staticmethod
     def _validate_secret(secret: str) -> None:
@@ -400,6 +403,22 @@ class RemoteService:
             if self._trust_revoke_handler is None:
                 raise RemoteUnavailableError("trust revocation is unavailable")
             return self._trust_revoke_handler(request.caller_node_id)
+        if request.op == "capability_request":
+            if request.caller_node_id is None:
+                raise RemoteAuthorizationError(
+                    "caller identity required for capability requests"
+                )
+            if self._capability_share is None:
+                raise RemoteUnavailableError("capability sharing is unavailable")
+            try:
+                result = self._capability_share.request(
+                    request.caller_node_id,
+                    request.params["capability"],
+                    request.params["params"],
+                )
+            except PermissionError as error:
+                raise RemoteAuthorizationError(str(error)) from error
+            return {"result": result}
         if request.op == "hello":
             return {
                 "ok": True,
@@ -526,7 +545,7 @@ class RemoteService:
         )
 
 
-class AuthenticatedNodeProvider:
+class AuthenticatedNodeProvider(RemoteRoleOperations):
     """Client-side ``NodeProvider`` over one authenticated remote node.
 
     Builds and signs every request, verifies every response, enforces
@@ -562,6 +581,23 @@ class AuthenticatedNodeProvider:
         payload = self._request("hello", {}, cancel_event)
         validate_hello_payload(payload, expected_node_id=self._node_id)
         return payload
+
+    def request_shared(
+        self,
+        capability: str,
+        params: dict[str, Any] | None = None,
+        cancel_event: Any | None = None,
+    ) -> Any:
+        """Invoke a target-owned, explicitly granted shared capability."""
+
+        payload = self._request(
+            "capability_request",
+            {"capability": capability, "params": params or {}},
+            cancel_event,
+        )
+        if "result" not in payload:
+            raise RemoteProtocolError("shared capability response has no result")
+        return payload["result"]
 
     def revoke_self(self, cancel_event: Any | None = None) -> dict[str, Any]:
         """Ask the target to delete this caller's grant (self-revocation).
@@ -777,220 +813,6 @@ class AuthenticatedNodeProvider:
 
     def force_quit(self, refs: list[dict[str, Any]]) -> ProcessActionResult:
         return self.terminate(self._typed_request(refs, ProcessActionKind.FORCE_QUIT))
-
-    def consume_invite(
-        self, token: str, *, cluster_id: str, epoch: int, fencing_token: str
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "consume_invite",
-            {
-                "token": token,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def assign_role(
-        self,
-        target_node_id: str,
-        roles: list[str],
-        *,
-        cluster_id: str,
-        epoch: int,
-        fencing_token: str,
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "assign_role",
-            {
-                "target_node_id": target_node_id,
-                "roles": roles,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def renew_coordinator_lease(
-        self, *, cluster_id: str, epoch: int, fencing_token: str
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "renew_coordinator_lease",
-            {
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def upload_snapshot(
-        self,
-        payload: dict[str, Any],
-        *,
-        cluster_id: str,
-        epoch: int,
-        fencing_token: str,
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "worker_snapshot",
-            {
-                "payload": payload,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def upload_standby_batch(
-        self,
-        payload: dict[str, Any],
-        *,
-        cluster_id: str,
-        epoch: int,
-        fencing_token: str,
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "standby_batch",
-            {
-                "payload": payload,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def pause_worker(
-        self, target_node_id: str, *, cluster_id: str, epoch: int, fencing_token: str
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "pause_worker",
-            {
-                "target_node_id": target_node_id,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def revoke_worker(
-        self, target_node_id: str, *, cluster_id: str, epoch: int, fencing_token: str
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "revoke_worker",
-            {
-                "target_node_id": target_node_id,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def resume_worker(
-        self, target_node_id: str, *, cluster_id: str, epoch: int, fencing_token: str
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "resume_worker",
-            {
-                "target_node_id": target_node_id,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def remove_connection(
-        self, target_node_id: str, *, cluster_id: str, epoch: int, fencing_token: str
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "remove_connection",
-            {
-                "target_node_id": target_node_id,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def remove_job(
-        self, target_node_id: str, *, cluster_id: str, epoch: int, fencing_token: str
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "remove_job",
-            {
-                "target_node_id": target_node_id,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def grant_capabilities(
-        self,
-        subject_node_id: str,
-        target_node_id: str,
-        permissions: list[str],
-        *,
-        expires_at: float,
-        cluster_id: str,
-        epoch: int,
-        fencing_token: str,
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "grant_capabilities",
-            {
-                "subject_node_id": subject_node_id,
-                "target_node_id": target_node_id,
-                "permissions": permissions,
-                "expires_at": expires_at,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def revoke_capabilities(
-        self,
-        subject_node_id: str,
-        target_node_id: str,
-        *,
-        cluster_id: str,
-        epoch: int,
-        fencing_token: str,
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "revoke_capabilities",
-            {
-                "subject_node_id": subject_node_id,
-                "target_node_id": target_node_id,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
-
-    def sync_capability_grant(
-        self,
-        subject_node_id: str,
-        target_node_id: str,
-        permissions: list[str],
-        *,
-        expires_at: float,
-        cluster_id: str,
-        epoch: int,
-        fencing_token: str,
-    ) -> dict[str, Any]:
-        return self._role_request(
-            "sync_capability_grant",
-            {
-                "subject_node_id": subject_node_id,
-                "target_node_id": target_node_id,
-                "permissions": permissions,
-                "expires_at": expires_at,
-                "cluster_id": cluster_id,
-                "epoch": epoch,
-                "fencing_token": fencing_token,
-            },
-        )
 
     def terminate(self, request: ProcessTerminationRequest) -> ProcessActionResult:
         if request.target_node_id != self._node_id:

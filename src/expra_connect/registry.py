@@ -36,18 +36,28 @@ class NodeRecord:
 
 
 class NodeRegistry:
-    def __init__(self, local_node_id: NodeId) -> None:
+    def __init__(self, local_node_id: NodeId, *, cluster_enabled: bool = True) -> None:
         self.local_node_id = local_node_id
         self._records: dict[NodeId, NodeRecord] = {
             local_node_id: NodeRecord(
                 local_node_id,
                 trust=TrustState.AUTHORIZED,
-                membership=MembershipState.COORDINATOR,
+                membership=(
+                    MembershipState.COORDINATOR
+                    if cluster_enabled
+                    else MembershipState.NOT_JOINED
+                ),
             )
         }
 
     def record(self, node_id: NodeId) -> NodeRecord | None:
         return self._records.get(node_id)
+
+    @property
+    def records(self) -> tuple[NodeRecord, ...]:
+        """Return a stable snapshot for diagnostics and host adapters."""
+
+        return tuple(self._records.values())
 
     def observe(
         self, node_id: NodeId, capabilities: frozenset[NodeCapability]

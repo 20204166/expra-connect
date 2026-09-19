@@ -40,6 +40,31 @@ class _Backend:
 
 
 class FullDiscoveryTests(unittest.TestCase):
+    def test_custom_service_type_is_used_for_peer_matching(self) -> None:
+        holder: dict[str, _Backend] = {}
+
+        def factory(listener: Callable[..., None]) -> _Backend:
+            backend = _Backend(listener)
+            holder["backend"] = backend
+            return backend
+
+        discovery = NetworkDiscovery(
+            "local-node",
+            advertisement=DiscoveryAdvertisement(
+                stable_id="local-node",
+                display_name="Local",
+                hostname="localhost",
+                app_version="1.0",
+            ),
+            backend_factory=factory,
+            service_type="_custom._tcp.local.",
+        )
+        self.assertTrue(discovery.start())
+        holder["backend"].listener("add", "peer-b._custom._tcp.local.", _Info("peer-b"))
+        holder["backend"].listener("add", f"ignored.{SERVICE_TYPE}", _Info("ignored"))
+
+        self.assertEqual([item.stable_id for item in discovery.peers()], ["peer-b"])
+
     def test_lifecycle_normalizes_events_filters_self_and_expires(self) -> None:
         now = [100.0]
         events: list[tuple[str, Any]] = []

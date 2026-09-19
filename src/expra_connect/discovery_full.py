@@ -113,8 +113,13 @@ class ZeroconfDiscoveryBackend:
     as UTF-8 strings; the local service advertises only presence metadata.
     """
 
-    def __init__(self, listener: Callable[[EventKind, str, Any], None]) -> None:
+    def __init__(
+        self,
+        listener: Callable[[EventKind, str, Any], None],
+        service_type: str = SERVICE_TYPE,
+    ) -> None:
         self._listener = listener
+        self._service_type = service_type
         self._zeroconf: Any = None
         self._service_info: Any = None
         self._browser: Any = None
@@ -174,13 +179,15 @@ class ZeroconfDiscoveryBackend:
         if addresses:
             service_kwargs["addresses"] = addresses
         service_info = _zeroconf_module.ServiceInfo(
-            SERVICE_TYPE,
-            f"{advertisement.stable_id}.{SERVICE_TYPE}",
+            self._service_type,
+            f"{advertisement.stable_id}.{self._service_type}",
             **service_kwargs,
         )
         zc.register_service(service_info)
         listener = _ZeroconfListener(self._listener)
-        browser = _zeroconf_module.ServiceBrowser(zc, SERVICE_TYPE, cast(Any, listener))
+        browser = _zeroconf_module.ServiceBrowser(
+            zc, self._service_type, cast(Any, listener)
+        )
         self._service_info = service_info
         self._browser = browser
 
@@ -243,19 +250,23 @@ class NetworkDiscovery:
             [Callable[[EventKind, str, Any], None]], DiscoveryBackend
         ]
         | None = None,
+        service_type: str = SERVICE_TYPE,
         clock: Callable[[], float] = time.monotonic,
         ttl_seconds: float = DEFAULT_TTL_SECONDS,
         on_event: Callable[[EventKind, Any], None] | None = None,
     ) -> None:
         self._local_node_id = local_node_id
         self._advertisement = advertisement
+        self._service_type = service_type
         self._clock = clock
         self._ttl_seconds = ttl_seconds
         self._on_event = on_event
         self._backend = (
             backend_factory(self._handle_transport_event)
             if backend_factory is not None
-            else ZeroconfDiscoveryBackend(self._handle_transport_event)
+            else ZeroconfDiscoveryBackend(
+                self._handle_transport_event, service_type=service_type
+            )
         )
         self._peers: dict[str, _PeerRecord] = {}
         self._service_nodes: dict[str, str] = {}
@@ -437,11 +448,10 @@ class NetworkDiscovery:
         if self._on_event is not None:
             self._on_event(kind, payload)
 
-    @staticmethod
-    def _node_id_for_service(service_name: str) -> str | None:
-        if not service_name.endswith(SERVICE_TYPE):
+    def _node_id_for_service(self, service_name: str) -> str | None:
+        if not service_name.endswith(self._service_type):
             return None
-        node_id = service_name[: -len(SERVICE_TYPE)]
+        node_id = service_name[: -len(self._service_type)]
         node_id = node_id.removesuffix(".")
         return node_id or None
 
@@ -452,6 +462,8 @@ class NetworkDiscovery:
 
         if not isinstance(service_name, str):
             raise _MalformedAdvertisement("service name must be a string")
+        if self._node_id_for_service(service_name) is None:
+            return None
         properties = _property_map(info)
         stable_id = properties.get("id")
         if not stable_id:
@@ -463,7 +475,9 @@ class NetworkDiscovery:
         if stable_id == str(local_node_id):
             return None
 
-        hostname = properties.get("name") or _service_hostname(service_name)
+        hostname = properties.get("name") or _service_hostname(
+            service_name, self._service_type
+        )
         app_version = properties.get("app_version", "")
         protocol_version = properties.get("protocol_version", "")
         platform = properties.get("platform") or None
@@ -573,8 +587,10 @@ def _to_text(value: Any) -> str:
     return str(value)
 
 
-def _service_hostname(service_name: str) -> str:
-    node_id = NetworkDiscovery._node_id_for_service(service_name)
+def _service_hostname(service_name: str, service_type: str = SERVICE_TYPE) -> str:
+    if not service_name.endswith(service_type):
+        return service_name
+    node_id = service_name[: -len(service_type)].removesuffix(".")
     return node_id or service_name
 
 
