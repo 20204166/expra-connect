@@ -1,0 +1,98 @@
+"""Headless discovery candidate validation, ranking, and TTL state."""
+
+from __future__ import annotations
+
+import ipaddress
+import time
+from collections.abc import Callable
+from dataclasses import dataclass, replace
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryCandidate:
+    stable_id: str
+    addresses: tuple[str, ...]
+    port: int
+    seen_at: float = 0.0
+
+
+def normalize_port(value: object) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if int(value) != value or not 1 <= int(value) <= 65535:
+        return None
+    return int(value)
+
+
+def validate_candidate(
+    candidate: DiscoveryCandidate, *, self_id: str | None = None
+) -> None:
+    if not candidate.stable_id or candidate.stable_id == "local":
+        raise ValueError("invalid discovery identity")
+    if self_id is not None and candidate.stable_id == self_id:
+        raise ValueError("self discovery is not a peer")
+    if not 1 <= candidate.port <= 65535 or not candidate.addresses:
+        raise ValueError("invalid discovery endpoint")
+
+
+def _address_rank(address: str) -> int:
+    try:
+        parsed = ipaddress.ip_address(address)
+    except ValueError:
+        return 5
+    if parsed.is_loopback:
+        return 4
+    if parsed.version == 4 and parsed in ipaddress.ip_network("192.168.0.0/16"):
+        return 0
+    if parsed.version == 4 and parsed in ipaddress.ip_network("172.16.0.0/12"):
+        return 1
+    if parsed.version == 4 and parsed in ipaddress.ip_network("10.0.0.0/8"):
+        return 2
+    if parsed.version == 4 and parsed in ipaddress.ip_network("100.64.0.0/10"):
+        return 3
+    return 4
+
+
+def preferred_address(addresses: tuple[str, ...]) -> str:
+    if not addresses:
+        raise ValueError("no route candidates")
+    return min(addresses, key=_address_rank)
+
+
+class DiscoveryRegistry:
+    def __init__(
+        self,
+        *,
+        clock: Callable[[], float] = time.monotonic,
+        ttl: float = 4800.0,
+        self_id: str | None = None,
+    ) -> None:
+        self._clock = clock
+        self._ttl = ttl
+        self._self_id = self_id
+        self._items: dict[str, DiscoveryCandidate] = {}
+
+    def add(self, candidate: DiscoveryCandidate) -> bool:
+        try:
+            validate_candidate(candidate, self_id=self._self_id)
+        except ValueError:
+            return False
+        self._items[candidate.stable_id] = replace(candidate, seen_at=self._clock())
+        return True
+
+    def remove(self, stable_id: str) -> None:
+        self._items.pop(stable_id, None)
+
+    def candidates(self) -> tuple[DiscoveryCandidate, ...]:
+        return tuple(self._items.values())
+
+    def expire(self, *, now: float | None = None) -> tuple[str, ...]:
+        current = self._clock() if now is None else now
+        expired = tuple(
+            key
+            for key, item in self._items.items()
+            if current - item.seen_at > self._ttl
+        )
+        for key in expired:
+            del self._items[key]
+        return expired

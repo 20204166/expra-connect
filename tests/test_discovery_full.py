@@ -1,0 +1,78 @@
+import unittest
+from collections.abc import Callable
+from typing import Any
+
+from expra_connect.discovery_full import (
+    EVENT_CANDIDATE,
+    EVENT_LOST,
+    SERVICE_TYPE,
+    DiscoveryAdvertisement,
+    NetworkDiscovery,
+)
+
+
+class _Info:
+    port = 27321
+
+    def __init__(self, node_id: str) -> None:
+        self.addresses = [b"192.168.1.10"]
+        self.properties = {
+            b"id": node_id.encode(),
+            b"name": b"Peer B",
+            b"app_version": b"1.0",
+            b"protocol_version": b"1",
+            b"connectable": b"true",
+        }
+
+
+class _Backend:
+    available = True
+
+    def __init__(self, listener: Callable[..., None]) -> None:
+        self.listener = listener
+        self.started = False
+
+    def start(self, advertisement: Any) -> None:
+        self.started = True
+
+    def stop(self) -> None:
+        self.started = False
+
+
+class FullDiscoveryTests(unittest.TestCase):
+    def test_lifecycle_normalizes_events_filters_self_and_expires(self) -> None:
+        now = [100.0]
+        events: list[tuple[str, Any]] = []
+        holder: dict[str, _Backend] = {}
+
+        def factory(listener: Callable[..., None]) -> _Backend:
+            backend = _Backend(listener)
+            holder["backend"] = backend
+            return backend
+
+        discovery = NetworkDiscovery(
+            "local-node",
+            advertisement=DiscoveryAdvertisement(
+                stable_id="local-node",
+                display_name="Local",
+                hostname="localhost",
+                app_version="1.0",
+            ),
+            backend_factory=factory,
+            clock=lambda: now[0],
+            ttl_seconds=5.0,
+            on_event=lambda kind, payload: events.append((kind, payload)),
+        )
+        self.assertTrue(discovery.start())
+        holder["backend"].listener("add", f"peer-b.{SERVICE_TYPE}", _Info("peer-b"))
+        holder["backend"].listener(
+            "add", f"local-node.{SERVICE_TYPE}", _Info("local-node")
+        )
+        self.assertEqual([item.stable_id for item in discovery.peers()], ["peer-b"])
+        self.assertEqual(events[0][0], EVENT_CANDIDATE)
+        now[0] = 106.0
+        discovery.expire_stale()
+        self.assertEqual(discovery.peers(), ())
+        self.assertEqual(events[-1][0], EVENT_LOST)
+        discovery.stop()
+        self.assertFalse(discovery.active)
