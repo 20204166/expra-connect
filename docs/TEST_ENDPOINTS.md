@@ -41,31 +41,33 @@ Expected evidence:
 Purpose: prove real discovery, TLS pinning, pairing persistence, authenticated
 connection, and a target-owned shared capability across Linux and Windows.
 
-Start the Linux target from the repository:
+Start the Linux target using the import-level example. This confirms the
+installed package version and registers the target-owned shared capability
+before discovery begins:
 
 ```sh
-python run_peer.py \
-  --role target \
+python3 examples/linux_pair_target.py \
   --profile .expra-endpoint-2-target \
-  --report endpoint-2-linux.json \
   | tee endpoint-2-linux-console.log
 ```
 
-Copy the Linux `node_id` from the `started` event. On Windows, install or
-refresh the package and fetch the runner:
+The Linux target must print a `ready` event with version `0.6.1.0` and
+`discovery_started: true`. On Windows, install or refresh the package and
+fetch the current runner:
 
 ```powershell
 irm https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1 | iex
 irm https://raw.githubusercontent.com/20204166/expra-connect/main/run_peer.py -OutFile run_peer.py
 ```
 
-Run the Windows initiator with the copied Linux node ID:
+Run the Windows initiator without manually copying the Linux node ID. It uses
+the first discovered compatible peer:
 
 ```powershell
 py run_peer.py `
   --role initiator `
   --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" `
-  --peer-id LINUX_NODE_ID `
+  --wait 60 `
   --report endpoint-2-windows.json `
   | Tee-Object -FilePath endpoint-2-windows-console.log
 ```
@@ -87,7 +89,9 @@ Expected evidence:
 - The authenticated connection completes.
 - `test.read_state` returns a result from the Linux target.
 - Linux and Windows JSON reports contain no private keys or pairing secrets.
-- The Linux target report contains the Windows caller ID and pairing request.
+- The Linux target console contains the Windows caller ID and pairing request.
+- If discovery succeeds but pairing times out, test each advertised Linux
+  address with `Test-NetConnection <address> -Port 27321` from Windows.
 
 Keep the Linux target running until the Windows report reaches
 `shared_capability_result`. Preserve both reports and both console logs.
