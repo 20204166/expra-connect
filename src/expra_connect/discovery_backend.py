@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import socket
 from collections.abc import Callable
 from typing import Any, cast
 
@@ -43,7 +44,7 @@ class ZeroconfBackend:
         if info is None:
             return
         addresses = tuple(
-            address.decode() if isinstance(address, bytes) else address
+            _address_text(address)
             for address in info.addresses
         )
         self._on_event(event, {"name": name, "addresses": addresses, "port": info.port})
@@ -55,3 +56,13 @@ class ZeroconfBackend:
         if self._zeroconf is not None:
             self._zeroconf.close()
             self._zeroconf = None
+
+
+def _address_text(address: Any) -> str:
+    if not isinstance(address, bytes):
+        return str(address)
+    family = socket.AF_INET if len(address) == 4 else socket.AF_INET6
+    try:
+        return socket.inet_ntop(family, address)
+    except OSError:
+        return address.decode("utf-8", errors="replace")

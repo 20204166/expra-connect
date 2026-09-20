@@ -7,7 +7,7 @@ from threading import Event
 from typing import Any, cast
 
 from .socket_transport import SocketRemoteTransport
-from .wire_protocol import RemoteTransportError
+from .wire_protocol import RemoteProtocolError, RemoteTransportError
 
 TransportError = RemoteTransportError
 
@@ -22,4 +22,7 @@ class SocketTransport:
         self, payload: dict[str, Any], *, cancel_event: Event | None = None
     ) -> dict[str, Any]:
         response = self._transport.request(json.dumps(payload), cancel_event)
-        return cast(dict[str, Any], json.loads(response))
+        decoded = json.loads(response)
+        if not isinstance(decoded, dict):
+            raise RemoteProtocolError("response must be a JSON object")
+        return cast(dict[str, Any], decoded)

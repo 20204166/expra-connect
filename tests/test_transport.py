@@ -4,7 +4,7 @@ from threading import Event
 
 from expra_connect.server import PeerServer
 from expra_connect.transport import SocketTransport, TransportError
-from expra_connect.wire_protocol import RemoteExecutionError
+from expra_connect.wire_protocol import RemoteExecutionError, RemoteProtocolError
 
 
 class TransportTests(unittest.TestCase):
@@ -42,3 +42,13 @@ class TransportTests(unittest.TestCase):
     def test_connection_failures_are_normalized(self) -> None:
         with self.assertRaises(TransportError):
             SocketTransport("127.0.0.1", 1, timeout=0.1).request({})
+
+    def test_response_must_be_a_json_object(self) -> None:
+        server = PeerServer("127.0.0.1", 0, lambda _request: ["not", "an object"])
+        server.start()
+        try:
+            host, port = server.address
+            with self.assertRaises(RemoteProtocolError):
+                SocketTransport(host, port).request({})
+        finally:
+            server.stop()

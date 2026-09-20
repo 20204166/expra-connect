@@ -12,3 +12,17 @@ class SharingTests(unittest.TestCase):
             share.request(NodeId("peer"), "demo.read_state")
         share.allow(NodeId("peer"), "demo.read_state")
         self.assertEqual(share.request(NodeId("peer"), "demo.read_state"), {"ok": True})
+
+    def test_request_preserves_an_explicit_empty_parameter_mapping(self) -> None:
+        received: list[dict[str, object]] = []
+
+        def handler(_peer: NodeId, params: dict[str, object]) -> object:
+            received.append(params)
+            return None
+
+        params: dict[str, object] = {}
+        share = CapabilityShare()
+        share.register("demo.read_state", handler)
+        share.allow(NodeId("peer"), "demo.read_state")
+        share.request(NodeId("peer"), "demo.read_state", params)
+        self.assertIs(received[0], params)

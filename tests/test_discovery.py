@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 
 from expra_connect.discovery import (
     DiscoveryCandidate,
@@ -7,6 +8,7 @@ from expra_connect.discovery import (
     preferred_address,
     validate_candidate,
 )
+from expra_connect.discovery_backend import ZeroconfBackend
 
 
 class DiscoveryTests(unittest.TestCase):
@@ -15,6 +17,16 @@ class DiscoveryTests(unittest.TestCase):
             validate_candidate(DiscoveryCandidate("local", ("192.168.1.2",), 27321))
         with self.assertRaises(ValueError):
             validate_candidate(DiscoveryCandidate("peer", ("192.168.1.2",), 0))
+
+    def test_candidate_validation_rejects_non_integer_ports(self) -> None:
+        with self.assertRaises(ValueError):
+            validate_candidate(
+                DiscoveryCandidate("peer", ("192.168.1.2",), True)  # type: ignore[arg-type]
+            )
+        with self.assertRaises(ValueError):
+            validate_candidate(
+                DiscoveryCandidate("peer", ("192.168.1.2",), 1.5)  # type: ignore[arg-type]
+            )
 
     def test_private_route_is_preferred_without_being_identity(self) -> None:
         self.assertEqual(
@@ -55,3 +67,25 @@ class DiscoveryTests(unittest.TestCase):
         self.assertIsNone(normalize_port(True))
         self.assertIsNone(normalize_port(27321.5))
         self.assertIsNone(normalize_port(70000))
+
+    def test_port_normalization_rejects_non_finite_numbers(self) -> None:
+        self.assertIsNone(normalize_port(float("nan")))
+        self.assertIsNone(normalize_port(float("inf")))
+        self.assertIsNone(normalize_port(float("-inf")))
+
+    def test_zeroconf_backend_decodes_packed_addresses(self) -> None:
+        events: list[tuple[str, dict[str, object]]] = []
+        backend = ZeroconfBackend(
+            "_expra-peer._tcp.local.",
+            lambda event, payload: events.append((event, payload)),
+        )
+        info = SimpleNamespace(addresses=[b"\xc0\xa8\x01\x02"], port=27321)
+
+        backend._emit(
+            SimpleNamespace(get_service_info=lambda *_args: info),
+            "type",
+            "peer",
+            "add",
+        )
+
+        self.assertEqual(events[0][1]["addresses"], ("192.168.1.2",))

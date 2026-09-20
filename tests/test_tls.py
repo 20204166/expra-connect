@@ -76,3 +76,10 @@ class TLSMaterialTests(unittest.TestCase):
             self.assertTrue(second.private_key.exists())
             self.assertEqual(second.private_key.stat().st_mode & 0o777, 0o600)
             self.assertNotEqual(first.fingerprint, second.fingerprint)
+
+    def test_generation_must_be_positive(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError):
+                ensure_tls_material_generation(Path(directory), "peer", 0)
+            with self.assertRaises(ValueError):
+                ensure_tls_material_generation(Path(directory), "peer", -1)

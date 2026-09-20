@@ -39,4 +39,6 @@ class CapabilityShare:
     ) -> object:
         if capability not in self._allowed.get(peer_id, set()):
             raise PermissionError("capability is not authorized")
-        return self._handlers[capability](peer_id, params or {})
+        return self._handlers[capability](
+            peer_id, {} if params is None else params
+        )

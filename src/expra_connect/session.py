@@ -65,5 +65,8 @@ class LogicalSessionRegistry:
             return
         with self._lock:
             session = self._sessions.get(session_id)
-            if session is None or session[1] != generation:
+            if session is None or self._clock() >= session[2]:
+                self._sessions.pop(session_id, None)
+                raise RemoteAuthError("logical session is expired")
+            if session[1] != generation:
                 raise RemoteAuthError("connection generation is stale")

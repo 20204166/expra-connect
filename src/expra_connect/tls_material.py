@@ -86,6 +86,10 @@ def ensure_tls_material_generation(
     directory: Path, node_id: str, generation: int | None = None
 ) -> TLSMaterial:
     """Load or create replaceable TLS material for one transport generation."""
+    if generation is not None and (
+        isinstance(generation, bool) or not isinstance(generation, int) or generation < 1
+    ):
+        raise ValueError("TLS generation must be a positive integer")
     directory.mkdir(parents=True, exist_ok=True)
     suffix = "" if generation is None else f"-{generation}"
     certificate = directory / f"peer-tls{suffix}.crt"

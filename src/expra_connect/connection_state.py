@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
@@ -86,6 +87,16 @@ class RetryState:
         max_seconds: float = 300.0,
         max_backoff_exponent: int = 8,
     ) -> None:
+        if (
+            not math.isfinite(base_seconds)
+            or base_seconds < 0
+            or not math.isfinite(max_seconds)
+            or max_seconds < 0
+            or isinstance(max_backoff_exponent, bool)
+            or not isinstance(max_backoff_exponent, int)
+            or max_backoff_exponent < 0
+        ):
+            raise ValueError("invalid retry backoff configuration")
         self.last_failure = failure
         self.attempt += 1
         if failure in {
@@ -100,6 +111,8 @@ class RetryState:
             base_seconds * 2 ** min(self.attempt - 1, max_backoff_exponent),
         )
         extra = 0.0 if jitter is None else max(0.0, float(jitter(self.attempt)))
+        if not math.isfinite(extra):
+            raise ValueError("retry jitter must be finite")
         self.next_attempt_at = now + delay + extra
         self.automatic_retry = True
 

@@ -492,6 +492,23 @@ class FullDiscoveryTests(unittest.TestCase):
         self.assertEqual(discovery.peers(), ())
         self.assertEqual(events, [])
 
+    def test_malformed_remove_event_is_ignored(self) -> None:
+        discovery = NetworkDiscovery(
+            "local-node",
+            advertisement=DiscoveryAdvertisement(
+                stable_id="local-node",
+                display_name="Local",
+                hostname="localhost",
+                app_version="1.0",
+            ),
+            backend_factory=lambda listener: _Backend(listener),
+        )
+        self.assertTrue(discovery.start())
+
+        discovery._handle_transport_event("remove", [], None)  # type: ignore[arg-type]
+
+        self.assertEqual(discovery.peers(), ())
+
     def test_default_ttl_exceeds_mdns_record_ttl(self) -> None:
         from expra_connect.discovery_full import DEFAULT_TTL_SECONDS
 

@@ -383,6 +383,8 @@ class NetworkDiscovery:
             return
         try:
             if event == "remove":
+                if not isinstance(service_name, str):
+                    return
                 node_id = self._service_nodes.pop(service_name, None)
                 self._service_candidates.pop(service_name, None)
                 if node_id is not None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
+import math
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
@@ -27,6 +28,8 @@ class DiscoveryCandidate:
 def normalize_port(value: object) -> int | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
     if int(value) != value or not 1 <= int(value) <= 65535:
         return None
     return int(value)
@@ -39,7 +42,7 @@ def validate_candidate(
         raise ValueError("invalid discovery identity")
     if self_id is not None and candidate.stable_id == self_id:
         raise ValueError("self discovery is not a peer")
-    if not 1 <= candidate.port <= 65535 or not candidate.addresses:
+    if normalize_port(candidate.port) is None or not candidate.addresses:
         raise ValueError("invalid discovery endpoint")
 
 

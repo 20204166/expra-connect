@@ -1,3 +1,4 @@
+import math
 import unittest
 
 from expra_connect.connection_state import (
@@ -38,3 +39,20 @@ class ConnectionStateTests(unittest.TestCase):
             classify_peer_failure("connection refused"), PeerFailure.CONNECTION_REFUSED
         )
         self.assertEqual(classify_peer_failure("other"), PeerFailure.DISAPPEARED)
+
+    def test_retry_rejects_invalid_backoff_configuration(self) -> None:
+        retry = RetryState()
+        with self.assertRaises(ValueError):
+            retry.record_failure(PeerFailure.TIMEOUT, now=0.0, base_seconds=-1.0)
+        with self.assertRaises(ValueError):
+            retry.record_failure(PeerFailure.TIMEOUT, now=0.0, max_backoff_exponent=-1)
+        with self.assertRaises(ValueError):
+            retry.record_failure(
+                PeerFailure.TIMEOUT,
+                now=0.0,
+                max_backoff_exponent=1.5,  # type: ignore[arg-type]
+            )
+        with self.assertRaises(ValueError):
+            retry.record_failure(
+                PeerFailure.TIMEOUT, now=0.0, jitter=lambda _attempt: math.inf
+            )

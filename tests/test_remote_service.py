@@ -322,6 +322,32 @@ class RemoteServiceTests(unittest.TestCase):
         with self.assertRaises(RemoteAuthError):
             client.hello()
 
+    def test_expired_session_is_rejected_by_current_generation_check(self) -> None:
+        now = [100.0]
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            clock=lambda: now[0],
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+            clock=lambda: now[0],
+        )
+        client.hello()
+        session_id = client._session_id
+        self.assertIsNotNone(session_id)
+        now[0] = 701.0
+        with self.assertRaises(RemoteAuthError):
+            service._sessions.assert_current(session_id or "", "memory")
+
     def test_lost_response_retries_retry_safe_mutation_once(self) -> None:
         calls = 0
 
