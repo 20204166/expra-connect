@@ -68,6 +68,18 @@ The distribution name is `expra-connect`; the Python import name is
 import expra_connect
 ```
 
+Windows online installation from any PowerShell directory:
+
+```powershell
+irm https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1 | iex
+```
+
+The online installer downloads the newest wheel named in `dist/SHA256SUMS`,
+verifies its SHA256 digest, requires Python 3.10 or newer, installs the package
+for the current user, verifies the import and installed version, and adds the
+user scripts directory to `PATH`. Use `-System` with a downloaded copy of the
+script for a system-wide installation.
+
 This repository is local-only and does not publish to PyPI. The wheel and
 install scripts are the supported application distribution boundary.
 
