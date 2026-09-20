@@ -18,6 +18,17 @@ def public_state(cluster: Cluster) -> dict[str, object]:
     """Return cluster evidence without exposing the fencing-token value."""
     state = cluster.to_dict()
     state["fencing_token_present"] = bool(state.pop("fencing_token", ""))
+
+    def redact(value: object) -> None:
+        if isinstance(value, dict):
+            value.pop("fencing_token", None)
+            for nested in value.values():
+                redact(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                redact(nested)
+
+    redact(state)
     return state
 
 
@@ -45,7 +56,11 @@ def main() -> int:
 
     # The worker validates target, cluster, epoch, and invite expiry before it
     # becomes a member. Consuming the invite also assigns the worker role.
-    worker.join(invite, coordinator)
+    worker.join(
+        invite,
+        coordinator,
+        pairing=lambda peer_id: peer_id == coordinator.local_id,
+    )
     print(
         json.dumps(
             {
