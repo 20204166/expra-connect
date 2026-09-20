@@ -12,11 +12,13 @@ import time
 from dataclasses import asdict, is_dataclass
 from enum import Enum
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from expra_connect import ConnectConfig, ConnectRuntime, NodeId
 
 CAPABILITY = "test.read_state"
+_REPORT_LOCK = Lock()
 
 
 def json_default(value: Any) -> Any:
@@ -26,21 +28,23 @@ def json_default(value: Any) -> Any:
 
 
 def write_event(report_path: Path, event: str, **values: Any) -> None:
-    record = {"event": event, **values}
-    print(json.dumps(record, sort_keys=True, default=json_default), flush=True)
-    history: list[dict[str, Any]] = []
-    if report_path.exists():
-        try:
-            existing = json.loads(report_path.read_text(encoding="utf-8"))
-            if isinstance(existing, list):
-                history = existing
-        except json.JSONDecodeError:
-            pass
-    history.append(record)
-    report_path.write_text(
-        json.dumps(history, indent=2, sort_keys=True, default=json_default) + "\n",
-        encoding="utf-8",
-    )
+    with _REPORT_LOCK:
+        record = {"event": event, **values}
+        print(json.dumps(record, sort_keys=True, default=json_default), flush=True)
+        history: list[dict[str, Any]] = []
+        if report_path.exists():
+            try:
+                existing = json.loads(report_path.read_text(encoding="utf-8"))
+                if isinstance(existing, list):
+                    history = existing
+            except json.JSONDecodeError:
+                pass
+        history.append(record)
+        report_path.write_text(
+            json.dumps(history, indent=2, sort_keys=True, default=json_default)
+            + "\n",
+            encoding="utf-8",
+        )
 
 
 def discovery_event(report_path: Path, kind: str, payload: Any) -> None:
