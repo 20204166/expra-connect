@@ -194,6 +194,7 @@ class RemoteService:
         fencing_token: str | None = None,
         role_handler: Callable[[RemoteRequest], dict[str, Any]] | None = None,
         trust_revoke_handler: Callable[[NodeId], dict[str, Any]] | None = None,
+        trust_revoke_commit: Callable[[], None] | None = None,
         require_dashboard_share: bool = False,
         capability_share: Any | None = None,
         idempotency_cache: IdempotencyCache | None = None,
@@ -254,6 +255,7 @@ class RemoteService:
         self._fencing_token = fencing_token
         self._role_handler = role_handler
         self._trust_revoke_handler = trust_revoke_handler
+        self._trust_revoke_commit = trust_revoke_commit
         self._require_dashboard_share = require_dashboard_share
         self._dashboard_shares: dict[NodeId, float] = {}
         self._capability_share = capability_share
@@ -407,6 +409,8 @@ class RemoteService:
                 connection_generation=connection_generation,
             )
             return json.dumps(response)
+        if request.op == "revoke_self" and self._trust_revoke_commit is not None:
+            self._trust_revoke_commit()
         response = sign_response(
             node_id=self._node_id.value,
             request_id=request.request_id,

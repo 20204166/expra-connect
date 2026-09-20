@@ -69,6 +69,20 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertFalse((Path(directory) / "identity.json").exists())
             self.assertEqual(config.app_version, __version__)
 
+    def test_explicit_advertised_addresses_are_normalized(self) -> None:
+        config = ConnectConfig(
+            profile_dir=Path("/tmp/expra-connect-test"),
+            advertised_addresses=("192.168.1.20", "10.0.0.20"),
+        )
+        self.assertEqual(config.advertised_addresses, ("192.168.1.20", "10.0.0.20"))
+
+    def test_empty_advertised_address_policy_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            ConnectConfig(
+                profile_dir=Path("/tmp/expra-connect-test"),
+                advertised_addresses=(),
+            )
+
 
 class RuntimeClusterOperationTests(unittest.TestCase):
     def _runtime_with_cluster(self) -> ConnectRuntime:
@@ -621,6 +635,16 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             self.assertEqual(provider.hello()["node_id"], second.identity.node_id.value)
             assert second.pairing is not None
             self.assertFalse(second.pairing.pending)
+            assert second._service is not None
+            self.assertEqual(
+                second._service._grants[first.identity.node_id].permissions,
+                frozenset({NodePermission.READ_STATE}),
+            )
+            self.assertEqual(
+                provider.revoke_self(),
+                {"revoked": True, "node_id": first.identity.node_id.value},
+            )
+            self.assertNotIn(first.identity.node_id, second.pairing.grants)
             first.shutdown()
             second.shutdown()
 

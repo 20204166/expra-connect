@@ -42,8 +42,12 @@ class NetworkPairingTests(unittest.TestCase):
             pairing=pairing,
             candidates={peer_id.value: candidate},
             persist=lambda: True,
+            on_route_attempt=lambda phase, endpoint, outcome, _error: route_events.append(
+                (phase, endpoint.address, outcome)
+            ),
         )
         attempts: list[str] = []
+        route_events: list[tuple[str, str, str]] = []
 
         def build_transport(address: str, _port: int, **_: object) -> object:
             attempts.append(address)
@@ -81,6 +85,15 @@ class NetworkPairingTests(unittest.TestCase):
             network_pairing.pair(peer_id, permissions=frozenset({"read_state"}))
 
         self.assertEqual(attempts, ["192.168.1.20", "10.0.0.20"])
+        self.assertEqual(
+            route_events,
+            [
+                ("pairing", "192.168.1.20", "started"),
+                ("pairing", "192.168.1.20", "failed"),
+                ("pairing", "10.0.0.20", "started"),
+                ("pairing", "10.0.0.20", "succeeded"),
+            ],
+        )
 
 
 if __name__ == "__main__":

@@ -51,7 +51,7 @@ python3 examples/linux_pair_target_detailed.py \
   | tee endpoint-2-linux-console.log
 ```
 
-The Linux target must print a `ready` event with version `0.6.1.0` and
+The Linux target must print a `ready` event with the current release version and
 `discovery_started: true`. On Windows, install or refresh the package and
 fetch the current runner:
 
@@ -82,6 +82,40 @@ connected
 shared_capability_result
 ```
 
+For multi-interface hosts, restrict advertisement to the address reachable by
+the other machine. Repeat the option for more than one approved interface:
+
+```sh
+python run_peer.py --role target --profile .expra-endpoint-2-target \
+  --advertise-address 192.168.55.107 \
+  --report endpoint-2-linux.json
+```
+
+Every pairing and connection route attempt is recorded as a `route_attempt`
+event with phase, address, port, source, outcome, and a redacted error string.
+
+To test active transport rotation, start the target with a delayed rotation and
+keep the initiator alive long enough to reconnect:
+
+```sh
+python run_peer.py --role target --profile .expra-endpoint-2-target \
+  --rotate-after 15 --report endpoint-2-linux-rotation.json
+```
+
+```powershell
+py run_peer.py `
+  --role initiator `
+  --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" `
+  --peer-id LINUX_NODE_ID `
+  --reconnect-after-rotation `
+  --rotation-wait 20 `
+  --report endpoint-2-windows-rotation.json
+```
+
+Expected additional events are `rotated`, `reconnected_after_rotation`, and
+`shared_after_rotation`. The stable node ID must remain unchanged while the
+transport generation and TLS fingerprint change.
+
 Expected evidence:
 
 - Discovery reports the Linux candidate and matching advertised TLS fingerprint.
@@ -107,18 +141,31 @@ On the initiator, first collect diagnostics:
 expra-peer --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" diagnostics > endpoint-3-before.json
 ```
 
-Stop and restart the initiator, then collect diagnostics again:
+Stop and restart the initiator, then run the harness against the same profile
+with the existing peer ID. This proves that trust and the stable identity are
+loaded from disk rather than silently pairing again:
 
 ```powershell
-expra-peer --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" diagnostics > endpoint-3-after.json
+py run_peer.py `
+  --role initiator `
+  --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" `
+  --existing-peer-id LINUX_NODE_ID `
+  --peer-id LINUX_NODE_ID `
+  --report endpoint-3-after.json
 ```
 
 Confirm that the node identity, trusted peer, and grant survive the restart.
-Then revoke the peer:
+Then revoke the caller on the Linux target and prove a subsequent capability
+request is denied:
 
 ```powershell
-expra-peer --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" revoke LINUX_NODE_ID
-expra-peer --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" diagnostics
+py run_peer.py `
+  --role initiator `
+  --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" `
+  --existing-peer-id LINUX_NODE_ID `
+  --peer-id LINUX_NODE_ID `
+  --revoke-self `
+  --report endpoint-3-revoke.json
 ```
 
 Expected evidence:
@@ -126,8 +173,8 @@ Expected evidence:
 - The initiator identity remains unchanged after restart.
 - The trusted peer and grant are present before revoke.
 - The revoke command succeeds.
-- The grant is absent immediately afterward.
-- A subsequent authenticated request is denied.
+- The report contains `self_revoked` followed by `post_revoke_denied`.
+- The target grant is absent immediately afterward.
 - The Linux target remains a separate connection/membership concern; local
   revoke must not silently delete unrelated discovery or cluster state.
 

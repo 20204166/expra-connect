@@ -36,6 +36,9 @@ class ConnectionManager:
         candidates: MutableMapping[str, DiscoveredNodeCandidate],
         provider_factory: Callable[..., Any] = AuthenticatedNodeProvider,
         persist: Callable[[], bool] | None = None,
+        on_route_attempt: Callable[
+            [str, EndpointCandidate, str, str | None], None
+        ] | None = None,
     ) -> None:
         self._local_id = local_id
         self._pairing = pairing
@@ -44,6 +47,7 @@ class ConnectionManager:
         self._providers: dict[NodeId, AuthenticatedNodeProvider] = {}
         self._provider_factory = provider_factory
         self._persist = persist
+        self._on_route_attempt = on_route_attempt
         self._generations: dict[NodeId, int] = {}
         self._resume_peers: set[NodeId] = set()
         self._lock = RLock()
@@ -113,6 +117,7 @@ class ConnectionManager:
             self._set_state(peer_id, ConnectionState(status, changed_at=time.time()))
             errors: list[BaseException] = []
             for endpoint in sorted(endpoints, key=endpoint_rank):
+                self._report_route_attempt("connection", endpoint, "started", None)
                 try:
                     transport = TLSRemoteTransport(
                         endpoint.address,
@@ -129,6 +134,9 @@ class ConnectionManager:
                     self._validate_hello_generation(trusted, candidate, hello)
                     capabilities = parse_hello_capabilities(hello)
                 except RemoteAuthError as error:
+                    self._report_route_attempt(
+                        "connection", endpoint, "failed", str(error)
+                    )
                     self._set_state(
                         peer_id,
                         ConnectionState(
@@ -146,6 +154,9 @@ class ConnectionManager:
                 ) as error:
                     errors.append(error)
                     self._mark_failure(peer_id, endpoint)
+                    self._report_route_attempt(
+                        "connection", endpoint, "failed", str(error)
+                    )
                     continue
                 self._registry.observe(peer_id, capabilities)
                 self._registry.promote(peer_id, permissions=capabilities)
@@ -153,6 +164,7 @@ class ConnectionManager:
                 self._providers[peer_id] = provider
                 self._set_state(peer_id, ConnectionState.online(now=time.time()))
                 self._mark_success(peer_id, endpoint)
+                self._report_route_attempt("connection", endpoint, "succeeded", None)
                 return cast(AuthenticatedNodeProvider, provider)
             reason = str(errors[-1]) if errors else "all endpoint routes failed"
             self._providers.pop(peer_id, None)
@@ -163,6 +175,20 @@ class ConnectionManager:
             if errors:
                 raise errors[-1]
             raise ConnectionError(reason)
+
+    def _report_route_attempt(
+        self,
+        phase: str,
+        endpoint: EndpointCandidate,
+        outcome: str,
+        error: str | None,
+    ) -> None:
+        if self._on_route_attempt is None:
+            return
+        try:
+            self._on_route_attempt(phase, endpoint, outcome, error)
+        except Exception:
+            pass
 
     @staticmethod
     def _candidate_generation_allowed(

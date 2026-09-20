@@ -49,11 +49,68 @@ def discovery_event(report_path: Path, kind: str, payload: Any) -> None:
     write_event(report_path, "discovery_event", kind=kind, payload=payload)
 
 
+def wait_for_peer(
+    runtime: ConnectRuntime,
+    peer_id: str | None,
+    timeout: float,
+    fingerprint_not: str | None = None,
+) -> Any | None:
+    """Wait for a current candidate instead of guessing a propagation delay."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        candidate = next(
+            (
+                peer
+                for peer in runtime.peers
+                if (peer_id is None or peer.stable_id == peer_id)
+                and (
+                    fingerprint_not is None
+                    or peer.transport_fingerprint != fingerprint_not
+                )
+            ),
+            None,
+        )
+        if candidate is not None:
+            return candidate
+        time.sleep(1)
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--role", choices=("target", "initiator"), required=True)
     parser.add_argument("--peer-id", help="target peer node ID for initiator mode")
+    parser.add_argument(
+        "--existing-peer-id",
+        help="reuse an already trusted peer after restarting the profile",
+    )
+    parser.add_argument(
+        "--advertise-address",
+        action="append",
+        help="explicit address to advertise; repeat for multiple interfaces",
+    )
+    parser.add_argument(
+        "--rotate-after",
+        type=float,
+        help="target-only: rotate transport after this many seconds",
+    )
+    parser.add_argument(
+        "--reconnect-after-rotation",
+        action="store_true",
+        help="initiator-only: reconnect and share again after rotation",
+    )
+    parser.add_argument(
+        "--rotation-wait",
+        type=float,
+        default=15.0,
+        help="seconds to wait before reconnecting after a target rotation",
+    )
+    parser.add_argument(
+        "--revoke-self",
+        action="store_true",
+        help="initiator-only: revoke this caller on the target and verify denial",
+    )
     parser.add_argument("--wait", type=float, default=60.0)
     parser.add_argument("--report", type=Path, default=Path("peer-report.json"))
     args = parser.parse_args()
@@ -77,13 +134,22 @@ def main() -> int:
             on_discovery=lambda kind, payload: discovery_event(
                 args.report, kind, payload
             ),
+            advertised_addresses=(
+                tuple(args.advertise_address) if args.advertise_address else None
+            ),
+            on_route_attempt=lambda phase, endpoint, outcome, error: write_event(
+                args.report,
+                "route_attempt",
+                phase=phase,
+                address=endpoint.address,
+                port=endpoint.port,
+                source=endpoint.source.value,
+                outcome=outcome,
+                error=error,
+            ),
             discovery_enabled=True,
         )
     )
-    status = runtime.start()
-    identity = runtime.identity
-    if identity is None:
-        raise RuntimeError("runtime did not create an identity")
     if args.role == "target":
         runtime.sharing.register(
             CAPABILITY,
@@ -93,6 +159,10 @@ def main() -> int:
                 "params": params,
             },
         )
+    status = runtime.start()
+    identity = runtime.identity
+    if identity is None:
+        raise RuntimeError("runtime did not create an identity")
     write_event(
         args.report,
         "started",
@@ -114,22 +184,26 @@ def main() -> int:
                 "target_ready",
                 instruction="Run the initiator harness with this node ID visible to it.",
             )
+            rotation_deadline = (
+                time.monotonic() + args.rotate_after
+                if args.rotate_after is not None
+                else None
+            )
             while True:
+                if rotation_deadline is not None and time.monotonic() >= rotation_deadline:
+                    rotated = runtime.rotate_transport()
+                    write_event(
+                        args.report,
+                        "rotated",
+                        generation=runtime.transport_generations.current_generation
+                        if runtime.transport_generations is not None
+                        else None,
+                        tls_fingerprint=rotated.tls_fingerprint,
+                    )
+                    rotation_deadline = None
                 time.sleep(1)
 
-        deadline = time.monotonic() + args.wait
-        candidate = None
-        while time.monotonic() < deadline:
-            if args.peer_id:
-                candidate = next(
-                    (peer for peer in runtime.peers if peer.stable_id == args.peer_id),
-                    None,
-                )
-            elif runtime.peers:
-                candidate = runtime.peers[0]
-            if candidate is not None:
-                break
-            time.sleep(1)
+        candidate = wait_for_peer(runtime, args.peer_id, args.wait)
         if candidate is None:
             write_event(
                 args.report,
@@ -140,17 +214,60 @@ def main() -> int:
 
         write_event(args.report, "discovered", candidate=asdict(candidate))
         peer_id = NodeId(candidate.stable_id)
-        trusted = runtime.pair_peer(peer_id)
-        write_event(
-            args.report,
-            "paired",
-            peer_id=trusted.peer_id.value,
-            permissions=sorted(trusted.permissions),
-        )
+        if args.existing_peer_id:
+            if args.existing_peer_id != peer_id.value:
+                raise ValueError("discovered peer does not match --existing-peer-id")
+            trusted = runtime.pairing.trusted.get(peer_id) if runtime.pairing else None
+            if trusted is None:
+                raise PermissionError("existing peer is not present in persisted trust")
+            write_event(args.report, "restored_trust", peer_id=peer_id.value)
+        else:
+            trusted = runtime.pair_peer(peer_id)
+            write_event(
+                args.report,
+                "paired",
+                peer_id=trusted.peer_id.value,
+                permissions=sorted(trusted.permissions),
+            )
         provider = runtime.connect_peer(peer_id)
         write_event(args.report, "connected", peer_id=peer_id.value)
         result = provider.request_shared(CAPABILITY, {"source": "run_peer.py"})
         write_event(args.report, "shared_capability_result", result=result)
+        if args.reconnect_after_rotation:
+            write_event(
+                args.report,
+                "waiting_for_rotated_peer",
+                peer_id=peer_id.value,
+                timeout=args.rotation_wait,
+            )
+            candidate = wait_for_peer(
+                runtime,
+                peer_id.value,
+                args.rotation_wait,
+                fingerprint_not=candidate.transport_fingerprint,
+            )
+            if candidate is None:
+                raise TimeoutError("rotated peer advertisement was not rediscovered")
+            provider = runtime.reconnect_peer(peer_id)
+            write_event(args.report, "reconnected_after_rotation", peer_id=peer_id.value)
+            result = provider.request_shared(
+                CAPABILITY, {"source": "run_peer.py", "after_rotation": True}
+            )
+            write_event(args.report, "shared_after_rotation", result=result)
+        if args.revoke_self:
+            provider.revoke_self()
+            write_event(args.report, "self_revoked", peer_id=peer_id.value)
+            try:
+                provider.request_shared(CAPABILITY, {"source": "after_revoke"})
+            except Exception as error:  # noqa: BLE001 - prove denial at the boundary
+                write_event(
+                    args.report,
+                    "post_revoke_denied",
+                    error_type=type(error).__name__,
+                    error=str(error),
+                )
+            else:
+                raise AssertionError("revoked caller still accessed capability")
         return 0
     except Exception as error:  # noqa: BLE001 - report every host-level failure
         write_event(

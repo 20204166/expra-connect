@@ -9,7 +9,12 @@ from typing import Any
 
 from .discovery import endpoint_rank
 from .identity import NodeId, NodeIdentity, node_identity_fingerprint
-from .models import READ_PERMISSIONS, DiscoveredNodeCandidate, NodePermission
+from .models import (
+    READ_PERMISSIONS,
+    DiscoveredNodeCandidate,
+    EndpointCandidate,
+    NodePermission,
+)
 from .pairing import PairingManager, PeerGrant, TrustedPeer
 from .remote_service import AuthenticatedNodeProvider, PairingTransaction
 from .socket_transport import TLSRemoteTransport
@@ -30,6 +35,9 @@ class NetworkPairing:
         pairing: PairingManager,
         candidates: Mapping[str, DiscoveredNodeCandidate],
         persist: Callable[[], bool],
+        on_route_attempt: Callable[
+            [str, EndpointCandidate, str, str | None], None
+        ] | None = None,
     ) -> None:
         self._identity = identity
         self._transport_fingerprint = transport_fingerprint
@@ -39,6 +47,7 @@ class NetworkPairing:
         self._pairing = pairing
         self._candidates = candidates
         self._persist = persist
+        self._on_route_attempt = on_route_attempt
 
     def pair(
         self,
@@ -77,6 +86,7 @@ class NetworkPairing:
         transport: Any | None = None
         response: bool | dict[str, Any] | None = None
         for endpoint in sorted(candidate.endpoint_candidates, key=endpoint_rank):
+            self._report_route_attempt("pairing", endpoint, "started", None)
             try:
                 transport = TLSRemoteTransport(
                     endpoint.address,
@@ -97,14 +107,22 @@ class NetworkPairing:
                 break
             except (OSError, ConnectionError, RemoteTransportError) as error:
                 errors.append(error)
+                self._report_route_attempt(
+                    "pairing", endpoint, "failed", str(error)
+                )
+
         if response is None:
             self._abort(pending.transaction_id)
             raise errors[-1] if errors else ConnectionError("pairing routes failed")
         if not isinstance(response, dict):
+            self._report_route_attempt(
+                "pairing", endpoint, "rejected", "peer rejected pairing"
+            )
             self._abort(pending.transaction_id)
             if cancel_event is not None and cancel_event.is_set():
                 raise RuntimeError("pairing cancelled")
             raise PermissionError("peer rejected pairing")
+        self._report_route_attempt("pairing", endpoint, "succeeded", None)
         transaction = PairingTransaction(
             transaction_id=response["transaction_id"],
             caller_node_id=response["caller_node_id"],
@@ -182,3 +200,17 @@ class NetworkPairing:
     def _abort(self, transaction_id: str) -> None:
         self._pairing.abort(transaction_id)
         self._persist()
+
+    def _report_route_attempt(
+        self,
+        phase: str,
+        endpoint: EndpointCandidate,
+        outcome: str,
+        error: str | None,
+    ) -> None:
+        if self._on_route_attempt is None:
+            return
+        try:
+            self._on_route_attempt(phase, endpoint, outcome, error)
+        except Exception:
+            pass

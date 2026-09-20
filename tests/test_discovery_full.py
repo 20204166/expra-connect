@@ -8,6 +8,8 @@ from expra_connect.discovery_full import (
     SERVICE_TYPE,
     DiscoveryAdvertisement,
     NetworkDiscovery,
+    _service_addresses,
+    _service_instance_id,
 )
 
 
@@ -47,6 +49,31 @@ class _Backend:
 
 
 class FullDiscoveryTests(unittest.TestCase):
+    def test_rotated_transport_gets_a_new_service_instance_name(self) -> None:
+        base = DiscoveryAdvertisement(
+            stable_id="peer-a",
+            display_name="Peer",
+            hostname="peer-a",
+            app_version="1",
+            transport_generation=1,
+        )
+        rotated = DiscoveryAdvertisement(
+            stable_id="peer-a",
+            display_name="Peer",
+            hostname="peer-a",
+            app_version="1",
+            transport_generation=2,
+        )
+        self.assertEqual(_service_instance_id(base), "peer-a")
+        self.assertEqual(_service_instance_id(rotated), "peer-a-g2")
+
+    def test_explicit_advertised_addresses_exclude_unconfigured_interfaces(self) -> None:
+        addresses = _service_addresses(("192.168.1.20", "2001:db8::20"))
+        self.assertEqual(
+            {address for address in addresses},
+            {b"\xc0\xa8\x01\x14", bytes.fromhex("20010db8000000000000000000000020")},
+        )
+
     def test_custom_service_type_is_used_for_peer_matching(self) -> None:
         holder: dict[str, _Backend] = {}
 

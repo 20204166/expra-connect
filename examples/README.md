@@ -65,6 +65,16 @@ endpoint addresses and test TCP port `27321` from Windows. If pairing works but
 the capability request fails, compare the caller ID in `pairing_request` with
 the capability allowlist decision.
 
+The lower-level `run_peer.py` harness also supports:
+
+```text
+--advertise-address ADDRESS       restricts mDNS to approved interfaces
+--rotate-after SECONDS            rotates the target transport generation
+--reconnect-after-rotation        reconnects after a new advertisement
+--existing-peer-id NODE_ID        verifies persisted trust after restart
+--revoke-self                     verifies target-side authorization revocation
+```
+
 ## Cluster Membership Demo
 
 `cluster_membership_demo.py` is deliberately separate from the network pairing

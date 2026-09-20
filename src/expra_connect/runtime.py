@@ -114,12 +114,14 @@ class ConnectConfig:
     service_type: str = SERVICE_TYPE
     hostname: str = ""
     platform_name: str = ""
+    advertised_addresses: tuple[str, ...] | None = None
     cluster_enabled: bool = False
     capabilities: frozenset[NodeCapability] = READ_CAPABILITIES
     provider: Any = None
     on_discovery: Callable[[str, Any], None] | None = None
     on_pairing_request: Callable[[PairingRequest], bool] | None = None
     on_elevation_request: Callable[[CapabilityElevationRequest], bool] | None = None
+    on_route_attempt: Callable[[str, Any, str, str | None], None] | None = None
     discovery_backend_factory: (
         Callable[[Callable[[str, str, Any], None]], DiscoveryBackend] | None
     ) = None
@@ -132,16 +134,17 @@ class ConnectConfig:
             raise ValueError("service_type must be a fully qualified service type")
         if not 0 <= self.preferred_port <= 65535:
             raise ValueError("preferred_port must be between 0 and 65535")
-
+        if self.advertised_addresses is not None and (
+            not self.advertised_addresses
+            or not all(address.strip() for address in self.advertised_addresses)
+        ):
+            raise ValueError("advertised_addresses must contain non-empty values")
     @property
     def resolved_hostname(self) -> str:
         return self.hostname or socket.gethostname()
-
     @property
     def resolved_platform(self) -> str:
         return self.platform_name or platform.system().lower()
-
-
 class ConnectRuntime:
     """Compose the mature peer components without doing work in construction."""
 
@@ -171,7 +174,6 @@ class ConnectRuntime:
     @property
     def status(self) -> RuntimeStatus:
         return self._status
-
     @property
     def started(self) -> bool:
         return self._status.state is RuntimeState.STARTED
@@ -179,23 +181,18 @@ class ConnectRuntime:
     @property
     def identity(self) -> NodeIdentity | None:
         return self._identity
-
     @property
     def registry(self) -> NodeRegistry | None:
         return self._registry
-
     @property
     def pairing(self) -> PairingManager | None:
         return self._pairing
-
     @property
     def sharing(self) -> CapabilityShare:
         return self._sharing
-
     @property
     def cluster(self) -> Cluster | None:
         return self._cluster
-
     @property
     def peers(self) -> tuple[DiscoveredNodeCandidate, ...]:
         return tuple(self._peers.values())
@@ -343,7 +340,7 @@ class ConnectRuntime:
         self._refresh_live_grants()
         return grant
 
-    def revoke_peer(self, peer_id: NodeId) -> None:
+    def revoke_peer(self, peer_id: NodeId, *, _refresh: bool = True) -> None:
         pairing = self._require_pairing()
         previous_trusted = dict(pairing.trusted)
         previous_grants = dict(pairing.grants)
@@ -359,7 +356,14 @@ class ConnectRuntime:
         self._peers.pop(peer_id.value, None)
         if self._connection_manager is not None:
             self._connection_manager.disconnect(peer_id, reason="revoked")
-        self._refresh_live_grants()
+        if _refresh:
+            self._refresh_live_grants()
+
+    def _revoke_self(self, peer_id: NodeId) -> dict[str, Any]:
+        return (
+            self.revoke_peer(peer_id, _refresh=False),
+            {"revoked": True, "node_id": peer_id.value},
+        )[1]
 
     def _require_pairing(self) -> PairingManager:
         if self._pairing is None:
@@ -474,6 +478,7 @@ class ConnectRuntime:
             registry=self._registry,
             candidates=self._peers,
             persist=self._save_persisted_state,
+            on_route_attempt=self.config.on_route_attempt,
         )
         self._transport_generations = TransportGenerationManager(
             self._identity,
@@ -538,6 +543,8 @@ class ConnectRuntime:
             role_handler=self._handle_role_request
             if self._cluster is not None
             else None,
+            trust_revoke_handler=self._revoke_self,
+            trust_revoke_commit=self._refresh_live_grants,
         )
         server = RemoteSocketServer(
             service,
@@ -568,6 +575,7 @@ class ConnectRuntime:
             pairing=self._pairing,
             candidates=self._peers,
             persist=self._save_persisted_state,
+            on_route_attempt=self.config.on_route_attempt,
         )
         bound_port = server.bound_port
         advertisement = DiscoveryAdvertisement(
@@ -583,6 +591,7 @@ class ConnectRuntime:
             root_public_key=self._identity.root_public_key,
             transport_generation=self._transport_generations.current.generation,
             transport_proof=self._transport_generations.current.proof,
+            advertised_addresses=self.config.advertised_addresses,
         )
         if not self.config.discovery_enabled:
             return self._started_status(server, material.fingerprint, False, True, None)

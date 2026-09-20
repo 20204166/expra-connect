@@ -88,6 +88,7 @@ class DiscoveryAdvertisement:
     root_public_key: str | None = None
     transport_generation: int | None = None
     transport_proof: str | None = None
+    advertised_addresses: tuple[str, ...] | None = None
 
 
 class DiscoveryBackend(Protocol):
@@ -184,12 +185,12 @@ class ZeroconfDiscoveryBackend:
             "properties": properties,
             "server": f"{advertisement.hostname}.local.",
         }
-        addresses = _local_service_addresses()
+        addresses = _service_addresses(advertisement.advertised_addresses)
         if addresses:
             service_kwargs["addresses"] = addresses
         service_info = _zeroconf_module.ServiceInfo(
             self._service_type,
-            f"{advertisement.stable_id}.{self._service_type}",
+            f"{_service_instance_id(advertisement)}.{self._service_type}",
             **service_kwargs,
         )
         zc.register_service(service_info)
@@ -603,6 +604,24 @@ def _local_service_addresses() -> list[bytes]:
     return addresses
 
 
+def _service_addresses(configured: tuple[str, ...] | None) -> list[bytes]:
+    """Use an explicit address policy or discover all usable local addresses."""
+
+    if configured is None:
+        return _local_service_addresses()
+    addresses: list[bytes] = []
+    for raw in configured:
+        try:
+            address = ipaddress.ip_address(raw)
+            if address.is_loopback:
+                continue
+            family = socket.AF_INET if address.version == 4 else socket.AF_INET6
+            addresses.append(socket.inet_pton(family, str(address)))
+        except (ValueError, OSError, TypeError):
+            LOGGER.warning("Ignoring invalid configured discovery address %r", raw)
+    return addresses
+
+
 def _attr(info: Any, name: str) -> Any:
     if info is None:
         return None
@@ -633,6 +652,17 @@ def _service_hostname(service_name: str, service_type: str = SERVICE_TYPE) -> st
         return service_name
     node_id = service_name[: -len(service_type)].removesuffix(".")
     return node_id or service_name
+
+
+def _service_instance_id(advertisement: DiscoveryAdvertisement) -> str:
+    """Give a rotated transport a fresh mDNS instance for cache invalidation."""
+
+    if (
+        advertisement.transport_generation is not None
+        and advertisement.transport_generation > 1
+    ):
+        return f"{advertisement.stable_id}-g{advertisement.transport_generation}"
+    return advertisement.stable_id
 
 
 def _address_texts(addresses: Any) -> list[str]:

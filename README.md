@@ -122,6 +122,10 @@ discovery, multi-route pairing fallback, TLS pinning, authenticated connect,
 target-owned capability authorization, and redacted evidence reporting. See
 `examples/README.md` for the complete walkthrough and failure boundaries.
 
+The acceptance runner also records per-route attempts, supports explicit
+advertised-address selection, exercises active transport rotation, verifies
+persisted trust after restart, and verifies target-side self-revocation.
+
 ### Windows Setup Without Python
 
 Open PowerShell and run the single bootstrap command:

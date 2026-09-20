@@ -89,6 +89,7 @@ class ConnectionManagerTests(unittest.TestCase):
 
     def test_route_failure_falls_back_without_changing_peer_identity(self) -> None:
         attempts: list[str] = []
+        route_events: list[tuple[str, str, str, str | None]] = []
 
         class Provider:
             def __init__(self, address: str) -> None:
@@ -106,6 +107,9 @@ class ConnectionManagerTests(unittest.TestCase):
             registry=self.registry,
             candidates=self.candidates,
             provider_factory=lambda **kwargs: Provider(kwargs["transport"].address),
+            on_route_attempt=lambda phase, endpoint, outcome, error: route_events.append(
+                (phase, endpoint.address, outcome, error)
+            ),
         )
         with patch(
             "expra_connect.connection_manager.TLSRemoteTransport",
@@ -113,6 +117,15 @@ class ConnectionManagerTests(unittest.TestCase):
         ):
             manager.connect(self.peer)
         self.assertEqual(attempts, ["192.168.1.2", "10.8.0.2"])
+        self.assertEqual(
+            [(item[0], item[1], item[2]) for item in route_events],
+            [
+                ("connection", "192.168.1.2", "started"),
+                ("connection", "192.168.1.2", "failed"),
+                ("connection", "10.8.0.2", "started"),
+                ("connection", "10.8.0.2", "succeeded"),
+            ],
+        )
         record = self.registry.record(self.peer)
         assert record is not None
         self.assertEqual(record.connection.status, ConnectionStatus.ONLINE)
