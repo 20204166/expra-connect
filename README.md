@@ -80,6 +80,57 @@ for the current user, verifies the import and installed version, and adds the
 user scripts directory to `PATH`. Use `-System` with a downloaded copy of the
 script for a system-wide installation.
 
+If Windows does not have Python, install it first from an elevated PowerShell:
+
+```powershell
+winget install --id Python.Python.3.12 -e
+```
+
+Open a new PowerShell window after installation, then run the online installer.
+
+## Two-Node Test Runner
+
+`run_peer.py` is a redacted acceptance harness for one Linux node and one
+Windows node. It records listener, TLS fingerprint, discovery, pairing,
+connection, and shared-capability results in `peer-report.json`. It never writes
+pairing secrets or private keys.
+
+On the target node, run:
+
+```sh
+python run_peer.py --role target --profile .expra-target --report target-report.json
+```
+
+On the initiator node, copy the target node ID from its `started` event and run:
+
+```sh
+python run_peer.py --role initiator --profile .expra-initiator \
+  --peer-id TARGET_NODE_ID --report initiator-report.json
+```
+
+On Windows, use `py` instead of `python` if required:
+
+```powershell
+py run_peer.py --role target --profile "$env:LOCALAPPDATA\expra-target" --report target-report.json
+py run_peer.py --role initiator --profile "$env:LOCALAPPDATA\expra-initiator" --peer-id TARGET_NODE_ID --report initiator-report.json
+```
+
+To fetch the runner directly on Windows after installing the package:
+
+```powershell
+irm https://raw.githubusercontent.com/20204166/expra-connect/main/run_peer.py -OutFile run_peer.py
+```
+
+The runner is ordinary host code. Run it from the directory containing
+`run_peer.py`, or provide its full path. Each report is a JSON array containing
+all events in order, rather than only the final result.
+
+The target runner approves only this test harness pairing and shares only
+`test.read_state`. Stop it with `Ctrl+C` after the initiator reports
+`shared_capability_result`. Run the same harness with host firewalls and VPN
+policy enabled, and send both JSON reports plus the output of
+`expra-peer --version` when reporting a Windows result.
+
 This repository is local-only and does not publish to PyPI. The wheel and
 install scripts are the supported application distribution boundary.
 
