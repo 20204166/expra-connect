@@ -95,6 +95,72 @@ Windows node. It records listener, TLS fingerprint, discovery, pairing,
 connection, and shared-capability results in `peer-report.json`. It never writes
 pairing secrets or private keys.
 
+### Linux Setup
+
+From a fresh checkout:
+
+```sh
+git clone https://github.com/20204166/expra-connect.git
+cd expra-connect
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install dist/expra_connect-0.2.0.0-py3-none-any.whl
+expra-peer --version
+expra-peer --profile .expra-linux diagnostics
+```
+
+### Windows Setup Without Python
+
+Open PowerShell and install Python with Windows Package Manager:
+
+```powershell
+winget install --id Python.Python.3.12 -e
+```
+
+Close and reopen PowerShell, then install Expra Connect online:
+
+```powershell
+irm https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1 | iex
+```
+
+Verify the installation:
+
+```powershell
+expra-peer --version
+expra-peer --profile "$env:LOCALAPPDATA\expra-connect" diagnostics
+```
+
+The online installer is the standard Windows installation path. It downloads
+the wheel and checksum from this repository, verifies the wheel, installs the
+package for the current user, verifies the import, and updates the user PATH.
+
+### CLI Runtime Smoke Test
+
+Start a peer and leave it running:
+
+```sh
+expra-peer --profile .expra-peer serve
+```
+
+From another terminal, inspect it:
+
+```sh
+expra-peer --profile .expra-peer status
+expra-peer --profile .expra-peer identity
+expra-peer --profile .expra-peer peers
+expra-peer --profile .expra-peer diagnostics
+```
+
+On Windows use the same commands with the profile path changed:
+
+```powershell
+expra-peer --profile "$env:LOCALAPPDATA\expra-peer" serve
+expra-peer --profile "$env:LOCALAPPDATA\expra-peer" diagnostics
+```
+
+The CLI starts a normal runtime and is suitable for listener and discovery
+smoke tests. It does not automatically approve pairing requests.
+
 On the target node, run:
 
 ```sh
@@ -124,6 +190,73 @@ irm https://raw.githubusercontent.com/20204166/expra-connect/main/run_peer.py -O
 The runner is ordinary host code. Run it from the directory containing
 `run_peer.py`, or provide its full path. Each report is a JSON array containing
 all events in order, rather than only the final result.
+
+### Standard Two-Node Invocation
+
+Run the target first. The target approves only this test pairing and exposes
+only the `test.read_state` capability:
+
+```sh
+python run_peer.py \
+  --role target \
+  --profile .expra-target \
+  --report target-report.json
+```
+
+On Windows:
+
+```powershell
+irm https://raw.githubusercontent.com/20204166/expra-connect/main/run_peer.py -OutFile run_peer.py
+py run_peer.py `
+  --role target `
+  --profile "$env:LOCALAPPDATA\expra-target" `
+  --report target-report.json
+```
+
+Copy the target `node_id` from its `started` event. On the initiator run:
+
+```sh
+python run_peer.py \
+  --role initiator \
+  --profile .expra-initiator \
+  --peer-id TARGET_NODE_ID \
+  --report initiator-report.json
+```
+
+On Windows:
+
+```powershell
+py run_peer.py `
+  --role initiator `
+  --profile "$env:LOCALAPPDATA\expra-initiator" `
+  --peer-id TARGET_NODE_ID `
+  --report initiator-report.json
+```
+
+The initiator waits for discovery, pairs, establishes the authenticated
+connection, invokes `test.read_state`, and exits. The target remains running.
+Stop the target with `Ctrl+C` after the initiator reports
+`shared_capability_result`.
+
+### Acceptance Evidence
+
+Collect these files from both nodes:
+
+```text
+target-report.json
+initiator-report.json
+```
+
+Also collect:
+
+```sh
+expra-peer --version
+expra-peer --profile PROFILE diagnostics
+```
+
+Run with the normal host firewall and VPN policy enabled. Do not disable the
+firewall or open arbitrary ports. Record whether any failure is discovery,
+transport, authentication, authorization, pairing, or cluster state.
 
 The target runner approves only this test harness pairing and shares only
 `test.read_state`. Stop it with `Ctrl+C` after the initiator reports
