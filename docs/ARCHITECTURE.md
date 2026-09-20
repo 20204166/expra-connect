@@ -20,7 +20,7 @@ topology state, not a transport state.
 | --- | --- | --- |
 | Durable node identity and fingerprint | `identity.py` | Loads identity before listener startup |
 | Root signing identity and transport generations | `identity.py`, `tls_material.py` | Signs and validates credential replacement without changing `NodeId` |
-| Candidate discovery and expiry | `discovery_full.py` | Starts/stops backend and forwards events |
+| Candidate discovery and expiry | `discovery_full.py` | Serializes backend lifecycle, normalizes per-service observations, and forwards events |
 | Pairing, grants, trust, and revocation | `pairing.py` | Persists transitions and refreshes the listener ACL |
 | TLS/HMAC request security | `tls_material.py`, `wire_protocol.py`, `remote_service.py` | Composes the authenticated server boundary |
 | Outgoing connection state and providers | `connection_manager.py`, `connection_state.py` | Connects only discovered trusted peers |

@@ -280,6 +280,7 @@ class NetworkDiscovery:
         )
         self._peers: dict[str, _PeerRecord] = {}
         self._service_nodes: dict[str, str] = {}
+        self._service_candidates: dict[str, DiscoveredNodeCandidate] = {}
         self._peer_lock = RLock()
         self._active = False
         self._unavailable_reason: str | None = None
@@ -324,9 +325,14 @@ class NetworkDiscovery:
             self._unavailable_reason = "python-zeroconf is not installed"
             LOGGER.info("Network discovery unavailable: %s", self._unavailable_reason)
             return False
+        # Mark the transaction active before invoking backend code. Some
+        # Zeroconf implementations synchronously deliver an initial callback
+        # from ServiceBrowser construction; that observation must not be lost.
+        self._active = True
         try:
             self._backend.start(self._advertisement)
         except Exception as error:  # noqa: BLE001 - discovery must not fail the app.
+            self._active = False
             try:
                 self._backend.stop()
             except Exception:
@@ -335,10 +341,10 @@ class NetworkDiscovery:
                 )
             self._peers.clear()
             self._service_nodes.clear()
+            self._service_candidates.clear()
             self._unavailable_reason = f"Discovery start failed: {error}"
             LOGGER.warning("Network discovery failed to start: %s", error)
             return False
-        self._active = True
         LOGGER.info("Network discovery active for %s", self._advertisement.stable_id)
         return True
 
@@ -353,6 +359,7 @@ class NetworkDiscovery:
                 LOGGER.warning("Network discovery stop failed: %s", error)
             self._peers.clear()
             self._service_nodes.clear()
+            self._service_candidates.clear()
 
     @property
     def active(self) -> bool:
@@ -377,8 +384,9 @@ class NetworkDiscovery:
         try:
             if event == "remove":
                 node_id = self._service_nodes.pop(service_name, None)
-                if node_id is not None and node_id not in self._service_nodes.values():
-                    self._drop_peer(node_id)
+                self._service_candidates.pop(service_name, None)
+                if node_id is not None:
+                    self._rebuild_peer(node_id)
                 return
             candidate = self._normalize(service_name, info)
         except _MalformedAdvertisement as error:
@@ -388,61 +396,53 @@ class NetworkDiscovery:
             return
         if candidate is None:
             return
+        previous_node_id = self._service_nodes.get(service_name)
+        if previous_node_id is not None and previous_node_id != candidate.stable_id:
+            self._service_candidates.pop(service_name, None)
+            self._rebuild_peer(previous_node_id)
         self._service_nodes[service_name] = candidate.stable_id
-        record = self._peers.get(candidate.stable_id)
-        if record is not None:
-            existing = record.candidate
-            if (
-                existing.transport_fingerprint
-                and candidate.transport_fingerprint
-                and existing.transport_fingerprint != candidate.transport_fingerprint
-            ):
-                LOGGER.warning(
-                    "Ignoring conflicting endpoint announcement for node %s",
-                    candidate.stable_id,
-                )
-                return
-            addresses = tuple(
-                dict.fromkeys((*existing.addresses, *candidate.addresses))
-            )
-            endpoints = tuple(
-                {
-                    endpoint.key: endpoint
-                    for endpoint in (
-                        *existing.endpoint_candidates,
-                        *candidate.endpoint_candidates,
-                    )
-                }.values()
-            )
-            updated = replace(
-                candidate,
-                addresses=addresses,
-                endpoint_candidates=endpoints,
-                transport_fingerprint=(
-                    candidate.transport_fingerprint or existing.transport_fingerprint
-                ),
-                identity_fingerprint=(
-                    candidate.identity_fingerprint or existing.identity_fingerprint
-                ),
-            )
-            changed = (
-                existing.addresses != updated.addresses
-                or existing.hostname != updated.hostname
-                or existing.app_version != updated.app_version
-                or existing.port != updated.port
-                or existing.connectable != updated.connectable
-                or existing.identity_fingerprint != updated.identity_fingerprint
-                or existing.transport_fingerprint != updated.transport_fingerprint
-                or existing.root_public_key != updated.root_public_key
-                or existing.transport_generation != updated.transport_generation
-                or existing.transport_proof != updated.transport_proof
-            )
-            self._peers[candidate.stable_id] = _PeerRecord(updated, candidate.last_seen)
-            if changed:
-                self._emit(EVENT_CANDIDATE, updated)
+        self._service_candidates[service_name] = candidate
+        self._rebuild_peer(candidate.stable_id)
+
+    def _rebuild_peer(self, node_id: str) -> None:
+        observations = tuple(
+            candidate
+            for service_name, candidate in self._service_candidates.items()
+            if self._service_nodes.get(service_name) == node_id
+        )
+        if not observations:
+            self._drop_peer(node_id)
             return
-        self._peers[candidate.stable_id] = _PeerRecord(candidate, candidate.last_seen)
-        self._emit(EVENT_CANDIDATE, candidate)
+        latest = max(observations, key=lambda item: item.last_seen)
+        addresses = tuple(
+            dict.fromkeys(
+                address
+                for observation in observations
+                for address in observation.addresses
+            )
+        )
+        endpoints = tuple(
+            {
+                endpoint.key: endpoint
+                for observation in observations
+                for endpoint in observation.endpoint_candidates
+            }.values()
+        )
+        updated = replace(
+            latest,
+            addresses=addresses,
+            endpoint_candidates=endpoints,
+        )
+        record = self._peers.get(node_id)
+        if record is None:
+            self._peers[node_id] = _PeerRecord(updated, latest.last_seen)
+            self._emit(EVENT_CANDIDATE, updated)
+            return
+        existing = record.candidate
+        self._peers[node_id] = _PeerRecord(updated, latest.last_seen)
+        changed = replace(existing, last_seen=updated.last_seen) != updated
+        if changed:
+            self._emit(EVENT_CANDIDATE, updated)
 
     def _drop_peer(self, node_id: str) -> None:
         with self._peer_lock:
@@ -530,7 +530,7 @@ class NetworkDiscovery:
             raw_port
             if isinstance(raw_port, int)
             and not isinstance(raw_port, bool)
-            and 0 <= raw_port <= 65535
+            and 1 <= raw_port <= 65535
             else None
         )
 

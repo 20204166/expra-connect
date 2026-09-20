@@ -15,6 +15,7 @@ from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerpri
 from expra_connect.models import DiscoveredNodeCandidate, NodeCapability, NodePermission
 from expra_connect.pairing import PeerGrant, TrustedPeer
 from expra_connect.remote_service import AuthenticatedNodeProvider, PairingTransaction
+from expra_connect.role_engine import ClusterRole as RegistryClusterRole
 from expra_connect.runtime import (
     ConnectConfig,
     ConnectRuntime,
@@ -395,6 +396,101 @@ class RuntimeClusterOperationTests(unittest.TestCase):
 
             self.assertEqual(events, [])
             self.assertEqual(runtime.peers, ())
+            runtime.shutdown()
+
+    def test_trusted_rediscovery_accepts_a_signed_new_transport_generation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            runtime.start()
+            assert runtime.pairing is not None
+            peer_id = NodeId("rotating-peer")
+            peer_identity = NodeIdentity.create(peer_id)
+            runtime.pairing.trusted[peer_id] = TrustedPeer(
+                peer_id=peer_id,
+                secret="a" * 64,
+                permissions=frozenset({"read_state"}),
+                transport_fingerprint="transport-one",
+                root_public_key=peer_identity.root_public_key,
+                transport_generation=1,
+            )
+            fingerprint = "transport-two"
+            candidate = DiscoveredNodeCandidate(
+                stable_id=peer_id.value,
+                hostname="peer.local",
+                addresses=("192.168.1.8",),
+                port=27321,
+                service_name="rotating-peer._expra-peer._tcp.local.",
+                app_version="1.0",
+                protocol_version="1",
+                platform=None,
+                connectable=True,
+                compatible=True,
+                last_seen=1.0,
+                transport_fingerprint=fingerprint,
+                root_public_key=peer_identity.root_public_key,
+                transport_generation=2,
+                transport_proof=peer_identity.sign_transport_proof(2, fingerprint),
+            )
+
+            runtime._on_discovery(1, "candidate", candidate)
+
+            self.assertEqual(runtime.peers, (candidate,))
+            runtime.shutdown()
+
+    def test_discovery_loss_does_not_erase_trust_or_membership(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            runtime.start()
+            assert runtime.pairing is not None
+            assert runtime.registry is not None
+            assert runtime.identity is not None
+            peer_id = NodeId("trusted-peer")
+            runtime.pairing.trusted[peer_id] = TrustedPeer(
+                peer_id=peer_id,
+                secret="a" * 64,
+                permissions=frozenset({"read_state"}),
+            )
+            runtime.registry.observe(peer_id, frozenset())
+            runtime.registry.promote(peer_id, permissions=frozenset())
+            runtime.registry.join(
+                peer_id,
+                role=RegistryClusterRole.WORKER,
+                coordinator_id=runtime.identity.node_id,
+            )
+            runtime._peers[peer_id.value] = DiscoveredNodeCandidate(
+                stable_id=peer_id.value,
+                hostname="peer.local",
+                addresses=("192.168.1.8",),
+                port=27321,
+                service_name="trusted-peer._expra-peer._tcp.local.",
+                app_version="1.0",
+                protocol_version="1",
+                platform=None,
+                connectable=True,
+                compatible=True,
+                last_seen=1.0,
+            )
+
+            runtime._on_discovery(1, "lost", peer_id.value)
+
+            self.assertIn(peer_id, runtime.pairing.trusted)
+            record = runtime.registry.record(peer_id)
+            assert record is not None
+            self.assertEqual(record.membership.value, "worker")
             runtime.shutdown()
 
     def test_discovery_backend_failure_keeps_listener_and_reports_reason(self) -> None:

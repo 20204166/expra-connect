@@ -1,9 +1,9 @@
 # Edge-Case Research
 
-Research was performed on 2026-09-20. External material was used to identify
-failure cases, not to copy implementations. The local System Analyzer reference
-requested by the repository guide was unavailable at `/home/btn17/Downloads/exp`,
-so no parity claim is made here.
+Research was performed on 2026-09-20. External material and the read-only
+System Analyzer reference at `/home/btn17/Downloads/exp` were used to identify
+failure cases, not to copy implementations. The full discovery disposition is
+in `DISCOVERY_EDGE_CASE_PARITY.md`.
 
 ## Sources And Findings
 
@@ -29,3 +29,17 @@ so no parity claim is made here.
 
 No external code was copied. Relay, DERP, STUN/TURN, QUIC, streaming, and
 multipath transport remain out of scope.
+
+## Discovery Parity Audit
+
+System Analyzer code copied: **NO**. System Analyzer edge-case knowledge
+adapted: **YES**.
+
+The audit preserved the existing ownership split. `NetworkDiscovery` now
+accepts synchronous startup observations transactionally, tracks observations
+per service name so stale routes are not retained after an update, and treats
+port zero as non-connectable. Runtime trusted-rediscovery filtering accepts a
+changed transport fingerprint only when it is a valid newer signed transport
+generation; unrelated or forged changes remain rejected. Deterministic tests
+cover these cases and the discovery lifecycle race. Windows, firewall, VPN,
+LAN, and real mDNS behavior remain physical-validation items and were not run.

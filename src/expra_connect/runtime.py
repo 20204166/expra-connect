@@ -671,30 +671,20 @@ class ConnectRuntime:
             peer_id = NodeId(candidate.stable_id)
         except ValueError:
             return False
-        trusted = self._pairing.trusted.get(peer_id)
-        grant = self._pairing.grants.get(peer_id)
-        expected_identity = (
-            trusted.identity_fingerprint
-            if trusted is not None
-            else grant.identity_fingerprint
-            if grant is not None
-            else None
-        )
-        expected_transport = (
-            trusted.transport_fingerprint
-            if trusted is not None
-            else grant.transport_fingerprint
-            if grant is not None
-            else None
-        )
+        peer = self._pairing.trusted.get(peer_id) or self._pairing.grants.get(peer_id)
+        if peer is None:
+            return True
         if (
-            expected_identity is not None
-            and candidate.identity_fingerprint != expected_identity
+            peer.identity_fingerprint
+            and candidate.identity_fingerprint != peer.identity_fingerprint
         ):
             return False
-        return not (
-            expected_transport is not None
-            and candidate.transport_fingerprint != expected_transport
+        return (
+            peer.transport_fingerprint is None
+            or candidate.transport_fingerprint == peer.transport_fingerprint
+            or bool(
+                ConnectionManager._candidate_generation_allowed(peer, candidate)
+            )
         )
 
     def _handle_pairing_request(self, request: PairingRequest) -> dict[str, Any]:
