@@ -12,7 +12,7 @@ from dataclasses import replace
 from typing import Any
 
 from ..identity import NodeId
-from .invites import ClusterDataError, create_invite
+from .invites import ClusterDataError, create_invite, invite_to_dict
 from .models import ClusterRole, CoordinatorEpoch, InviteRecord, RoleAssignment
 from .roles import RoleState, hash_invite, new_fencing_token
 from .state import role_state_from_dict, role_state_to_dict
@@ -155,28 +155,10 @@ class ClusterState:
                 "local_node_id": self.local_node_id,
                 "local_id": self.local_node_id,
                 "active_invites": [
-                    {
-                        "token_hash": item.token_hash,
-                        "target_node_id": item.target_node_id,
-                        "expires_at": item.expires_at,
-                        "cluster_id": item.cluster_id,
-                        "coordinator_id": item.coordinator_id,
-                        "epoch": item.epoch,
-                        "fencing_token": item.fencing_token,
-                    }
-                    for item in self.active_invites
+                    invite_to_dict(item) for item in self.active_invites
                 ],
                 "join_admissions": [
-                    {
-                        "token_hash": item.token_hash,
-                        "target_node_id": item.target_node_id,
-                        "expires_at": item.expires_at,
-                        "cluster_id": item.cluster_id,
-                        "coordinator_id": item.coordinator_id,
-                        "epoch": item.epoch,
-                        "fencing_token": item.fencing_token,
-                    }
-                    for item in self.join_admissions
+                    invite_to_dict(item) for item in self.join_admissions
                 ],
                 "used_invites": sorted(self.used_invites),
             }

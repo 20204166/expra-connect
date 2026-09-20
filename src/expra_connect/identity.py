@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 import secrets
 import time
 from collections.abc import Callable
@@ -44,7 +45,7 @@ class NodeIdentity:
     root_private_key: str = ""
 
     def __post_init__(self) -> None:
-        if len(self.secret) != 64:
+        if not isinstance(self.secret, str) or len(self.secret) != 64:
             raise ValueError("identity secret must be 256-bit hex text")
         try:
             bytes.fromhex(self.secret)
@@ -364,11 +365,18 @@ class TransportGenerationManager:
                     raise TypeError
                 item = self._decode(raw)
                 expiry = raw.get("expires_at")
-                if expiry is not None and not isinstance(expiry, (int, float)):
+                if (
+                    expiry is not None
+                    and (
+                        not isinstance(expiry, (int, float))
+                        or isinstance(expiry, bool)
+                        or not math.isfinite(float(expiry))
+                    )
+                ):
                     raise ValueError
                 self._accepted[item.generation] = (item, expiry)
             self._next = None if raw_next is None else self._decode(raw_next)
-        except (KeyError, TypeError, ValueError) as error:
+        except (KeyError, OverflowError, TypeError, ValueError) as error:
             raise StateDataError("transport state is malformed") from error
 
     def _decode(self, raw: object) -> TransportGeneration:

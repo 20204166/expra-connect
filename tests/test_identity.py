@@ -13,6 +13,10 @@ class IdentityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             NodeId("local")
 
+    def test_node_id_rejects_overlong_values(self) -> None:
+        with self.assertRaises(ValueError):
+            NodeId("x" * 129)
+
     def test_node_id_is_value_equal(self) -> None:
         self.assertEqual(NodeId("peer-a"), NodeId("peer-a"))
         self.assertNotEqual(NodeId("peer-a"), NodeId("peer-b"))
@@ -37,3 +41,11 @@ class IdentityTests(unittest.TestCase):
     def test_identity_rejects_invalid_secret(self) -> None:
         with self.assertRaises(ValueError):
             NodeIdentity(NodeId("peer-a"), "not-a-secret")
+
+    def test_identity_rejects_non_string_secret(self) -> None:
+        with self.assertRaises(ValueError):
+            NodeIdentity(NodeId("peer-a"), None)  # type: ignore[arg-type]
+
+    def test_identity_rejects_invalid_root_key(self) -> None:
+        with self.assertRaises(ValueError):
+            NodeIdentity(NodeId("peer-a"), "0" * 64, "not-base64")

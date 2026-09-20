@@ -1,3 +1,4 @@
+import math
 import tempfile
 import unittest
 from pathlib import Path
@@ -108,3 +109,53 @@ class IdentityRotationTests(unittest.TestCase):
                 NodeIdentity.create(NodeId("peer-a")), store=JsonStateStore(path)
             )
             self.assertEqual(manager.current.fingerprint, "legacy")
+
+    def test_invalid_transport_proof_returns_false(self) -> None:
+        identity = NodeIdentity.create(NodeId("peer-a"))
+        self.assertFalse(
+            identity.verify_transport_proof(1, "fingerprint", "not-a-proof")
+        )
+
+    def test_current_requires_initialization(self) -> None:
+        manager = TransportGenerationManager(NodeIdentity.create(NodeId("peer-a")))
+        with self.assertRaises(TransportStateError):
+            _ = manager.current
+
+    def test_activation_requires_the_pending_generation(self) -> None:
+        manager = TransportGenerationManager(NodeIdentity.create(NodeId("peer-a")))
+        manager.initialize("one")
+        with self.assertRaises(TransportStateError):
+            manager.activate(2)
+
+    def test_persisted_nonfinite_or_boolean_expiry_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "transport.json"
+            identity = NodeIdentity.create(NodeId("peer-a"))
+            manager = TransportGenerationManager(
+                identity, store=JsonStateStore(path)
+            )
+            current = manager.initialize("one")
+            document = {
+                "version": 2,
+                "current": {
+                    "generation": current.generation,
+                    "fingerprint": current.fingerprint,
+                    "proof": current.proof,
+                },
+                "accepted": [
+                    {
+                        "generation": current.generation + 1,
+                        "fingerprint": "two",
+                        "proof": identity.sign_transport_proof(2, "two"),
+                        "expires_at": True,
+                    }
+                ],
+                "next": None,
+            }
+            for expiry in (True, math.nan, 10**1000):
+                document["accepted"][0]["expires_at"] = expiry
+                JsonStateStore(path).save(document)
+                with self.assertRaises(StateDataError):
+                    TransportGenerationManager(
+                        identity, store=JsonStateStore(path)
+                    )
