@@ -59,6 +59,7 @@ OP_REQUIRED_PERMISSION: dict[str, NodePermission] = {
     operation: NodePermission(capability.value)
     for operation, capability in OP_REQUIRED_CAPABILITY.items()
 }
+_KNOWN_PERMISSION_VALUES = frozenset(permission.value for permission in NodePermission)
 ROLE_OPERATIONS = frozenset(
     {
         "consume_invite",
@@ -188,7 +189,7 @@ class PairingRequest:
         if not self.transport_fingerprint:
             raise RemoteAuthError("pairing transport fingerprint is missing")
         _validate_secret(self.proposed_secret)
-        if not self.permissions <= frozenset(READ_PERMISSIONS):
+        if not self.permissions <= READ_PERMISSIONS:
             raise RemoteAuthorizationError("pairing is read-only")
 
 
@@ -278,7 +279,7 @@ def validate_pairing_control_request(
         parsed_permissions = frozenset(NodePermission(item) for item in permissions)
     except ValueError as error:
         raise RemoteProtocolError("pairing control permissions are invalid") from error
-    if not parsed_permissions <= frozenset(READ_PERMISSIONS):
+    if not parsed_permissions <= READ_PERMISSIONS:
         raise RemoteAuthorizationError("pairing control is read-only")
     expires_at = raw["expires_at"]
     if (
@@ -942,12 +943,11 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
                     raise RemoteProtocolError(f"{op} target identity is invalid")
             if op == "grant_capabilities":
                 permissions = params.get("permissions")
-                known = {item.value for item in NodePermission}
                 if (
                     not isinstance(permissions, list)
                     or not permissions
                     or any(
-                        not isinstance(item, str) or item not in known
+                        not isinstance(item, str) or item not in _KNOWN_PERMISSION_VALUES
                         for item in permissions
                     )
                 ):
@@ -977,9 +977,9 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
                 if not isinstance(params.get(field), str) or not params[field]:
                     raise RemoteProtocolError(f"{op} target identity is invalid")
             permissions = params.get("permissions")
-            known = {item.value for item in NodePermission}
             if not isinstance(permissions, list) or any(
-                not isinstance(item, str) or item not in known for item in permissions
+                not isinstance(item, str) or item not in _KNOWN_PERMISSION_VALUES
+                for item in permissions
             ):
                 raise RemoteProtocolError(f"{op} permissions are invalid")
             if (

@@ -357,7 +357,7 @@ class FullDiscoveryTests(unittest.TestCase):
 
         self.assertEqual(discovery.peers()[0].addresses, ("192.168.1.20",))
 
-    def test_conflicting_transport_fingerprint_does_not_replace_existing_peer(
+    def test_transport_fingerprint_update_replaces_existing_peer(
         self,
     ) -> None:
         holder: dict[str, _Backend] = {}

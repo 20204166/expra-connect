@@ -18,7 +18,7 @@ class TransportTests(unittest.TestCase):
         finally:
             server.stop()
 
-    def test_response_after_cancellation_poll_interval_is_allowed(self) -> None:
+    def test_delayed_response_after_poll_interval_is_allowed(self) -> None:
         def delayed(_request: dict[str, object]) -> dict[str, object]:
             time.sleep(0.3)
             return {"ok": True}

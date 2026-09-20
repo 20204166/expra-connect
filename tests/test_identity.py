@@ -25,12 +25,14 @@ class IdentityTests(unittest.TestCase):
             restored = NodeIdentity.load(path)
             self.assertEqual(restored.node_id, identity.node_id)
             self.assertEqual(restored.secret, identity.secret)
+            self.assertEqual(restored.root_public_key, identity.root_public_key)
 
-    def test_identity_document_is_json_without_private_key_material(self) -> None:
+    def test_identity_document_is_versioned_json_with_root_key_material(self) -> None:
         identity = NodeIdentity.create(NodeId("peer-a"))
         document = json.loads(identity.to_json())
         self.assertEqual(document["node_id"], "peer-a")
-        self.assertNotIn("private_key", document)
+        self.assertEqual(document["version"], 2)
+        self.assertTrue(document["root_private_key"])
 
     def test_identity_rejects_invalid_secret(self) -> None:
         with self.assertRaises(ValueError):

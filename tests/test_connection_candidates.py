@@ -44,7 +44,7 @@ class CandidateTests(unittest.TestCase):
         self.assertEqual(item.endpoint_candidates[0].address, "192.168.1.2")
         self.assertEqual(item.addresses, ("192.168.1.2",))
 
-    def test_route_ranking_is_deterministic_and_prefers_configured_then_success(
+    def test_route_ranking_is_deterministic_and_prefers_configured_endpoint(
         self,
     ) -> None:
         endpoints = (

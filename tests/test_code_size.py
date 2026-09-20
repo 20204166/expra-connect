@@ -15,12 +15,13 @@ class CodeSizeTests(unittest.TestCase):
     def test_python_modules_stay_below_hard_limit(self) -> None:
         oversized = []
         soft_overages = []
-        for path in sorted(SOURCE_ROOT.glob("*.py")):
+        for path in sorted(SOURCE_ROOT.rglob("*.py")):
+            relative_path = path.relative_to(SOURCE_ROOT)
             lines = len(path.read_text(encoding="utf-8").splitlines())
             if lines > HARD_LINE_LIMIT:
-                oversized.append(f"{path.name}: {lines} lines")
+                oversized.append(f"{relative_path}: {lines} lines")
             elif lines > SOFT_LINE_LIMIT:
-                soft_overages.append(f"{path.name}: {lines} lines")
+                soft_overages.append(f"{relative_path}: {lines} lines")
         if soft_overages:
             warnings.warn(
                 "module exceeds the 900-line consolidation threshold: "

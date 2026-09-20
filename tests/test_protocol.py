@@ -110,6 +110,25 @@ class ProtocolTests(unittest.TestCase):
                 {"cluster_id": "c", "epoch": True, "fencing_token": "t"},
             )
 
+    def test_capability_operation_validation_rejects_unknown_permissions(self) -> None:
+        common = {
+            "cluster_id": "c",
+            "epoch": 1,
+            "fencing_token": "t",
+            "subject_node_id": "subject",
+            "target_node_id": "target",
+        }
+        for operation in ("grant_capabilities", "sync_capability_grant"):
+            params = {
+                **common,
+                "permissions": [NodePermission.READ_STATE.value, "future"],
+                "expires_at": 10.0,
+            }
+            with self.subTest(operation=operation), self.assertRaises(
+                RemoteProtocolError
+            ):
+                validate_operation_params(operation, params)
+
     def test_response_signature_and_freshness_are_verified(self) -> None:
         envelope = sign_response(
             node_id="peer-a",

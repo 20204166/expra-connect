@@ -217,7 +217,7 @@ class RemoteServiceTests(unittest.TestCase):
         )
         self.assertEqual(client.hello()["node_id"], "peer")
 
-    def test_socket_replacement_resumes_authenticated_logical_session(self) -> None:
+    def test_authenticated_logical_session_reuses_session(self) -> None:
         client = self._client()
         client.hello()
         self.assertIsNotNone(client._session_id)

@@ -13,13 +13,7 @@ from expra_connect.persistence import JsonStateStore, StateDataError
 
 
 class IdentityRotationTests(unittest.TestCase):
-    def _manager(self, directory: str) -> TransportGenerationManager:
-        identity = NodeIdentity.create(NodeId("peer-a"))
-        return TransportGenerationManager(
-            identity, store=JsonStateStore(Path(directory) / "transport.json")
-        )
-
-    def test_root_identity_survives_restart_and_migrates_old_identity(self) -> None:
+    def test_legacy_identity_document_migrates_with_a_root_key(self) -> None:
         identity = NodeIdentity.create(NodeId("peer-a"))
         restored = NodeIdentity.from_json(
             f'{{"node_id":"peer-a","secret":"{identity.secret}"}}'

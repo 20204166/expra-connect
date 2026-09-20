@@ -81,7 +81,7 @@ class PairingTests(unittest.TestCase):
         self.assertIn(NodeId("peer-a"), acceptor.grants)
         self.assertNotIn(NodeId("peer-a"), acceptor.trusted)
 
-    def test_fingerprint_binding_and_expiry_pruning(self) -> None:
+    def test_approved_transaction_expiry_is_pruned(self) -> None:
         manager = PairingManager(NodeId("peer-a"), clock=lambda: 100.0, ttl=5.0)
         transaction = manager.begin(
             NodeId("peer-b"),

@@ -16,7 +16,10 @@ class ClusterPersistenceTests(unittest.TestCase):
             cluster.save(JsonStateStore(Path(directory) / "cluster.json"))
             state = JsonStateStore(Path(directory) / "cluster.json").load()
             self.assertEqual(state["local_id"], "coord")
-            self.assertEqual(state["assignments"][0]["role"], "coordinator")
+            self.assertEqual(state["epoch"]["coordinator_id"], "coord")
+            assignments = {item["node_id"]: item for item in state["assignments"]}
+            self.assertEqual(assignments["coord"]["role"], "coordinator")
+            self.assertEqual(assignments["worker"]["role"], "worker")
 
     def test_cluster_load_restores_epoch_and_rejects_missing_local_membership(
         self,
