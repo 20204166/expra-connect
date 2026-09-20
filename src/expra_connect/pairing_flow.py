@@ -5,13 +5,15 @@ from __future__ import annotations
 import secrets
 import threading
 from collections.abc import Callable, Mapping
+from typing import Any
 
-from .discovery import preferred_endpoint
+from .discovery import endpoint_rank
 from .identity import NodeId, NodeIdentity, node_identity_fingerprint
 from .models import READ_PERMISSIONS, DiscoveredNodeCandidate, NodePermission
 from .pairing import PairingManager, PeerGrant, TrustedPeer
 from .remote_service import AuthenticatedNodeProvider, PairingTransaction
 from .socket_transport import TLSRemoteTransport
+from .wire_protocol import RemoteTransportError
 
 
 class NetworkPairing:
@@ -71,27 +73,33 @@ class NetworkPairing:
                 self._transport_generation, self._transport_fingerprint
             ),
         )
-        endpoint = preferred_endpoint(candidate.endpoint_candidates)
-        transport = TLSRemoteTransport(
-            endpoint.address,
-            endpoint.port,
-            expected_fingerprint=candidate.transport_fingerprint,
-        )
-        try:
-            response = AuthenticatedNodeProvider.request_pairing(
-                transport=transport,
-                caller_node_id=self._identity.node_id,
-                identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
-                transport_fingerprint=self._transport_fingerprint,
-                proposed_secret=pending.secret,
-                permissions=frozenset(
-                    NodePermission(permission) for permission in permissions
-                ),
-                cancel_event=cancel_event,
-            )
-        except Exception:
+        errors: list[BaseException] = []
+        transport: Any | None = None
+        response: bool | dict[str, Any] | None = None
+        for endpoint in sorted(candidate.endpoint_candidates, key=endpoint_rank):
+            try:
+                transport = TLSRemoteTransport(
+                    endpoint.address,
+                    endpoint.port,
+                    expected_fingerprint=candidate.transport_fingerprint,
+                )
+                response = AuthenticatedNodeProvider.request_pairing(
+                    transport=transport,
+                    caller_node_id=self._identity.node_id,
+                    identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
+                    transport_fingerprint=self._transport_fingerprint,
+                    proposed_secret=pending.secret,
+                    permissions=frozenset(
+                        NodePermission(permission) for permission in permissions
+                    ),
+                    cancel_event=cancel_event,
+                )
+                break
+            except (OSError, ConnectionError, RemoteTransportError) as error:
+                errors.append(error)
+        if response is None:
             self._abort(pending.transaction_id)
-            raise
+            raise errors[-1] if errors else ConnectionError("pairing routes failed")
         if not isinstance(response, dict):
             self._abort(pending.transaction_id)
             if cancel_event is not None and cancel_event.is_set():
