@@ -30,7 +30,7 @@ expra-peer --profile "$env:LOCALAPPDATA\expra-endpoint-1" --no-discovery serve
 
 Expected evidence:
 
-- Version is `0.4.0.0` or the current release version.
+- Version is `0.6.0.0` or the current release version.
 - Import succeeds.
 - Diagnostics report `state: started`.
 - A real bound port and TLS fingerprint are reported.
