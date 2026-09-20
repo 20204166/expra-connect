@@ -74,19 +74,13 @@ Windows online installation from any PowerShell directory:
 irm https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1 | iex
 ```
 
-The online installer downloads the newest wheel named in `dist/SHA256SUMS`,
-verifies its SHA256 digest, requires Python 3.10 or newer, installs the package
-for the current user, verifies the import and installed version, and adds the
-user scripts directory to `PATH`. Use `-System` with a downloaded copy of the
-script for a system-wide installation.
-
-If Windows does not have Python, install it first from an elevated PowerShell:
-
-```powershell
-winget install --id Python.Python.3.12 -e
-```
-
-Open a new PowerShell window after installation, then run the online installer.
+The online installer detects when Windows has no Python and bootstraps Python
+3.12 through `winget`. It then downloads the newest wheel named in
+`dist/SHA256SUMS`, verifies its SHA256 digest, installs the package for the
+current user, verifies the import and installed version, and adds the user
+scripts directory to `PATH`. Use `-System` with a downloaded copy of the script
+for a system-wide installation. If `winget` is unavailable, install Python 3.10
+or newer and retry the same command.
 
 ## Two-Node Test Runner
 
@@ -111,13 +105,7 @@ expra-peer --profile .expra-linux diagnostics
 
 ### Windows Setup Without Python
 
-Open PowerShell and install Python with Windows Package Manager:
-
-```powershell
-winget install --id Python.Python.3.12 -e
-```
-
-Close and reopen PowerShell, then install Expra Connect online:
+Open PowerShell and run the single bootstrap command:
 
 ```powershell
 irm https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1 | iex

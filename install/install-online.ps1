@@ -26,6 +26,15 @@ try {
         & $Py -c "import sys; raise SystemExit(0 if sys.prefix != sys.base_prefix else 1)" 2>$null
         return ($LASTEXITCODE -eq 0)
     }
+    if (-not (Get-Command "py" -ErrorAction SilentlyContinue) -and
+        -not (Get-Command "python" -ErrorAction SilentlyContinue)) {
+        if (-not (Get-Command "winget" -ErrorAction SilentlyContinue)) {
+            throw "Python is not installed and winget is unavailable. Install Python 3.10 or newer, then retry."
+        }
+        Write-Host "Python was not found. Installing Python 3.12 with winget..."
+        winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements
+        if ($LASTEXITCODE -ne 0) { throw "winget could not install Python 3.12 (exit $LASTEXITCODE)" }
+    }
     function Get-PythonCandidates {
         $candidates = [System.Collections.Generic.List[object]]::new()
         foreach ($m in @("3.14", "3.13", "3.12", "3.11", "3.10")) {
@@ -64,7 +73,7 @@ try {
     if (-not $py) {
         Write-Host "No usable Python 3.10+ interpreter was found."
         $reasons | ForEach-Object { Write-Host "  - $_" }
-        throw "Install Python 3.10 or newer and retry outside an active virtual environment."
+        throw "No usable Python 3.10+ interpreter was found after bootstrap."
     }
     if (Test-VenvPython $py) { throw "Cannot install into an active virtual environment." }
     if ($env:VIRTUAL_ENV) { Write-Warning "Active virtual environment '$env:VIRTUAL_ENV' was not modified." }
