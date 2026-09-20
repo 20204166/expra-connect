@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
 import platform
 import socket
@@ -99,6 +100,7 @@ class ConnectConfig:
     provider: Any = None
     on_discovery: Callable[[str, Any], None] | None = None
     on_pairing_request: Callable[[PairingRequest], bool] | None = None
+    on_elevation_request: Callable[[CapabilityElevationRequest], bool] | None = None
     discovery_backend_factory: (
         Callable[[Callable[[str, str, Any], None]], DiscoveryBackend] | None
     ) = None
@@ -198,13 +200,14 @@ class ConnectRuntime:
         peer_id: NodeId,
         *,
         permissions: frozenset[str] = frozenset({NodePermission.READ_STATE.value}),
+        cancel_event: threading.Event | None = None,
     ) -> TrustedPeer:
         """Complete an explicit network pairing with a discovered candidate."""
 
         pairing = self._network_pairing
         if pairing is None:
             raise RuntimeError("runtime must be started before pairing")
-        return pairing.pair(peer_id, permissions=permissions)
+        return pairing.pair(peer_id, permissions=permissions, cancel_event=cancel_event)
 
     def begin_pairing(self, peer_id: NodeId, **kwargs: Any) -> PendingPairing:
         pairing = self._require_pairing()
@@ -580,15 +583,49 @@ class ConnectRuntime:
             return self._save_persisted_state()
         if request.operation != "pair_confirm":
             return False
+        previous_grants = dict(pairing.grants)
         try:
             self.approve_pairing(request.transaction_id, expected_permissions)
         except (PersistenceError, ValueError):
             return False
         self._pending_permissions.pop(request.transaction_id, None)
-        return True
-
-    def _handle_elevation_request(self, _request: CapabilityElevationRequest) -> bool:
+        if self._save_persisted_state():
+            return True
+        pairing.grants = previous_grants
+        self._pending_permissions[request.transaction_id] = expected_permissions
+        self._save_persisted_state()
         return False
+
+    def _handle_elevation_request(self, request: CapabilityElevationRequest) -> bool:
+        callback = self.config.on_elevation_request
+        pairing = self._require_pairing()
+        grant = pairing.grants.get(request.caller_node_id)
+        if (
+            callback is None
+            or grant is None
+            or not hmac.compare_digest(grant.secret, request.current_secret)
+            or grant.identity_fingerprint != request.identity_fingerprint
+            or grant.transport_fingerprint != request.transport_fingerprint
+        ):
+            return False
+        if not callback(request):
+            return False
+        previous = grant
+        pairing.grants[request.caller_node_id] = PeerGrant(
+            caller_id=grant.caller_id,
+            secret=grant.secret,
+            permissions=frozenset(
+                permission.value for permission in request.permissions
+            ),
+            identity_fingerprint=grant.identity_fingerprint,
+            transport_fingerprint=grant.transport_fingerprint,
+        )
+        if not self._save_persisted_state():
+            pairing.grants[request.caller_node_id] = previous
+            return False
+        if self._service is not None:
+            self._service.update_grants(self._wire_grants())
+        return True
 
     def _handle_role_request(self, request: RemoteRequest) -> dict[str, Any]:
         cluster = self._cluster

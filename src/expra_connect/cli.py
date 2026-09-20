@@ -7,6 +7,7 @@ import json
 import os
 import time
 from dataclasses import asdict
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -40,8 +41,16 @@ def _runtime(args: argparse.Namespace) -> ConnectRuntime:
     )
 
 
+def _json_default(value: Any) -> Any:
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, Path):
+        return str(value)
+    return str(value)
+
+
 def _print(value: Any) -> None:
-    print(json.dumps(value, indent=2, sort_keys=True, default=str))
+    print(json.dumps(value, indent=2, sort_keys=True, default=_json_default))
 
 
 def _status(runtime: ConnectRuntime) -> dict[str, Any]:

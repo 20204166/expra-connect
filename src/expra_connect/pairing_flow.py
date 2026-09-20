@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+import threading
 from collections.abc import Callable, Mapping
 
 from .identity import NodeId, NodeIdentity, node_identity_fingerprint
@@ -35,7 +36,10 @@ class NetworkPairing:
         peer_id: NodeId,
         *,
         permissions: frozenset[str],
+        cancel_event: threading.Event | None = None,
     ) -> TrustedPeer:
+        if cancel_event is not None and cancel_event.is_set():
+            raise RuntimeError("pairing cancelled")
         candidate = self._candidates.get(peer_id.value)
         if candidate is None or candidate.port is None or not candidate.addresses:
             raise ConnectionError("peer must be discovered and connectable")
@@ -63,9 +67,12 @@ class NetworkPairing:
             permissions=frozenset(
                 NodePermission(permission) for permission in permissions
             ),
+            cancel_event=cancel_event,
         )
         if not isinstance(response, dict):
             self._abort(pending.transaction_id)
+            if cancel_event is not None and cancel_event.is_set():
+                raise RuntimeError("pairing cancelled")
             raise PermissionError("peer rejected pairing")
         transaction = PairingTransaction(
             transaction_id=response["transaction_id"],
@@ -79,9 +86,6 @@ class NetworkPairing:
             expires_at=response["expires_at"],
             transport=transport,
         )
-        if not AuthenticatedNodeProvider.confirm_pairing(transaction):
-            self._abort(pending.transaction_id)
-            raise PermissionError("peer did not confirm pairing")
         self._pairing.accept_grant(
             pending.transaction_id,
             peer_id,
@@ -101,9 +105,26 @@ class NetworkPairing:
             candidate.transport_fingerprint,
         )
         self._pairing.trusted[peer_id] = trusted
-        if not self._persist():
+        if cancel_event is not None and cancel_event.is_set():
             self._pairing.revoke(peer_id)
+            self._persist()
+            AuthenticatedNodeProvider.abort_pairing(transaction)
+            raise RuntimeError("pairing cancelled")
+        if not self._persist():
+            try:
+                AuthenticatedNodeProvider.abort_pairing(transaction)
+            finally:
+                self._pairing.revoke(peer_id)
             raise RuntimeError("pairing was not durably persisted")
+        if not AuthenticatedNodeProvider.confirm_pairing(
+            transaction, cancel_event=cancel_event
+        ):
+            try:
+                AuthenticatedNodeProvider.abort_pairing(transaction)
+            finally:
+                self._pairing.revoke(peer_id)
+                self._persist()
+            raise PermissionError("peer did not confirm pairing")
         return trusted
 
     def _abort(self, transaction_id: str) -> None:

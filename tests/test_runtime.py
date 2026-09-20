@@ -16,7 +16,11 @@ from expra_connect.pairing import PeerGrant, TrustedPeer
 from expra_connect.remote_service import AuthenticatedNodeProvider, PairingTransaction
 from expra_connect.runtime import ConnectConfig, ConnectRuntime, RuntimeStatus
 from expra_connect.socket_transport import TLSRemoteTransport
-from expra_connect.wire_protocol import PairingControlRequest, PairingRequest
+from expra_connect.wire_protocol import (
+    CapabilityElevationRequest,
+    PairingControlRequest,
+    PairingRequest,
+)
 
 
 class _UnavailableDiscoveryBackend:
@@ -507,6 +511,151 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertEqual(provider.hello()["node_id"], second.identity.node_id.value)
             first.shutdown()
             second.shutdown()
+
+    def test_pair_peer_aborts_target_grant_when_local_commit_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            first = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory) / "first",
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            second = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory) / "second",
+                    discovery_enabled=False,
+                    preferred_port=0,
+                    on_pairing_request=lambda _request: True,
+                )
+            )
+            first.start()
+            second.start()
+            assert first.identity is not None
+            assert second.identity is not None
+            assert second.status.bound_port is not None
+            assert second.status.tls_fingerprint is not None
+            first._peers[second.identity.node_id.value] = DiscoveredNodeCandidate(
+                stable_id=second.identity.node_id.value,
+                hostname="127.0.0.1",
+                addresses=("127.0.0.1",),
+                port=second.status.bound_port,
+                service_name="_expra-peer._tcp.local.",
+                app_version=__version__,
+                protocol_version="1",
+                platform="linux",
+                connectable=True,
+                compatible=True,
+                last_seen=time.time(),
+                identity_fingerprint=node_identity_fingerprint(second.identity.node_id),
+                transport_fingerprint=second.status.tls_fingerprint,
+            )
+
+            assert first._network_pairing is not None
+            with (
+                patch.object(first._network_pairing, "_persist", return_value=False),
+                self.assertRaises(RuntimeError),
+            ):
+                first.pair_peer(second.identity.node_id)
+
+            assert first.pairing is not None
+            assert second.pairing is not None
+            assert first.identity is not None
+            self.assertNotIn(first.identity.node_id, second.pairing.grants)
+            self.assertNotIn(second.identity.node_id, first.pairing.trusted)
+            first.shutdown()
+            second.shutdown()
+
+    def test_pair_peer_cancellation_leaves_no_pending_trust(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            first = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory) / "first",
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            second = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory) / "second",
+                    discovery_enabled=False,
+                    preferred_port=0,
+                    on_pairing_request=lambda _request: True,
+                )
+            )
+            first.start()
+            second.start()
+            assert first.identity is not None
+            assert second.identity is not None
+            assert second.status.bound_port is not None
+            assert second.status.tls_fingerprint is not None
+            first._peers[second.identity.node_id.value] = DiscoveredNodeCandidate(
+                stable_id=second.identity.node_id.value,
+                hostname="127.0.0.1",
+                addresses=("127.0.0.1",),
+                port=second.status.bound_port,
+                service_name="_expra-peer._tcp.local.",
+                app_version=__version__,
+                protocol_version="1",
+                platform="linux",
+                connectable=True,
+                compatible=True,
+                last_seen=time.time(),
+                identity_fingerprint=node_identity_fingerprint(second.identity.node_id),
+                transport_fingerprint=second.status.tls_fingerprint,
+            )
+            cancel_event = threading.Event()
+            cancel_event.set()
+
+            with self.assertRaises(RuntimeError):
+                first.pair_peer(second.identity.node_id, cancel_event=cancel_event)
+
+            assert first.pairing is not None
+            assert second.pairing is not None
+            self.assertFalse(first.pairing.pending)
+            self.assertFalse(first.pairing.trusted)
+            self.assertFalse(second.pairing.pending)
+            self.assertFalse(second.pairing.grants)
+            first.shutdown()
+            second.shutdown()
+
+    def test_elevation_uses_host_approval_and_refreshes_live_grant(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                    on_elevation_request=lambda _request: True,
+                )
+            )
+            runtime.start()
+            assert runtime.identity is not None
+            assert runtime.pairing is not None
+            peer_id = NodeId("elevation-peer")
+            grant = PeerGrant(
+                caller_id=peer_id,
+                secret="d" * 64,
+                permissions=frozenset({NodePermission.READ_STATE.value}),
+                identity_fingerprint="identity",
+                transport_fingerprint="transport",
+            )
+            runtime.pairing.grants[peer_id] = grant
+            request = CapabilityElevationRequest(
+                caller_node_id=peer_id,
+                identity_fingerprint="identity",
+                transport_fingerprint="transport",
+                current_secret=grant.secret,
+                proposed_secret="e" * 64,
+                permissions=frozenset({NodePermission.REMOTE_MANAGEMENT}),
+            )
+
+            self.assertTrue(runtime._handle_elevation_request(request))
+            self.assertEqual(
+                runtime.pairing.grants[peer_id].permissions,
+                frozenset({NodePermission.REMOTE_MANAGEMENT.value}),
+            )
+            runtime.shutdown()
 
     def test_malformed_trust_state_is_structured_and_not_overwritten_on_shutdown(
         self,

@@ -122,6 +122,12 @@ finally:
     runtime.shutdown()
 ```
 
+The package also exports the public discovery, pairing, authorization, sharing,
+and cluster models, including `DiscoveredNodeCandidate`, `PeerGrant`,
+`TrustedPeer`, `PendingPairing`, `NodeCapability`, `NodePermission`, and
+`CapabilityShare`. `runtime.peers`, `runtime.pairing`, and `runtime.cluster`
+expose the corresponding live results after `start()`.
+
 Discovery is enabled by default, binds `0.0.0.0`, and prefers port `27321`; all
 three are configurable. Cluster participation is disabled unless explicitly
 enabled. Callback delivery is headless and occurs on the network/discovery
