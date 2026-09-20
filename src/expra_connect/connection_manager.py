@@ -20,6 +20,7 @@ from .socket_transport import TLSRemoteTransport
 from .wire_protocol import (
     RemoteAuthError,
     RemoteExecutionError,
+    RemoteProtocolError,
     RemoteTransportError,
     parse_hello_capabilities,
 )
@@ -135,7 +136,8 @@ class ConnectionManager:
                     hello = provider.hello()
                     self._validate_hello_generation(trusted, candidate, hello)
                     capabilities = parse_hello_capabilities(hello)
-                except RemoteAuthError as error:
+                    self._record_generation(peer_id, trusted, candidate)
+                except RemoteProtocolError as error:
                     self._report_route_attempt(
                         "connection", endpoint, "failed", str(error)
                     )
@@ -162,7 +164,6 @@ class ConnectionManager:
                     continue
                 self._registry.observe(peer_id, capabilities)
                 self._registry.promote(peer_id, permissions=capabilities)
-                self._record_generation(peer_id, trusted, candidate)
                 self._providers[peer_id] = provider
                 self._set_state(peer_id, ConnectionState.online(now=time.time()))
                 self._mark_success(peer_id, endpoint)
@@ -266,7 +267,7 @@ class ConnectionManager:
             self._set_state(peer_id, ConnectionState.offline(reason, now=time.time()))
 
     def disconnect_all(self) -> None:
-        for peer_id in tuple(self._providers):
+        for peer_id in self.providers:
             self.disconnect(peer_id)
 
     def _set_state(self, peer_id: NodeId, state: ConnectionState) -> None:

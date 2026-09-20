@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from threading import Thread
 from unittest.mock import patch
 
@@ -9,7 +10,7 @@ from expra_connect.discovery import (
     DiscoveryRegistry,
     preferred_endpoint,
 )
-from expra_connect.identity import NodeId
+from expra_connect.identity import NodeId, NodeIdentity
 from expra_connect.models import (
     DiscoveredNodeCandidate,
     EndpointCandidate,
@@ -17,7 +18,11 @@ from expra_connect.models import (
 )
 from expra_connect.pairing import PairingManager, TrustedPeer
 from expra_connect.registry import NodeRegistry
-from expra_connect.wire_protocol import RemoteAuthError, RemoteTransportError
+from expra_connect.wire_protocol import (
+    RemoteAuthError,
+    RemoteProtocolError,
+    RemoteTransportError,
+)
 
 
 def candidate(*endpoints: EndpointCandidate) -> DiscoveredNodeCandidate:
@@ -36,6 +41,22 @@ def candidate(*endpoints: EndpointCandidate) -> DiscoveredNodeCandidate:
         transport_fingerprint="fingerprint",
         endpoint_candidates=endpoints,
     )
+
+
+class SuccessfulProvider:
+    def __init__(self, identity: NodeIdentity) -> None:
+        self._identity = identity
+
+    def hello(self) -> dict[str, object]:
+        return {
+            "capabilities": [],
+            "transport_fingerprint": "replacement-fingerprint",
+            "root_public_key": self._identity.root_public_key,
+            "transport_generation": 2,
+            "transport_proof": self._identity.sign_transport_proof(
+                2, "replacement-fingerprint"
+            ),
+        }
 
 
 class CandidateTests(unittest.TestCase):
@@ -267,3 +288,170 @@ class ConnectionManagerTests(unittest.TestCase):
             record.connection.status,
             ConnectionStatus.OFFLINE,
         )
+
+    def test_malformed_hello_marks_authentication_failed(self) -> None:
+        class Provider:
+            def hello(self) -> dict[str, object]:
+                return {"capabilities": "not-a-list"}
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: Provider(),
+        )
+        with (
+            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            self.assertRaises(RemoteProtocolError),
+        ):
+            manager.connect(self.peer)
+        record = self.registry.record(self.peer)
+        assert record is not None
+        self.assertEqual(
+            record.connection.status,
+            ConnectionStatus.AUTHENTICATION_FAILED,
+        )
+
+    def test_malformed_hello_reports_a_failed_route(self) -> None:
+        events: list[tuple[str, str]] = []
+
+        class Provider:
+            def hello(self) -> dict[str, object]:
+                return {"capabilities": None}
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: Provider(),
+            on_route_attempt=lambda _phase, endpoint, outcome, _error: events.append(
+                (endpoint.address, outcome)
+            ),
+        )
+        with (
+            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            self.assertRaises(RemoteProtocolError),
+        ):
+            manager.connect(self.peer)
+        self.assertEqual(
+            events,
+            [("192.168.1.2", "started"), ("192.168.1.2", "failed")],
+        )
+
+    def _replacement_candidate(self) -> tuple[NodeIdentity, DiscoveredNodeCandidate]:
+        identity = NodeIdentity.create(self.peer)
+        self.pairing.trusted[self.peer] = replace(
+            self.pairing.trusted[self.peer],
+            root_public_key=identity.root_public_key,
+        )
+        candidate = replace(
+            self.candidates[self.peer.value],
+            transport_fingerprint="replacement-fingerprint",
+            root_public_key=identity.root_public_key,
+            transport_generation=2,
+            transport_proof=identity.sign_transport_proof(
+                2, "replacement-fingerprint"
+            ),
+        )
+        self.candidates[self.peer.value] = candidate
+        return identity, candidate
+
+    def test_generation_persistence_failure_marks_authentication_failed(self) -> None:
+        identity, _ = self._replacement_candidate()
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: SuccessfulProvider(identity),
+            persist=lambda: False,
+        )
+        with (
+            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            self.assertRaises(RemoteAuthError),
+        ):
+            manager.connect(self.peer)
+        record = self.registry.record(self.peer)
+        assert record is not None
+        self.assertEqual(
+            record.connection.status,
+            ConnectionStatus.AUTHENTICATION_FAILED,
+        )
+
+    def test_generation_persistence_failure_does_not_promote_capabilities(self) -> None:
+        identity, _ = self._replacement_candidate()
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: SuccessfulProvider(identity),
+            persist=lambda: False,
+        )
+        with (
+            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            self.assertRaises(RemoteAuthError),
+        ):
+            manager.connect(self.peer)
+        record = self.registry.record(self.peer)
+        assert record is not None
+        self.assertEqual(record.capabilities, frozenset())
+
+    def test_generation_persistence_failure_does_not_retain_provider(self) -> None:
+        identity, _ = self._replacement_candidate()
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: SuccessfulProvider(identity),
+            persist=lambda: False,
+        )
+        with (
+            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            self.assertRaises(RemoteAuthError),
+        ):
+            manager.connect(self.peer)
+        self.assertEqual(manager.providers, ())
+
+    def test_generation_persistence_failure_reports_a_failed_route(self) -> None:
+        identity, _ = self._replacement_candidate()
+        events: list[str] = []
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: SuccessfulProvider(identity),
+            persist=lambda: False,
+            on_route_attempt=lambda _phase, _endpoint, outcome, _error: events.append(
+                outcome
+            ),
+        )
+        with (
+            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            self.assertRaises(RemoteAuthError),
+        ):
+            manager.connect(self.peer)
+        self.assertEqual(events, ["started", "failed"])
+
+    def test_disconnect_all_uses_a_stable_provider_snapshot(self) -> None:
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+        )
+        manager._providers[self.peer] = object()
+        disconnected: list[NodeId] = []
+
+        def disconnect(peer_id: NodeId) -> None:
+            disconnected.append(peer_id)
+            manager._providers[NodeId("another-peer")] = object()
+
+        manager.disconnect = disconnect  # type: ignore[method-assign]
+        manager.disconnect_all()
+        self.assertEqual(disconnected, [self.peer])
