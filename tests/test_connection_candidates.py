@@ -107,8 +107,8 @@ class ConnectionManagerTests(unittest.TestCase):
             registry=self.registry,
             candidates=self.candidates,
             provider_factory=lambda **kwargs: Provider(kwargs["transport"].address),
-            on_route_attempt=lambda phase, endpoint, outcome, error: route_events.append(
-                (phase, endpoint.address, outcome, error)
+            on_route_attempt=lambda phase, endpoint, outcome, error: (
+                route_events.append((phase, endpoint.address, outcome, error))
             ),
         )
         with patch(

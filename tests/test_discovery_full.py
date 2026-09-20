@@ -81,7 +81,9 @@ class FullDiscoveryTests(unittest.TestCase):
         self.assertEqual(_service_instance_id(base), "peer-a")
         self.assertEqual(_service_instance_id(rotated), "peer-a-g2")
 
-    def test_explicit_advertised_addresses_exclude_unconfigured_interfaces(self) -> None:
+    def test_explicit_advertised_addresses_exclude_unconfigured_interfaces(
+        self,
+    ) -> None:
         addresses = _service_addresses(("192.168.1.20", "2001:db8::20"))
         self.assertEqual(
             {address for address in addresses},

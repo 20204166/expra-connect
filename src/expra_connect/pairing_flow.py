@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import secrets
 import threading
 from collections.abc import Callable, Mapping
@@ -20,6 +21,8 @@ from .remote_service import AuthenticatedNodeProvider, PairingTransaction
 from .socket_transport import TLSRemoteTransport
 from .wire_protocol import RemoteTransportError
 
+LOGGER = logging.getLogger(__name__)
+
 
 class NetworkPairing:
     """Run request, target confirmation, local trust, and durable commit."""
@@ -35,9 +38,8 @@ class NetworkPairing:
         pairing: PairingManager,
         candidates: Mapping[str, DiscoveredNodeCandidate],
         persist: Callable[[], bool],
-        on_route_attempt: Callable[
-            [str, EndpointCandidate, str, str | None], None
-        ] | None = None,
+        on_route_attempt: Callable[[str, EndpointCandidate, str, str | None], None]
+        | None = None,
     ) -> None:
         self._identity = identity
         self._transport_fingerprint = transport_fingerprint
@@ -85,7 +87,9 @@ class NetworkPairing:
         errors: list[BaseException] = []
         transport: Any | None = None
         response: bool | dict[str, Any] | None = None
+        last_endpoint: EndpointCandidate | None = None
         for endpoint in sorted(candidate.endpoint_candidates, key=endpoint_rank):
+            last_endpoint = endpoint
             self._report_route_attempt("pairing", endpoint, "started", None)
             try:
                 transport = TLSRemoteTransport(
@@ -96,7 +100,9 @@ class NetworkPairing:
                 response = AuthenticatedNodeProvider.request_pairing(
                     transport=transport,
                     caller_node_id=self._identity.node_id,
-                    identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
+                    identity_fingerprint=node_identity_fingerprint(
+                        self._identity.node_id
+                    ),
                     transport_fingerprint=self._transport_fingerprint,
                     proposed_secret=pending.secret,
                     permissions=frozenset(
@@ -107,22 +113,37 @@ class NetworkPairing:
                 break
             except (OSError, ConnectionError, RemoteTransportError) as error:
                 errors.append(error)
-                self._report_route_attempt(
-                    "pairing", endpoint, "failed", str(error)
-                )
+                self._report_route_attempt("pairing", endpoint, "failed", str(error))
 
         if response is None:
             self._abort(pending.transaction_id)
             raise errors[-1] if errors else ConnectionError("pairing routes failed")
         if not isinstance(response, dict):
-            self._report_route_attempt(
-                "pairing", endpoint, "rejected", "peer rejected pairing"
-            )
+            if last_endpoint is not None:
+                self._report_route_attempt(
+                    "pairing", last_endpoint, "rejected", "peer rejected pairing"
+                )
             self._abort(pending.transaction_id)
             if cancel_event is not None and cancel_event.is_set():
                 raise RuntimeError("pairing cancelled")
             raise PermissionError("peer rejected pairing")
-        self._report_route_attempt("pairing", endpoint, "succeeded", None)
+        try:
+            accepted_permissions = frozenset(
+                NodePermission(item) for item in response["permissions"]
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            self._abort(pending.transaction_id)
+            raise ValueError("pairing response permissions are malformed") from error
+        if (
+            not accepted_permissions
+            or not accepted_permissions <= frozenset(NodePermission)
+            or not accepted_permissions
+            <= frozenset(NodePermission(item) for item in permissions)
+        ):
+            self._abort(pending.transaction_id)
+            raise PermissionError("peer returned permissions outside the request")
+        if last_endpoint is not None:
+            self._report_route_attempt("pairing", last_endpoint, "succeeded", None)
         transaction = PairingTransaction(
             transaction_id=response["transaction_id"],
             caller_node_id=response["caller_node_id"],
@@ -132,9 +153,7 @@ class NetworkPairing:
             transport_generation=response.get("transport_generation"),
             transport_proof=response.get("transport_proof"),
             secret=response["secret"],
-            permissions=frozenset(
-                NodePermission(item) for item in response["permissions"]
-            ),
+            permissions=accepted_permissions,
             expires_at=response["expires_at"],
             transport=transport,
         )
@@ -144,7 +163,7 @@ class NetworkPairing:
             PeerGrant(
                 self._identity.node_id,
                 pending.secret,
-                permissions,
+                accepted_permissions,
                 node_identity_fingerprint(self._identity.node_id),
                 self._transport_fingerprint,
                 self._root_public_key or self._identity.root_public_key,
@@ -158,7 +177,7 @@ class NetworkPairing:
         trusted = TrustedPeer(
             peer_id,
             pending.secret,
-            permissions,
+            accepted_permissions,
             candidate.identity_fingerprint,
             candidate.transport_fingerprint,
             candidate.root_public_key,
@@ -213,4 +232,4 @@ class NetworkPairing:
         try:
             self._on_route_attempt(phase, endpoint, outcome, error)
         except Exception:
-            pass
+            LOGGER.debug("Pairing route callback failed", exc_info=True)

@@ -10,6 +10,10 @@ from dataclasses import dataclass
 
 from .identity import NodeId
 
+# ``ping`` is retained as the legacy read-only operation used by the original
+# pairing API; network pairing uses ``read_state``.
+_READ_ONLY_PERMISSIONS = frozenset({"ping", "read_state"})
+
 
 @dataclass(frozen=True, slots=True)
 class PendingPairing:
@@ -90,6 +94,8 @@ class PairingManager:
 
     def approve(self, transaction_id: str, permissions: frozenset[str]) -> PeerGrant:
         transaction = self._active(transaction_id)
+        if not permissions <= _READ_ONLY_PERMISSIONS:
+            raise ValueError("pairing permissions are read-only")
         grant = PeerGrant(
             transaction.peer_id,
             transaction.secret,
@@ -133,6 +139,9 @@ class PairingManager:
             grant.permissions,
             grant.identity_fingerprint,
             grant.transport_fingerprint,
+            grant.root_public_key,
+            grant.transport_generation,
+            grant.transport_proof,
         )
         self.trusted[transaction.peer_id] = trusted
         del self.pending[transaction_id]
@@ -190,10 +199,33 @@ class PairingManager:
             key: item for key, item in self.pending.items() if item.peer_id != peer_id
         }
 
-    def has_relationship(self, peer_id: NodeId) -> bool:
+    def find_pending(self, peer_id: NodeId, secret: str) -> PendingPairing | None:
+        """Find an active exact transaction without changing transaction state."""
+        current = self._clock()
+        return next(
+            (
+                transaction
+                for transaction in self.pending.values()
+                if transaction.peer_id == peer_id
+                and transaction.secret == secret
+                and transaction.expires_at >= current
+            ),
+            None,
+        )
+
+    def has_valid_relationship(self, peer_id: NodeId) -> bool:
+        """Return whether either directional side has a relationship with peer."""
         return peer_id in self.trusted or any(
             g.caller_id == peer_id for g in self.grants.values()
         )
+
+    def can_join_cluster(self, peer_id: NodeId) -> bool:
+        """Return whether this peer has a directional relationship for membership."""
+        return self.has_valid_relationship(peer_id)
+
+    def has_relationship(self, peer_id: NodeId) -> bool:
+        """Compatibility alias for the canonical relationship query."""
+        return self.has_valid_relationship(peer_id)
 
     def can_call(self, peer_id: NodeId, permission: str) -> bool:
         peer = self.trusted.get(peer_id)

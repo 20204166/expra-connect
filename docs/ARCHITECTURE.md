@@ -26,11 +26,13 @@ topology state, not a transport state.
 | Outgoing connection state and providers | `connection_manager.py`, `connection_state.py` | Connects only discovered trusted peers |
 | Logical sessions and request safety | `session.py`, `provider_requests.py`, `wire_protocol.py` | Authenticates resume, fences old sockets, and bounds idempotent results |
 | Target-owned capability policy | `sharing.py` | Injects the allowlist into `RemoteService` |
-| Optional cluster membership and fencing | `cluster.py`, `role_engine.py` | Enabled only by `ConnectConfig.cluster_enabled` |
+| Optional cluster membership, roles, invites, leases, and fencing | `cluster/` | Enabled only by `ConnectConfig.cluster_enabled`; flat modules are compatibility re-exports |
 | Host UI/event-loop delivery | Host application | Queues callbacks onto its own UI/runtime thread |
 
 `runtime.py` is intentionally a composition root and lifecycle facade. It does
 not implement a second discovery, transport, pairing, or capability system.
+Cluster Join is explicit and Pair-gated. Discovery and Pairing never create
+membership, and connection loss never removes it.
 
 ## Stable Identity and Transport Rotation
 

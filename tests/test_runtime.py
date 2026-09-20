@@ -187,6 +187,90 @@ class RuntimeClusterOperationTests(unittest.TestCase):
 
         self.assertFalse(cluster.is_member(NodeId("worker")))
 
+    def test_join_rejects_malformed_response_without_local_mutation(self) -> None:
+        runtime = self._runtime_with_cluster()
+        runtime._identity = NodeIdentity.create(NodeId("worker"))
+
+        class Pairing:
+            def can_join_cluster(self, peer_id: NodeId) -> bool:
+                return peer_id == NodeId("coord")
+
+        class Provider:
+            _caller_node_id = NodeId("coord")
+
+            def consume_invite(self, _token: str, **_kwargs: Any) -> dict[str, Any]:
+                return {"cluster_id": "attacker"}
+
+        runtime._pairing = Pairing()  # type: ignore[assignment]
+        cluster = runtime.cluster
+        assert cluster is not None
+        before = (cluster.cluster_id, cluster.epoch, dict(cluster.assignments))
+        invite = type(
+            "Invite",
+            (),
+            {
+                "token": "token",
+                "cluster_id": cluster.cluster_id,
+                "coordinator_id": cluster.coordinator_id.value,
+                "epoch": cluster.epoch.epoch,
+                "fencing_token": cluster.epoch.fencing_token,
+                "expires_at": 300.0,
+            },
+        )()
+        with self.assertRaises(ValueError):
+            runtime.join_cluster(Provider(), invite)
+        self.assertEqual(
+            (cluster.cluster_id, cluster.epoch, cluster.assignments), before
+        )
+
+    def test_join_rolls_back_when_local_persistence_fails(self) -> None:
+        runtime = self._runtime_with_cluster()
+        runtime._identity = NodeIdentity.create(NodeId("worker"))
+
+        class Pairing:
+            def can_join_cluster(self, _peer_id: NodeId) -> bool:
+                return True
+
+        class Provider:
+            _caller_node_id = NodeId("coord")
+
+            def consume_invite(self, _token: str, **_kwargs: Any) -> dict[str, Any]:
+                return {
+                    "target_node_id": "worker",
+                    "expires_at": 300.0,
+                    "cluster_id": "cluster",
+                    "coordinator_id": "coord",
+                    "epoch": 1,
+                    "fencing_token": "fence",
+                }
+
+        runtime._pairing = Pairing()  # type: ignore[assignment]
+        cluster = runtime.cluster
+        assert cluster is not None
+        cluster.cluster_id = "cluster"
+        cluster.epoch = type(cluster.epoch)(1, NodeId("coord"), "fence", 0.0, 300.0)
+        before = (cluster.cluster_id, cluster.epoch, dict(cluster.assignments))
+        invite = type(
+            "Invite",
+            (),
+            {
+                "token": "token",
+                "cluster_id": "cluster",
+                "coordinator_id": "coord",
+                "epoch": 1,
+                "fencing_token": "fence",
+                "expires_at": 300.0,
+            },
+        )()
+        with (
+            patch.object(runtime, "_save_persisted_state", return_value=False),
+            self.assertRaises(RuntimeError),
+        ):
+            runtime.join_cluster(Provider(), invite)
+        self.assertEqual(
+            (cluster.cluster_id, cluster.epoch, cluster.assignments), before
+        )
+
     def test_identity_fingerprint_matches_mature_namespaced_format(self) -> None:
         digest = hashlib.sha256(b"system-analyzer-node:peer").hexdigest()
         expected = ":".join(digest[index : index + 4] for index in range(0, 64, 4))

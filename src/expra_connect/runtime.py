@@ -18,7 +18,7 @@ from typing import Any
 from typing_extensions import Self
 
 from ._version import __version__
-from .cluster import Cluster, ClusterRole
+from .cluster import Cluster, ClusterState, ClusterStore, FailoverCoordinator, RoleState
 from .connection_manager import ConnectionManager
 from .discovery_full import (
     REAP_TICK_SECONDS,
@@ -44,8 +44,9 @@ from .models import (
 from .pairing import PairingManager, PeerGrant, PendingPairing, TrustedPeer
 from .pairing_flow import NetworkPairing
 from .persistence import JsonStateStore, StateDataError, migrate_state
-from .registry import NodeRegistry
+from .registry import NodeRegistry, TrustState
 from .remote_models import NodeStatus
+from .remote_role_operations import RuntimeClusterOperations
 from .remote_service import RemoteService
 from .role_engine import ClusterRole as RegistryClusterRole
 from .runtime_persistence import (
@@ -139,13 +140,17 @@ class ConnectConfig:
             or not all(address.strip() for address in self.advertised_addresses)
         ):
             raise ValueError("advertised_addresses must contain non-empty values")
+
     @property
     def resolved_hostname(self) -> str:
         return self.hostname or socket.gethostname()
+
     @property
     def resolved_platform(self) -> str:
         return self.platform_name or platform.system().lower()
-class ConnectRuntime:
+
+
+class ConnectRuntime(RuntimeClusterOperations):
     """Compose the mature peer components without doing work in construction."""
 
     def __init__(self, config: ConnectConfig) -> None:
@@ -154,6 +159,9 @@ class ConnectRuntime:
         self._pairing: PairingManager | None = None
         self._registry: NodeRegistry | None = None
         self._cluster: Cluster | None = None
+        self._cluster_store: ClusterStore | None = None
+        self._cluster_capability_grants: tuple[Any, ...] = ()
+        self._failover_coordinator: FailoverCoordinator | None = None
         self._sharing = CapabilityShare()
         self._server: RemoteSocketServer | None = None
         self._service: RemoteService | None = None
@@ -174,6 +182,7 @@ class ConnectRuntime:
     @property
     def status(self) -> RuntimeStatus:
         return self._status
+
     @property
     def started(self) -> bool:
         return self._status.state is RuntimeState.STARTED
@@ -181,18 +190,23 @@ class ConnectRuntime:
     @property
     def identity(self) -> NodeIdentity | None:
         return self._identity
+
     @property
     def registry(self) -> NodeRegistry | None:
         return self._registry
+
     @property
     def pairing(self) -> PairingManager | None:
         return self._pairing
+
     @property
     def sharing(self) -> CapabilityShare:
         return self._sharing
+
     @property
     def cluster(self) -> Cluster | None:
         return self._cluster
+
     @property
     def peers(self) -> tuple[DiscoveredNodeCandidate, ...]:
         return tuple(self._peers.values())
@@ -360,10 +374,8 @@ class ConnectRuntime:
             self._refresh_live_grants()
 
     def _revoke_self(self, peer_id: NodeId) -> dict[str, Any]:
-        return (
-            self.revoke_peer(peer_id, _refresh=False),
-            {"revoked": True, "node_id": peer_id.value},
-        )[1]
+        self.revoke_peer(peer_id, _refresh=False)
+        return {"revoked": True, "node_id": peer_id.value}
 
     def _require_pairing(self) -> PairingManager:
         if self._pairing is None:
@@ -450,13 +462,38 @@ class ConnectRuntime:
             self._identity.node_id, cluster_enabled=self.config.cluster_enabled
         )
         if self.config.cluster_enabled:
-            cluster_store = JsonStateStore(
-                self.config.profile_dir / "cluster.json", kind="cluster"
-            )
-            self._cluster = (
-                Cluster.load(self._identity.node_id, cluster_store)
-                if cluster_store.path.exists()
-                else Cluster(self._identity.node_id)
+            cluster_store = ClusterStore(self.config.profile_dir / "cluster.json")
+            self._cluster_store = cluster_store
+            if cluster_store.path.exists():
+                persisted = cluster_store.load()
+                if persisted.local_node_id != self._identity.node_id.value:
+                    raise ValueError("persisted cluster belongs to another local node")
+                self._cluster = Cluster(self._identity.node_id)
+                self._cluster.cluster_id = persisted.cluster_id
+                self._cluster.epoch = persisted.coordinator_epoch
+                self._cluster.assignments = {
+                    item.node_id: item
+                    for item in persisted.role_assignments
+                    if item.node_id is not None
+                }
+                self._cluster._used_invites = set(persisted.used_invites)
+                self._cluster._restore_invites(persisted.active_invites)
+                self._cluster._join_admissions = {
+                    item.token_hash: item for item in persisted.join_admissions
+                }
+                self._cluster.promotion_epochs = frozenset(persisted.promotion_epochs)
+                self._cluster.capability_grants = tuple(persisted.capability_grants)
+                self._cluster_capability_grants = tuple(persisted.capability_grants)
+            else:
+                self._cluster = Cluster(self._identity.node_id)
+            self._failover_coordinator = FailoverCoordinator(
+                RoleState(
+                    tuple(self._cluster.assignments.values()),
+                    self._cluster.epoch,
+                    self._cluster.promotion_epochs,
+                    self._cluster.capability_grants,
+                ),
+                persist=self._persist_failover_state,
             )
         state = JsonStateStore(self.config.profile_dir / "trust.json", kind="trust")
         if state.path.exists():
@@ -472,6 +509,7 @@ class ConnectRuntime:
                 self._pairing.pending[pending.transaction_id] = pending
                 self._pending_permissions[pending.transaction_id] = permissions
             self._wire_grants()
+        self._hydrate_registry_membership()
         self._connection_manager = ConnectionManager(
             local_id=self._identity.node_id,
             pairing=self._pairing,
@@ -529,12 +567,16 @@ class ConnectRuntime:
             secret=self._identity.secret,
             app_version=self.config.app_version,
             grants=self._wire_grants(),
+            cluster_capability_grants=self._cluster_capability_grants,
             identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
             transport_fingerprint=material.fingerprint,
             root_public_key=self._identity.root_public_key,
             transport_generation=self._transport_generations.current.generation,
             transport_proof=self._transport_generations.current.proof,
             capability_share=self._sharing,
+            idempotency_store=JsonStateStore(
+                self.config.profile_dir / "idempotency.json"
+            ),
             cluster_id=self._cluster.cluster_id if self._cluster is not None else None,
             coordinator_epoch=(self._cluster.epoch.epoch if self._cluster else None),
             fencing_token=(
@@ -682,9 +724,7 @@ class ConnectRuntime:
         return (
             peer.transport_fingerprint is None
             or candidate.transport_fingerprint == peer.transport_fingerprint
-            or bool(
-                ConnectionManager._candidate_generation_allowed(peer, candidate)
-            )
+            or bool(ConnectionManager._candidate_generation_allowed(peer, candidate))
         )
 
     def _handle_pairing_request(self, request: PairingRequest) -> dict[str, Any]:
@@ -799,81 +839,9 @@ class ConnectRuntime:
         return True
 
     def _handle_role_request(self, request: RemoteRequest) -> dict[str, Any]:
-        cluster = self._cluster
-        if cluster is None:
-            raise RuntimeError("cluster participation is disabled")
-        caller = request.caller_node_id
-        if caller is None:
-            raise PermissionError("cluster operation has no caller identity")
-        if request.op == "consume_invite":
-            previous_assignment = cluster.assignments.get(caller)
-            previous_online_state = cluster._online.get(caller)
-            invite = cluster.consume_invite(request.params["token"], caller)
-            if not self._save_persisted_state():
-                cluster._invites[invite.token] = invite
-                cluster._used_invites.discard(invite.token)
-                if previous_assignment is None:
-                    cluster.assignments.pop(caller, None)
-                else:
-                    cluster.assignments[caller] = previous_assignment
-                if previous_online_state is None:
-                    cluster._online.pop(caller, None)
-                else:
-                    cluster._online[caller] = previous_online_state
-                raise PersistenceError("cluster invite was not durably persisted")
-            return {
-                "target_node_id": invite.target_id.value,
-                "expires_at": invite.expires_at,
-                "cluster_id": cluster.cluster_id,
-                "coordinator_id": cluster.coordinator_id.value,
-                "epoch": cluster.epoch.epoch,
-                "fencing_token": cluster.epoch.fencing_token,
-            }
-        if (
-            request.op
-            in {
-                "assign_role",
-                "revoke_member",
-                "renew_coordinator_lease",
-            }
-            and caller != cluster.coordinator_id
-        ):
-            raise PermissionError("only the Coordinator may perform this operation")
-        if request.op == "renew_coordinator_lease":
-            return {
-                "ok": True,
-                "cluster_id": cluster.cluster_id,
-                "epoch": cluster.epoch.epoch,
-                "coordinator_id": cluster.coordinator_id.value,
-            }
-        if request.op == "assign_role":
-            target = NodeId(request.params["target_node_id"])
-            roles = request.params["roles"]
-            if len(roles) != 1:
-                raise ValueError("one cluster role is required")
-            previous_assignments = dict(cluster.assignments)
-            previous_online_map = dict(cluster._online)
-            cluster.assign(target, ClusterRole(roles[0]))
-            if not self._save_persisted_state():
-                cluster.assignments = previous_assignments
-                cluster._online = previous_online_map
-                raise PersistenceError("cluster role was not durably persisted")
-            if self._registry is not None and self._registry.record(target) is not None:
-                self._registry.join(
-                    target,
-                    role=RegistryClusterRole(roles[0]),
-                    coordinator_id=cluster.coordinator_id,
-                )
-            return {"ok": True, "node_id": target.value, "role": roles[0]}
-        if request.op == "revoke_member":
-            target = NodeId(request.params["target_node_id"])
-            previous_assignments = dict(cluster.assignments)
-            cluster.revoke(target)
-            if not self._save_persisted_state():
-                cluster.assignments = previous_assignments
-                raise PersistenceError("cluster revocation was not durably persisted")
-            return {"ok": True, "node_id": target.value, "revoked": True}
-        raise ValueError(f"unsupported cluster operation: {request.op}")
+        from .remote_role_operations import dispatch_role_request
+
+        return dispatch_role_request(self, request)
 
     def _start_expiry_worker(
         self, generation: int, discovery: NetworkDiscovery
@@ -963,13 +931,48 @@ class ConnectRuntime:
             saved = False
         if self._cluster is not None:
             try:
-                JsonStateStore(self.config.profile_dir / "cluster.json").save(
-                    migrate_state("cluster", self._cluster.to_dict())
+                store = self._cluster_store or ClusterStore(
+                    self.config.profile_dir / "cluster.json"
+                )
+                store.save(
+                    ClusterState(
+                        local_node_id=self._cluster.local_id.value,
+                        cluster_id=self._cluster.cluster_id,
+                        role_assignments=tuple(self._cluster.assignments.values()),
+                        coordinator_epoch=self._cluster.epoch,
+                        active_invites=tuple(self._cluster._invites.values()),
+                        join_admissions=tuple(self._cluster._join_admissions.values()),
+                        used_invites=frozenset(self._cluster._used_invites),
+                        promotion_epochs=self._cluster.promotion_epochs,
+                        capability_grants=self._cluster_capability_grants,
+                    )
                 )
             except (OSError, TypeError, ValueError) as error:
                 LOGGER.warning("Could not persist cluster state: %s", error)
                 saved = False
         return saved
+
+    def _hydrate_registry_membership(self) -> None:
+        if self._registry is None or self._cluster is None:
+            return
+        for node_id, assignment in self._cluster.assignments.items():
+            if self._registry.record(node_id) is None:
+                self._registry.observe(node_id, frozenset())
+            if self._pairing is not None and self._pairing.can_join_cluster(node_id):
+                record = self._registry.record(node_id)
+                if record is not None and record.trust is not TrustState.AUTHORIZED:
+                    self._registry.promote(node_id, permissions=frozenset())
+            self._registry.hydrate_membership(
+                node_id,
+                role=RegistryClusterRole(
+                    "coordinator"
+                    if any(role.value == "coordinator" for role in assignment.roles)
+                    else "subcoordinator"
+                    if any(role.value == "subcoordinator" for role in assignment.roles)
+                    else "worker"
+                ),
+                coordinator_id=self._cluster.coordinator_id,
+            )
 
     def _wire_grants(self) -> dict[NodeId, WirePeerGrant]:
         if self._pairing is None:
@@ -988,3 +991,6 @@ class ConnectRuntime:
     def _refresh_live_grants(self) -> None:
         if self._service is not None:
             self._service.update_grants(self._wire_grants())
+            self._service.update_cluster_capability_grants(
+                self._cluster_capability_grants
+            )

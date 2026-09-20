@@ -114,6 +114,23 @@ class NodeRegistry:
         self._records[node_id] = updated
         return updated
 
+    def hydrate_membership(
+        self,
+        node_id: NodeId,
+        *,
+        role: ClusterRole,
+        coordinator_id: NodeId,
+    ) -> NodeRecord:
+        """Project persisted canonical membership without changing trust."""
+        current = self._require(node_id)
+        updated = replace(
+            current,
+            membership=MembershipState(role.value),
+            coordinator_id=coordinator_id,
+        )
+        self._records[node_id] = updated
+        return updated
+
     def _require(self, node_id: NodeId) -> NodeRecord:
         record = self._records.get(node_id)
         if record is None:

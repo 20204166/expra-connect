@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable, MutableMapping
 from dataclasses import replace
@@ -23,6 +24,8 @@ from .wire_protocol import (
     parse_hello_capabilities,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 class ConnectionManager:
     """Own outgoing providers and project connection state into ``NodeRegistry``."""
@@ -36,9 +39,8 @@ class ConnectionManager:
         candidates: MutableMapping[str, DiscoveredNodeCandidate],
         provider_factory: Callable[..., Any] = AuthenticatedNodeProvider,
         persist: Callable[[], bool] | None = None,
-        on_route_attempt: Callable[
-            [str, EndpointCandidate, str, str | None], None
-        ] | None = None,
+        on_route_attempt: Callable[[str, EndpointCandidate, str, str | None], None]
+        | None = None,
     ) -> None:
         self._local_id = local_id
         self._pairing = pairing
@@ -188,7 +190,7 @@ class ConnectionManager:
         try:
             self._on_route_attempt(phase, endpoint, outcome, error)
         except Exception:
-            pass
+            LOGGER.debug("Connection route callback failed", exc_info=True)
 
     @staticmethod
     def _candidate_generation_allowed(

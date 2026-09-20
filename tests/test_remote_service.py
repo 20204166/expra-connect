@@ -49,6 +49,28 @@ class _Provider:
 
 
 class RemoteServiceTests(unittest.TestCase):
+    def test_cluster_fence_cannot_move_backwards(self) -> None:
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            cluster_id="cluster",
+            coordinator_epoch=2,
+            fencing_token="new-fence",
+        )
+
+        with self.assertRaises(RemoteAuthorizationError):
+            service.update_cluster_fence(
+                cluster_id="cluster",
+                coordinator_epoch=1,
+                fencing_token="old-fence",
+            )
+
     def _client(self) -> AuthenticatedNodeProvider:
         service = RemoteService(
             node_id=NodeId("peer"),

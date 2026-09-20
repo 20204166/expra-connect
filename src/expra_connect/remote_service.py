@@ -28,6 +28,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from .cluster.roles import RoleAuthorizationError
 from .identity import NodeId, node_identity_fingerprint
 from .models import (
     READ_CAPABILITIES,
@@ -184,6 +185,7 @@ class RemoteService:
         process_manager: Any | None = None,
         expected_caller_id: NodeId | None = None,
         grants: dict[NodeId, PeerGrant] | None = None,
+        cluster_capability_grants: tuple[Any, ...] = (),
         identity_fingerprint: str | None = None,
         transport_fingerprint: str | None = None,
         root_public_key: str | None = None,
@@ -223,6 +225,7 @@ class RemoteService:
         self._grant_mode = grants is not None
         self._grant_lock = threading.RLock()
         self._grants = dict(grants or {})
+        self._cluster_capability_grants = tuple(cluster_capability_grants)
         for grant in self._grants.values():
             self._validate_secret(grant.secret)
             if grant.expires_at is not None and not math.isfinite(
@@ -362,7 +365,11 @@ class RemoteService:
                 if OPERATION_SAFETY.get(request.op) != "read"
                 else solve()
             )
-        except RemoteAuthorizationError as error:
+        except (
+            RemoteAuthorizationError,
+            PermissionError,
+            RoleAuthorizationError,
+        ) as error:
             response = sign_response(
                 node_id=self._node_id.value,
                 request_id=request.request_id,
@@ -437,6 +444,12 @@ class RemoteService:
             self._grants = validated
             self._grant_version += 1
 
+    def update_cluster_capability_grants(self, grants: tuple[Any, ...]) -> None:
+        """Replace the separate cluster ACL without changing Pair grants."""
+        with self._grant_lock:
+            self._cluster_capability_grants = tuple(grants)
+            self._grant_version += 1
+
     @staticmethod
     def _caller_from_json(envelope: Any) -> NodeId | None:
         if not isinstance(envelope, dict):
@@ -454,6 +467,23 @@ class RemoteService:
             raise RemoteAuthorizationError(f"node is not authorised for {request.op}")
         permission = OP_REQUIRED_PERMISSION[request.op]
         permissions = grant.permissions if grant is not None else self._permissions
+        if request.caller_node_id is not None:
+            cluster_grant = next(
+                (
+                    item
+                    for item in self._cluster_capability_grants
+                    if item.subject == request.caller_node_id
+                    and item.target == self._node_id
+                    and self._clock() < item.expires_at
+                ),
+                None,
+            )
+            if cluster_grant is not None:
+                permissions = permissions & cluster_grant.permissions
+                if not permissions:
+                    raise RemoteAuthorizationError(
+                        "cluster capability grant has no Pair permission overlap"
+                    )
         if permission not in permissions:
             raise RemoteAuthorizationError(f"caller lacks permission for {request.op}")
         validate_operation_params(request.op, request.params)
@@ -584,6 +614,19 @@ class RemoteService:
     def update_cluster_fence(
         self, *, cluster_id: str, coordinator_epoch: int, fencing_token: str
     ) -> None:
+        if self._cluster_id == cluster_id and self._coordinator_epoch is not None:
+            if coordinator_epoch < self._coordinator_epoch:
+                raise RemoteAuthorizationError(
+                    "cannot install an older coordinator epoch"
+                )
+            if coordinator_epoch == self._coordinator_epoch:
+                if self._fencing_token is None or not hmac.compare_digest(
+                    fencing_token, self._fencing_token
+                ):
+                    raise RemoteAuthorizationError(
+                        "coordinator fencing token conflicts"
+                    )
+                return
         self._cluster_id = cluster_id
         self._coordinator_epoch = coordinator_epoch
         self._fencing_token = fencing_token

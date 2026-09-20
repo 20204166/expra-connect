@@ -9,11 +9,22 @@ class ClusterTests(unittest.TestCase):
         coordinator = Cluster(NodeId("coord"))
         invite = coordinator.create_invite(NodeId("worker"), now=100.0)
         worker = Cluster(NodeId("worker"))
-        worker.join(invite, coordinator, now=100.0)
+        worker.join(invite, coordinator, pairing=lambda _peer: True, now=100.0)
         self.assertEqual(worker.cluster_id, coordinator.cluster_id)
         self.assertEqual(worker.coordinator_id, NodeId("coord"))
         self.assertEqual(worker.local_role, ClusterRole.WORKER)
         self.assertTrue(coordinator.is_member(NodeId("worker")))
+
+    def test_join_without_pair_admission_does_not_consume_invite(self) -> None:
+        coordinator = Cluster(NodeId("coord"))
+        invite = coordinator.create_invite(NodeId("worker"), now=100.0)
+        worker = Cluster(NodeId("worker"))
+
+        with self.assertRaises(PermissionError):
+            worker.join(invite, coordinator, pairing=lambda _peer: False, now=100.0)
+
+        self.assertFalse(coordinator.is_member(NodeId("worker")))
+        worker.join(invite, coordinator, pairing=lambda _peer: True, now=100.0)
 
     def test_offline_does_not_remove_membership(self) -> None:
         cluster = Cluster(NodeId("coord"))

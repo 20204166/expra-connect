@@ -11,6 +11,11 @@ Authorization is enforced by the target for every operation. Revoke is
 separate from ordinary connection detach. Private keys, HMAC secrets,
 invitation material, and fencing-token values are never logged.
 
+Cluster Join additionally requires a valid directional Pair relationship, a
+targeted one-time invite, the current cluster epoch and fence, and request
+freshness/idempotency. Cluster `CapabilityGrant` values are separate from
+Pairing `PeerGrant` values and can narrow, but never broaden, Pair authority.
+
 An unrelated certificate or signing root claiming a known `NodeId` is rejected.
 Transport state is versioned, atomically persisted, and malformed state fails
 closed. Previous generations are accepted only during the explicit bounded

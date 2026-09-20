@@ -42,8 +42,8 @@ class NetworkPairingTests(unittest.TestCase):
             pairing=pairing,
             candidates={peer_id.value: candidate},
             persist=lambda: True,
-            on_route_attempt=lambda phase, endpoint, outcome, _error: route_events.append(
-                (phase, endpoint.address, outcome)
+            on_route_attempt=lambda phase, endpoint, outcome, _error: (
+                route_events.append((phase, endpoint.address, outcome))
             ),
         )
         attempts: list[str] = []

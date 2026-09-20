@@ -1,12 +1,4 @@
-"""Versioned, HMAC-authenticated remote protocol envelope.
-
-Owns the signed request/response envelope (``sign_request``/``sign_response``
-and ``verify_request``/``verify_response``), the bounded replay cache, the
-freshness window, the operation/role metadata tables, and the hello/operation
-validation that never grants unknown capabilities. This is the shared wire
-contract used by both the server-side ``RemoteService`` and the client-side
-``AuthenticatedNodeProvider``.
-"""
+"""Versioned HMAC envelope, replay protection, and operation validation."""
 
 import hashlib
 import hmac
@@ -35,7 +27,6 @@ DEFAULT_REPLAY_MAX_ENTRIES = 4096
 DEFAULT_MAX_ACTIVE_HANDLERS = 8
 DEFAULT_IDEMPOTENCY_TTL_SECONDS = 300.0
 DEFAULT_IDEMPOTENCY_MAX_ENTRIES = 4096
-
 OP_REQUIRED_CAPABILITY: dict[str, NodeCapability] = {
     "hello": NodeCapability.READ_STATE,
     "ping": NodeCapability.READ_STATE,
@@ -52,32 +43,49 @@ OP_REQUIRED_CAPABILITY: dict[str, NodeCapability] = {
     "assign_role": NodeCapability.REMOTE_MANAGEMENT,
     "renew_coordinator_lease": NodeCapability.REMOTE_MANAGEMENT,
     "revoke_member": NodeCapability.REMOTE_MANAGEMENT,
+    "pause_worker": NodeCapability.REMOTE_MANAGEMENT,
+    "resume_worker": NodeCapability.REMOTE_MANAGEMENT,
+    "revoke_worker": NodeCapability.REMOTE_MANAGEMENT,
+    "remove_job": NodeCapability.REMOTE_MANAGEMENT,
+    "remove_connection": NodeCapability.REMOTE_MANAGEMENT,
+    "grant_capabilities": NodeCapability.REMOTE_MANAGEMENT,
+    "revoke_capabilities": NodeCapability.REMOTE_MANAGEMENT,
+    "sync_capability_grant": NodeCapability.REMOTE_MANAGEMENT,
+    "worker_snapshot": NodeCapability.REMOTE_MANAGEMENT,
+    "standby_batch": NodeCapability.REMOTE_MANAGEMENT,
     "capability_request": NodeCapability.READ_STATE,
 }
-
 OP_REQUIRED_PERMISSION: dict[str, NodePermission] = {
     operation: NodePermission(capability.value)
     for operation, capability in OP_REQUIRED_CAPABILITY.items()
 }
-
 ROLE_OPERATIONS = frozenset(
     {
         "consume_invite",
         "assign_role",
         "renew_coordinator_lease",
         "revoke_member",
+        "pause_worker",
+        "resume_worker",
+        "revoke_worker",
+        "remove_job",
+        "remove_connection",
+        "grant_capabilities",
+        "revoke_capabilities",
+        "sync_capability_grant",
+        "worker_snapshot",
+        "standby_batch",
     }
 )
-
-# A retry-safe mutation is allowed to use its same signed envelope again after
-# a response loss. Unsafe operations are never retried by the client.
 OPERATION_SAFETY: dict[str, str] = {
     operation: "read" for operation in OP_REQUIRED_CAPABILITY
 }
 for _operation in ("process_request_quit", "revoke_self"):
     OPERATION_SAFETY[_operation] = "retry_safe"
-for _operation in {"process_force_quit", *ROLE_OPERATIONS}:
+for _operation in ("process_force_quit",):
     OPERATION_SAFETY[_operation] = "unsafe"
+for _operation in ROLE_OPERATIONS:
+    OPERATION_SAFETY[_operation] = "retry_safe"
 
 
 class RemoteProtocolError(ValueError):
