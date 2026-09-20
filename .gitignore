@@ -8,6 +8,6 @@ __pycache__/
 .venv/
 dist/*
 !dist/SHA256SUMS
-!dist/expra_connect-0.2.0.1-py3-none-any.whl
+!dist/expra_connect-0.4.0.0-py3-none-any.whl
 build/
 *.log

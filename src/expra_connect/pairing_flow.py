@@ -41,7 +41,12 @@ class NetworkPairing:
         if cancel_event is not None and cancel_event.is_set():
             raise RuntimeError("pairing cancelled")
         candidate = self._candidates.get(peer_id.value)
-        if candidate is None or candidate.port is None or not candidate.addresses:
+        if (
+            candidate is None
+            or not candidate.compatible
+            or candidate.port is None
+            or not candidate.addresses
+        ):
             raise ConnectionError("peer must be discovered and connectable")
         if not candidate.transport_fingerprint:
             raise ValueError("peer advertisement has no transport fingerprint")
@@ -58,17 +63,21 @@ class NetworkPairing:
             candidate.port,
             expected_fingerprint=candidate.transport_fingerprint,
         )
-        response = AuthenticatedNodeProvider.request_pairing(
-            transport=transport,
-            caller_node_id=self._identity.node_id,
-            identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
-            transport_fingerprint=self._transport_fingerprint,
-            proposed_secret=pending.secret,
-            permissions=frozenset(
-                NodePermission(permission) for permission in permissions
-            ),
-            cancel_event=cancel_event,
-        )
+        try:
+            response = AuthenticatedNodeProvider.request_pairing(
+                transport=transport,
+                caller_node_id=self._identity.node_id,
+                identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
+                transport_fingerprint=self._transport_fingerprint,
+                proposed_secret=pending.secret,
+                permissions=frozenset(
+                    NodePermission(permission) for permission in permissions
+                ),
+                cancel_event=cancel_event,
+            )
+        except Exception:
+            self._abort(pending.transaction_id)
+            raise
         if not isinstance(response, dict):
             self._abort(pending.transaction_id)
             if cancel_event is not None and cancel_event.is_set():
@@ -116,9 +125,18 @@ class NetworkPairing:
             finally:
                 self._pairing.revoke(peer_id)
             raise RuntimeError("pairing was not durably persisted")
-        if not AuthenticatedNodeProvider.confirm_pairing(
-            transaction, cancel_event=cancel_event
-        ):
+        try:
+            confirmed = AuthenticatedNodeProvider.confirm_pairing(
+                transaction, cancel_event=cancel_event
+            )
+        except Exception:
+            try:
+                AuthenticatedNodeProvider.abort_pairing(transaction)
+            finally:
+                self._pairing.revoke(peer_id)
+                self._persist()
+            raise
+        if not confirmed:
             try:
                 AuthenticatedNodeProvider.abort_pairing(transaction)
             finally:

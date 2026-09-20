@@ -5,4 +5,4 @@ and the newest wheel. Keeping this module a leaf lets setuptools read the
 version without importing transport, TLS, or discovery dependencies.
 """
 
-__version__ = "0.2.0.1"
+__version__ = "0.4.0.0"

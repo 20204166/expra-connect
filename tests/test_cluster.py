@@ -33,3 +33,26 @@ class ClusterTests(unittest.TestCase):
             )
         cluster.revoke(NodeId("worker"))
         self.assertFalse(cluster.is_member(NodeId("worker")))
+
+    def test_consume_invite_records_one_time_membership_admission(self) -> None:
+        cluster = Cluster(NodeId("coord"))
+        invite = cluster.create_invite(NodeId("worker"), now=100.0)
+
+        consumed = cluster.consume_invite(invite.token, NodeId("worker"), now=100.0)
+
+        self.assertEqual(consumed, invite)
+        self.assertTrue(cluster.is_member(NodeId("worker")))
+        with self.assertRaises(ValueError):
+            cluster.consume_invite(invite.token, NodeId("worker"), now=101.0)
+
+    def test_consume_invite_rejects_wrong_target_without_consuming(self) -> None:
+        cluster = Cluster(NodeId("coord"))
+        invite = cluster.create_invite(NodeId("worker"), now=100.0)
+
+        with self.assertRaises(ValueError):
+            cluster.consume_invite(invite.token, NodeId("other"), now=100.0)
+
+        self.assertEqual(
+            cluster.consume_invite(invite.token, NodeId("worker"), now=100.0),
+            invite,
+        )

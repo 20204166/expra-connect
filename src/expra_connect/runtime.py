@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hmac
 import logging
+import math
 import platform
 import socket
 import threading
@@ -144,6 +145,7 @@ class ConnectRuntime:
         self._persistence_ready = False
         self._pending_permissions: dict[str, frozenset[str]] = {}
         self._lifecycle_lock = threading.RLock()
+        self._pairing_transition_lock = threading.Lock()
         self._generation = 0
         self._status = RuntimeStatus(RuntimeState.STOPPED)
 
@@ -559,6 +561,10 @@ class ConnectRuntime:
         }
 
     def _handle_pairing_control(self, request: PairingControlRequest) -> bool:
+        with self._pairing_transition_lock:
+            return self._handle_pairing_control_locked(request)
+
+    def _handle_pairing_control_locked(self, request: PairingControlRequest) -> bool:
         pairing = self._require_pairing()
         pending = pairing.pending.get(request.transaction_id)
         expected_permissions = self._pending_permissions.get(request.transaction_id)
@@ -584,14 +590,17 @@ class ConnectRuntime:
         if request.operation != "pair_confirm":
             return False
         previous_grants = dict(pairing.grants)
+        previous_pending = dict(pairing.pending)
         try:
             self.approve_pairing(request.transaction_id, expected_permissions)
         except (PersistenceError, ValueError):
             return False
+        pairing.pending.pop(request.transaction_id, None)
         self._pending_permissions.pop(request.transaction_id, None)
         if self._save_persisted_state():
             return True
         pairing.grants = previous_grants
+        pairing.pending = previous_pending
         self._pending_permissions[request.transaction_id] = expected_permissions
         self._save_persisted_state()
         return False
@@ -631,8 +640,46 @@ class ConnectRuntime:
         cluster = self._cluster
         if cluster is None:
             raise RuntimeError("cluster participation is disabled")
+        caller = request.caller_node_id
+        if caller is None:
+            raise PermissionError("cluster operation has no caller identity")
+        if request.op == "consume_invite":
+            previous_assignment = cluster.assignments.get(caller)
+            previous_online_state = cluster._online.get(caller)
+            invite = cluster.consume_invite(request.params["token"], caller)
+            if not self._save_persisted_state():
+                cluster._invites[invite.token] = invite
+                cluster._used_invites.discard(invite.token)
+                if previous_assignment is None:
+                    cluster.assignments.pop(caller, None)
+                else:
+                    cluster.assignments[caller] = previous_assignment
+                if previous_online_state is None:
+                    cluster._online.pop(caller, None)
+                else:
+                    cluster._online[caller] = previous_online_state
+                raise PersistenceError("cluster invite was not durably persisted")
+            return {
+                "target_node_id": invite.target_id.value,
+                "expires_at": invite.expires_at,
+                "cluster_id": cluster.cluster_id,
+                "coordinator_id": cluster.coordinator_id.value,
+                "epoch": cluster.epoch.epoch,
+                "fencing_token": cluster.epoch.fencing_token,
+            }
+        if (
+            request.op
+            in {
+                "assign_role",
+                "revoke_member",
+                "renew_coordinator_lease",
+            }
+            and caller != cluster.coordinator_id
+        ):
+            raise PermissionError("only the Coordinator may perform this operation")
         if request.op == "renew_coordinator_lease":
             return {
+                "ok": True,
                 "cluster_id": cluster.cluster_id,
                 "epoch": cluster.epoch.epoch,
                 "coordinator_id": cluster.coordinator_id.value,
@@ -642,20 +689,26 @@ class ConnectRuntime:
             roles = request.params["roles"]
             if len(roles) != 1:
                 raise ValueError("one cluster role is required")
+            previous_assignments = dict(cluster.assignments)
+            previous_online_map = dict(cluster._online)
             cluster.assign(target, ClusterRole(roles[0]))
+            if not self._save_persisted_state():
+                cluster.assignments = previous_assignments
+                cluster._online = previous_online_map
+                raise PersistenceError("cluster role was not durably persisted")
             if self._registry is not None and self._registry.record(target) is not None:
                 self._registry.join(
                     target,
                     role=RegistryClusterRole(roles[0]),
                     coordinator_id=cluster.coordinator_id,
                 )
-            if not self._save_persisted_state():
-                raise PersistenceError("cluster role was not durably persisted")
             return {"ok": True, "node_id": target.value, "role": roles[0]}
         if request.op == "revoke_member":
             target = NodeId(request.params["target_node_id"])
+            previous_assignments = dict(cluster.assignments)
             cluster.revoke(target)
             if not self._save_persisted_state():
+                cluster.assignments = previous_assignments
                 raise PersistenceError("cluster revocation was not durably persisted")
             return {"ok": True, "node_id": target.value, "revoked": True}
         raise ValueError(f"unsupported cluster operation: {request.op}")
@@ -784,10 +837,12 @@ def _peer_grant_to_json(grant: PeerGrant) -> dict[str, Any]:
 def _peer_grant_from_json(value: Any) -> PeerGrant:
     if not isinstance(value, dict):
         raise TypeError("persisted grant must be an object")
+    permissions = _permissions_from_json(value.get("permissions"))
+    _validate_secret(value.get("secret"))
     return PeerGrant(
         caller_id=NodeId(str(value["caller_id"])),
         secret=str(value["secret"]),
-        permissions=frozenset(str(item) for item in value["permissions"]),
+        permissions=permissions,
         identity_fingerprint=_optional_text(value.get("identity_fingerprint")),
         transport_fingerprint=_optional_text(value.get("transport_fingerprint")),
     )
@@ -806,10 +861,12 @@ def _trusted_peer_to_json(peer: TrustedPeer) -> dict[str, Any]:
 def _trusted_peer_from_json(value: Any) -> TrustedPeer:
     if not isinstance(value, dict):
         raise TypeError("persisted trusted peer must be an object")
+    permissions = _permissions_from_json(value.get("permissions"))
+    _validate_secret(value.get("secret"))
     return TrustedPeer(
         peer_id=NodeId(str(value["peer_id"])),
         secret=str(value["secret"]),
-        permissions=frozenset(str(item) for item in value["permissions"]),
+        permissions=permissions,
         identity_fingerprint=_optional_text(value.get("identity_fingerprint")),
         transport_fingerprint=_optional_text(value.get("transport_fingerprint")),
     )
@@ -835,13 +892,19 @@ def _pending_pairing_from_json(
     if not isinstance(value, dict):
         raise TypeError("persisted pending pairing must be an object")
     expires_at = value["expires_at"]
-    if not isinstance(expires_at, (int, float)):
+    if (
+        isinstance(expires_at, bool)
+        or not isinstance(expires_at, (int, float))
+        or not math.isfinite(float(expires_at))
+    ):
         raise TypeError("persisted pending pairing expiry is invalid")
+    _validate_secret(value.get("secret"))
     permissions = value.get("permissions", [])
     if not isinstance(permissions, list) or any(
         not isinstance(item, str) for item in permissions
     ):
         raise TypeError("persisted pending pairing permissions are invalid")
+    permissions_set = _permissions_from_json(permissions)
     return (
         PendingPairing(
             transaction_id=str(value["transaction_id"]),
@@ -851,9 +914,28 @@ def _pending_pairing_from_json(
             identity_fingerprint=_optional_text(value.get("identity_fingerprint")),
             transport_fingerprint=_optional_text(value.get("transport_fingerprint")),
         ),
-        frozenset(permissions),
+        permissions_set,
     )
 
 
 def _optional_text(value: Any) -> str | None:
     return None if value is None else str(value)
+
+
+def _permissions_from_json(value: Any) -> frozenset[str]:
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        raise TypeError("persisted permissions are invalid")
+    known = {permission.value for permission in NodePermission}
+    permissions = frozenset(value)
+    if not permissions <= known:
+        raise ValueError("persisted permissions contain an unknown value")
+    return permissions
+
+
+def _validate_secret(value: Any) -> None:
+    if not isinstance(value, str) or len(value) != 64:
+        raise ValueError("persisted peer secret is invalid")
+    try:
+        bytes.fromhex(value)
+    except ValueError as error:
+        raise ValueError("persisted peer secret is invalid") from error

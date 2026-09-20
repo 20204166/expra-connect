@@ -68,6 +68,7 @@ class Cluster:
         }
         self._online: dict[NodeId, bool] = {local_id: True}
         self._used_invites: set[str] = set()
+        self._invites: dict[str, Invite] = {}
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -149,7 +150,7 @@ class Cluster:
         if self.coordinator_id != self.local_id:
             raise PermissionError("only the Coordinator may create invites")
         current = self._clock() if now is None else now
-        return Invite(
+        invite = Invite(
             secrets.token_urlsafe(24),
             target_id,
             self.cluster_id,
@@ -157,6 +158,8 @@ class Cluster:
             self.epoch,
             current + 300,
         )
+        self._invites[invite.token] = invite
+        return invite
 
     def join(
         self, invite: Invite, coordinator: Cluster, *, now: float | None = None
@@ -170,6 +173,7 @@ class Cluster:
             or invite.epoch != coordinator.epoch
         ):
             raise ValueError("invite target or cluster mismatch")
+        coordinator._invites.pop(invite.token, None)
         coordinator._used_invites.add(invite.token)
         coordinator.assign(self.local_id, ClusterRole.WORKER)
         self.cluster_id = coordinator.cluster_id
@@ -181,6 +185,28 @@ class Cluster:
             ),
         }
         self._online[coordinator.local_id] = True
+
+    def consume_invite(
+        self, token: str, target_id: NodeId, *, now: float | None = None
+    ) -> Invite:
+        """Consume a locally issued invite and admit its target as a worker."""
+
+        if self.coordinator_id != self.local_id:
+            raise PermissionError("only the Coordinator may consume invites")
+        invite = self._invites.get(token)
+        current = self._clock() if now is None else now
+        if (
+            invite is None
+            or token in self._used_invites
+            or invite.expires_at <= current
+        ):
+            raise ValueError("invite is expired or already consumed")
+        if invite.target_id != target_id or invite.cluster_id != self.cluster_id:
+            raise ValueError("invite target or cluster mismatch")
+        self._invites.pop(token)
+        self._used_invites.add(token)
+        self.assign(target_id, ClusterRole.WORKER)
+        return invite
 
     def assign(self, node_id: NodeId, role: ClusterRole) -> None:
         if role is ClusterRole.COORDINATOR and any(

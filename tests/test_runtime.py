@@ -9,6 +9,7 @@ from typing import Any, cast
 from unittest.mock import patch
 
 from expra_connect import __version__
+from expra_connect.cluster import Cluster, ClusterRole
 from expra_connect.discovery_full import DiscoveryAdvertisement
 from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerprint
 from expra_connect.models import DiscoveredNodeCandidate, NodeCapability, NodePermission
@@ -20,6 +21,7 @@ from expra_connect.wire_protocol import (
     CapabilityElevationRequest,
     PairingControlRequest,
     PairingRequest,
+    RemoteRequest,
 )
 
 
@@ -61,6 +63,109 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertFalse(runtime.started)
             self.assertFalse((Path(directory) / "identity.json").exists())
             self.assertEqual(config.app_version, __version__)
+
+
+class RuntimeClusterOperationTests(unittest.TestCase):
+    def _runtime_with_cluster(self) -> ConnectRuntime:
+        runtime = ConnectRuntime(
+            ConnectConfig(
+                profile_dir=Path("/tmp/expra-connect-test"), cluster_enabled=True
+            )
+        )
+        runtime._cluster = Cluster(NodeId("coord"), clock=lambda: 100.0)
+        runtime._persistence_ready = True
+        return runtime
+
+    def _request(
+        self, operation: str, caller: str, params: dict[str, Any]
+    ) -> RemoteRequest:
+        return RemoteRequest(
+            node_id=NodeId("coord"),
+            caller_node_id=NodeId(caller),
+            op=operation,
+            params=params,
+            request_id="request",
+            nonce="nonce",
+            timestamp=0.0,
+        )
+
+    def test_role_handler_consumes_invite_and_returns_current_fence(self) -> None:
+        runtime = self._runtime_with_cluster()
+        cluster = runtime.cluster
+        assert cluster is not None
+        invite = cluster.create_invite(NodeId("worker"), now=100.0)
+
+        with patch.object(runtime, "_save_persisted_state", return_value=True):
+            result = runtime._handle_role_request(
+                self._request(
+                    "consume_invite",
+                    "worker",
+                    {
+                        "token": invite.token,
+                        "cluster_id": cluster.cluster_id,
+                        "epoch": cluster.epoch.epoch,
+                        "fencing_token": cluster.epoch.fencing_token,
+                    },
+                )
+            )
+
+        self.assertEqual(result["target_node_id"], "worker")
+        self.assertTrue(cluster.is_member(NodeId("worker")))
+
+    def test_role_handler_rejects_non_coordinator_membership_mutation(self) -> None:
+        runtime = self._runtime_with_cluster()
+        cluster = runtime.cluster
+        assert cluster is not None
+        cluster.assign(NodeId("worker"), ClusterRole.WORKER)
+        params = {
+            "target_node_id": "worker",
+            "roles": [ClusterRole.WORKER.value],
+            "cluster_id": cluster.cluster_id,
+            "epoch": cluster.epoch.epoch,
+            "fencing_token": cluster.epoch.fencing_token,
+        }
+
+        with self.assertRaises(PermissionError):
+            runtime._handle_role_request(self._request("assign_role", "worker", params))
+
+    def test_role_handler_renews_only_for_current_coordinator(self) -> None:
+        runtime = self._runtime_with_cluster()
+        cluster = runtime.cluster
+        assert cluster is not None
+        params = {
+            "cluster_id": cluster.cluster_id,
+            "epoch": cluster.epoch.epoch,
+            "fencing_token": cluster.epoch.fencing_token,
+        }
+
+        result = runtime._handle_role_request(
+            self._request("renew_coordinator_lease", "coord", params)
+        )
+        self.assertTrue(result["ok"])
+        with self.assertRaises(PermissionError):
+            runtime._handle_role_request(
+                self._request("renew_coordinator_lease", "worker", params)
+            )
+
+    def test_role_handler_rolls_back_membership_when_cluster_save_fails(self) -> None:
+        runtime = self._runtime_with_cluster()
+        cluster = runtime.cluster
+        assert cluster is not None
+        params = {
+            "target_node_id": "worker",
+            "roles": [ClusterRole.WORKER.value],
+            "cluster_id": cluster.cluster_id,
+            "epoch": cluster.epoch.epoch,
+            "fencing_token": cluster.epoch.fencing_token,
+        }
+
+        with (
+            patch.object(runtime, "_save_persisted_state", return_value=False),
+            self.assertRaises(RuntimeError),
+        ):
+            runtime._handle_role_request(self._request("assign_role", "coord", params))
+
+        self.assertFalse(cluster.is_member(NodeId("worker")))
 
     def test_identity_fingerprint_matches_mature_namespaced_format(self) -> None:
         digest = hashlib.sha256(b"system-analyzer-node:peer").hexdigest()
@@ -509,6 +614,8 @@ class RuntimeConfigurationTests(unittest.TestCase):
 
             self.assertEqual(trusted.peer_id, second.identity.node_id)
             self.assertEqual(provider.hello()["node_id"], second.identity.node_id.value)
+            assert second.pairing is not None
+            self.assertFalse(second.pairing.pending)
             first.shutdown()
             second.shutdown()
 

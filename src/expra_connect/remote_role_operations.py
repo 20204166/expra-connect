@@ -154,6 +154,19 @@ class RemoteRoleOperations:
             },
         )
 
+    def revoke_member(
+        self, target_node_id: str, *, cluster_id: str, epoch: int, fencing_token: str
+    ) -> dict[str, Any]:
+        return self._role_request(
+            "revoke_member",
+            {
+                "target_node_id": target_node_id,
+                "cluster_id": cluster_id,
+                "epoch": epoch,
+                "fencing_token": fencing_token,
+            },
+        )
+
     def grant_capabilities(
         self,
         subject_node_id: str,

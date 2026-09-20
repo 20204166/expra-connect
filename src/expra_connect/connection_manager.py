@@ -44,7 +44,7 @@ class ConnectionManager:
     def connect(self, peer_id: NodeId) -> AuthenticatedNodeProvider:
         trusted = self._pairing.trusted.get(peer_id)
         candidate = self._candidates.get(peer_id.value)
-        if trusted is None or candidate is None:
+        if trusted is None or candidate is None or not candidate.compatible:
             raise PermissionError("peer must be discovered and trusted first")
         if candidate.port is None or not candidate.addresses:
             raise ConnectionError("peer has no connectable endpoint")
