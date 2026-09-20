@@ -46,7 +46,7 @@ installed package version and registers the target-owned shared capability
 before discovery begins:
 
 ```sh
-python3 examples/linux_pair_target.py \
+python3 examples/linux_pair_target_detailed.py \
   --profile .expra-endpoint-2-target \
   | tee endpoint-2-linux-console.log
 ```

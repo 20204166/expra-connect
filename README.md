@@ -105,19 +105,22 @@ expra-peer --profile .expra-linux diagnostics
 
 ### Linux-to-Windows Pairing Example
 
-The repository includes a small Linux target that uses the installed Python
-import, prints its package version, approves read-only pairing, and registers
+The repository includes a documented Linux target in `examples/` that uses the
+installed Python import, prints its package version, records redacted discovery
+and pairing evidence, approves read-only pairing, and registers
 `test.read_state` for the Windows acceptance run:
 
 ```sh
-python3 examples/linux_pair_target.py \
-  --profile .expra-windows-target
+python3 examples/linux_pair_target_detailed.py \
+  --profile .expra-windows-target \
+  --report linux-target.json
 ```
 
 Leave it running, then run the current `run_peer.py` initiator on Windows. The
 expected final event is `shared_capability_result`. This test exercises mDNS
 discovery, multi-route pairing fallback, TLS pinning, authenticated connect,
-and target-owned capability authorization.
+target-owned capability authorization, and redacted evidence reporting. See
+`examples/README.md` for the complete walkthrough and failure boundaries.
 
 ### Windows Setup Without Python
 
