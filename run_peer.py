@@ -61,17 +61,6 @@ def main() -> int:
             caller_node_id=request.caller_node_id.value,
             permissions=sorted(permission.value for permission in request.permissions),
         )
-        try:
-            runtime.sharing.register(
-                CAPABILITY,
-                lambda peer_id, params: {
-                    "ok": True,
-                    "peer_id": peer_id.value,
-                    "params": params,
-                },
-            )
-        except ValueError:
-            pass
         runtime.sharing.allow(request.caller_node_id, CAPABILITY)
         return True
 
@@ -86,6 +75,15 @@ def main() -> int:
     identity = runtime.identity
     if identity is None:
         raise RuntimeError("runtime did not create an identity")
+    if args.role == "target":
+        runtime.sharing.register(
+            CAPABILITY,
+            lambda peer_id, params: {
+                "ok": True,
+                "peer_id": peer_id.value,
+                "params": params,
+            },
+        )
     write_event(
         args.report,
         "started",
