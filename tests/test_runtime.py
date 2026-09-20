@@ -15,7 +15,12 @@ from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerpri
 from expra_connect.models import DiscoveredNodeCandidate, NodeCapability, NodePermission
 from expra_connect.pairing import PeerGrant, TrustedPeer
 from expra_connect.remote_service import AuthenticatedNodeProvider, PairingTransaction
-from expra_connect.runtime import ConnectConfig, ConnectRuntime, RuntimeStatus
+from expra_connect.runtime import (
+    ConnectConfig,
+    ConnectRuntime,
+    RuntimeState,
+    RuntimeStatus,
+)
 from expra_connect.socket_transport import TLSRemoteTransport
 from expra_connect.wire_protocol import (
     CapabilityElevationRequest,
@@ -961,6 +966,43 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             self.assertEqual(
                 advertisement.transport_fingerprint, status.tls_fingerprint
             )
+            runtime.shutdown()
+
+    def test_diagnostics_include_operational_metadata_but_no_secrets(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            runtime.start()
+            diagnostics = runtime.diagnostics()
+            serialized = json.dumps(diagnostics, default=str)
+            self.assertEqual(diagnostics["transport"]["current_generation"], 1)
+            self.assertIn("root_fingerprint", diagnostics["identity"])
+            self.assertNotIn(
+                runtime.identity.secret if runtime.identity else "", serialized
+            )
+            runtime.shutdown()
+
+    def test_transport_rotation_restarts_listener_with_new_generation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            runtime.start()
+            old_fingerprint = runtime.status.tls_fingerprint
+            status = runtime.rotate_transport()
+            self.assertEqual(status.state, RuntimeState.STARTED)
+            assert runtime.transport_generations is not None
+            self.assertEqual(runtime.transport_generations.current_generation, 2)
+            self.assertNotEqual(status.tls_fingerprint, old_fingerprint)
             runtime.shutdown()
 
 

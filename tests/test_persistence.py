@@ -4,10 +4,27 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from expra_connect.persistence import JsonStateStore, StateDataError
+from expra_connect.persistence import JsonStateStore, StateDataError, migrate_state
 
 
 class PersistenceTests(unittest.TestCase):
+    def test_legacy_trust_and_single_route_records_migrate_without_secrets_in_output(
+        self,
+    ) -> None:
+        document = migrate_state(
+            "trust",
+            {"grants": [{"caller_id": "peer", "host": "10.0.0.2", "port": 27321}]},
+        )
+        self.assertEqual(document["schema_version"], 2)
+        self.assertEqual(document["grants"][0]["routes"][0]["source"], "legacy")
+        self.assertNotIn("secret", document["grants"][0])
+
+    def test_unknown_schema_and_malformed_route_state_fail_closed(self) -> None:
+        with self.assertRaises(StateDataError):
+            migrate_state("trust", {"schema_version": 99})
+        with self.assertRaises(StateDataError):
+            migrate_state("routes", {"routes": {"host": "bad"}})
+
     def test_json_state_round_trips_with_private_file_mode(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.json"

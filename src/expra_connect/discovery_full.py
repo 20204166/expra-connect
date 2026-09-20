@@ -28,7 +28,7 @@ import socket
 import time
 import warnings
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from threading import RLock
 from typing import Any, Protocol, cast
 
@@ -85,6 +85,9 @@ class DiscoveryAdvertisement:
     port: int | None = None
     identity_fingerprint: str | None = None
     transport_fingerprint: str | None = None
+    root_public_key: str | None = None
+    transport_generation: int | None = None
+    transport_proof: str | None = None
 
 
 class DiscoveryBackend(Protocol):
@@ -168,6 +171,12 @@ class ZeroconfDiscoveryBackend:
             properties["fingerprint"] = advertisement.identity_fingerprint
         if advertisement.transport_fingerprint:
             properties["tls_fingerprint"] = advertisement.transport_fingerprint
+        if advertisement.root_public_key:
+            properties["root_public_key"] = advertisement.root_public_key
+        if advertisement.transport_generation is not None:
+            properties["transport_generation"] = str(advertisement.transport_generation)
+        if advertisement.transport_proof:
+            properties["transport_proof"] = advertisement.transport_proof
         properties["connectable"] = "true" if advertisement.connectable else "false"
         port = advertisement.port or 0
         service_kwargs: dict[str, Any] = {
@@ -367,7 +376,7 @@ class NetworkDiscovery:
         try:
             if event == "remove":
                 node_id = self._service_nodes.pop(service_name, None)
-                if node_id is not None:
+                if node_id is not None and node_id not in self._service_nodes.values():
                     self._drop_peer(node_id)
                 return
             candidate = self._normalize(service_name, info)
@@ -382,20 +391,38 @@ class NetworkDiscovery:
         record = self._peers.get(candidate.stable_id)
         if record is not None:
             existing = record.candidate
-            updated = DiscoveredNodeCandidate(
-                stable_id=candidate.stable_id,
-                hostname=candidate.hostname,
-                addresses=candidate.addresses,
-                port=candidate.port,
-                service_name=candidate.service_name,
-                app_version=candidate.app_version,
-                protocol_version=candidate.protocol_version,
-                platform=candidate.platform,
-                connectable=candidate.connectable,
-                compatible=candidate.compatible,
-                last_seen=candidate.last_seen,
-                identity_fingerprint=candidate.identity_fingerprint,
-                transport_fingerprint=candidate.transport_fingerprint,
+            if (
+                existing.transport_fingerprint
+                and candidate.transport_fingerprint
+                and existing.transport_fingerprint != candidate.transport_fingerprint
+            ):
+                LOGGER.warning(
+                    "Ignoring conflicting endpoint announcement for node %s",
+                    candidate.stable_id,
+                )
+                return
+            addresses = tuple(
+                dict.fromkeys((*existing.addresses, *candidate.addresses))
+            )
+            endpoints = tuple(
+                {
+                    endpoint.key: endpoint
+                    for endpoint in (
+                        *existing.endpoint_candidates,
+                        *candidate.endpoint_candidates,
+                    )
+                }.values()
+            )
+            updated = replace(
+                candidate,
+                addresses=addresses,
+                endpoint_candidates=endpoints,
+                transport_fingerprint=(
+                    candidate.transport_fingerprint or existing.transport_fingerprint
+                ),
+                identity_fingerprint=(
+                    candidate.identity_fingerprint or existing.identity_fingerprint
+                ),
             )
             changed = (
                 existing.addresses != updated.addresses
@@ -405,6 +432,9 @@ class NetworkDiscovery:
                 or existing.connectable != updated.connectable
                 or existing.identity_fingerprint != updated.identity_fingerprint
                 or existing.transport_fingerprint != updated.transport_fingerprint
+                or existing.root_public_key != updated.root_public_key
+                or existing.transport_generation != updated.transport_generation
+                or existing.transport_proof != updated.transport_proof
             )
             self._peers[candidate.stable_id] = _PeerRecord(updated, candidate.last_seen)
             if changed:
@@ -483,6 +513,14 @@ class NetworkDiscovery:
         platform = properties.get("platform") or None
         identity_fingerprint = properties.get("fingerprint") or None
         transport_fingerprint = properties.get("tls_fingerprint") or None
+        root_public_key = properties.get("root_public_key") or None
+        raw_generation = properties.get("transport_generation")
+        transport_generation = (
+            int(raw_generation)
+            if raw_generation is not None and raw_generation.isdigit()
+            else None
+        )
+        transport_proof = properties.get("transport_proof") or None
         connectable = properties.get("connectable", "false").casefold() == "true"
 
         port: int | None = None
@@ -511,6 +549,9 @@ class NetworkDiscovery:
             last_seen=self._clock(),
             identity_fingerprint=identity_fingerprint,
             transport_fingerprint=transport_fingerprint,
+            root_public_key=root_public_key,
+            transport_generation=transport_generation,
+            transport_proof=transport_proof,
         )
 
 

@@ -12,30 +12,32 @@
 
 ### Tasks
 
-- [ ] Implement identity and persistence-safe value types.
-- [ ] Implement protocol framing, HMAC envelopes, and replay freshness.
-- [ ] Implement TLS material, fingerprint pinning, socket deadlines, and cancellation.
-- [ ] Implement discovery candidates, validation, ranking, TTL, and self-filtering.
-- [ ] Implement directional pairing records, pending approval, confirmation, abort, and expiry.
-- [ ] Implement generic capability sharing and authorization.
-- [ ] Implement invite/join, role assignments, coordinator epochs, and offline membership.
-- [ ] Add CLI demo and import-boundary tests.
-- [ ] Run all quality gates and verify the source repository is untouched.
+- [x] Implement identity and persistence-safe value types.
+- [x] Implement protocol framing, HMAC envelopes, and replay freshness.
+- [x] Implement TLS material, fingerprint pinning, socket deadlines, and cancellation.
+- [x] Implement discovery candidates, validation, ranking, TTL, and self-filtering.
+- [x] Implement directional pairing records, pending approval, confirmation, abort, and expiry.
+- [x] Implement generic capability sharing and authorization.
+- [x] Implement invite/join, role assignments, coordinator epochs, and offline membership.
+- [x] Add CLI demo and import-boundary tests.
+- [x] Run all quality gates and verify no application/engine repository is changed.
 
 ## Stable Identity, Rotating Transport & Session Continuity
 
-**Status:** Future work. This section records the intended design boundary only;
-it does not authorize implementation in the current extraction phase.
+**Status:** Implemented. Stable identity, signed transport generation state,
+schema migration, runtime lifecycle composition, multi-route failover, logical
+session fencing, bounded request idempotency, and diagnostics are covered by
+the current implementation and regression tests.
 
-The future model keeps `NodeId` as the stable logical peer identity while
+The implemented model keeps `NodeId` as the stable logical peer identity while
 treating addresses, ports, TLS credentials, routes, sockets, and sessions as
-replaceable layers. Transport generations may rotate only through authenticated
-continuity from the already-trusted identity. A peer may advertise several
-validated endpoint candidates, and one canonical path manager may migrate or
-fail over between them without changing trust, pairing, or cluster membership.
-Logical sessions should eventually survive socket replacement where safely
-resumable, with request IDs and bounded idempotency/replay handling preventing
-mutating operations from executing twice after a lost response. Relay, NAT
+replaceable layers. Transport generations rotate only through authenticated
+continuity from the already-trusted identity. A peer advertises several
+validated endpoint candidates, and one canonical path manager migrates or
+fails over between them without changing trust, pairing, or cluster membership.
+Logical sessions survive socket replacement where safely resumable, with request
+IDs and bounded idempotency/replay handling preventing mutating operations from
+executing twice after a lost response. Relay, NAT
 traversal, streaming, and speculative multipath transport remain out of scope.
 
 The exact future implementation prompt is preserved below for later use:

@@ -7,6 +7,8 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
+from .models import EndpointCandidate, EndpointSource
+
 
 @dataclass(frozen=True, slots=True)
 class DiscoveryCandidate:
@@ -14,6 +16,12 @@ class DiscoveryCandidate:
     addresses: tuple[str, ...]
     port: int
     seen_at: float = 0.0
+
+    @property
+    def endpoint_candidates(self) -> tuple[EndpointCandidate, ...]:
+        return tuple(
+            EndpointCandidate(address, self.port) for address in self.addresses
+        )
 
 
 def normalize_port(value: object) -> int | None:
@@ -57,6 +65,38 @@ def preferred_address(addresses: tuple[str, ...]) -> str:
     if not addresses:
         raise ValueError("no route candidates")
     return min(addresses, key=_address_rank)
+
+
+def endpoint_rank(endpoint: EndpointCandidate) -> tuple[int, int, int, str, int]:
+    """Return a stable route rank; prior success beats source preference."""
+
+    source_rank = {
+        EndpointSource.CONFIGURED: 0,
+        EndpointSource.IPV4: 1,
+        EndpointSource.IPV6: 2,
+        EndpointSource.VPN: 3,
+        EndpointSource.DISCOVERY: 4,
+    }[endpoint.source]
+    success_rank = 0 if endpoint.last_success is not None else 1
+    failure_rank = 1 if endpoint.last_failure is not None else 0
+    return (
+        success_rank,
+        endpoint.priority,
+        source_rank + failure_rank,
+        endpoint.address,
+        endpoint.port,
+    )
+
+
+def preferred_endpoint(
+    endpoints: tuple[EndpointCandidate, ...],
+) -> EndpointCandidate:
+    usable = tuple(
+        endpoint for endpoint in endpoints if endpoint.validation != "invalid"
+    )
+    if not usable:
+        raise ValueError("no route candidates")
+    return min(usable, key=endpoint_rank)
 
 
 class DiscoveryRegistry:

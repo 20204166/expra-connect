@@ -74,12 +74,8 @@ def _identity(runtime: ConnectRuntime) -> dict[str, str] | None:
 
 
 def _diagnostics(runtime: ConnectRuntime) -> dict[str, Any]:
-    result: dict[str, Any] = {
-        "version": __version__,
-        "status": _status(runtime),
-        "identity": _identity(runtime),
-        "peers": [asdict(peer) for peer in runtime.peers],
-    }
+    result: dict[str, Any] = {"version": __version__, **runtime.diagnostics()}
+    result["peers"] = [asdict(peer) for peer in runtime.peers]
     if runtime.pairing is not None:
         result["trust"] = {
             "trusted_peers": sorted(peer.value for peer in runtime.pairing.trusted),

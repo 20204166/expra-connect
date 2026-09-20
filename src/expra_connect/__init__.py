@@ -5,8 +5,22 @@ from .cluster import Cluster, ClusterRole
 from .connection_state import ConnectionState, RetryState
 from .discovery_full import NetworkDiscovery
 from .failover import FailoverCoordinator
-from .identity import NodeId, NodeIdentity
-from .models import DiscoveredNodeCandidate, NodeCapability, NodePermission
+from .identity import (
+    NodeId,
+    NodeIdentity,
+    RotationConflict,
+    TransportGeneration,
+    TransportGenerationManager,
+    TransportStateError,
+    verify_transport_proof,
+)
+from .models import (
+    DiscoveredNodeCandidate,
+    EndpointCandidate,
+    EndpointSource,
+    NodeCapability,
+    NodePermission,
+)
 from .pairing import PairingManager, PeerGrant, PendingPairing, TrustedPeer
 from .persistence import JsonStateStore
 from .registry import NodeRegistry
@@ -25,6 +39,8 @@ __all__ = [
     "ConnectRuntime",
     "ConnectionState",
     "DiscoveredNodeCandidate",
+    "EndpointCandidate",
+    "EndpointSource",
     "FailoverCoordinator",
     "JsonStateStore",
     "NetworkDiscovery",
@@ -40,8 +56,13 @@ __all__ = [
     "RemoteSocketServer",
     "RetryState",
     "RoleState",
+    "RotationConflict",
     "RuntimeState",
     "RuntimeStatus",
+    "TransportGeneration",
+    "TransportGenerationManager",
+    "TransportStateError",
     "TrustedPeer",
     "__version__",
+    "verify_transport_proof",
 ]

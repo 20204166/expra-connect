@@ -9,6 +9,7 @@ server.
 """
 
 import hmac
+import inspect
 import socket as socket_module
 import ssl
 import struct
@@ -27,6 +28,15 @@ from .wire_protocol import (
     RemoteTransportError,
 )
 
+__all__ = [
+    "MemoryRemoteTransport",
+    "RemoteTransportError",
+    "SocketRemoteTransport",
+    "TLSRemoteTransport",
+    "build_trusted_transport",
+    "request_with_retry",
+]
+
 
 class MemoryRemoteTransport:
     """In-process transport that hands envelopes straight to a ``RemoteService``.
@@ -42,6 +52,27 @@ class MemoryRemoteTransport:
         if cancel_event is not None and cancel_event.is_set():
             raise RemoteExecutionError("cancelled")
         return cast(str, self._service.handle(envelope_text))
+
+
+def request_with_retry(
+    request: Callable[..., str],
+    envelope_text: str,
+    cancel_event: Any | None,
+    attempts: int,
+) -> str:
+    """Invoke a transport while retaining one envelope for safe retries."""
+
+    for attempt in range(attempts):
+        try:
+            try:
+                inspect.signature(request).bind(envelope_text, cancel_event)
+            except (TypeError, ValueError):
+                return request(envelope_text)
+            return request(envelope_text, cancel_event)
+        except RemoteTransportError:
+            if attempt + 1 == attempts:
+                raise
+    raise RemoteTransportError("remote transport returned no response")
 
 
 def _recv_exact(

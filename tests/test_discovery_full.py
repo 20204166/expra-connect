@@ -14,8 +14,13 @@ from expra_connect.discovery_full import (
 class _Info:
     port = 27321
 
-    def __init__(self, node_id: str) -> None:
-        self.addresses = [b"192.168.1.10"]
+    def __init__(
+        self,
+        node_id: str,
+        address: bytes = b"192.168.1.10",
+        fingerprint: bytes | None = None,
+    ) -> None:
+        self.addresses = [address]
         self.properties = {
             b"id": node_id.encode(),
             b"name": b"Peer B",
@@ -23,6 +28,8 @@ class _Info:
             b"protocol_version": b"1",
             b"connectable": b"true",
         }
+        if fingerprint is not None:
+            self.properties[b"tls_fingerprint"] = fingerprint
 
 
 class _Backend:
@@ -101,3 +108,67 @@ class FullDiscoveryTests(unittest.TestCase):
         self.assertEqual(events[-1][0], EVENT_LOST)
         discovery.stop()
         self.assertFalse(discovery.active)
+
+    def test_duplicate_service_announcements_merge_routes_and_remove_independently(
+        self,
+    ) -> None:
+        holder: dict[str, _Backend] = {}
+
+        def factory(listener: Callable[..., None]) -> _Backend:
+            backend = _Backend(listener)
+            holder["backend"] = backend
+            return backend
+
+        discovery = NetworkDiscovery(
+            "local-node",
+            advertisement=DiscoveryAdvertisement(
+                stable_id="local-node",
+                display_name="Local",
+                hostname="localhost",
+                app_version="1",
+            ),
+            backend_factory=factory,
+        )
+        self.assertTrue(discovery.start())
+        backend = holder["backend"]
+        backend.listener(
+            "add", f"peer-a.{SERVICE_TYPE}", _Info("peer", b"\xc0\xa8\x01\n")
+        )
+        backend.listener(
+            "add", f"peer-b.{SERVICE_TYPE}", _Info("peer", b"\xc0\xa8\x01\x0b")
+        )
+        self.assertEqual(
+            discovery.peers()[0].addresses, ("192.168.1.10", "192.168.1.11")
+        )
+        backend.listener("remove", f"peer-a.{SERVICE_TYPE}", None)
+        self.assertEqual(len(discovery.peers()), 1)
+
+    def test_conflicting_transport_fingerprint_does_not_replace_existing_peer(
+        self,
+    ) -> None:
+        holder: dict[str, _Backend] = {}
+
+        def factory(listener: Callable[..., None]) -> _Backend:
+            backend = _Backend(listener)
+            holder["backend"] = backend
+            return backend
+
+        discovery = NetworkDiscovery(
+            "local-node",
+            advertisement=DiscoveryAdvertisement(
+                stable_id="local-node",
+                display_name="Local",
+                hostname="localhost",
+                app_version="1",
+            ),
+            backend_factory=factory,
+        )
+        self.assertTrue(discovery.start())
+        backend = holder["backend"]
+        backend.listener(
+            "add", f"peer-a.{SERVICE_TYPE}", _Info("peer", fingerprint=b"one")
+        )
+        backend.listener(
+            "update", f"peer-a.{SERVICE_TYPE}", _Info("peer", fingerprint=b"two")
+        )
+        self.assertEqual(discovery.peers()[0].transport_fingerprint, "one")

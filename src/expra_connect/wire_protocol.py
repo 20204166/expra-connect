@@ -33,6 +33,8 @@ DEFAULT_FRESHNESS_SECONDS = 60.0
 DEFAULT_REPLAY_TTL_SECONDS = 300.0
 DEFAULT_REPLAY_MAX_ENTRIES = 4096
 DEFAULT_MAX_ACTIVE_HANDLERS = 8
+DEFAULT_IDEMPOTENCY_TTL_SECONDS = 300.0
+DEFAULT_IDEMPOTENCY_MAX_ENTRIES = 4096
 
 OP_REQUIRED_CAPABILITY: dict[str, NodeCapability] = {
     "hello": NodeCapability.READ_STATE,
@@ -67,6 +69,16 @@ ROLE_OPERATIONS = frozenset(
     }
 )
 
+# A retry-safe mutation is allowed to use its same signed envelope again after
+# a response loss. Unsafe operations are never retried by the client.
+OPERATION_SAFETY: dict[str, str] = {
+    operation: "read" for operation in OP_REQUIRED_CAPABILITY
+}
+for _operation in ("process_request_quit", "revoke_self"):
+    OPERATION_SAFETY[_operation] = "retry_safe"
+for _operation in {"process_force_quit", *ROLE_OPERATIONS}:
+    OPERATION_SAFETY[_operation] = "unsafe"
+
 
 class RemoteProtocolError(ValueError):
     """Raised for malformed or unsupported envelopes."""
@@ -86,6 +98,10 @@ class RemoteExecutionError(RuntimeError):
 
 class RemoteTransportError(RuntimeError):
     """Raised when the transport cannot complete an authenticated exchange."""
+
+
+class IdempotencyCollisionError(RemoteAuthError):
+    """Raised when one request ID is reused for different operation content."""
 
 
 class RemoteUnavailableError(RemoteExecutionError):
@@ -154,6 +170,9 @@ class PairingRequest:
     transport_fingerprint: str
     proposed_secret: str
     permissions: frozenset[NodePermission]
+    root_public_key: str | None = None
+    transport_generation: int | None = None
+    transport_proof: str | None = None
 
     def __post_init__(self) -> None:
         if not self.caller_node_id.value or not self.identity_fingerprint:
@@ -284,6 +303,9 @@ class RemoteRequest:
     request_id: str
     nonce: str
     timestamp: float
+    session_id: str | None = None
+    resume: bool = False
+    connection_generation: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -296,6 +318,8 @@ class RemoteResponse:
     payload: dict[str, Any] | None
     error: str | None
     timestamp: float
+    session_id: str | None = None
+    connection_generation: str | None = None
 
 
 def _canonical(fields: dict[str, Any]) -> str:
@@ -320,6 +344,9 @@ def sign_request(
     timestamp: float,
     secret: str,
     caller_node_id: str | None = None,
+    session_id: str | None = None,
+    resume: bool = False,
+    connection_generation: str | None = None,
 ) -> dict[str, Any]:
     fields: dict[str, Any] = {
         "v": REMOTE_PROTOCOL_VERSION,
@@ -332,6 +359,11 @@ def sign_request(
     }
     if caller_node_id is not None:
         fields["caller_node_id"] = caller_node_id
+    if session_id is not None:
+        fields["session_id"] = session_id
+        fields["resume"] = resume
+    if connection_generation is not None:
+        fields["connection_generation"] = connection_generation
     envelope = dict(fields)
     envelope["sig"] = _signature(secret, fields)
     return envelope
@@ -346,6 +378,8 @@ def sign_response(
     timestamp: float,
     payload: dict[str, Any] | None = None,
     error: str | None = None,
+    session_id: str | None = None,
+    connection_generation: str | None = None,
 ) -> dict[str, Any]:
     fields: dict[str, Any] = {
         "v": REMOTE_PROTOCOL_VERSION,
@@ -356,6 +390,10 @@ def sign_response(
         "error": error,
         "ts": timestamp,
     }
+    if session_id is not None:
+        fields["session_id"] = session_id
+    if connection_generation is not None:
+        fields["connection_generation"] = connection_generation
     envelope = dict(fields)
     envelope["sig"] = _signature(secret, fields)
     return envelope
@@ -457,6 +495,9 @@ def verify_request(
         "nonce",
         "ts",
         "sig",
+        "session_id",
+        "resume",
+        "connection_generation",
     }
     if not set(envelope) <= allowed_fields or "sig" not in envelope:
         raise RemoteProtocolError("request envelope fields are invalid")
@@ -472,6 +513,9 @@ def verify_request(
     params = envelope.get("params")
     request_id = envelope.get("request_id")
     nonce = envelope.get("nonce")
+    session_id = envelope.get("session_id")
+    resume = envelope.get("resume", False)
+    connection_generation = envelope.get("connection_generation")
     timestamp = envelope.get("ts")
     if not isinstance(node_id, str) or not node_id:
         raise RemoteAuthError("request node_id is invalid")
@@ -483,10 +527,18 @@ def verify_request(
         raise RemoteProtocolError("request op must be a string")
     if not isinstance(params, dict):
         raise RemoteProtocolError("request params must be an object")
-    if not isinstance(request_id, str) or not request_id:
+    if not isinstance(request_id, str) or not _valid_identifier(request_id):
         raise RemoteAuthError("request_id is invalid")
-    if not isinstance(nonce, str) or not nonce:
+    if not isinstance(nonce, str) or not _valid_identifier(nonce):
         raise RemoteAuthError("request nonce is invalid")
+    if session_id is not None and not _valid_identifier(session_id):
+        raise RemoteAuthError("session_id is invalid")
+    if not isinstance(resume, bool):
+        raise RemoteAuthError("request resume flag is invalid")
+    if connection_generation is not None and not _valid_identifier(
+        connection_generation
+    ):
+        raise RemoteAuthError("connection generation is invalid")
     if (
         not isinstance(timestamp, (int, float))
         or isinstance(timestamp, bool)
@@ -507,6 +559,9 @@ def verify_request(
         request_id=request_id,
         nonce=nonce,
         timestamp=float(timestamp),
+        session_id=session_id,
+        resume=resume,
+        connection_generation=connection_generation,
     )
 
 
@@ -530,6 +585,8 @@ def verify_response(
         "error",
         "ts",
         "sig",
+        "session_id",
+        "connection_generation",
     }
     if not set(envelope) <= allowed_fields or "sig" not in envelope:
         raise RemoteProtocolError("response envelope fields are invalid")
@@ -543,6 +600,8 @@ def verify_response(
     request_id = envelope.get("request_id")
     status = envelope.get("status")
     timestamp = envelope.get("ts")
+    session_id = envelope.get("session_id")
+    connection_generation = envelope.get("connection_generation")
     if (
         not isinstance(node_id, str)
         or not node_id
@@ -558,6 +617,12 @@ def verify_response(
     error = envelope.get("error")
     if error is not None and not isinstance(error, str):
         raise RemoteProtocolError("response error must be a string or null")
+    if session_id is not None and not _valid_identifier(session_id):
+        raise RemoteAuthError("response session_id is invalid")
+    if connection_generation is not None and not _valid_identifier(
+        connection_generation
+    ):
+        raise RemoteAuthError("response connection generation is invalid")
     if (
         not isinstance(timestamp, (int, float))
         or isinstance(timestamp, bool)
@@ -574,7 +639,164 @@ def verify_response(
         payload=payload,
         error=error,
         timestamp=float(timestamp),
+        session_id=session_id,
+        connection_generation=connection_generation,
     )
+
+
+def _valid_identifier(value: str) -> bool:
+    return (
+        isinstance(value, str)
+        and 1 <= len(value) <= 128
+        and all(character.isalnum() or character in "._:-" for character in value)
+    )
+
+
+@dataclass(slots=True)
+class _IdempotencyEntry:
+    fingerprint: str
+    expires_at: float
+    event: threading.Event
+    result: dict[str, Any] | None = None
+    error: BaseException | None = None
+    complete: bool = False
+
+
+class IdempotencyCache:
+    """Bounded result cache with one executor per request ID."""
+
+    def __init__(
+        self,
+        *,
+        clock: Callable[[], float] = time.monotonic,
+        ttl_seconds: float = DEFAULT_IDEMPOTENCY_TTL_SECONDS,
+        max_entries: int = DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
+        state_store: Any | None = None,
+    ) -> None:
+        if ttl_seconds <= 0 or max_entries < 1:
+            raise ValueError("invalid idempotency cache bounds")
+        self._clock = clock
+        self._ttl = ttl_seconds
+        self._max_entries = max_entries
+        self._entries: dict[tuple[str, str], _IdempotencyEntry] = {}
+        self._lock = threading.Lock()
+        self._state_store = state_store
+        if state_store is not None:
+            self._load_state()
+
+    def run(
+        self,
+        key: tuple[str, str],
+        fingerprint: str,
+        operation: Callable[[], dict[str, Any]],
+    ) -> dict[str, Any]:
+        now = self._clock()
+        with self._lock:
+            self._prune(now)
+            entry = self._entries.get(key)
+            owner = entry is None
+            if entry is None:
+                if len(self._entries) >= self._max_entries:
+                    raise RemoteAuthError("idempotency cache is full")
+                entry = _IdempotencyEntry(
+                    fingerprint=fingerprint,
+                    expires_at=now + self._ttl,
+                    event=threading.Event(),
+                )
+                self._entries[key] = entry
+            elif entry.fingerprint != fingerprint:
+                raise IdempotencyCollisionError("request ID was reused")
+        if not owner:
+            entry.event.wait()
+            if entry.error is not None:
+                raise entry.error
+            if entry.result is None:
+                raise RemoteExecutionError("idempotency result is unavailable")
+            return dict(entry.result)
+        try:
+            result = operation()
+        except BaseException as error:
+            with self._lock:
+                entry.error = error
+                entry.complete = True
+                entry.event.set()
+                self._entries.pop(key, None)
+            raise
+        with self._lock:
+            entry.result = dict(result)
+            entry.complete = True
+            entry.event.set()
+            self._save_state()
+        return result
+
+    def _prune(self, now: float) -> None:
+        for key, entry in list(self._entries.items()):
+            if entry.complete and now >= entry.expires_at:
+                del self._entries[key]
+
+    def _load_state(self) -> None:
+        state_store = self._state_store
+        if state_store is None:
+            return
+        try:
+            raw = state_store.load()
+        except Exception:  # noqa: BLE001 - corrupt cache must fail closed.
+            return
+        for item in raw.get("entries", []):
+            if not isinstance(item, dict):
+                continue
+            key = item.get("key")
+            fingerprint = item.get("fingerprint")
+            result = item.get("result")
+            remaining = item.get("remaining")
+            if (
+                not isinstance(key, list)
+                or len(key) != 2
+                or not all(isinstance(part, str) for part in key)
+                or not isinstance(fingerprint, str)
+                or not isinstance(result, dict)
+                or not isinstance(remaining, (int, float))
+                or remaining <= 0
+            ):
+                continue
+            if len(self._entries) >= self._max_entries:
+                break
+            event = threading.Event()
+            event.set()
+            self._entries[(key[0], key[1])] = _IdempotencyEntry(
+                fingerprint=fingerprint,
+                expires_at=self._clock() + float(remaining),
+                event=event,
+                result=result,
+                complete=True,
+            )
+
+    def _save_state(self) -> None:
+        state_store = self._state_store
+        if state_store is None:
+            return
+        now = self._clock()
+        state_store.save(
+            {
+                "entries": [
+                    {
+                        "key": list(key),
+                        "fingerprint": entry.fingerprint,
+                        "result": entry.result,
+                        "remaining": entry.expires_at - now,
+                    }
+                    for key, entry in self._entries.items()
+                    if entry.complete
+                    and entry.result is not None
+                    and entry.expires_at > now
+                ]
+            }
+        )
+
+    def __len__(self) -> int:
+        with self._lock:
+            self._prune(self._clock())
+            return len(self._entries)
 
 
 def validate_operation_params(op: str, params: dict[str, Any]) -> None:

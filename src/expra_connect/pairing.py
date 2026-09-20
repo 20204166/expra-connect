@@ -19,6 +19,9 @@ class PendingPairing:
     expires_at: float
     identity_fingerprint: str | None = None
     transport_fingerprint: str | None = None
+    root_public_key: str | None = None
+    transport_generation: int | None = None
+    transport_proof: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +31,9 @@ class TrustedPeer:
     permissions: frozenset[str]
     identity_fingerprint: str | None = None
     transport_fingerprint: str | None = None
+    root_public_key: str | None = None
+    transport_generation: int | None = None
+    transport_proof: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +43,9 @@ class PeerGrant:
     permissions: frozenset[str]
     identity_fingerprint: str | None = None
     transport_fingerprint: str | None = None
+    root_public_key: str | None = None
+    transport_generation: int | None = None
+    transport_proof: str | None = None
 
 
 class PairingManager:
@@ -61,6 +70,9 @@ class PairingManager:
         *,
         identity_fingerprint: str | None = None,
         transport_fingerprint: str | None = None,
+        root_public_key: str | None = None,
+        transport_generation: int | None = None,
+        transport_proof: str | None = None,
     ) -> PendingPairing:
         transaction = PendingPairing(
             uuid.uuid4().hex,
@@ -69,6 +81,9 @@ class PairingManager:
             self._clock() + self._ttl,
             identity_fingerprint,
             transport_fingerprint,
+            root_public_key,
+            transport_generation,
+            transport_proof,
         )
         self.pending[transaction.transaction_id] = transaction
         return transaction
@@ -81,6 +96,9 @@ class PairingManager:
             permissions,
             transaction.identity_fingerprint,
             transaction.transport_fingerprint,
+            transaction.root_public_key,
+            transaction.transport_generation,
+            transaction.transport_proof,
         )
         self.grants[transaction.peer_id] = grant
         return grant
@@ -97,6 +115,9 @@ class PairingManager:
             transaction.expires_at,
             transaction.identity_fingerprint,
             transaction.transport_fingerprint,
+            transaction.root_public_key,
+            transaction.transport_generation,
+            transaction.transport_proof,
         )
         self.pending[pending.transaction_id] = pending
         return pending
@@ -131,6 +152,9 @@ class PairingManager:
         if (
             grant.identity_fingerprint != transaction.identity_fingerprint
             or grant.transport_fingerprint != transaction.transport_fingerprint
+            or grant.root_public_key != transaction.root_public_key
+            or grant.transport_generation != transaction.transport_generation
+            or grant.transport_proof != transaction.transport_proof
         ):
             raise ValueError("pairing fingerprint binding mismatch")
         trusted = TrustedPeer(
@@ -139,6 +163,9 @@ class PairingManager:
             grant.permissions,
             grant.identity_fingerprint,
             grant.transport_fingerprint,
+            grant.root_public_key,
+            grant.transport_generation,
+            grant.transport_proof,
         )
         self.trusted[peer_id] = trusted
         del self.pending[transaction_id]

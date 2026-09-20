@@ -10,10 +10,20 @@ from expra_connect.tls import (
     ensure_tls_material,
     server_context,
 )
+from expra_connect.tls_material import ensure_tls_material_generation
 from expra_connect.wire_protocol import RemoteAuthError
 
 
 class TLSMaterialTests(unittest.TestCase):
+    def test_generation_material_uses_distinct_durable_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            first = ensure_tls_material_generation(Path(directory), "peer-a", 1)
+            second = ensure_tls_material_generation(Path(directory), "peer-a", 2)
+            self.assertEqual(first.generation, 1)
+            self.assertEqual(second.generation, 2)
+            self.assertNotEqual(first.fingerprint, second.fingerprint)
+            self.assertTrue(first.certificate.name.endswith("-1.crt"))
+
     def test_material_is_reused_and_fingerprint_is_encoding_independent(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             first = ensure_tls_material(Path(directory), "peer-a")

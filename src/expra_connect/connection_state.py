@@ -11,6 +11,8 @@ class ConnectionStatus(str, Enum):
     UNKNOWN = "unknown"
     CONNECTING = "connecting"
     ONLINE = "online"
+    MIGRATING = "migrating"
+    RESUMING = "resuming"
     OFFLINE = "offline"
     AUTHENTICATION_FAILED = "authentication_failed"
     IDENTITY_CHANGED = "identity_changed"

@@ -6,6 +6,7 @@ import secrets
 import threading
 from collections.abc import Callable, Mapping
 
+from .discovery import preferred_endpoint
 from .identity import NodeId, NodeIdentity, node_identity_fingerprint
 from .models import READ_PERMISSIONS, DiscoveredNodeCandidate, NodePermission
 from .pairing import PairingManager, PeerGrant, TrustedPeer
@@ -21,12 +22,18 @@ class NetworkPairing:
         *,
         identity: NodeIdentity,
         transport_fingerprint: str,
+        root_public_key: str | None = None,
+        transport_generation: int = 1,
+        transport_proof: str | None = None,
         pairing: PairingManager,
         candidates: Mapping[str, DiscoveredNodeCandidate],
         persist: Callable[[], bool],
     ) -> None:
         self._identity = identity
         self._transport_fingerprint = transport_fingerprint
+        self._root_public_key = root_public_key
+        self._transport_generation = transport_generation
+        self._transport_proof = transport_proof
         self._pairing = pairing
         self._candidates = candidates
         self._persist = persist
@@ -57,10 +64,17 @@ class NetworkPairing:
             secret=secrets.token_hex(32),
             identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
             transport_fingerprint=self._transport_fingerprint,
+            root_public_key=self._root_public_key or self._identity.root_public_key,
+            transport_generation=self._transport_generation,
+            transport_proof=self._transport_proof
+            or self._identity.sign_transport_proof(
+                self._transport_generation, self._transport_fingerprint
+            ),
         )
+        endpoint = preferred_endpoint(candidate.endpoint_candidates)
         transport = TLSRemoteTransport(
-            candidate.addresses[0],
-            candidate.port,
+            endpoint.address,
+            endpoint.port,
             expected_fingerprint=candidate.transport_fingerprint,
         )
         try:
@@ -88,6 +102,9 @@ class NetworkPairing:
             caller_node_id=response["caller_node_id"],
             identity_fingerprint=response["identity_fingerprint"],
             transport_fingerprint=response["transport_fingerprint"],
+            root_public_key=response.get("root_public_key"),
+            transport_generation=response.get("transport_generation"),
+            transport_proof=response.get("transport_proof"),
             secret=response["secret"],
             permissions=frozenset(
                 NodePermission(item) for item in response["permissions"]
@@ -104,6 +121,12 @@ class NetworkPairing:
                 permissions,
                 node_identity_fingerprint(self._identity.node_id),
                 self._transport_fingerprint,
+                self._root_public_key or self._identity.root_public_key,
+                self._transport_generation,
+                self._transport_proof
+                or self._identity.sign_transport_proof(
+                    self._transport_generation, self._transport_fingerprint
+                ),
             ),
         )
         trusted = TrustedPeer(
@@ -112,6 +135,9 @@ class NetworkPairing:
             permissions,
             candidate.identity_fingerprint,
             candidate.transport_fingerprint,
+            candidate.root_public_key,
+            candidate.transport_generation,
+            candidate.transport_proof,
         )
         self._pairing.trusted[peer_id] = trusted
         if cancel_event is not None and cancel_event.is_set():

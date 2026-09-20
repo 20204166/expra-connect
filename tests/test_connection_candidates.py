@@ -1,0 +1,256 @@
+import unittest
+from threading import Thread
+from unittest.mock import patch
+
+from expra_connect.connection_manager import ConnectionManager
+from expra_connect.connection_state import ConnectionStatus
+from expra_connect.discovery import (
+    DiscoveryCandidate,
+    DiscoveryRegistry,
+    preferred_endpoint,
+)
+from expra_connect.identity import NodeId
+from expra_connect.models import (
+    DiscoveredNodeCandidate,
+    EndpointCandidate,
+    EndpointSource,
+)
+from expra_connect.pairing import PairingManager, TrustedPeer
+from expra_connect.registry import NodeRegistry
+from expra_connect.wire_protocol import RemoteAuthError, RemoteTransportError
+
+
+def candidate(*endpoints: EndpointCandidate) -> DiscoveredNodeCandidate:
+    return DiscoveredNodeCandidate(
+        stable_id="peer-node",
+        hostname="peer.local",
+        addresses=tuple(endpoint.address for endpoint in endpoints),
+        port=endpoints[0].port if endpoints else None,
+        service_name="peer._expra-peer._tcp.local.",
+        app_version="1",
+        protocol_version="1",
+        platform=None,
+        connectable=True,
+        compatible=True,
+        last_seen=1.0,
+        transport_fingerprint="fingerprint",
+        endpoint_candidates=endpoints,
+    )
+
+
+class CandidateTests(unittest.TestCase):
+    def test_legacy_endpoint_fields_are_adapted(self) -> None:
+        item = candidate(EndpointCandidate("192.168.1.2", 27321))
+        self.assertEqual(item.endpoint_candidates[0].address, "192.168.1.2")
+        self.assertEqual(item.addresses, ("192.168.1.2",))
+
+    def test_route_ranking_is_deterministic_and_prefers_configured_then_success(
+        self,
+    ) -> None:
+        endpoints = (
+            EndpointCandidate("10.0.0.2", 27321, source=EndpointSource.VPN),
+            EndpointCandidate("2001:db8::2", 27321, source=EndpointSource.IPV6),
+            EndpointCandidate("192.168.1.2", 27321, source=EndpointSource.IPV4),
+            EndpointCandidate(
+                "configured.example", 27321, source=EndpointSource.CONFIGURED
+            ),
+        )
+        self.assertEqual(preferred_endpoint(endpoints).address, "configured.example")
+
+    def test_legacy_discovery_registry_replaces_duplicate_observation(self) -> None:
+        registry = DiscoveryRegistry(clock=lambda: 10.0)
+        self.assertTrue(
+            registry.add(DiscoveryCandidate("peer", ("192.168.1.2",), 27321))
+        )
+        self.assertTrue(
+            registry.add(DiscoveryCandidate("peer", ("2001:db8::2",), 27321))
+        )
+        item = registry.candidates()[0]
+        self.assertEqual(item.addresses, ("2001:db8::2",))
+
+
+class ConnectionManagerTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.peer = NodeId("peer-node")
+        self.pairing = PairingManager(NodeId("local-node"))
+        self.pairing.trusted[self.peer] = TrustedPeer(
+            self.peer,
+            "a" * 64,
+            frozenset({"read_state"}),
+            transport_fingerprint="fingerprint",
+        )
+        self.registry = NodeRegistry(NodeId("local-node"))
+        self.candidates = {
+            self.peer.value: candidate(
+                EndpointCandidate("192.168.1.2", 27321, source=EndpointSource.IPV4),
+                EndpointCandidate("10.8.0.2", 27321, source=EndpointSource.VPN),
+            )
+        }
+
+    def test_route_failure_falls_back_without_changing_peer_identity(self) -> None:
+        attempts: list[str] = []
+
+        class Provider:
+            def __init__(self, address: str) -> None:
+                self.address = address
+
+            def hello(self) -> dict[str, object]:
+                attempts.append(self.address)
+                if self.address == "192.168.1.2":
+                    raise RemoteTransportError("route failed")
+                return {"capabilities": []}
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **kwargs: Provider(kwargs["transport"].address),
+        )
+        with patch(
+            "expra_connect.connection_manager.TLSRemoteTransport",
+            side_effect=lambda host, port, **_: type("T", (), {"address": host})(),
+        ):
+            manager.connect(self.peer)
+        self.assertEqual(attempts, ["192.168.1.2", "10.8.0.2"])
+        record = self.registry.record(self.peer)
+        assert record is not None
+        self.assertEqual(record.connection.status, ConnectionStatus.ONLINE)
+        self.assertEqual(manager.connection_generation(self.peer), 1)
+
+    def test_authentication_failure_does_not_try_another_route(self) -> None:
+        attempts: list[str] = []
+
+        class Provider:
+            def hello(self) -> dict[str, object]:
+                attempts.append("attempt")
+                raise RemoteAuthError("fingerprint mismatch")
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: Provider(),
+        )
+        with (
+            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            self.assertRaises(RemoteAuthError),
+        ):
+            manager.connect(self.peer)
+        self.assertEqual(attempts, ["attempt"])
+        record = self.registry.record(self.peer)
+        assert record is not None
+        self.assertEqual(
+            record.connection.status,
+            ConnectionStatus.AUTHENTICATION_FAILED,
+        )
+
+    def test_stale_generation_cannot_commit_after_disconnect(self) -> None:
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+        )
+        generation = manager.connection_generation(self.peer)
+        manager.disconnect(self.peer)
+        self.assertFalse(manager.is_current_generation(self.peer, generation))
+
+    def test_repeated_connect_deduplicates_the_live_provider(self) -> None:
+        class Provider:
+            def hello(self) -> dict[str, object]:
+                return {"capabilities": []}
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: Provider(),
+        )
+        with patch("expra_connect.connection_manager.TLSRemoteTransport"):
+            first = manager.connect(self.peer)
+            second = manager.connect(self.peer)
+        self.assertIs(first, second)
+        self.assertEqual(manager.connection_generation(self.peer), 1)
+
+    def test_reconnect_replaces_the_live_provider_and_advances_generation(self) -> None:
+        providers: list[object] = []
+
+        class Provider:
+            def hello(self) -> dict[str, object]:
+                return {"capabilities": []}
+
+        def build_provider(**_: object) -> Provider:
+            provider = Provider()
+            providers.append(provider)
+            return provider
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=build_provider,
+        )
+        with patch("expra_connect.connection_manager.TLSRemoteTransport"):
+            first = manager.connect(self.peer)
+            second = manager.reconnect(self.peer)
+        self.assertIsNot(first, second)
+        self.assertEqual(len(providers), 2)
+        self.assertEqual(manager.connection_generation(self.peer), 2)
+
+    def test_simultaneous_connects_are_deduplicated(self) -> None:
+        attempts = 0
+
+        class Provider:
+            def hello(self) -> dict[str, object]:
+                return {"capabilities": []}
+
+        def build_provider(**_: object) -> Provider:
+            nonlocal attempts
+            attempts += 1
+            return Provider()
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=build_provider,
+        )
+        results: list[object] = []
+        with patch("expra_connect.connection_manager.TLSRemoteTransport"):
+            threads = [
+                Thread(target=lambda: results.append(manager.connect(self.peer)))
+                for _ in range(4)
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        self.assertEqual(attempts, 1)
+        self.assertEqual(len(results), 4)
+
+    def test_all_routes_failed_marks_peer_offline(self) -> None:
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+        )
+        with (
+            patch(
+                "expra_connect.connection_manager.TLSRemoteTransport",
+                side_effect=RemoteTransportError("route failed"),
+            ),
+            self.assertRaises(RemoteTransportError),
+        ):
+            manager.connect(self.peer)
+        record = self.registry.record(self.peer)
+        assert record is not None
+        self.assertEqual(
+            record.connection.status,
+            ConnectionStatus.OFFLINE,
+        )

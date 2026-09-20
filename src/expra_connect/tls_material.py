@@ -24,6 +24,7 @@ class TLSMaterial:
     certificate: Path
     private_key: Path
     fingerprint: str
+    generation: int | None = None
 
 
 def certificate_fingerprint(certificate: bytes) -> str:
@@ -77,15 +78,26 @@ def _generate_self_signed(
 
 
 def ensure_tls_material(directory: Path, node_id: str) -> TLSMaterial:
+    """Load or create the legacy generation-zero transport material."""
+    return ensure_tls_material_generation(directory, node_id)
+
+
+def ensure_tls_material_generation(
+    directory: Path, node_id: str, generation: int | None = None
+) -> TLSMaterial:
+    """Load or create replaceable TLS material for one transport generation."""
     directory.mkdir(parents=True, exist_ok=True)
-    certificate = directory / "peer-tls.crt"
-    private_key = directory / "peer-tls.key"
+    suffix = "" if generation is None else f"-{generation}"
+    certificate = directory / f"peer-tls{suffix}.crt"
+    private_key = directory / f"peer-tls{suffix}.key"
     if not certificate.exists() or not private_key.exists():
         _generate_self_signed(directory, node_id, certificate, private_key)
     _chmod_best_effort(private_key, 0o600)
     _chmod_best_effort(certificate, 0o644)
     der = ssl.PEM_cert_to_DER_cert(certificate.read_text(encoding="ascii"))
-    return TLSMaterial(certificate, private_key, certificate_fingerprint(der))
+    return TLSMaterial(
+        certificate, private_key, certificate_fingerprint(der), generation
+    )
 
 
 def server_context(material: TLSMaterial) -> ssl.SSLContext:

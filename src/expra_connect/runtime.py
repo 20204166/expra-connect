@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import hmac
+import json
 import logging
-import math
 import platform
 import socket
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
 from types import TracebackType
@@ -27,7 +27,13 @@ from .discovery_full import (
     DiscoveryBackend,
     NetworkDiscovery,
 )
-from .identity import NodeId, NodeIdentity, node_identity_fingerprint
+from .identity import (
+    NodeId,
+    NodeIdentity,
+    TransportGenerationManager,
+    TransportStateError,
+    node_identity_fingerprint,
+)
 from .models import (
     READ_CAPABILITIES,
     READ_PERMISSIONS,
@@ -37,14 +43,26 @@ from .models import (
 )
 from .pairing import PairingManager, PeerGrant, PendingPairing, TrustedPeer
 from .pairing_flow import NetworkPairing
-from .persistence import JsonStateStore
+from .persistence import JsonStateStore, StateDataError, migrate_state
 from .registry import NodeRegistry
 from .remote_models import NodeStatus
 from .remote_service import RemoteService
 from .role_engine import ClusterRole as RegistryClusterRole
+from .runtime_persistence import (
+    peer_grant_from_json,
+    peer_grant_to_json,
+    pending_pairing_from_json,
+    pending_pairing_to_json,
+    trusted_peer_from_json,
+    trusted_peer_to_json,
+)
 from .server import PEER_SERVICE_DEFAULT_PORT, RemoteSocketServer
 from .sharing import CapabilityShare
-from .tls_material import ensure_tls_material, server_context
+from .tls_material import (
+    ensure_tls_material,
+    ensure_tls_material_generation,
+    server_context,
+)
 from .wire_protocol import (
     CapabilityElevationRequest,
     PairingControlRequest,
@@ -141,6 +159,7 @@ class ConnectRuntime:
         self._expiry_thread: threading.Thread | None = None
         self._peers: dict[str, DiscoveredNodeCandidate] = {}
         self._connection_manager: ConnectionManager | None = None
+        self._transport_generations: TransportGenerationManager | None = None
         self._network_pairing: NetworkPairing | None = None
         self._persistence_ready = False
         self._pending_permissions: dict[str, frozenset[str]] = {}
@@ -184,6 +203,100 @@ class ConnectRuntime:
     @property
     def connections(self) -> tuple[NodeId, ...]:
         return self._connection_manager.providers if self._connection_manager else ()
+
+    @property
+    def transport_generations(self) -> TransportGenerationManager | None:
+        return self._transport_generations
+
+    def reconnect_peer(self, peer_id: NodeId) -> Any:
+        """Reconnect a logical peer without changing trust or membership."""
+
+        manager = self._connection_manager
+        if manager is None:
+            raise RuntimeError("runtime has not started")
+        reconnect = getattr(manager, "reconnect", None)
+        if callable(reconnect):
+            return reconnect(peer_id)
+        manager.disconnect(peer_id, reason="reconnect")
+        return manager.connect(peer_id)
+
+    def rotate_transport(self) -> RuntimeStatus:
+        """Activate a root-authorized TLS generation and restart the listener."""
+        if (
+            not self.started
+            or self._identity is None
+            or self._transport_generations is None
+        ):
+            raise RuntimeError("runtime must be started before transport rotation")
+        next_generation = self._transport_generations.current.generation + 1
+        material = ensure_tls_material_generation(
+            self.config.profile_dir, self._identity.node_id.value, next_generation
+        )
+        self._transport_generations.prepare(material.fingerprint)
+        self._transport_generations.activate(next_generation)
+        self.shutdown()
+        status = self.start()
+        if status.state is not RuntimeState.STARTED:
+            self._transport_generations.rollback_active()
+            self.start()
+            raise TransportStateError("transport rotation could not restart listener")
+        return status
+
+    def diagnostics(self) -> dict[str, Any]:
+        """Return operational state without credentials or invitation material."""
+
+        identity = self._identity
+        generations = self._transport_generations
+        result: dict[str, Any] = {
+            "status": asdict(self._status),
+            "generation": self._generation,
+            "identity": None,
+            "transport": {
+                "fingerprint": self._status.tls_fingerprint,
+                "current_generation": (
+                    generations.current_generation if generations is not None else None
+                ),
+                "pending_generation": (
+                    generations.next.generation
+                    if generations is not None and generations.next is not None
+                    else None
+                ),
+            },
+            "routes": [],
+            "connections": [],
+            "sessions": [],
+        }
+        if identity is not None:
+            result["identity"] = {
+                "node_id": identity.node_id.value,
+                "root_fingerprint": node_identity_fingerprint(identity.root_public_key),
+            }
+        for candidate in self.peers:
+            result["routes"].append(
+                {
+                    "node_id": candidate.stable_id,
+                    "hostname": candidate.hostname,
+                    "addresses": candidate.addresses,
+                    "port": candidate.port,
+                    "transport_fingerprint": candidate.transport_fingerprint,
+                    "last_seen": candidate.last_seen,
+                }
+            )
+        if self._registry is not None:
+            for record in self._registry.records:
+                result["connections"].append(
+                    {
+                        "node_id": record.node_id.value,
+                        "state": record.connection.status.value,
+                        "reason": record.connection.reason,
+                        "changed_at": record.connection.changed_at,
+                    }
+                )
+        if self._connection_manager is not None:
+            result["sessions"] = [
+                node_id.value for node_id in self._connection_manager.providers
+            ]
+        return result
 
     def connect_peer(self, peer_id: NodeId) -> Any:
         manager = self._connection_manager
@@ -267,7 +380,7 @@ class ConnectRuntime:
             self._load_identity()
             self._load_persisted_state()
             return self._start_components(generation)
-        except (KeyError, OSError, TypeError, ValueError) as error:
+        except (KeyError, OSError, TypeError, ValueError, StateDataError) as error:
             self._status = RuntimeStatus(
                 RuntimeState.PERSISTENCE_FAILED, reason=str(error)
             )
@@ -312,10 +425,16 @@ class ConnectRuntime:
     def _load_identity(self) -> None:
         profile = self.config.profile_dir
         path = profile / "identity.json"
-        self._identity = (
-            NodeIdentity.load(path) if path.exists() else NodeIdentity.create()
-        )
-        if not path.exists():
+        if path.exists():
+            document = JsonStateStore(path, kind="identity").load()
+            self._identity = NodeIdentity.from_json(json.dumps(document))
+            if (
+                document.get("schema_version") != 2
+                or "root_private_key" not in document
+            ):
+                self._identity.save(path)
+        else:
+            self._identity = NodeIdentity.create()
             self._identity.save(path)
 
     def _load_persisted_state(self) -> None:
@@ -327,23 +446,25 @@ class ConnectRuntime:
             self._identity.node_id, cluster_enabled=self.config.cluster_enabled
         )
         if self.config.cluster_enabled:
-            cluster_store = JsonStateStore(self.config.profile_dir / "cluster.json")
+            cluster_store = JsonStateStore(
+                self.config.profile_dir / "cluster.json", kind="cluster"
+            )
             self._cluster = (
                 Cluster.load(self._identity.node_id, cluster_store)
                 if cluster_store.path.exists()
                 else Cluster(self._identity.node_id)
             )
-        state = JsonStateStore(self.config.profile_dir / "trust.json")
+        state = JsonStateStore(self.config.profile_dir / "trust.json", kind="trust")
         if state.path.exists():
             document = state.load()
             for raw in document.get("grants", []):
-                grant = _peer_grant_from_json(raw)
+                grant = peer_grant_from_json(raw)
                 self._pairing.grants[grant.caller_id] = grant
             for raw in document.get("trusted", []):
-                trusted = _trusted_peer_from_json(raw)
+                trusted = trusted_peer_from_json(raw)
                 self._pairing.trusted[trusted.peer_id] = trusted
             for raw in document.get("pending", []):
-                pending, permissions = _pending_pairing_from_json(raw)
+                pending, permissions = pending_pairing_from_json(raw)
                 self._pairing.pending[pending.transaction_id] = pending
                 self._pending_permissions[pending.transaction_id] = permissions
             self._wire_grants()
@@ -352,6 +473,11 @@ class ConnectRuntime:
             pairing=self._pairing,
             registry=self._registry,
             candidates=self._peers,
+            persist=self._save_persisted_state,
+        )
+        self._transport_generations = TransportGenerationManager(
+            self._identity,
+            store=JsonStateStore(self.config.profile_dir / "transport.json"),
         )
         self._persistence_ready = True
 
@@ -359,7 +485,28 @@ class ConnectRuntime:
         if self._identity is None or self._pairing is None:
             raise RuntimeError("runtime state is incomplete")
         profile = self.config.profile_dir
-        material = ensure_tls_material(profile, self._identity.node_id.value)
+        self._transport_generations = (
+            self._transport_generations
+            or TransportGenerationManager(
+                self._identity,
+                store=JsonStateStore(profile / "transport.json"),
+            )
+        )
+        if self._transport_generations.current_generation is None:
+            material = ensure_tls_material(profile, self._identity.node_id.value)
+            self._transport_generations.initialize(material.fingerprint)
+        else:
+            generation = self._transport_generations.current.generation
+            legacy = ensure_tls_material(profile, self._identity.node_id.value)
+            material = (
+                legacy
+                if generation == 1
+                else ensure_tls_material_generation(
+                    profile, self._identity.node_id.value, generation
+                )
+            )
+        if self._transport_generations.current.fingerprint != material.fingerprint:
+            raise TransportStateError("TLS material does not match trusted generation")
         service = RemoteService(
             node_id=self._identity.node_id,
             display_name=self.config.display_name,
@@ -378,6 +525,10 @@ class ConnectRuntime:
             app_version=self.config.app_version,
             grants=self._wire_grants(),
             identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
+            transport_fingerprint=material.fingerprint,
+            root_public_key=self._identity.root_public_key,
+            transport_generation=self._transport_generations.current.generation,
+            transport_proof=self._transport_generations.current.proof,
             capability_share=self._sharing,
             cluster_id=self._cluster.cluster_id if self._cluster is not None else None,
             coordinator_epoch=(self._cluster.epoch.epoch if self._cluster else None),
@@ -411,6 +562,9 @@ class ConnectRuntime:
         self._network_pairing = NetworkPairing(
             identity=self._identity,
             transport_fingerprint=material.fingerprint,
+            root_public_key=self._identity.root_public_key,
+            transport_generation=self._transport_generations.current.generation,
+            transport_proof=self._transport_generations.current.proof,
             pairing=self._pairing,
             candidates=self._peers,
             persist=self._save_persisted_state,
@@ -426,6 +580,9 @@ class ConnectRuntime:
             port=bound_port,
             identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
             transport_fingerprint=material.fingerprint,
+            root_public_key=self._identity.root_public_key,
+            transport_generation=self._transport_generations.current.generation,
+            transport_proof=self._transport_generations.current.proof,
         )
         if not self.config.discovery_enabled:
             return self._started_status(server, material.fingerprint, False, True, None)
@@ -541,6 +698,9 @@ class ConnectRuntime:
             secret=request.proposed_secret,
             identity_fingerprint=request.identity_fingerprint,
             transport_fingerprint=request.transport_fingerprint,
+            root_public_key=request.root_public_key,
+            transport_generation=request.transport_generation,
+            transport_proof=request.transport_proof,
         )
         self._pending_permissions[pending.transaction_id] = frozenset(
             permission.value for permission in request.permissions
@@ -555,6 +715,9 @@ class ConnectRuntime:
             "caller_node_id": pending.peer_id.value,
             "identity_fingerprint": request.identity_fingerprint,
             "transport_fingerprint": request.transport_fingerprint,
+            "root_public_key": request.root_public_key,
+            "transport_generation": request.transport_generation,
+            "transport_proof": request.transport_proof,
             "secret": pending.secret,
             "permissions": sorted(self._pending_permissions[pending.transaction_id]),
             "expires_at": pending.expires_at,
@@ -772,33 +935,37 @@ class ConnectRuntime:
         saved = True
         try:
             JsonStateStore(self.config.profile_dir / "trust.json").save(
-                {
-                    "grants": [
-                        _peer_grant_to_json(item)
-                        for item in self._pairing.grants.values()
-                    ],
-                    "trusted": [
-                        _trusted_peer_to_json(item)
-                        for item in self._pairing.trusted.values()
-                    ],
-                    "pending": [
-                        _pending_pairing_to_json(
-                            item,
-                            self._pending_permissions.get(
-                                item.transaction_id, frozenset()
-                            ),
-                        )
-                        for item in self._pairing.pending.values()
-                    ],
-                }
+                migrate_state(
+                    "trust",
+                    {
+                        "schema_version": 2,
+                        "grants": [
+                            peer_grant_to_json(item)
+                            for item in self._pairing.grants.values()
+                        ],
+                        "trusted": [
+                            trusted_peer_to_json(item)
+                            for item in self._pairing.trusted.values()
+                        ],
+                        "pending": [
+                            pending_pairing_to_json(
+                                item,
+                                self._pending_permissions.get(
+                                    item.transaction_id, frozenset()
+                                ),
+                            )
+                            for item in self._pairing.pending.values()
+                        ],
+                    },
+                )
             )
         except (OSError, TypeError, ValueError) as error:
             LOGGER.warning("Could not persist connection trust state: %s", error)
             saved = False
         if self._cluster is not None:
             try:
-                self._cluster.save(
-                    JsonStateStore(self.config.profile_dir / "cluster.json")
+                JsonStateStore(self.config.profile_dir / "cluster.json").save(
+                    migrate_state("cluster", self._cluster.to_dict())
                 )
             except (OSError, TypeError, ValueError) as error:
                 LOGGER.warning("Could not persist cluster state: %s", error)
@@ -822,120 +989,3 @@ class ConnectRuntime:
     def _refresh_live_grants(self) -> None:
         if self._service is not None:
             self._service.update_grants(self._wire_grants())
-
-
-def _peer_grant_to_json(grant: PeerGrant) -> dict[str, Any]:
-    return {
-        "caller_id": grant.caller_id.value,
-        "secret": grant.secret,
-        "permissions": sorted(grant.permissions),
-        "identity_fingerprint": grant.identity_fingerprint,
-        "transport_fingerprint": grant.transport_fingerprint,
-    }
-
-
-def _peer_grant_from_json(value: Any) -> PeerGrant:
-    if not isinstance(value, dict):
-        raise TypeError("persisted grant must be an object")
-    permissions = _permissions_from_json(value.get("permissions"))
-    _validate_secret(value.get("secret"))
-    return PeerGrant(
-        caller_id=NodeId(str(value["caller_id"])),
-        secret=str(value["secret"]),
-        permissions=permissions,
-        identity_fingerprint=_optional_text(value.get("identity_fingerprint")),
-        transport_fingerprint=_optional_text(value.get("transport_fingerprint")),
-    )
-
-
-def _trusted_peer_to_json(peer: TrustedPeer) -> dict[str, Any]:
-    return {
-        "peer_id": peer.peer_id.value,
-        "secret": peer.secret,
-        "permissions": sorted(peer.permissions),
-        "identity_fingerprint": peer.identity_fingerprint,
-        "transport_fingerprint": peer.transport_fingerprint,
-    }
-
-
-def _trusted_peer_from_json(value: Any) -> TrustedPeer:
-    if not isinstance(value, dict):
-        raise TypeError("persisted trusted peer must be an object")
-    permissions = _permissions_from_json(value.get("permissions"))
-    _validate_secret(value.get("secret"))
-    return TrustedPeer(
-        peer_id=NodeId(str(value["peer_id"])),
-        secret=str(value["secret"]),
-        permissions=permissions,
-        identity_fingerprint=_optional_text(value.get("identity_fingerprint")),
-        transport_fingerprint=_optional_text(value.get("transport_fingerprint")),
-    )
-
-
-def _pending_pairing_to_json(
-    pending: PendingPairing, permissions: frozenset[str]
-) -> dict[str, Any]:
-    return {
-        "transaction_id": pending.transaction_id,
-        "peer_id": pending.peer_id.value,
-        "secret": pending.secret,
-        "expires_at": pending.expires_at,
-        "identity_fingerprint": pending.identity_fingerprint,
-        "transport_fingerprint": pending.transport_fingerprint,
-        "permissions": sorted(permissions),
-    }
-
-
-def _pending_pairing_from_json(
-    value: Any,
-) -> tuple[PendingPairing, frozenset[str]]:
-    if not isinstance(value, dict):
-        raise TypeError("persisted pending pairing must be an object")
-    expires_at = value["expires_at"]
-    if (
-        isinstance(expires_at, bool)
-        or not isinstance(expires_at, (int, float))
-        or not math.isfinite(float(expires_at))
-    ):
-        raise TypeError("persisted pending pairing expiry is invalid")
-    _validate_secret(value.get("secret"))
-    permissions = value.get("permissions", [])
-    if not isinstance(permissions, list) or any(
-        not isinstance(item, str) for item in permissions
-    ):
-        raise TypeError("persisted pending pairing permissions are invalid")
-    permissions_set = _permissions_from_json(permissions)
-    return (
-        PendingPairing(
-            transaction_id=str(value["transaction_id"]),
-            peer_id=NodeId(str(value["peer_id"])),
-            secret=str(value["secret"]),
-            expires_at=float(expires_at),
-            identity_fingerprint=_optional_text(value.get("identity_fingerprint")),
-            transport_fingerprint=_optional_text(value.get("transport_fingerprint")),
-        ),
-        permissions_set,
-    )
-
-
-def _optional_text(value: Any) -> str | None:
-    return None if value is None else str(value)
-
-
-def _permissions_from_json(value: Any) -> frozenset[str]:
-    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-        raise TypeError("persisted permissions are invalid")
-    known = {permission.value for permission in NodePermission}
-    permissions = frozenset(value)
-    if not permissions <= known:
-        raise ValueError("persisted permissions contain an unknown value")
-    return permissions
-
-
-def _validate_secret(value: Any) -> None:
-    if not isinstance(value, str) or len(value) != 64:
-        raise ValueError("persisted peer secret is invalid")
-    try:
-        bytes.fromhex(value)
-    except ValueError as error:
-        raise ValueError("persisted peer secret is invalid") from error

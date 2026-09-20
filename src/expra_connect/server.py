@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 import logging
+import secrets
 import socketserver
 import ssl
 import threading
@@ -157,7 +159,16 @@ class RemoteSocketServer:
                     elif isinstance(raw, dict) and raw.get("op") == "elevation_request":
                         response = _elevation_response(raw, elevation_handler)
                     else:
-                        response = service.handle(text)
+                        generation = secrets.token_hex(16)
+                        handle = service.handle
+                        try:
+                            inspect.signature(handle).bind(
+                                text, connection_generation=generation
+                            )
+                        except (TypeError, ValueError):
+                            response = handle(text)
+                        else:
+                            response = handle(text, connection_generation=generation)
                     if not isinstance(response, str):
                         raise RemoteProtocolError("service response must be text")
                     _send_frame(
@@ -251,7 +262,7 @@ def _pair_request_response(
         "secret",
         "permissions",
     }
-    if handler is None or set(raw) != required:
+    if handler is None or not required <= set(raw):
         return json.dumps({"approved": False, "error": "pairing_unavailable"})
     permissions = raw["permissions"]
     if not isinstance(permissions, list) or any(
@@ -265,6 +276,22 @@ def _pair_request_response(
             transport_fingerprint=raw["transport_fingerprint"],
             proposed_secret=raw["secret"],
             permissions=frozenset(NodePermission(item) for item in permissions),
+            root_public_key=(
+                raw.get("root_public_key")
+                if isinstance(raw.get("root_public_key"), str)
+                else None
+            ),
+            transport_generation=(
+                raw.get("transport_generation")
+                if isinstance(raw.get("transport_generation"), int)
+                and not isinstance(raw.get("transport_generation"), bool)
+                else None
+            ),
+            transport_proof=(
+                raw.get("transport_proof")
+                if isinstance(raw.get("transport_proof"), str)
+                else None
+            ),
         )
         if raw["pairing_mode"] != PAIRING_MODE_TRANSACTIONAL:
             raise RemoteProtocolError("pairing mode is invalid")

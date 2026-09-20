@@ -12,10 +12,8 @@ This module is the high-level remote API. It keeps the client-side
   ``SocketRemoteTransport``/``TLSRemoteTransport`` pair;
 - ``server`` — the listening ``RemoteSocketServer``.
 
-The transport is injected so tests and the GUI never depend on sockets; a
-concrete loopback ``RemoteSocketServer``/``SocketRemoteTransport`` pair is
-provided for real manual-host connections. Live remote data features
-(dashboard/process/storage browsing) remain intentionally deferred elsewhere:
+The transport is injected so tests and hosts never depend on sockets. Live
+remote data features remain intentionally deferred elsewhere:
 this module provides the secure contract and provider infrastructure, not the
 feature wiring.
 """
@@ -25,11 +23,9 @@ import inspect
 import json
 import logging
 import math
-import secrets
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Any
 
 from .identity import NodeId, node_identity_fingerprint
@@ -39,6 +35,9 @@ from .models import (
     NodePermission,
     ProcessActionKind,
 )
+from .pairing_models import PairingTransaction
+from .process_backend import RemoteProcessActionBackend
+from .provider_requests import ProviderRequestMixin
 from .remote_models import (
     ClusterDataError,
     NodeSnapshot,
@@ -64,6 +63,7 @@ from .server import (
     PEER_SERVICE_DEFAULT_PORT,
     RemoteSocketServer,
 )
+from .session import LogicalSessionRegistry
 from .socket_transport import (
     MemoryRemoteTransport,
     SocketRemoteTransport,
@@ -72,16 +72,20 @@ from .socket_transport import (
 )
 from .wire_protocol import (
     DEFAULT_FRESHNESS_SECONDS,
+    DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
+    DEFAULT_IDEMPOTENCY_TTL_SECONDS,
     DEFAULT_MAX_ACTIVE_HANDLERS,
     DEFAULT_REPLAY_MAX_ENTRIES,
     DEFAULT_REPLAY_TTL_SECONDS,
     MAX_ENVELOPE_BYTES,
     OP_REQUIRED_CAPABILITY,
     OP_REQUIRED_PERMISSION,
+    OPERATION_SAFETY,
     PAIRING_MODE_TRANSACTIONAL,
     REMOTE_PROTOCOL_VERSION,
     ROLE_OPERATIONS,
     CapabilityElevationRequest,
+    IdempotencyCache,
     PairingRequest,
     PeerGrant,
     RemoteAuthError,
@@ -105,26 +109,15 @@ from .wire_protocol import (
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
-class PairingTransaction:
-    """Target approval binding retained until local trust is confirmed."""
-
-    transaction_id: str
-    caller_node_id: str
-    identity_fingerprint: str
-    transport_fingerprint: str
-    secret: str
-    permissions: frozenset[NodePermission]
-    expires_at: float
-    transport: Any
-
-
 __all__ = [
     "DEFAULT_FRESHNESS_SECONDS",
+    "DEFAULT_IDEMPOTENCY_MAX_ENTRIES",
+    "DEFAULT_IDEMPOTENCY_TTL_SECONDS",
     "DEFAULT_MAX_ACTIVE_HANDLERS",
     "DEFAULT_REPLAY_MAX_ENTRIES",
     "DEFAULT_REPLAY_TTL_SECONDS",
     "MAX_ENVELOPE_BYTES",
+    "OPERATION_SAFETY",
     "OP_REQUIRED_CAPABILITY",
     "OP_REQUIRED_PERMISSION",
     "PAIRING_MODE_TRANSACTIONAL",
@@ -192,6 +185,10 @@ class RemoteService:
         expected_caller_id: NodeId | None = None,
         grants: dict[NodeId, PeerGrant] | None = None,
         identity_fingerprint: str | None = None,
+        transport_fingerprint: str | None = None,
+        root_public_key: str | None = None,
+        transport_generation: int | None = None,
+        transport_proof: str | None = None,
         cluster_id: str | None = None,
         coordinator_epoch: int | None = None,
         fencing_token: str | None = None,
@@ -199,6 +196,10 @@ class RemoteService:
         trust_revoke_handler: Callable[[NodeId], dict[str, Any]] | None = None,
         require_dashboard_share: bool = False,
         capability_share: Any | None = None,
+        idempotency_cache: IdempotencyCache | None = None,
+        idempotency_ttl_seconds: float = DEFAULT_IDEMPOTENCY_TTL_SECONDS,
+        idempotency_max_entries: int = DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
+        idempotency_store: Any | None = None,
     ) -> None:
         self._node_id = node_id
         self._display_name = display_name
@@ -212,6 +213,10 @@ class RemoteService:
         self._identity_fingerprint = identity_fingerprint or node_identity_fingerprint(
             node_id
         )
+        self._transport_fingerprint = transport_fingerprint
+        self._root_public_key = root_public_key
+        self._transport_generation = transport_generation
+        self._transport_proof = transport_proof
         self._validate_secret(secret)
         self._secret = secret
         self._grant_mode = grants is not None
@@ -252,6 +257,16 @@ class RemoteService:
         self._require_dashboard_share = require_dashboard_share
         self._dashboard_shares: dict[NodeId, float] = {}
         self._capability_share = capability_share
+        self._idempotency = idempotency_cache or IdempotencyCache(
+            clock=clock,
+            ttl_seconds=idempotency_ttl_seconds,
+            max_entries=idempotency_max_entries,
+            state_store=idempotency_store,
+        )
+        self._sessions = LogicalSessionRegistry(
+            clock=clock, ttl_seconds=freshness_seconds * 10
+        )
+        self._grant_version = 0
 
     @staticmethod
     def _validate_secret(secret: str) -> None:
@@ -262,7 +277,9 @@ class RemoteService:
         except ValueError as error:
             raise ValueError("peer credentials must be hexadecimal") from error
 
-    def handle(self, envelope_text: str) -> str:
+    def handle(
+        self, envelope_text: str, *, connection_generation: str | None = None
+    ) -> str:
         try:
             envelope = json.loads(envelope_text)
         except (ValueError, TypeError) as error:
@@ -280,13 +297,29 @@ class RemoteService:
                 if grant.expires_at is not None and self._clock() >= grant.expires_at:
                     raise RemoteAuthError("request caller grant has expired")
                 credential = grant.secret
-        request = verify_request(
-            envelope,
-            secret=credential,
-            clock=self._clock,
-            freshness_seconds=self._freshness_seconds,
-            replay_cache=self._replay_cache,
-        )
+        try:
+            request = verify_request(
+                envelope,
+                secret=credential,
+                clock=self._clock,
+                freshness_seconds=self._freshness_seconds,
+                replay_cache=self._replay_cache,
+            )
+        except RemoteAuthError as error:
+            op = envelope.get("op") if isinstance(envelope, dict) else None
+            operation_safety = OPERATION_SAFETY.get(op) if isinstance(op, str) else None
+            if "replayed" not in str(error) or operation_safety not in {
+                "retry_safe",
+                "unsafe",
+            }:
+                raise
+            request = verify_request(
+                envelope,
+                secret=credential,
+                clock=self._clock,
+                freshness_seconds=self._freshness_seconds,
+                replay_cache=ReplayCache(clock=self._clock),
+            )
         response_secret = grant.secret if grant is not None else self._secret
         if (
             self._expected_caller_id is not None
@@ -295,17 +328,38 @@ class RemoteService:
             raise RemoteAuthError("request caller identity is invalid")
         if request.node_id != self._node_id:
             raise RemoteAuthError("request target identity is invalid")
-        if request.op in {
-            "process_request_quit",
-            "process_force_quit",
-        } and not self._replay_cache.check_and_record_request_id(
-            request.node_id.value, request.request_id, self._clock()
-        ):
-            raise RemoteAuthError("destructive request_id has already been used")
+        session_id = self._sessions.authenticate(
+            request, connection_generation=connection_generation
+        )
         if request.op in ROLE_OPERATIONS:
             self._verify_role_fence(request)
+        grant_version = self._grant_version
+        cache_key = (
+            request.caller_node_id.value
+            if request.caller_node_id is not None
+            else request.node_id.value,
+            request.request_id,
+        )
+        fingerprint = json.dumps(
+            {"op": request.op, "params": request.params},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+        def solve() -> dict[str, Any]:
+            result = self._solve(request, grant=grant)
+            self._sessions.assert_current(session_id, connection_generation)
+            with self._grant_lock:
+                if grant_version != self._grant_version:
+                    raise RemoteAuthorizationError("caller permission changed")
+            return result
+
         try:
-            payload = self._solve(request, grant=grant)
+            payload = (
+                self._idempotency.run(cache_key, fingerprint, solve)
+                if OPERATION_SAFETY.get(request.op) != "read"
+                else solve()
+            )
         except RemoteAuthorizationError as error:
             response = sign_response(
                 node_id=self._node_id.value,
@@ -318,6 +372,8 @@ class RemoteService:
                 ),
                 timestamp=self._clock(),
                 secret=response_secret,
+                session_id=session_id,
+                connection_generation=connection_generation,
             )
             return json.dumps(response)
         except RemoteUnavailableError:
@@ -328,6 +384,8 @@ class RemoteService:
                 error="target_offline",
                 timestamp=self._clock(),
                 secret=response_secret,
+                session_id=session_id,
+                connection_generation=connection_generation,
             )
             return json.dumps(response)
         except RemoteProtocolError:
@@ -345,6 +403,8 @@ class RemoteService:
                 error="execution_failed",
                 timestamp=self._clock(),
                 secret=response_secret,
+                session_id=session_id,
+                connection_generation=connection_generation,
             )
             return json.dumps(response)
         response = sign_response(
@@ -354,12 +414,13 @@ class RemoteService:
             payload=payload,
             timestamp=self._clock(),
             secret=response_secret,
+            session_id=session_id,
+            connection_generation=connection_generation,
         )
         return json.dumps(response)
 
     def update_grants(self, grants: dict[NodeId, PeerGrant]) -> None:
         """Replace the live target ACL after an atomic settings update."""
-
         validated = dict(grants)
         for grant in validated.values():
             self._validate_secret(grant.secret)
@@ -370,6 +431,7 @@ class RemoteService:
         with self._grant_lock:
             self._grant_mode = True
             self._grants = validated
+            self._grant_version += 1
 
     @staticmethod
     def _caller_from_json(envelope: Any) -> NodeId | None:
@@ -424,6 +486,10 @@ class RemoteService:
                 "ok": True,
                 "node_id": self._node_id.value,
                 "identity_fingerprint": self._identity_fingerprint,
+                "transport_fingerprint": self._transport_fingerprint,
+                "root_public_key": self._root_public_key,
+                "transport_generation": self._transport_generation,
+                "transport_proof": self._transport_proof,
                 "protocol_version": REMOTE_PROTOCOL_VERSION,
                 "app_version": self._app_version,
                 "capabilities": sorted(
@@ -545,7 +611,7 @@ class RemoteService:
         )
 
 
-class AuthenticatedNodeProvider(RemoteRoleOperations):
+class AuthenticatedNodeProvider(ProviderRequestMixin, RemoteRoleOperations):
     """Client-side ``NodeProvider`` over one authenticated remote node.
 
     Builds and signs every request, verifies every response, enforces
@@ -571,6 +637,7 @@ class AuthenticatedNodeProvider(RemoteRoleOperations):
         self._clock = clock
         self._freshness_seconds = freshness_seconds
         self._invalidated = False
+        self._session_id: str | None = None
 
     def invalidate(self) -> None:
         """Disable this provider after its local trust record is revoked."""
@@ -617,6 +684,9 @@ class AuthenticatedNodeProvider(RemoteRoleOperations):
         identity_fingerprint: str,
         transport_fingerprint: str,
         proposed_secret: str,
+        root_public_key: str | None = None,
+        transport_generation: int | None = None,
+        transport_proof: str | None = None,
         permissions: frozenset[NodePermission],
         cancel_event: Any | None = None,
     ) -> bool | dict[str, Any]:
@@ -632,6 +702,9 @@ class AuthenticatedNodeProvider(RemoteRoleOperations):
                 "caller_node_id": caller_node_id.value,
                 "identity_fingerprint": identity_fingerprint,
                 "transport_fingerprint": transport_fingerprint,
+                "root_public_key": root_public_key,
+                "transport_generation": transport_generation,
+                "transport_proof": transport_proof,
                 "secret": proposed_secret,
                 "permissions": sorted(permission.value for permission in permissions),
             }
@@ -865,95 +938,3 @@ class AuthenticatedNodeProvider(RemoteRoleOperations):
 
     def stop_background_workers(self) -> None:
         return None
-
-    def _check_cancel(self, cancel_event: Any | None) -> None:
-        if cancel_event is not None and cancel_event.is_set():
-            raise RemoteExecutionError("cancelled")
-
-    def _request(
-        self,
-        op: str,
-        params: dict[str, Any],
-        cancel_event: Any | None = None,
-    ) -> dict[str, Any]:
-        if self._invalidated:
-            raise RemoteAuthError("remote provider has been revoked")
-        self._check_cancel(cancel_event)
-        request_id = secrets.token_hex(16)
-        nonce = secrets.token_hex(16)
-        envelope = sign_request(
-            node_id=self._node_id.value,
-            op=op,
-            params=params,
-            request_id=request_id,
-            nonce=nonce,
-            timestamp=self._clock(),
-            secret=self._secret,
-            caller_node_id=(
-                self._caller_node_id.value if self._caller_node_id is not None else None
-            ),
-        )
-        envelope_text = json.dumps(envelope)
-        request = self._transport.request
-        try:
-            inspect.signature(request).bind(envelope_text, cancel_event)
-        except (TypeError, ValueError):
-            response_text = request(envelope_text)
-        else:
-            response_text = request(envelope_text, cancel_event)
-        try:
-            response_envelope = json.loads(response_text)
-        except (TypeError, ValueError) as error:
-            raise RemoteProtocolError("response is not valid JSON") from error
-        response = verify_response(
-            response_envelope,
-            secret=self._secret,
-            clock=self._clock,
-            freshness_seconds=self._freshness_seconds,
-        )
-        if response.node_id != self._node_id:
-            raise RemoteAuthError("response came from the wrong node")
-        if response.request_id != request_id:
-            raise RemoteAuthError("response request id does not match")
-        if response.status == "error":
-            if response.error == "permission_denied":
-                raise RemoteAuthorizationError("caller lacks permission")
-            if response.error == "capability_unavailable":
-                raise RemoteAuthorizationError("node capability is unavailable")
-            if response.error == "target_offline":
-                raise RemoteUnavailableError("target is offline")
-            raise RemoteExecutionError(response.error or "remote operation failed")
-        if response.payload is None:
-            raise RemoteProtocolError("successful response has no payload")
-        return response.payload
-
-
-class RemoteProcessActionBackend:
-    """Target-bound process action adapter over an authenticated provider."""
-
-    def __init__(self, provider: AuthenticatedNodeProvider) -> None:
-        self._provider = provider
-
-    def request_quit(
-        self,
-        pids: list[int],
-        expected_create_times: dict[int, float] | None = None,
-    ) -> ProcessActionResult:
-        return self._provider.request_quit(
-            [
-                {"pid": pid, "create_time": (expected_create_times or {}).get(pid)}
-                for pid in pids
-            ]
-        )
-
-    def force_quit(
-        self,
-        pids: list[int],
-        expected_create_times: dict[int, float] | None = None,
-    ) -> ProcessActionResult:
-        return self._provider.force_quit(
-            [
-                {"pid": pid, "create_time": (expected_create_times or {}).get(pid)}
-                for pid in pids
-            ]
-        )

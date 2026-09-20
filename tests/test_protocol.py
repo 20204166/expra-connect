@@ -1,8 +1,12 @@
 import socket
+import tempfile
+import threading
 import unittest
+from pathlib import Path
 
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
+from expra_connect.persistence import JsonStateStore
 from expra_connect.protocol import (
     MAX_FRAME,
     RemoteAuthError,
@@ -14,6 +18,9 @@ from expra_connect.protocol import (
     verify_request,
 )
 from expra_connect.wire_protocol import (
+    OPERATION_SAFETY,
+    IdempotencyCache,
+    IdempotencyCollisionError,
     PairingRequest,
     RemoteAuthorizationError,
     RemoteProtocolError,
@@ -126,4 +133,83 @@ class ProtocolTests(unittest.TestCase):
                 secret="secret",
                 clock=lambda: 100.0,
                 freshness_seconds=60.0,
+            )
+
+    def test_request_id_is_strictly_bounded_and_ascii(self) -> None:
+        envelope = sign_request(
+            node_id="peer-a",
+            op="ping",
+            params={},
+            request_id="bad id",
+            nonce="nonce-1",
+            timestamp=100.0,
+            secret="secret",
+        )
+        with self.assertRaises(RemoteAuthError):
+            verify_request(
+                envelope,
+                secret="secret",
+                clock=lambda: 100.0,
+                freshness_seconds=60.0,
+                replay_cache=ReplayCache(clock=lambda: 100.0),
+            )
+
+    def test_idempotency_collision_and_bound_are_enforced(self) -> None:
+        cache = IdempotencyCache(clock=lambda: 1.0, max_entries=1)
+        self.assertEqual(
+            cache.run(("peer", "id"), "a", lambda: {"ok": True}), {"ok": True}
+        )
+        with self.assertRaises(IdempotencyCollisionError):
+            cache.run(("peer", "id"), "b", lambda: {"ok": False})
+        with self.assertRaises(RemoteAuthError):
+            cache.run(("peer", "other"), "c", lambda: {"ok": False})
+
+    def test_duplicate_idempotency_execution_is_single_owner(self) -> None:
+        started = threading.Event()
+        release = threading.Event()
+        calls = 0
+        lock = threading.Lock()
+
+        def operation() -> dict[str, bool]:
+            nonlocal calls
+            with lock:
+                calls += 1
+            started.set()
+            release.wait(1.0)
+            return {"ok": True}
+
+        cache = IdempotencyCache()
+        results: list[dict[str, bool]] = []
+
+        def invoke() -> None:
+            results.append(cache.run(("peer", "id"), "same", operation))
+
+        first = threading.Thread(target=invoke)
+        second = threading.Thread(target=invoke)
+        first.start()
+        self.assertTrue(started.wait(1.0))
+        second.start()
+        release.set()
+        first.join(1.0)
+        second.join(1.0)
+        self.assertEqual(calls, 1)
+        self.assertEqual(results, [{"ok": True}, {"ok": True}])
+
+    def test_operation_safety_metadata_is_explicit(self) -> None:
+        self.assertEqual(OPERATION_SAFETY["ping"], "read")
+        self.assertEqual(OPERATION_SAFETY["process_request_quit"], "retry_safe")
+        self.assertEqual(OPERATION_SAFETY["process_force_quit"], "unsafe")
+
+    def test_completed_idempotency_result_survives_cache_restart(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = JsonStateStore(Path(directory) / "idempotency.json")
+            first = IdempotencyCache(state_store=store)
+            self.assertEqual(
+                first.run(("peer", "request"), "fingerprint", lambda: {"ok": True}),
+                {"ok": True},
+            )
+            second = IdempotencyCache(state_store=store)
+            self.assertEqual(
+                second.run(("peer", "request"), "fingerprint", lambda: {"ok": False}),
+                {"ok": True},
             )
