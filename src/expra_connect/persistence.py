@@ -29,11 +29,20 @@ class JsonStateStore:
                 os.fsync(file.fileno())
             os.chmod(temporary, 0o600)
             os.replace(temporary, self.path)
-            directory_fd = os.open(self.path.parent, os.O_RDONLY)
-            try:
-                os.fsync(directory_fd)
-            finally:
-                os.close(directory_fd)
+            if hasattr(os, "O_DIRECTORY"):
+                try:
+                    directory_fd = os.open(
+                        self.path.parent, os.O_RDONLY | os.O_DIRECTORY
+                    )
+                except OSError:
+                    directory_fd = None
+                if directory_fd is not None:
+                    try:
+                        os.fsync(directory_fd)
+                    except OSError:
+                        pass
+                    finally:
+                        os.close(directory_fd)
         finally:
             if os.path.exists(temporary):
                 os.unlink(temporary)

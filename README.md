@@ -98,7 +98,7 @@ git clone https://github.com/20204166/expra-connect.git
 cd expra-connect
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install dist/expra_connect-0.2.0.0-py3-none-any.whl
+python -m pip install dist/expra_connect-0.2.0.1-py3-none-any.whl
 expra-peer --version
 expra-peer --profile .expra-linux diagnostics
 ```
