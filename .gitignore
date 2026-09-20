@@ -14,3 +14,6 @@ dist/*
 !dist/expra_connect-0.7.0.0-py3-none-any.whl
 build/
 *.log
+.opencode/
+.claude/
+**/AGENTS.md
