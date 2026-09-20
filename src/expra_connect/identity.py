@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
-import os
 import secrets
-import tempfile
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -20,7 +18,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
-from .persistence import JsonStateStore, StateDataError
+from .persistence import JsonStateStore, StateDataError, _atomic_write
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,18 +94,11 @@ class NodeIdentity:
         )
 
     def save(self, path: Path) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as file:
-                file.write(self.to_json())
-                file.flush()
-                os.fsync(file.fileno())
-            os.chmod(temporary, 0o600)
-            os.replace(temporary, path)
-        finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
+        _atomic_write(
+            path,
+            lambda file: file.write(self.to_json()),
+            sync_directory=False,
+        )
 
     @classmethod
     def load(cls, path: Path) -> NodeIdentity:

@@ -19,7 +19,6 @@ feature wiring.
 """
 
 import hmac
-import inspect
 import json
 import logging
 import math
@@ -70,6 +69,7 @@ from .socket_transport import (
     SocketRemoteTransport,
     TLSRemoteTransport,
     build_trusted_transport,
+    _invoke_with_optional_cancel,
 )
 from .wire_protocol import (
     DEFAULT_FRESHNESS_SECONDS,
@@ -756,13 +756,9 @@ class AuthenticatedNodeProvider(ProviderRequestMixin, RemoteRoleOperations):
                 "permissions": sorted(permission.value for permission in permissions),
             }
         )
-        request = transport.request
-        try:
-            inspect.signature(request).bind(envelope, cancel_event)
-        except (TypeError, ValueError):
-            response_text = request(envelope)
-        else:
-            response_text = request(envelope, cancel_event)
+        response_text = _invoke_with_optional_cancel(
+            transport.request, envelope, cancel_event
+        )
         if cancel_event is not None and cancel_event.is_set():
             return False
         response = json.loads(response_text)
@@ -799,13 +795,9 @@ class AuthenticatedNodeProvider(ProviderRequestMixin, RemoteRoleOperations):
                 "expires_at": transaction.expires_at,
             }
         )
-        request = transport.request
-        try:
-            inspect.signature(request).bind(envelope, cancel_event)
-        except (TypeError, ValueError):
-            response_text = request(envelope)
-        else:
-            response_text = request(envelope, cancel_event)
+        response_text = _invoke_with_optional_cancel(
+            transport.request, envelope, cancel_event
+        )
         response = json.loads(response_text)
         return isinstance(response, dict) and response.get("approved") is True
 

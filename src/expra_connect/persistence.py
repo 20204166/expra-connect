@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TextIO, cast
 
 
 class StateDataError(ValueError):
@@ -15,6 +16,41 @@ class StateDataError(ValueError):
 
 
 CURRENT_SCHEMA_VERSION = 2
+
+
+def _atomic_write(
+    path: Path,
+    writer: Callable[[TextIO], None],
+    *,
+    mode: int = 0o600,
+    sync_directory: bool = True,
+) -> None:
+    """Write a private document through a flushed, replace-on-success file."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as file:
+            writer(file)
+            file.flush()
+            os.fsync(file.fileno())
+        os.chmod(temporary, mode)
+        os.replace(temporary, path)
+        if sync_directory and hasattr(os, "O_DIRECTORY"):
+            try:
+                directory_fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+            except OSError:
+                directory_fd = None
+            if directory_fd is not None:
+                try:
+                    os.fsync(directory_fd)
+                except OSError:
+                    pass
+                finally:
+                    os.close(directory_fd)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def migrate_state(kind: str, value: dict[str, Any]) -> dict[str, Any]:
@@ -84,34 +120,10 @@ class JsonStateStore:
         self.kind = kind
 
     def save(self, value: dict[str, Any]) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        fd, temporary = tempfile.mkstemp(
-            prefix=f".{self.path.name}.", dir=self.path.parent
+        _atomic_write(
+            self.path,
+            lambda file: json.dump(value, file, sort_keys=True),
         )
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as file:
-                json.dump(value, file, sort_keys=True)
-                file.flush()
-                os.fsync(file.fileno())
-            os.chmod(temporary, 0o600)
-            os.replace(temporary, self.path)
-            if hasattr(os, "O_DIRECTORY"):
-                try:
-                    directory_fd = os.open(
-                        self.path.parent, os.O_RDONLY | os.O_DIRECTORY
-                    )
-                except OSError:
-                    directory_fd = None
-                if directory_fd is not None:
-                    try:
-                        os.fsync(directory_fd)
-                    except OSError:
-                        pass
-                    finally:
-                        os.close(directory_fd)
-        finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
 
     def load(self) -> dict[str, Any]:
         try:

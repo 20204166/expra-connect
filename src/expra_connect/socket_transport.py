@@ -64,15 +64,23 @@ def request_with_retry(
 
     for attempt in range(attempts):
         try:
-            try:
-                inspect.signature(request).bind(envelope_text, cancel_event)
-            except (TypeError, ValueError):
-                return request(envelope_text)
-            return request(envelope_text, cancel_event)
+            return _invoke_with_optional_cancel(request, envelope_text, cancel_event)
         except RemoteTransportError:
             if attempt + 1 == attempts:
                 raise
     raise RemoteTransportError("remote transport returned no response")
+
+
+def _invoke_with_optional_cancel(
+    request: Callable[..., str], envelope_text: str, cancel_event: Any | None
+) -> str:
+    """Support transport callbacks with or without cancellation support."""
+
+    try:
+        inspect.signature(request).bind(envelope_text, cancel_event)
+    except (TypeError, ValueError):
+        return request(envelope_text)
+    return request(envelope_text, cancel_event)
 
 
 def _recv_exact(
