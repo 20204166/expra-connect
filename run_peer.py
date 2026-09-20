@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -43,6 +43,12 @@ def write_event(report_path: Path, event: str, **values: Any) -> None:
     )
 
 
+def discovery_event(report_path: Path, kind: str, payload: Any) -> None:
+    if is_dataclass(payload):
+        payload = asdict(payload)
+    write_event(report_path, "discovery_event", kind=kind, payload=payload)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", type=Path, required=True)
@@ -68,6 +74,9 @@ def main() -> int:
         ConnectConfig(
             profile_dir=args.profile,
             on_pairing_request=approve_pairing if args.role == "target" else None,
+            on_discovery=lambda kind, payload: discovery_event(
+                args.report, kind, payload
+            ),
             discovery_enabled=True,
         )
     )
@@ -90,6 +99,9 @@ def main() -> int:
         role=args.role,
         node_id=identity.node_id.value,
         state=status.state.value,
+        discovery_started=status.discovery_started,
+        discovery_disabled=status.discovery_disabled,
+        discovery_reason=status.discovery_reason,
         bound_host=status.bound_host,
         bound_port=status.bound_port,
         tls_fingerprint=status.tls_fingerprint,
