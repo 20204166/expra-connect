@@ -6,7 +6,12 @@ from typing import Any
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
 from expra_connect.remote_service import AuthenticatedNodeProvider, PairingTransaction
-from expra_connect.server import PEER_SERVICE_DEFAULT_PORT, RemoteSocketServer
+from expra_connect.server import (
+    PEER_SERVICE_DEFAULT_PORT,
+    RemoteSocketServer,
+    _elevation_response,
+    _pair_request_response,
+)
 from expra_connect.socket_transport import SocketRemoteTransport
 
 
@@ -16,6 +21,130 @@ class _Service:
 
 
 class ServerTests(unittest.TestCase):
+    def test_admission_semaphore_is_retained_for_listener_lifecycle(self) -> None:
+        server = RemoteSocketServer(_Service(), max_active_handlers=2)
+        server.start()
+        try:
+            self.assertIsNotNone(server._admission)
+            assert server._admission is not None
+            self.assertEqual(server._admission._value, 2)
+        finally:
+            server.stop()
+
+    def test_stop_closes_listener_when_shutdown_raises(self) -> None:
+        class BrokenServer:
+            def __init__(self) -> None:
+                self.closed = False
+
+            def shutdown(self) -> None:
+                raise RuntimeError("shutdown failed")
+
+            def server_close(self) -> None:
+                self.closed = True
+
+        server = RemoteSocketServer(_Service())
+        broken = BrokenServer()
+        server._server = broken
+        server._thread = object()
+
+        server.stop()
+
+        self.assertTrue(broken.closed)
+        self.assertIsNone(server._server)
+        self.assertIsNone(server._thread)
+
+    def test_pairing_request_with_extra_field_is_unavailable(self) -> None:
+        raw = {
+            "op": "pair_request",
+            "pairing_mode": "transactional",
+            "caller_node_id": "caller",
+            "identity_fingerprint": "identity",
+            "transport_fingerprint": "transport",
+            "secret": "a" * 64,
+            "permissions": [NodePermission.READ_STATE.value],
+            "unexpected": True,
+        }
+
+        response = _pair_request_response(raw, lambda _request: True)
+
+        self.assertEqual(
+            response,
+            '{"approved": false, "error": "pairing_unavailable"}',
+        )
+
+    def test_pairing_request_with_unknown_mode_is_unavailable(self) -> None:
+        raw = {
+            "op": "pair_request",
+            "pairing_mode": "legacy",
+            "caller_node_id": "caller",
+            "identity_fingerprint": "identity",
+            "transport_fingerprint": "transport",
+            "secret": "a" * 64,
+            "permissions": [NodePermission.READ_STATE.value],
+        }
+
+        response = _pair_request_response(raw, lambda _request: True)
+
+        self.assertEqual(
+            response,
+            '{"approved": false, "error": "pairing_unavailable"}',
+        )
+
+    def test_elevation_request_with_non_string_permission_is_invalid(self) -> None:
+        raw = {
+            "op": "elevation_request",
+            "caller_node_id": "caller",
+            "identity_fingerprint": "identity",
+            "transport_fingerprint": "transport",
+            "current_secret": "a" * 64,
+            "secret": "b" * 64,
+            "permissions": [NodePermission.READ_STATE.value, 1],
+        }
+
+        response = _elevation_response(raw, lambda _request: True)
+
+        self.assertEqual(
+            response,
+            '{"approved": false, "error": "invalid_elevation"}',
+        )
+
+    def test_elevation_request_with_unknown_permission_is_denied(self) -> None:
+        raw = {
+            "op": "elevation_request",
+            "caller_node_id": "caller",
+            "identity_fingerprint": "identity",
+            "transport_fingerprint": "transport",
+            "current_secret": "a" * 64,
+            "secret": "b" * 64,
+            "permissions": ["unknown"],
+        }
+
+        response = _elevation_response(raw, lambda _request: True)
+
+        self.assertEqual(
+            response,
+            '{"approved": false, "error": "denied"}',
+        )
+
+    def test_elevation_request_with_extra_field_is_unavailable(self) -> None:
+        raw = {
+            "op": "elevation_request",
+            "caller_node_id": "caller",
+            "identity_fingerprint": "identity",
+            "transport_fingerprint": "transport",
+            "current_secret": "a" * 64,
+            "secret": "b" * 64,
+            "permissions": [NodePermission.READ_STATE.value],
+            "unexpected": True,
+        }
+
+        response = _elevation_response(raw, lambda _request: True)
+
+        self.assertEqual(
+            response,
+            '{"approved": false, "error": "elevation_unavailable"}',
+        )
+
     def test_default_port_is_stable_and_non_ephemeral(self) -> None:
         self.assertEqual(PEER_SERVICE_DEFAULT_PORT, 27321)
         self.assertLess(PEER_SERVICE_DEFAULT_PORT, 32768)

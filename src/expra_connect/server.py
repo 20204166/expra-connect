@@ -105,6 +105,7 @@ class RemoteSocketServer:
         self._elevation_handler = elevation_handler
         self._server: Any = None
         self._thread: threading.Thread | None = None
+        self._admission: threading.BoundedSemaphore | None = None
         self._preferred_port_honored: bool | None = None
 
     @property
@@ -127,6 +128,7 @@ class RemoteSocketServer:
         pair_abort_handler = self._pair_abort_handler
         elevation_handler = self._elevation_handler
         admission = threading.BoundedSemaphore(self._max_active_handlers)
+        self._admission = admission
 
         class Handler(socketserver.BaseRequestHandler):
             def handle(self) -> None:
@@ -228,7 +230,10 @@ class RemoteSocketServer:
         self._server = None
         self._thread = None
         if server is not None:
-            server.shutdown()
+            try:
+                server.shutdown()
+            except Exception:  # shutdown is best-effort.
+                LOGGER.debug("peer socket server shutdown failed", exc_info=True)
             server.server_close()
 
     def update_grants(self, grants: dict[NodeId, Any]) -> None:
@@ -262,7 +267,17 @@ def _pair_request_response(
         "secret",
         "permissions",
     }
-    if handler is None or not required <= set(raw):
+    allowed = required | {
+        "root_public_key",
+        "transport_generation",
+        "transport_proof",
+    }
+    if (
+        handler is None
+        or not required <= set(raw)
+        or not set(raw) <= allowed
+        or raw.get("pairing_mode") != PAIRING_MODE_TRANSACTIONAL
+    ):
         return json.dumps({"approved": False, "error": "pairing_unavailable"})
     permissions = raw["permissions"]
     if not isinstance(permissions, list) or any(
@@ -293,8 +308,6 @@ def _pair_request_response(
                 else None
             ),
         )
-        if raw["pairing_mode"] != PAIRING_MODE_TRANSACTIONAL:
-            raise RemoteProtocolError("pairing mode is invalid")
         result = handler(request)
     except (KeyError, TypeError, ValueError, RemoteProtocolError):
         return json.dumps({"approved": False, "error": "denied"})
@@ -335,8 +348,10 @@ def _elevation_response(
         return json.dumps({"approved": False, "error": "elevation_unavailable"})
     try:
         permissions = raw["permissions"]
-        if not isinstance(permissions, list):
-            raise TypeError("permissions must be a list")
+        if not isinstance(permissions, list) or any(
+            not isinstance(item, str) for item in permissions
+        ):
+            return json.dumps({"approved": False, "error": "invalid_elevation"})
         request = CapabilityElevationRequest(
             caller_node_id=NodeId(raw["caller_node_id"]),
             identity_fingerprint=raw["identity_fingerprint"],
