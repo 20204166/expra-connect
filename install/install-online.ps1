@@ -15,13 +15,13 @@ try {
         $line = Get-Content $sumsPath | Where-Object { $_.Trim() } | Select-Object -Last 1
         $parts = $line -split "\s+"
         $expected = $parts[0]
-        $wheel = $parts[1]
+        $wheel = $parts[1].Trim()
         if ($wheel -notmatch "^expra_connect-(\d+\.\d+\.\d+\.\d+)-py3-none-any\.whl$") {
             throw "Unexpected wheel filename: $wheel"
         }
         $expectedVersion = $matches[1]
         $wheelPath = Join-Path $tmp $wheel
-        Invoke-WebRequest "$base/$wheel?cache=$cacheBust" -OutFile $wheelPath
+        Invoke-WebRequest "$base/$wheel" -Headers @{"Cache-Control" = "no-cache"} -OutFile $wheelPath
         $actual = (Get-FileHash $wheelPath -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($actual -eq $expected.ToLowerInvariant()) { break }
         if ($attempt -lt 3) { Start-Sleep -Seconds 2 }
