@@ -37,13 +37,18 @@ class RoleState:
     capability_grants: tuple[CapabilityGrant, ...] = ()
 
     def __post_init__(self) -> None:
-        ids = [item.node_id for item in self.assignments]
-        if None in ids or len(set(ids)) != len(ids):
+        # Unbound assignments are valid intermediate values; only persisted or
+        # addressed node assignments participate in cluster invariants.
+        assignments = tuple(
+            item for item in self.assignments if item.node_id is not None
+        )
+        ids = [item.node_id for item in assignments]
+        if len(set(ids)) != len(ids):
             raise ValueError("invalid or duplicate role assignment")
         if (
             sum(
                 not a.revoked and ClusterRole.COORDINATOR in a.roles
-                for a in self.assignments
+                for a in assignments
             )
             > 1
         ):
@@ -51,7 +56,7 @@ class RoleState:
         if (
             sum(
                 not a.revoked and ClusterRole.SUBCOORDINATOR in a.roles
-                for a in self.assignments
+                for a in assignments
             )
             > 1
         ):
@@ -68,7 +73,11 @@ class RoleState:
             (
                 a
                 for a in self.assignments
-                if not a.revoked and ClusterRole.COORDINATOR in a.roles
+                if (
+                    a.node_id is not None
+                    and not a.revoked
+                    and ClusterRole.COORDINATOR in a.roles
+                )
             ),
             None,
         )
@@ -324,7 +333,12 @@ def promote_subcoordinator(
         (
             a
             for a in state.assignments
-            if not a.revoked and not a.paused and ClusterRole.SUBCOORDINATOR in a.roles
+            if (
+                a.node_id is not None
+                and not a.revoked
+                and not a.paused
+                and ClusterRole.SUBCOORDINATOR in a.roles
+            )
         ),
         None,
     )

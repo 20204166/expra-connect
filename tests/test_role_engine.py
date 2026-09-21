@@ -1,5 +1,6 @@
 import unittest
 
+from expra_connect.cluster.state import role_state_to_dict as encode_role_state
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
 from expra_connect.role_engine import (
@@ -106,6 +107,56 @@ class RoleEngineTests(unittest.TestCase):
                     ]
                 }
             )
+
+    def test_role_state_ignores_unbound_assignments_for_role_invariants(self) -> None:
+        state = RoleState(
+            assignments=(
+                RoleAssignment(frozenset({ClusterRole.WORKER})),
+                self.coordinator,
+            )
+        )
+
+        self.assertIsNone(state.assignment_for(NodeId("unbound")))
+        self.assertEqual(state.active_coordinator(), self.coordinator)
+
+    def test_unbound_exclusive_roles_cannot_override_bound_roles(self) -> None:
+        state = RoleState(
+            assignments=(
+                RoleAssignment(frozenset({ClusterRole.COORDINATOR})),
+                self.coordinator,
+                RoleAssignment(frozenset({ClusterRole.SUBCOORDINATOR})),
+                self.sub,
+            ),
+            epoch=CoordinatorEpoch(1, NodeId("coord"), "token", 0.0, 10.0),
+        )
+
+        decision = promote_subcoordinator(state, now=10.0)
+
+        self.assertEqual(state.active_coordinator(), self.coordinator)
+        self.assertEqual(decision.epoch.coordinator_id, NodeId("sub"))
+
+    def test_unbound_assignments_are_not_written_to_strict_state_codec(self) -> None:
+        encoded = encode_role_state(
+            RoleState(
+                assignments=(
+                    RoleAssignment(frozenset({ClusterRole.WORKER})),
+                    self.worker,
+                )
+            )
+        )
+
+        self.assertEqual(
+            encoded["assignments"],
+            [
+                {
+                    "node_id": "worker",
+                    "roles": ["worker"],
+                    "paused": False,
+                    "revoked": False,
+                    "has_active_job": False,
+                }
+            ],
+        )
 
     def test_coordinator_can_grant_scoped_subcoordinator_permission(self) -> None:
         state = RoleState(assignments=(self.coordinator, self.sub, self.worker))

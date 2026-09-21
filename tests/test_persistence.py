@@ -5,9 +5,20 @@ from pathlib import Path
 from unittest.mock import patch
 
 from expra_connect.persistence import JsonStateStore, StateDataError, migrate_state
+from expra_connect.runtime_persistence import peer_grant_from_json
 
 
 class PersistenceTests(unittest.TestCase):
+    def test_persisted_secret_must_decode_to_256_bits(self) -> None:
+        with self.assertRaises(ValueError):
+            peer_grant_from_json(
+                {
+                    "caller_id": "peer",
+                    "secret": "a" * 62 + "  ",
+                    "permissions": [],
+                }
+            )
+
     def test_legacy_trust_and_single_route_records_migrate_without_secrets_in_output(
         self,
     ) -> None:

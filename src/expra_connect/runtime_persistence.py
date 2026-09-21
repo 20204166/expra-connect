@@ -147,6 +147,9 @@ def validate_secret(value: Any) -> None:
     if not isinstance(value, str) or len(value) != 64:
         raise ValueError("persisted peer secret is invalid")
     try:
-        bytes.fromhex(value)
+        decoded = bytes.fromhex(value)
     except ValueError as error:
         raise ValueError("persisted peer secret is invalid") from error
+    # ``bytes.fromhex`` permits whitespace, so length-check the decoded key too.
+    if len(decoded) != 32:
+        raise ValueError("persisted peer secret is invalid")

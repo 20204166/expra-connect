@@ -22,6 +22,7 @@ def role_state_to_dict(state: RoleState) -> dict[str, Any]:
                 "has_active_job": a.has_active_job,
             }
             for a in state.assignments
+            if a.node_id is not None
         ],
         "epoch": None
         if state.epoch is None
