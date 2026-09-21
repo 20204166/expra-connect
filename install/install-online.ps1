@@ -7,18 +7,25 @@ $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("expra-connect-" + [guid]::N
 New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
     $sumsPath = Join-Path $tmp "SHA256SUMS"
-    Invoke-WebRequest "$base/SHA256SUMS" -OutFile $sumsPath
-    $line = Get-Content $sumsPath | Where-Object { $_.Trim() } | Select-Object -Last 1
-    $parts = $line -split "\s+"
-    $expected = $parts[0]
-    $wheel = $parts[1]
-    if ($wheel -notmatch "^expra_connect-(\d+\.\d+\.\d+\.\d+)-py3-none-any\.whl$") {
-        throw "Unexpected wheel filename: $wheel"
+    $wheelPath = $null
+    $actual = $null
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $cacheBust = [guid]::NewGuid().ToString()
+        Invoke-WebRequest "$base/SHA256SUMS?cache=$cacheBust" -OutFile $sumsPath
+        $line = Get-Content $sumsPath | Where-Object { $_.Trim() } | Select-Object -Last 1
+        $parts = $line -split "\s+"
+        $expected = $parts[0]
+        $wheel = $parts[1]
+        if ($wheel -notmatch "^expra_connect-(\d+\.\d+\.\d+\.\d+)-py3-none-any\.whl$") {
+            throw "Unexpected wheel filename: $wheel"
+        }
+        $expectedVersion = $matches[1]
+        $wheelPath = Join-Path $tmp $wheel
+        Invoke-WebRequest "$base/$wheel?cache=$cacheBust" -OutFile $wheelPath
+        $actual = (Get-FileHash $wheelPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actual -eq $expected.ToLowerInvariant()) { break }
+        if ($attempt -lt 3) { Start-Sleep -Seconds 2 }
     }
-    $expectedVersion = $matches[1]
-    $wheelPath = Join-Path $tmp $wheel
-    Invoke-WebRequest "$base/$wheel" -OutFile $wheelPath
-    $actual = (Get-FileHash $wheelPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actual -ne $expected.ToLowerInvariant()) { throw "Wheel checksum mismatch" }
 
     function Test-VenvPython {
