@@ -141,6 +141,20 @@ class SurfaceRegistry:
     def stop_peer(self, peer_id: NodeId, surface_id: str) -> None:
         self.revoke_peer(peer_id, surface_id)
 
+    def revoke_source(self, source: Hashable) -> None:
+        """Remove every direct or cluster grant owned by one authorization source."""
+        self._peer_grants = {
+            key: grant for key, grant in self._peer_grants.items() if key[0] != source
+        }
+        self._cluster_grants = {
+            key: grant for key, grant in self._cluster_grants.items() if key[0] != source
+        }
+
+    def clear_grants(self) -> None:
+        """Clear ephemeral grants while retaining registered handlers."""
+        self._peer_grants.clear()
+        self._cluster_grants.clear()
+
     def dispatch(
         self,
         peer_id: NodeId,
@@ -259,3 +273,32 @@ class SurfaceRegistry:
             return definition.actions[action]
         except KeyError as error:
             raise ValueError("unknown surface action") from error
+
+
+class SurfaceRuntimeMixin:
+    """Public runtime seam for the process-local surface registry."""
+
+    _surface_registry: SurfaceRegistry
+
+    def register_surface(self, surface_id: str, *, read: SurfaceHandler,
+                         review: SurfaceHandler | None = None,
+                         actions: Mapping[str, SurfaceHandler]
+                         | Iterable[tuple[str, SurfaceHandler]]
+                         | None = None) -> SurfaceDefinition:
+        return self._surface_registry.register(
+            surface_id, read=read, review=review, actions=actions
+        )
+
+    def grant_surface_access(self, peer_id: NodeId, surface_id: str, *,
+                             access: SurfaceAccess | str,
+                             expires_at: float | None = None) -> SurfaceGrant:
+        return self._surface_registry.grant_peer(
+            peer_id, surface_id, access=access, expires_at=expires_at
+        )
+
+    def revoke_surface_access(self, peer_id: NodeId, surface_id: str, *,
+                              access: SurfaceAccess | str | None = None) -> None:
+        self._surface_registry.revoke_peer(peer_id, surface_id, access=access)
+
+    def stop_surface_share(self, peer_id: NodeId, surface_id: str) -> None:
+        self._surface_registry.stop_peer(peer_id, surface_id)

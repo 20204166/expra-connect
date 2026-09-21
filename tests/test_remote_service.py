@@ -4,6 +4,7 @@ import time
 import unittest
 from datetime import datetime, timezone
 
+from expra_connect.cluster.models import CapabilityGrant
 from expra_connect.identity import NodeId
 from expra_connect.models import READ_CAPABILITIES, NodeCapability, NodePermission
 from expra_connect.observability import ObservabilityWatcher
@@ -23,6 +24,7 @@ from expra_connect.remote_service import (
 from expra_connect.server import RemoteSocketServer
 from expra_connect.sharing import CapabilityShare
 from expra_connect.socket_transport import RemoteTransportError, SocketRemoteTransport
+from expra_connect.surfaces import SurfaceRegistry
 from expra_connect.wire_protocol import (
     IdempotencyCollisionError,
     PeerGrant,
@@ -51,6 +53,31 @@ class _Provider:
 
 
 class RemoteServiceTests(unittest.TestCase):
+    def test_service_receives_surface_registry_and_live_cluster_grants(self) -> None:
+        surfaces = SurfaceRegistry()
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            surface_registry=surfaces,
+        )
+
+        self.assertIs(service._surface_registry, surfaces)
+        grant = CapabilityGrant(
+            NodeId("caller"),
+            NodeId("peer"),
+            frozenset({NodePermission.READ_STATE}),
+            1.0,
+            20.0,
+        )
+        service.update_cluster_capability_grants((grant,))
+        self.assertEqual(service._cluster_capability_grants, (grant,))
+
     def test_authenticated_provider_observes_each_remote_operation_once(self) -> None:
         observer = ObservabilityWatcher()
         service_observer = ObservabilityWatcher()

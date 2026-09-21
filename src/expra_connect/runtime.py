@@ -60,6 +60,7 @@ from .runtime_persistence import (
 )
 from .server import PEER_SERVICE_DEFAULT_PORT, RemoteSocketServer
 from .sharing import CapabilityShare
+from .surfaces import SurfaceRegistry, SurfaceRuntimeMixin
 from .tls_material import (
     ensure_tls_material,
     ensure_tls_material_generation,
@@ -151,7 +152,7 @@ class ConnectConfig:
         return self.platform_name or platform.system().lower()
 
 
-class ConnectRuntime(RuntimeClusterOperations):
+class ConnectRuntime(SurfaceRuntimeMixin, RuntimeClusterOperations):
     """Compose the mature peer components without doing work in construction."""
 
     def __init__(self, config: ConnectConfig, *,
@@ -166,6 +167,7 @@ class ConnectRuntime(RuntimeClusterOperations):
         self._cluster_capability_grants: tuple[Any, ...] = ()
         self._failover_coordinator: FailoverCoordinator | None = None
         self._sharing = CapabilityShare()
+        self._surface_registry = SurfaceRegistry()
         self._server: RemoteSocketServer | None = None
         self._service: RemoteService | None = None
         self._discovery: NetworkDiscovery | None = None
@@ -201,23 +203,18 @@ class ConnectRuntime(RuntimeClusterOperations):
     @property
     def pairing(self) -> PairingManager | None:
         return self._pairing
-
     @property
     def sharing(self) -> CapabilityShare:
         return self._sharing
-
     @property
     def cluster(self) -> Cluster | None:
         return self._cluster
-
     @property
     def peers(self) -> tuple[DiscoveredNodeCandidate, ...]:
         return tuple(self._peers.values())
-
     @property
     def connections(self) -> tuple[NodeId, ...]:
         return self._connection_manager.providers if self._connection_manager else ()
-
     @property
     def transport_generations(self) -> TransportGenerationManager | None:
         return self._transport_generations
@@ -363,6 +360,7 @@ class ConnectRuntime(RuntimeClusterOperations):
         previous_grants = dict(pairing.grants)
         previous_pending = dict(pairing.pending)
         pairing.revoke(peer_id)
+        self._surface_registry.revoke_source(peer_id)
         if not self._save_persisted_state():
             pairing.trusted = previous_trusted
             pairing.grants = previous_grants
@@ -415,6 +413,7 @@ class ConnectRuntime(RuntimeClusterOperations):
         if self._connection_manager is not None:
             self._connection_manager.disconnect_all()
         self._save_persisted_state()
+        self._surface_registry.clear_grants()
         self._stop_expiry_worker()
         discovery, server = self._discovery, self._server
         self._discovery = None
@@ -577,6 +576,7 @@ class ConnectRuntime(RuntimeClusterOperations):
             transport_generation=self._transport_generations.current.generation,
             transport_proof=self._transport_generations.current.proof,
             capability_share=self._sharing,
+            surface_registry=self._surface_registry,
             idempotency_store=JsonStateStore(
                 self.config.profile_dir / "idempotency.json"
             ),

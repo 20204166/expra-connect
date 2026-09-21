@@ -72,6 +72,7 @@ from .socket_transport import (
     build_trusted_transport,
     _invoke_with_optional_cancel,
 )
+from .surfaces import SurfaceRegistry
 from .wire_protocol import (
     DEFAULT_FRESHNESS_SECONDS,
     DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
@@ -200,6 +201,7 @@ class RemoteService:
         trust_revoke_commit: Callable[[], None] | None = None,
         require_dashboard_share: bool = False,
         capability_share: Any | None = None,
+        surface_registry: SurfaceRegistry | None = None,
         idempotency_cache: IdempotencyCache | None = None,
         idempotency_ttl_seconds: float = DEFAULT_IDEMPOTENCY_TTL_SECONDS,
         idempotency_max_entries: int = DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
@@ -265,6 +267,7 @@ class RemoteService:
         self._require_dashboard_share = require_dashboard_share
         self._dashboard_shares: dict[NodeId, float] = {}
         self._capability_share = capability_share
+        self._surface_registry = surface_registry
         self._idempotency = idempotency_cache or IdempotencyCache(
             clock=clock,
             ttl_seconds=idempotency_ttl_seconds,
@@ -453,7 +456,6 @@ class RemoteService:
         with self._grant_lock:
             self._cluster_capability_grants = tuple(grants)
             self._grant_version += 1
-
     @staticmethod
     def _caller_from_json(envelope: Any) -> NodeId | None:
         if not isinstance(envelope, dict):

@@ -23,6 +23,7 @@ from expra_connect.runtime import (
     RuntimeState,
     RuntimeStatus,
 )
+from expra_connect.surfaces import SurfaceAccess
 from expra_connect.socket_transport import TLSRemoteTransport
 from expra_connect.wire_protocol import (
     CapabilityElevationRequest,
@@ -100,6 +101,66 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertIs(runtime._connection_manager._observer, observer)
             observer.record("test:operation", 0.1)
             self.assertIn("observability", runtime.diagnostics())
+
+    def test_runtime_surface_registration_grant_revoke_and_stop(self) -> None:
+        runtime = ConnectRuntime(ConnectConfig(profile_dir=Path("/tmp/expra-connect-test")))
+        peer_id = NodeId("surface-peer")
+        runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
+        runtime.grant_surface_access(peer_id, "dashboard/main", access=SurfaceAccess.READ)
+
+        self.assertEqual(
+            runtime._surface_registry.dispatch(
+                peer_id, "dashboard/main", access=SurfaceAccess.READ
+            ),
+            "ok",
+        )
+        runtime.revoke_surface_access(peer_id, "dashboard/main")
+        with self.assertRaises(PermissionError):
+            runtime._surface_registry.dispatch(
+                peer_id, "dashboard/main", access=SurfaceAccess.READ
+            )
+        runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
+        runtime.stop_surface_share(peer_id, "dashboard/main")
+        with self.assertRaises(PermissionError):
+            runtime._surface_registry.dispatch(
+                peer_id, "dashboard/main", access=SurfaceAccess.READ
+            )
+
+    def test_shutdown_clears_surface_grants_but_keeps_definitions(self) -> None:
+        runtime = ConnectRuntime(ConnectConfig(profile_dir=Path("/tmp/expra-connect-test")))
+        peer_id = NodeId("surface-peer")
+        runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
+        runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
+
+        runtime.shutdown()
+
+        with self.assertRaises(PermissionError):
+            runtime._surface_registry.dispatch(
+                peer_id, "dashboard/main", access=SurfaceAccess.READ
+            )
+        runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
+
+    def test_self_revocation_invalidates_direct_and_cluster_surface_access(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(ConnectConfig(profile_dir=Path(directory)))
+            runtime._load_identity()
+            runtime._load_persisted_state()
+            peer_id = NodeId("surface-peer")
+            runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
+            runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
+            runtime._surface_registry.grant_cluster(
+                peer_id, "dashboard/main", access="read"
+            )
+
+            runtime._revoke_self(peer_id)
+
+            with self.assertRaises(PermissionError):
+                runtime._surface_registry.dispatch(
+                    peer_id,
+                    "dashboard/main",
+                    access=SurfaceAccess.READ,
+                    cluster_sources=(peer_id,),
+                )
 
 
 class RuntimeClusterOperationTests(unittest.TestCase):
