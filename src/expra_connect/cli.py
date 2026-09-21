@@ -55,7 +55,10 @@ def _json_default(value: Any) -> Any:
     return str(value)
 
 
-def _print(value: Any) -> None:
+def _print(value: Any, *, human: bool = False, command: str = "") -> None:
+    if human:
+        print(format_human_output(command, value))
+        return
     print(json.dumps(value, indent=2, sort_keys=True, default=_json_default))
 
 
@@ -93,6 +96,107 @@ def _diagnostics(runtime: ConnectRuntime) -> dict[str, Any]:
             "members": sorted(node.value for node in cluster.assignments),
         }
     return result
+
+
+def _human_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return str(value).lower()
+    if value is None:
+        return "-"
+    if isinstance(value, Enum):
+        return str(value.value)
+    return str(value)
+
+
+def _human_item(value: Any) -> str:
+    if isinstance(value, (list, tuple)):
+        return ",".join(_human_value(item) for item in value)
+    return _human_value(value)
+
+
+def _human_status(status: dict[str, Any]) -> list[str]:
+    return [
+        f"state={_human_value(status.get('state'))}",
+        f"listener={'started' if status.get('listener_started') else 'not_started'}",
+        f"discovery={'started' if status.get('discovery_started') else 'not_started'}",
+        f"bound={status.get('bound_host', '-') or '-'}:"
+        f"{status.get('bound_port', '-') or '-'}",
+        f"tls_fingerprint={_human_value(status.get('tls_fingerprint'))}",
+    ]
+
+
+def _human_peer(peer: dict[str, Any], number: int) -> list[str]:
+    lines = [
+        f"peer[{number}] id={_human_value(peer.get('stable_id'))} "
+        f"host={_human_value(peer.get('hostname'))}"
+    ]
+    endpoints = peer.get("endpoint_candidates") or []
+    for endpoint in endpoints:
+        if not isinstance(endpoint, dict):
+            continue
+        source = endpoint.get("source")
+        lines.append(
+            f"  endpoint={_human_value(endpoint.get('address'))}:"
+            f"{_human_value(endpoint.get('port'))} source={_human_value(source)}"
+        )
+    return lines
+
+
+def format_human_output(command: str, value: Any) -> str:
+    """Render CLI values in stable order without printing secret-bearing fields."""
+
+    if command == "status" and isinstance(value, dict):
+        return "\n".join(_human_status(value))
+    if command == "identity" and isinstance(value, dict):
+        return "\n".join(
+            f"{key}={_human_value(value.get(key))}"
+            for key in ("node_id", "identity_fingerprint")
+        )
+    if command == "peers" and isinstance(value, list):
+        if not value:
+            return "peers=0"
+        return "\n".join(
+            line
+            for number, peer in enumerate(value, 1)
+            for line in _human_peer(peer, number)
+        )
+    if command == "diagnostics" and isinstance(value, dict):
+        lines = [f"version={_human_value(value.get('version'))}", "status:"]
+        lines.extend(f"  {line}" for line in _human_status(value.get("status", {})))
+        for section in ("identity", "transport", "trust", "cluster"):
+            data = value.get(section)
+            if not data:
+                continue
+            lines.append(f"{section}:")
+            for key, item in data.items():
+                if key in {"root_public_key", "transport_proof", "secret", "token"}:
+                    continue
+                display = len(item) if isinstance(item, (list, tuple, dict)) else item
+                lines.append(f"  {key}={_human_value(display)}")
+        lines.append("peers:")
+        peers = value.get("peers") or []
+        lines.extend(
+            f"  {line}"
+            for number, peer in enumerate(peers, 1)
+            for line in _human_peer(peer, number)
+        )
+        lines.append("observability:")
+        metrics = value.get("observability", {}).get("metrics", [])
+        if not metrics:
+            lines.append("  metrics=0")
+        for metric in metrics:
+            lines.append(
+                f"  metric target={metric.get('target', '-')} count={metric.get('count', 0)} "
+                f"success={metric.get('successes', 0)} failure={metric.get('failures', 0)}"
+            )
+        return "\n".join(lines)
+    if isinstance(value, dict):
+        return "\n".join(
+            f"{key}={_human_item(item)}"
+            for key, item in value.items()
+            if key not in {"secret", "token", "root_public_key", "transport_proof", "result"}
+        )
+    return _human_value(value)
 
 
 def _run_demo(args: argparse.Namespace) -> int:
@@ -140,6 +244,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--profile", type=Path, default=_default_profile())
     parser.add_argument("--no-discovery", action="store_true")
     parser.add_argument("--cluster", action="store_true")
+    parser.add_argument("--human", action="store_true", help="print ordered audit output")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("status")
     subparsers.add_parser("identity")
@@ -160,16 +265,24 @@ def main(argv: list[str] | None = None) -> int:
     status = runtime.start()
     try:
         if args.command == "status":
-            _print(_status(runtime))
+            _print(_status(runtime), human=args.human, command=args.command)
         elif args.command == "identity":
-            _print(_identity(runtime))
+            _print(_identity(runtime), human=args.human, command=args.command)
         elif args.command == "peers":
-            _print([asdict(peer) for peer in runtime.peers])
+            _print(
+                [asdict(peer) for peer in runtime.peers],
+                human=args.human,
+                command=args.command,
+            )
         elif args.command == "diagnostics":
-            _print(_diagnostics(runtime))
+            _print(_diagnostics(runtime), human=args.human, command=args.command)
         elif args.command == "revoke":
             runtime.revoke_peer(NodeId(args.peer_id))
-            _print({"ok": True, "revoked": args.peer_id})
+            _print(
+                {"ok": True, "revoked": args.peer_id},
+                human=args.human,
+                command=args.command,
+            )
         elif args.command == "pair":
             trusted = runtime.pair_peer(NodeId(args.peer_id))
             _print(
@@ -177,10 +290,12 @@ def main(argv: list[str] | None = None) -> int:
                     "ok": True,
                     "peer_id": trusted.peer_id.value,
                     "permissions": sorted(trusted.permissions),
-                }
+                },
+                human=args.human,
+                command=args.command,
             )
         elif args.command == "serve":
-            _print(_status(runtime))
+            _print(_status(runtime), human=args.human, command=args.command)
             if status.state.value != "started":
                 return 1
             while True:

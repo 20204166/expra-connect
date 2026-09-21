@@ -15,6 +15,7 @@ dist/*
 !dist/expra_connect-0.7.0.1-py3-none-any.whl
 !dist/expra_connect-0.7.1.0-py3-none-any.whl
 !dist/expra_connect-0.8.0.0-py3-none-any.whl
+!dist/expra_connect-1.0.0.0-py3-none-any.whl
 build/
 *.log
 .opencode/
