@@ -1,7 +1,7 @@
 """Two-node acceptance harness for Expra Connect.
 
 This is deliberately a host-level test runner, not part of the package API.
-It prints redacted JSON events and writes the same report to disk.
+It prints ordered redacted event summaries and writes structured reports to disk.
 """
 
 from __future__ import annotations
@@ -15,10 +15,11 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-from expra_connect import ConnectConfig, ConnectRuntime, NodeId
+from expra_connect import ConnectConfig, ConnectRuntime, NodeId, __version__
 
 CAPABILITY = "test.read_state"
 _REPORT_LOCK = Lock()
+_TERMINAL_SEQUENCE = 0
 
 
 def json_default(value: Any) -> Any:
@@ -27,10 +28,121 @@ def json_default(value: Any) -> Any:
     return str(value)
 
 
+def _short(value: Any) -> str:
+    text = str(value) if value is not None else "-"
+    return text if len(text) <= 8 else f"{text[:8]}..."
+
+
+def _field(value: Any) -> str:
+    if value is None:
+        return "-"
+    if isinstance(value, Enum):
+        return str(value.value)
+    if isinstance(value, bool):
+        return str(value).lower()
+    return str(value)
+
+
+def _candidate_fields(payload: Any) -> tuple[str, str, str]:
+    if not isinstance(payload, dict):
+        return "-", "-", "-"
+    addresses = payload.get("addresses") or []
+    endpoints = payload.get("endpoint_candidates") or []
+    endpoint = endpoints[0] if endpoints and isinstance(endpoints[0], dict) else {}
+    return (
+        _field(addresses[0] if addresses else endpoint.get("address")),
+        _field(payload.get("port") or endpoint.get("port")),
+        _field(endpoint.get("source")),
+    )
+
+
+def format_terminal_event(sequence: int, event: str, **values: Any) -> str:
+    """Render one stable, useful, non-sensitive terminal event line."""
+
+    prefix = f"[{sequence:02d}]"
+    if event == "started":
+        return (
+            f"{prefix} started role={_field(values.get('role'))} "
+            f"version={_field(values.get('version'))} "
+            f"state={_field(values.get('state'))}"
+        )
+    if event == "discovery_event" and values.get("kind") == "candidate":
+        address, port, source = _candidate_fields(values.get("payload"))
+        return f"{prefix} discovered address={address} port={port} source={source}"
+    if event == "discovered":
+        address, port, source = _candidate_fields(values.get("candidate"))
+        return f"{prefix} discovered address={address} port={port} source={source}"
+    if event == "discovery_event" and values.get("kind") == "lost":
+        return f"{prefix} discovery lost peer={_short(values.get('payload'))}"
+    if event == "discovery_event":
+        return f"{prefix} discovery kind={_field(values.get('kind'))}"
+    if event == "route_attempt":
+        line = (
+            f"{prefix} route phase={_field(values.get('phase'))} "
+            f"outcome={_field(values.get('outcome'))} "
+            f"address={_field(values.get('address'))} "
+            f"port={_field(values.get('port'))} "
+            f"source={_field(values.get('source'))}"
+        )
+        duration = values.get("duration_ms")
+        return f"{line} latency_ms={duration}" if duration is not None else line
+    if event == "pairing_request":
+        permissions = ",".join(sorted(values.get("permissions") or ())) or "-"
+        return (
+            f"{prefix} pairing_request caller={_short(values.get('caller_node_id'))} "
+            f"permissions={permissions}"
+        )
+    if event == "paired":
+        permissions = ",".join(sorted(values.get("permissions") or ())) or "-"
+        return (
+            f"{prefix} paired peer={_short(values.get('peer_id'))} "
+            f"permissions={permissions}"
+        )
+    if event == "connected":
+        return (
+            f"{prefix} connected peer={_short(values.get('peer_id'))} "
+            f"tls_verified={_field(values.get('tls_verified', True))} "
+            f"generation={_field(values.get('generation'))}"
+        )
+    if event in {"shared_capability_result", "shared_after_rotation"}:
+        result = values.get("result")
+        success = isinstance(result, dict) and result.get("ok") is True
+        return (
+            f"{prefix} shared capability={_field(values.get('capability', CAPABILITY))} "
+            f"outcome={'success' if success else 'failure'}"
+        )
+    if event == "discovery_timeout":
+        return f"{prefix} discovery_timeout peers={len(values.get('peers') or ())}"
+    if event == "error":
+        return f"{prefix} error type={_field(values.get('error_type'))}"
+    if event == "post_revoke_denied":
+        return f"{prefix} post_revoke_denied type={_field(values.get('error_type'))}"
+    if event == "target_ready":
+        return f"{prefix} target_ready"
+    if event == "stopping":
+        return f"{prefix} stopping"
+    if event == "restored_trust":
+        return f"{prefix} restored_trust peer={_short(values.get('peer_id'))}"
+    if event == "self_revoked":
+        return f"{prefix} self_revoked peer={_short(values.get('peer_id'))}"
+    if event == "rotated":
+        return f"{prefix} rotated generation={_field(values.get('generation'))}"
+    if event == "waiting_for_rotated_peer":
+        return (
+            f"{prefix} waiting_for_rotated_peer peer={_short(values.get('peer_id'))} "
+            f"timeout={_field(values.get('timeout'))}"
+        )
+    if event == "reconnected_after_rotation":
+        return f"{prefix} reconnected_after_rotation peer={_short(values.get('peer_id'))}"
+    return f"{prefix} {event}"
+
+
 def write_event(report_path: Path, event: str, **values: Any) -> None:
+    global _TERMINAL_SEQUENCE
     with _REPORT_LOCK:
         record = {"event": event, **values}
-        print(json.dumps(record, sort_keys=True, default=json_default), flush=True)
+        _TERMINAL_SEQUENCE += 1
+        print(format_terminal_event(_TERMINAL_SEQUENCE, event, **values), flush=True)
         history: list[dict[str, Any]] = []
         if report_path.exists():
             try:
@@ -120,6 +232,7 @@ def main() -> int:
     args = parser.parse_args()
 
     runtime: ConnectRuntime
+    route_started: dict[tuple[str, str, int], float] = {}
 
     def approve_pairing(request: Any) -> bool:
         write_event(
@@ -131,6 +244,28 @@ def main() -> int:
         runtime.sharing.allow(request.caller_node_id, CAPABILITY)
         return True
 
+    def route_attempt(
+        phase: str, endpoint: Any, outcome: str, error: str | None
+    ) -> None:
+        key = (phase, endpoint.address, endpoint.port)
+        now = time.monotonic()
+        duration_ms = None
+        if outcome == "started":
+            route_started[key] = now
+        elif key in route_started:
+            duration_ms = round((now - route_started.pop(key)) * 1000, 1)
+        write_event(
+            args.report,
+            "route_attempt",
+            phase=phase,
+            address=endpoint.address,
+            port=endpoint.port,
+            source=endpoint.source.value,
+            outcome=outcome,
+            error=error,
+            duration_ms=duration_ms,
+        )
+
     runtime = ConnectRuntime(
         ConnectConfig(
             profile_dir=args.profile,
@@ -141,16 +276,7 @@ def main() -> int:
             advertised_addresses=(
                 tuple(args.advertise_address) if args.advertise_address else None
             ),
-            on_route_attempt=lambda phase, endpoint, outcome, error: write_event(
-                args.report,
-                "route_attempt",
-                phase=phase,
-                address=endpoint.address,
-                port=endpoint.port,
-                source=endpoint.source.value,
-                outcome=outcome,
-                error=error,
-            ),
+            on_route_attempt=route_attempt,
             discovery_enabled=True,
         )
     )
@@ -171,6 +297,7 @@ def main() -> int:
         args.report,
         "started",
         role=args.role,
+        version=__version__,
         node_id=identity.node_id.value,
         state=status.state.value,
         discovery_started=status.discovery_started,
@@ -234,9 +361,20 @@ def main() -> int:
                 permissions=sorted(trusted.permissions),
             )
         provider = runtime.connect_peer(peer_id)
-        write_event(args.report, "connected", peer_id=peer_id.value)
+        write_event(
+            args.report,
+            "connected",
+            peer_id=peer_id.value,
+            tls_verified=True,
+            generation=candidate.transport_generation,
+        )
         result = provider.request_shared(CAPABILITY, {"source": "run_peer.py"})
-        write_event(args.report, "shared_capability_result", result=result)
+        write_event(
+            args.report,
+            "shared_capability_result",
+            capability=CAPABILITY,
+            result=result,
+        )
         if args.reconnect_after_rotation:
             write_event(
                 args.report,
