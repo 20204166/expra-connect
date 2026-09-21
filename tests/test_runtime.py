@@ -13,6 +13,7 @@ from expra_connect.cluster import Cluster, ClusterRole
 from expra_connect.discovery_full import DiscoveryAdvertisement
 from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerprint
 from expra_connect.models import DiscoveredNodeCandidate, NodeCapability, NodePermission
+from expra_connect.observability import ObservabilityWatcher
 from expra_connect.pairing import PeerGrant, TrustedPeer
 from expra_connect.remote_service import AuthenticatedNodeProvider, PairingTransaction
 from expra_connect.role_engine import ClusterRole as RegistryClusterRole
@@ -83,6 +84,22 @@ class RuntimeConfigurationTests(unittest.TestCase):
                 profile_dir=Path("/tmp/expra-connect-test"),
                 advertised_addresses=(),
             )
+
+    def test_runtime_shares_observer_with_connection_manager_and_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            observer = ObservabilityWatcher()
+            runtime = ConnectRuntime(
+                ConnectConfig(profile_dir=Path(directory)), observer=observer
+            )
+
+            runtime._load_identity()
+            runtime._load_persisted_state()
+
+            self.assertIs(runtime._observer, observer)
+            assert runtime._connection_manager is not None
+            self.assertIs(runtime._connection_manager._observer, observer)
+            observer.record("test:operation", 0.1)
+            self.assertIn("observability", runtime.diagnostics())
 
 
 class RuntimeClusterOperationTests(unittest.TestCase):

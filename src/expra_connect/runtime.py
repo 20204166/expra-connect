@@ -41,6 +41,7 @@ from .models import (
     NodeCapability,
     NodePermission,
 )
+from .observability import ObservabilityWatcher
 from .pairing import PairingManager, PeerGrant, PendingPairing, TrustedPeer
 from .pairing_flow import NetworkPairing
 from .persistence import JsonStateStore, StateDataError, migrate_state
@@ -153,8 +154,10 @@ class ConnectConfig:
 class ConnectRuntime(RuntimeClusterOperations):
     """Compose the mature peer components without doing work in construction."""
 
-    def __init__(self, config: ConnectConfig) -> None:
+    def __init__(self, config: ConnectConfig, *,
+                 observer: ObservabilityWatcher | None = None) -> None:
         self.config = config
+        self._observer = observer if observer is not None else ObservabilityWatcher()
         self._identity: NodeIdentity | None = None
         self._pairing: PairingManager | None = None
         self._registry: NodeRegistry | None = None
@@ -275,7 +278,7 @@ class ConnectRuntime(RuntimeClusterOperations):
             },
             "routes": [],
             "connections": [],
-            "sessions": [],
+            "sessions": [], "observability": asdict(self._observer.snapshot()),
         }
         if identity is not None:
             result["identity"] = {
@@ -516,7 +519,7 @@ class ConnectRuntime(RuntimeClusterOperations):
             registry=self._registry,
             candidates=self._peers,
             persist=self._save_persisted_state,
-            on_route_attempt=self.config.on_route_attempt,
+            on_route_attempt=self.config.on_route_attempt, observer=self._observer,
         )
         self._transport_generations = TransportGenerationManager(
             self._identity,
@@ -587,6 +590,7 @@ class ConnectRuntime(RuntimeClusterOperations):
             else None,
             trust_revoke_handler=self._revoke_self,
             trust_revoke_commit=self._refresh_live_grants,
+            observer=self._observer,
         )
         server = RemoteSocketServer(
             service,

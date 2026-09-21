@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from expra_connect.identity import NodeId
 from expra_connect.models import READ_CAPABILITIES, NodeCapability, NodePermission
+from expra_connect.observability import ObservabilityWatcher
 from expra_connect.remote_models import (
     DashboardSnapshot,
     NodeStatus,
@@ -16,6 +17,7 @@ from expra_connect.remote_service import (
     MemoryRemoteTransport,
     RemoteAuthError,
     RemoteAuthorizationError,
+    RemoteExecutionError,
     RemoteService,
 )
 from expra_connect.server import RemoteSocketServer
@@ -49,6 +51,51 @@ class _Provider:
 
 
 class RemoteServiceTests(unittest.TestCase):
+    def test_authenticated_provider_observes_each_remote_operation_once(self) -> None:
+        observer = ObservabilityWatcher()
+        service_observer = ObservabilityWatcher()
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            observer=service_observer,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            secret=SECRET,
+            transport=MemoryRemoteTransport(
+                service
+            ),
+            observer=observer,
+        )
+
+        client.hello()
+        cancelled = threading.Event()
+        cancelled.set()
+        with self.assertRaises(RemoteExecutionError):
+            client.hello(cancelled)
+        client.invalidate()
+        with self.assertRaises(RemoteAuthError):
+            client.hello()
+
+        metrics = {metric.target: metric for metric in observer.snapshot().metrics}
+        self.assertEqual(set(metrics), {"remote:hello"})
+        self.assertEqual(metrics["remote:hello"].count, 3)
+        self.assertEqual(metrics["remote:hello"].successes, 1)
+        self.assertEqual(metrics["remote:hello"].failures, 1)
+        self.assertEqual(metrics["remote:hello"].cancellations, 1)
+        self.assertNotIn(SECRET, metrics["remote:hello"].last_error or "")
+        service_metrics = {
+            metric.target: metric for metric in service_observer.snapshot().metrics
+        }
+        self.assertEqual(set(service_metrics), {"service:hello"})
+        self.assertEqual(service_metrics["service:hello"].count, 1)
+
     def test_cluster_fence_cannot_move_backwards(self) -> None:
         service = RemoteService(
             node_id=NodeId("peer"),

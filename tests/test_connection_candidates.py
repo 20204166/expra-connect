@@ -16,8 +16,10 @@ from expra_connect.models import (
     EndpointCandidate,
     EndpointSource,
 )
+from expra_connect.observability import ObservabilityWatcher
 from expra_connect.pairing import PairingManager, TrustedPeer
 from expra_connect.registry import NodeRegistry
+from expra_connect.remote_service import AuthenticatedNodeProvider
 from expra_connect.wire_protocol import (
     RemoteAuthError,
     RemoteProtocolError,
@@ -108,9 +110,36 @@ class ConnectionManagerTests(unittest.TestCase):
             )
         }
 
+    def test_default_provider_receives_shared_observer(self) -> None:
+        observer = ObservabilityWatcher()
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            observer=observer,
+        )
+
+        with (
+            patch(
+                "expra_connect.connection_manager.TLSRemoteTransport",
+                return_value=object(),
+            ),
+            patch.object(AuthenticatedNodeProvider, "__init__", return_value=None) as init,
+            patch.object(
+                AuthenticatedNodeProvider,
+                "hello",
+                return_value={"capabilities": []},
+            ),
+        ):
+            manager.connect(self.peer)
+
+        self.assertIs(init.call_args.kwargs["observer"], observer)
+
     def test_route_failure_falls_back_without_changing_peer_identity(self) -> None:
         attempts: list[str] = []
         route_events: list[tuple[str, str, str, str | None]] = []
+        observer = ObservabilityWatcher()
 
         class Provider:
             def __init__(self, address: str) -> None:
@@ -131,6 +160,7 @@ class ConnectionManagerTests(unittest.TestCase):
             on_route_attempt=lambda phase, endpoint, outcome, error: (
                 route_events.append((phase, endpoint.address, outcome, error))
             ),
+            observer=observer,
         )
         with patch(
             "expra_connect.connection_manager.TLSRemoteTransport",
@@ -151,6 +181,12 @@ class ConnectionManagerTests(unittest.TestCase):
         assert record is not None
         self.assertEqual(record.connection.status, ConnectionStatus.ONLINE)
         self.assertEqual(manager.connection_generation(self.peer), 1)
+        metric = observer.snapshot().metrics[0]
+        self.assertEqual(metric.target, "connection:peer-node")
+        self.assertEqual(metric.count, 2)
+        self.assertEqual(metric.successes, 1)
+        self.assertEqual(metric.failures, 1)
+        self.assertEqual(metric.last_error, "RemoteTransportError")
 
     def test_authentication_failure_does_not_try_another_route(self) -> None:
         attempts: list[str] = []

@@ -35,6 +35,7 @@ from .models import (
     NodePermission,
     ProcessActionKind,
 )
+from .observability import ObservabilityWatcher, observation_scope
 from .pairing_models import PairingTransaction
 from .process_backend import RemoteProcessActionBackend
 from .provider_requests import ProviderRequestMixin
@@ -203,6 +204,7 @@ class RemoteService:
         idempotency_ttl_seconds: float = DEFAULT_IDEMPOTENCY_TTL_SECONDS,
         idempotency_max_entries: int = DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
         idempotency_store: Any | None = None,
+        observer: ObservabilityWatcher | None = None,
     ) -> None:
         self._node_id = node_id
         self._display_name = display_name
@@ -211,6 +213,7 @@ class RemoteService:
         self._status = status
         self._capabilities = capabilities
         self._provider = provider
+        self._observer = observer
         self._process_manager = process_manager
         self._expected_caller_id = expected_caller_id
         self._identity_fingerprint = identity_fingerprint or node_identity_fingerprint(
@@ -352,11 +355,12 @@ class RemoteService:
         )
 
         def solve() -> dict[str, Any]:
-            result = self._solve(request, grant=grant)
-            self._sessions.assert_current(session_id, connection_generation)
-            with self._grant_lock:
-                if grant_version != self._grant_version:
-                    raise RemoteAuthorizationError("caller permission changed")
+            with observation_scope(self._observer, f"service:{request.op}"):
+                result = self._solve(request, grant=grant)
+                self._sessions.assert_current(session_id, connection_generation)
+                with self._grant_lock:
+                    if grant_version != self._grant_version:
+                        raise RemoteAuthorizationError("caller permission changed")
             return result
 
         try:
@@ -676,6 +680,7 @@ class AuthenticatedNodeProvider(ProviderRequestMixin, RemoteRoleOperations):
         clock: Callable[[], float] = time.time,
         freshness_seconds: float = DEFAULT_FRESHNESS_SECONDS,
         caller_node_id: NodeId | None = None,
+        observer: ObservabilityWatcher | None = None,
     ) -> None:
         self._node_id = node_id
         self._caller_node_id = caller_node_id
@@ -683,12 +688,26 @@ class AuthenticatedNodeProvider(ProviderRequestMixin, RemoteRoleOperations):
         self._transport = transport
         self._clock = clock
         self._freshness_seconds = freshness_seconds
+        self._observer = observer
         self._invalidated = False
         self._session_id: str | None = None
 
+    def _request(
+        self,
+        op: str,
+        params: dict[str, Any],
+        cancel_event: Any | None = None,
+    ) -> dict[str, Any]:
+        with observation_scope(
+            self._observer,
+            f"remote:{op}",
+            cancelled=cancel_event.is_set if cancel_event is not None else None,
+        ):
+            result = super()._request(op, params, cancel_event)
+        return result
+
     def invalidate(self) -> None:
         """Disable this provider after its local trust record is revoked."""
-
         self._invalidated = True
 
     def hello(self, cancel_event: Any | None = None) -> dict[str, Any]:

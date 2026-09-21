@@ -13,6 +13,7 @@ from .connection_state import ConnectionState, ConnectionStatus
 from .discovery import endpoint_rank
 from .identity import NodeId, verify_transport_proof
 from .models import DiscoveredNodeCandidate, EndpointCandidate
+from .observability import ObservationToken, ObservabilityWatcher
 from .pairing import PairingManager
 from .registry import NodeRegistry
 from .remote_service import AuthenticatedNodeProvider
@@ -42,6 +43,7 @@ class ConnectionManager:
         persist: Callable[[], bool] | None = None,
         on_route_attempt: Callable[[str, EndpointCandidate, str, str | None], None]
         | None = None,
+        observer: ObservabilityWatcher | None = None,
     ) -> None:
         self._local_id = local_id
         self._pairing = pairing
@@ -51,6 +53,7 @@ class ConnectionManager:
         self._provider_factory = provider_factory
         self._persist = persist
         self._on_route_attempt = on_route_attempt
+        self._observer = observer
         self._generations: dict[NodeId, int] = {}
         self._resume_peers: set[NodeId] = set()
         self._lock = RLock()
@@ -119,25 +122,42 @@ class ConnectionManager:
             self._registry.observe(peer_id, frozenset())
             self._set_state(peer_id, ConnectionState(status, changed_at=time.time()))
             errors: list[BaseException] = []
+            observer = self._observer
             for endpoint in sorted(endpoints, key=endpoint_rank):
                 self._report_route_attempt("connection", endpoint, "started", None)
+                observation: ObservationToken | None = (
+                    observer.begin(f"connection:{peer_id.value}")
+                    if observer is not None
+                    else None
+                )
                 try:
                     transport = TLSRemoteTransport(
                         endpoint.address,
                         endpoint.port,
                         expected_fingerprint=candidate.transport_fingerprint,
                     )
+                    provider_kwargs: dict[str, Any] = {
+                        "node_id": peer_id,
+                        "caller_node_id": self._local_id,
+                        "secret": trusted.secret,
+                        "transport": transport,
+                    }
+                    if self._provider_factory is AuthenticatedNodeProvider:
+                        provider_kwargs["observer"] = observer
                     provider = self._provider_factory(
-                        node_id=peer_id,
-                        caller_node_id=self._local_id,
-                        secret=trusted.secret,
-                        transport=transport,
+                        **provider_kwargs,
                     )
                     hello = provider.hello()
                     self._validate_hello_generation(trusted, candidate, hello)
                     capabilities = parse_hello_capabilities(hello)
                     self._record_generation(peer_id, trusted, candidate)
                 except RemoteProtocolError as error:
+                    if observation is not None:
+                        observer.finish(
+                            observation,
+                            outcome="failure",
+                            detail=type(error).__name__,
+                        )
                     self._report_route_attempt(
                         "connection", endpoint, "failed", str(error)
                     )
@@ -157,11 +177,27 @@ class ConnectionManager:
                     RemoteTransportError,
                 ) as error:
                     errors.append(error)
+                    if observation is not None:
+                        observer.finish(
+                            observation,
+                            outcome="failure",
+                            detail=type(error).__name__,
+                        )
                     self._mark_failure(peer_id, endpoint)
                     self._report_route_attempt(
                         "connection", endpoint, "failed", str(error)
                     )
                     continue
+                except Exception as error:
+                    if observation is not None:
+                        observer.finish(
+                            observation,
+                            outcome="failure",
+                            detail=type(error).__name__,
+                        )
+                    raise
+                if observation is not None:
+                    observer.finish(observation)
                 self._registry.observe(peer_id, capabilities)
                 self._registry.promote(peer_id, permissions=capabilities)
                 self._providers[peer_id] = provider

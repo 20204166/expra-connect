@@ -6,8 +6,9 @@ import math
 import statistics
 import threading
 import time
+from contextlib import contextmanager
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -114,6 +115,27 @@ def summarize_samples(samples: tuple[float, ...]) -> dict[str, float | int]:
         "spread": ordered[-1] - ordered[0],
         "outliers": sum(value > p75 + 1.5 * (p75 - p25) for value in ordered),
     }
+
+
+@contextmanager
+def observation_scope(
+    observer: "ObservabilityWatcher | None",
+    target: str,
+    *,
+    cancelled: Callable[[], bool] | None = None,
+) -> Iterator[None]:
+    """Finish one observation with a stable outcome when a scope raises."""
+
+    token = observer.begin(target) if observer is not None else None
+    outcome: Outcome = "success"
+    try:
+        yield
+    except Exception:
+        outcome = "cancelled" if cancelled is not None and cancelled() else "failure"
+        raise
+    finally:
+        if token is not None:
+            observer.finish(token, outcome=outcome)
 
 
 class ObservabilityWatcher:
