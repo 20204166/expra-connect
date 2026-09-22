@@ -244,6 +244,19 @@ def record_surface_result(
     write_event(report, "surface_result", **values)
 
 
+def _retry_surface_success(operation: Any, timeout: float = 5.0) -> Any:
+    """Allow the opposite harness to publish its matching surface grant."""
+    deadline = time.monotonic() + max(timeout, 0.0)
+    while True:
+        try:
+            return operation()
+        except RemoteAuthorizationError:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            time.sleep(min(0.1, remaining))
+
+
 def approve_surface_pairing(
     runtime: ConnectRuntime, report: Path, request: Any
 ) -> bool:
@@ -390,7 +403,7 @@ def exercise_remote_surfaces(
 
     def succeeded(access: str, operation: Any) -> None:
         try:
-            operation()
+            _retry_surface_success(operation)
         except Exception as error:  # noqa: BLE001 - report only the exception type
             write_event(report, "error", error_type=type(error).__name__)
             raise

@@ -14,6 +14,7 @@ from run_peer_extended import (
     _candidate_values,
     _diagnostics_values,
     _parser,
+    _retry_surface_success,
     _runtime,
     approve_surface_pairing,
     cleanup_runtime,
@@ -450,6 +451,20 @@ class ExtendedPeerStageTests(unittest.TestCase):
             [{"event": "error", "error_type": "ValueError", "sequence": 1}],
         )
         self.assertNotIn("secret detail", report_text)
+
+    def test_surface_success_waits_for_remote_grant_race(self) -> None:
+        attempts = 0
+
+        def operation() -> dict[str, bool]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                raise RemoteAuthorizationError("remote grant is still propagating")
+            return {"ok": True}
+
+        with unittest.mock.patch("run_peer_extended.time.sleep"):
+            self.assertEqual(_retry_surface_success(operation), {"ok": True})
+        self.assertEqual(attempts, 2)
 
     def test_bidirectional_initiator_orders_reverse_pair_and_connect_events(self) -> None:
         runtime = Mock()
