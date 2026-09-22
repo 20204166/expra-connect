@@ -363,8 +363,12 @@ class ExtendedPeerStageTests(unittest.TestCase):
 
         connect_bidirectionally(runtime, self._candidate("peer"))
 
-        runtime.sharing.allow.assert_called_once_with(
-            NodeId("peer"), SURFACE_SYNC_CAPABILITY
+        self.assertEqual(
+            runtime.sharing.allow.call_args_list,
+            [
+                unittest.mock.call(NodeId("peer"), SURFACE_SYNC_CAPABILITY),
+                unittest.mock.call(NodeId("peer"), SURFACE_SYNC_CAPABILITY),
+            ],
         )
 
     def test_exercise_remote_surfaces_stages_access_and_records_redacted_results(self) -> None:

@@ -381,7 +381,9 @@ def connect_bidirectionally(
         if on_paired is not None:
             on_paired()
     runtime.sharing.allow(peer_id, SURFACE_SYNC_CAPABILITY)
-    return runtime.connect_peer(peer_id)
+    provider = runtime.connect_peer(peer_id)
+    runtime.sharing.allow(peer_id, SURFACE_SYNC_CAPABILITY)
+    return provider
 
 
 def grant_harness_surface_access(runtime: ConnectRuntime, peer_id: NodeId) -> None:
