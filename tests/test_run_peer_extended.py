@@ -13,9 +13,12 @@ from run_peer_extended import (
     CAPABILITY,
     _candidate_values,
     _diagnostics_values,
+    _parser,
     cleanup_runtime,
     format_terminal_event,
     main,
+    record_surface_result,
+    register_harness_surfaces,
     run_initiator,
     run_target,
     write_event,
@@ -23,6 +26,51 @@ from run_peer_extended import (
 
 
 class ExtendedPeerEventWriterTests(unittest.TestCase):
+    def test_surface_events_allowlist_only_redacted_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            with redirect_stdout(StringIO()):
+                write_event(
+                    report,
+                    "surface_request",
+                    surface_id="desktop",
+                    access="read",
+                    outcome="success",
+                    error_type="ValueError",
+                    payload={"secret": "must not persist"},
+                )
+
+            record = json.loads(report.read_text(encoding="utf-8"))[0]
+            self.assertEqual(
+                record,
+                {
+                    "event": "surface_request",
+                    "sequence": 1,
+                    "surface_id": "desktop",
+                    "access": "read",
+                    "outcome": "success",
+                    "error_type": "ValueError",
+                },
+            )
+            self.assertNotIn("must not persist", report.read_text(encoding="utf-8"))
+
+    def test_record_surface_result_writes_no_handler_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            with redirect_stdout(StringIO()):
+                record_surface_result(report, "device/status", "review", "denied")
+
+            self.assertEqual(
+                json.loads(report.read_text(encoding="utf-8"))[0],
+                {
+                    "event": "surface_result",
+                    "sequence": 1,
+                    "surface_id": "device/status",
+                    "access": "review",
+                    "outcome": "denied",
+                },
+            )
+
     def test_sequence_numbers_are_ordered_per_report(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / "report.json"
@@ -117,6 +165,13 @@ class ExtendedPeerCleanupTests(unittest.TestCase):
 
 
 class ExtendedPeerArgumentTests(unittest.TestCase):
+    def test_parser_accepts_bidirectional_surfaces_without_changing_default(self) -> None:
+        common = ["--role", "target", "--profile", "/tmp/profile"]
+        self.assertFalse(_parser().parse_args(common).bidirectional_surfaces)
+        self.assertTrue(
+            _parser().parse_args(common + ["--bidirectional-surfaces"]).bidirectional_surfaces
+        )
+
     def test_main_accepts_task_one_arguments_without_starting_runtime(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / "report.json"
@@ -176,6 +231,25 @@ class ExtendedPeerStageTests(unittest.TestCase):
             transport_generation=1,
             transport_fingerprint="fingerprint",
         )
+
+    def test_register_harness_surfaces_uses_deterministic_structured_handlers(self) -> None:
+        runtime = Mock()
+        register_harness_surfaces(runtime)
+
+        self.assertEqual(
+            [call.args[0] for call in runtime.register_surface.call_args_list],
+            ["desktop", "desktop/settings", "device/status"],
+        )
+        for call in runtime.register_surface.call_args_list:
+            handlers = call.kwargs
+            first_read = handlers["read"](NodeId("peer"), {"ignored": "input"})
+            second_read = handlers["read"](NodeId("peer"), {})
+            self.assertEqual(first_read, second_read)
+            self.assertIsInstance(handlers["review"](NodeId("peer"), {}), dict)
+            self.assertEqual(
+                handlers["actions"]["save"](NodeId("peer"), {}),
+                handlers["actions"]["save"](NodeId("other"), {"payload": "ignored"}),
+            )
 
     def test_target_registers_capability_and_approves_pairing_before_start(self) -> None:
         runtime = Mock()

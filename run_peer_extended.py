@@ -45,6 +45,21 @@ _EVENT_FIELDS: dict[str, frozenset[str]] = {
     "waiting_for_rotated_peer": frozenset({"peer_id", "timeout"}),
     "reconnected_after_rotation": frozenset({"peer_id"}),
     "diagnostics": frozenset({"generation", "routes_count", "connections_count"}),
+    "surface_request": frozenset(
+        {"surface_id", "access", "outcome", "error_type"}
+    ),
+    "surface_result": frozenset(
+        {"surface_id", "access", "outcome", "error_type"}
+    ),
+    "surface_denied": frozenset(
+        {"surface_id", "access", "outcome", "error_type"}
+    ),
+    "reverse_connected": frozenset(
+        {"surface_id", "access", "outcome", "error_type"}
+    ),
+    "reverse_paired": frozenset(
+        {"surface_id", "access", "outcome", "error_type"}
+    ),
 }
 
 
@@ -119,6 +134,23 @@ def format_terminal_event(sequence: int, event: str, **values: Any) -> str:
             f"routes={_field(safe.get('routes_count'))} "
             f"connections={_field(safe.get('connections_count'))}"
         )
+    if event in {
+        "surface_request",
+        "surface_result",
+        "surface_denied",
+        "reverse_connected",
+        "reverse_paired",
+    }:
+        line = (
+            f"{prefix} {event} surface_id={_field(safe.get('surface_id'))} "
+            f"access={_field(safe.get('access'))} "
+            f"outcome={_field(safe.get('outcome'))}"
+        )
+        return (
+            f"{line} error_type={_field(safe.get('error_type'))}"
+            if "error_type" in safe
+            else line
+        )
     return f"{prefix} {event}"
 
 
@@ -155,6 +187,63 @@ def write_event(report: Path, event: str, **values: Any) -> None:
             encoding="utf-8",
         )
         print(format_terminal_event(sequence, event, **safe), flush=True)
+
+
+def register_harness_surfaces(runtime: ConnectRuntime) -> None:
+    """Register deterministic structured surfaces without exposing payloads."""
+    surfaces = (
+        (
+            "desktop",
+            {"surface_id": "desktop", "state": "ready"},
+            {"surface_id": "desktop", "review": "ready"},
+        ),
+        (
+            "desktop/settings",
+            {"surface_id": "desktop/settings", "theme": "light"},
+            {"surface_id": "desktop/settings", "review": "stable"},
+        ),
+        (
+            "device/status",
+            {"surface_id": "device/status", "status": "online"},
+            {"surface_id": "device/status", "review": "healthy"},
+        ),
+    )
+    for surface_id, read_result, review_result in surfaces:
+        def read(_peer_id: Any, _params: dict[str, Any], result=read_result) -> dict[str, Any]:
+            return dict(result)
+
+        def review(
+            _peer_id: Any, _params: dict[str, Any], result=review_result
+        ) -> dict[str, Any]:
+            return dict(result)
+
+        def save(_peer_id: Any, _params: dict[str, Any], name=surface_id) -> dict[str, Any]:
+            return {"surface_id": name, "saved": True}
+
+        runtime.register_surface(
+            surface_id,
+            read=read,
+            review=review,
+            actions={"save": save},
+        )
+
+
+def record_surface_result(
+    report: Path,
+    surface_id: str,
+    access: str,
+    outcome: str,
+    error_type: str | None = None,
+) -> None:
+    """Record surface metadata only; handler results are intentionally omitted."""
+    values: dict[str, Any] = {
+        "surface_id": surface_id,
+        "access": access,
+        "outcome": outcome,
+    }
+    if error_type is not None:
+        values["error_type"] = error_type
+    write_event(report, "surface_result", **values)
 
 
 @contextmanager
@@ -496,6 +585,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--peer-id")
     parser.add_argument("--wait", type=float, default=60.0)
     parser.add_argument("--advertise-address", action="append")
+    parser.add_argument("--bidirectional-surfaces", action="store_true")
     parser.add_argument("--rotate-after", type=float)
     parser.add_argument("--reconnect-after-rotation", action="store_true")
     parser.add_argument("--rotation-wait", type=float, default=15.0)
