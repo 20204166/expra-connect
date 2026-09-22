@@ -296,6 +296,19 @@ class SurfaceRuntimeMixin:
             peer_id, surface_id, access=access, expires_at=expires_at
         )
 
+    def grant_cluster_surface_access(
+        self,
+        source: Hashable,
+        surface_id: str,
+        *,
+        access: SurfaceAccess | str,
+        expires_at: float | None = None,
+    ) -> SurfaceGrant:
+        """Grant a surface to an explicit, separately validated cluster source."""
+        return self._surface_registry.grant_cluster(
+            source, surface_id, access=access, expires_at=expires_at
+        )
+
     def revoke_surface_access(self, peer_id: NodeId, surface_id: str, *,
                               access: SurfaceAccess | str | None = None) -> None:
         self._surface_registry.revoke_peer(peer_id, surface_id, access=access)

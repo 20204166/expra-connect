@@ -153,3 +153,28 @@ python3 examples/cluster_membership_demo.py
 
 Cluster membership is opt-in. A successful pair does not silently join either
 node to a cluster.
+
+## Structured Surface Sharing
+
+Surfaces are host-owned structured data, not pixel streaming. Pairing establishes
+trust only; it grants no surface access. Applications register arbitrary opaque
+surface IDs and grant each access level separately:
+
+```python
+runtime.register_surface(
+    "desktop/settings",
+    read=lambda peer, params: {"theme": "dark"},
+    review=lambda peer, params: {"pending": []},
+    actions={"save": lambda peer, params: {"saved": True}},
+)
+runtime.grant_surface_access(peer_id, "desktop/settings", access="read")
+runtime.grant_surface_access(peer_id, "desktop/settings", access="review")
+runtime.grant_surface_access(peer_id, "desktop/settings", access="action")
+
+# Stop all access, or revoke one access level explicitly.
+runtime.stop_surface_share(peer_id, "desktop/settings")
+runtime.revoke_surface_access(peer_id, "desktop/settings", access="read")
+```
+
+The typed provider exposes `read_surface`, `review_surface`, and
+`invoke_surface_action`; named actions require their own explicit action grant.
