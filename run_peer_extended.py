@@ -380,6 +380,7 @@ def connect_bidirectionally(
         runtime.pair_peer(peer_id)
         if on_paired is not None:
             on_paired()
+    runtime.sharing.allow(peer_id, SURFACE_SYNC_CAPABILITY)
     return runtime.connect_peer(peer_id)
 
 

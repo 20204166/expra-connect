@@ -356,6 +356,17 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.pair_peer.assert_called_once_with(NodeId("peer"))
         runtime.connect_peer.assert_called_once_with(NodeId("peer"))
 
+    def test_connect_bidirectionally_reauthorizes_sync_for_restored_trust(self) -> None:
+        runtime = Mock()
+        runtime.pairing.trusted.get.return_value = SimpleNamespace()
+        runtime.connect_peer.return_value = Mock()
+
+        connect_bidirectionally(runtime, self._candidate("peer"))
+
+        runtime.sharing.allow.assert_called_once_with(
+            NodeId("peer"), SURFACE_SYNC_CAPABILITY
+        )
+
     def test_exercise_remote_surfaces_stages_access_and_records_redacted_results(self) -> None:
         runtime = Mock()
         provider = Mock()
