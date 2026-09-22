@@ -442,14 +442,29 @@ class ExtendedPeerStageTests(unittest.TestCase):
             ],
         )
         self.assertNotIn("must not be logged", report_text)
+        sync_phases = (
+            "initial_denials",
+            "read_success",
+            "review_denied",
+            "review_success",
+            "action_denied",
+            "action_success",
+            "stopped_denied",
+            "revoked_denied",
+        )
         self.assertEqual(
             [call.args for call in provider.request_shared.call_args_list],
             [
                 (
                     SURFACE_SYNC_CAPABILITY,
-                    {"phase": "initial_surface_denials", "surface_id": surface_id},
+                    {
+                        "phase": phase,
+                        "surface_id": surface_id,
+                        "sync_key": f"{surface_id}:{phase}",
+                    },
                 )
                 for surface_id in surface_ids
+                for phase in sync_phases
             ],
         )
 

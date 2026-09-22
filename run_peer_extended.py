@@ -252,8 +252,7 @@ def register_surface_sync(
     """Register a private harness barrier without granting surface access."""
 
     def wait_for_surface(_peer_id: Any, params: dict[str, Any]) -> dict[str, bool]:
-        surface_id = params.get("surface_id")
-        event = ready_events.get(surface_id)
+        event = ready_events.get(params.get("sync_key"))
         return {"ready": event.wait(SURFACE_SYNC_TIMEOUT) if event else False}
 
     runtime.sharing.register(
@@ -431,40 +430,54 @@ def exercise_remote_surfaces(
         else:
             record_surface_result(report, surface_id, access, "success")
 
+    def synchronize(phase: str) -> None:
+        if ready_events is None:
+            return
+        sync_key = f"{surface_id}:{phase}"
+        ready_events.setdefault(sync_key, Event()).set()
+        ready = provider.request_shared(
+            SURFACE_SYNC_CAPABILITY,
+            {
+                "phase": phase,
+                "surface_id": surface_id,
+                "sync_key": sync_key,
+            },
+        )
+        if not isinstance(ready, dict) or ready.get("ready") is not True:
+            raise RemoteAuthorizationError("surface synchronization is not ready")
+
     for surface_id in surface_ids:
         denied("read", lambda: provider.read_surface(surface_id))
         denied("review", lambda: provider.review_surface(surface_id))
         denied("action", lambda: provider.invoke_surface_action(surface_id, "save"))
 
         if ready_events is not None:
-            ready_events[surface_id].set()
-            ready = provider.request_shared(
-                SURFACE_SYNC_CAPABILITY,
-                {
-                    "phase": "initial_surface_denials",
-                    "surface_id": surface_id,
-                },
-            )
-            if not isinstance(ready, dict) or ready.get("ready") is not True:
-                raise RemoteAuthorizationError("surface synchronization is not ready")
+            synchronize("initial_denials")
 
         runtime.grant_surface_access(peer_id, surface_id, access="read")
         succeeded("read", lambda: provider.read_surface(surface_id))
+        synchronize("read_success")
         denied("review", lambda: provider.review_surface(surface_id))
+        synchronize("review_denied")
 
         runtime.grant_surface_access(peer_id, surface_id, access="review")
         succeeded("review", lambda: provider.review_surface(surface_id))
+        synchronize("review_success")
         denied("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+        synchronize("action_denied")
 
         runtime.grant_surface_access(peer_id, surface_id, access="action")
         succeeded("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+        synchronize("action_success")
 
         runtime.stop_surface_share(peer_id, surface_id)
         denied("read", lambda: provider.read_surface(surface_id))
+        synchronize("stopped_denied")
 
         runtime.grant_surface_access(peer_id, surface_id, access="read")
         runtime.revoke_surface_access(peer_id, surface_id, access="read")
         denied("read", lambda: provider.read_surface(surface_id))
+        synchronize("revoked_denied")
 
 
 def _surface_success_or_denial(
