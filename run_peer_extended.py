@@ -402,22 +402,27 @@ def exercise_remote_surfaces(
     """Exercise each remote surface through every explicit authorization stage."""
     surface_ids = ("desktop", "desktop/settings", "device/status")
 
-    def denied(access: str, operation: Any) -> None:
-        try:
-            operation()
-        except RemoteAuthorizationError:
-            write_event(
-                report,
-                "surface_denied",
-                surface_id=surface_id,
-                access=access,
-                outcome="denied",
-                error_type=RemoteAuthorizationError.__name__,
-            )
-        except Exception as error:  # noqa: BLE001 - report only the exception type
-            write_event(report, "error", error_type=type(error).__name__)
-            raise
-        else:
+    def denied(access: str, operation: Any, *, retry_success: bool = False) -> None:
+        deadline = time.monotonic() + SURFACE_SYNC_TIMEOUT if retry_success else None
+        while True:
+            try:
+                operation()
+            except RemoteAuthorizationError:
+                write_event(
+                    report,
+                    "surface_denied",
+                    surface_id=surface_id,
+                    access=access,
+                    outcome="denied",
+                    error_type=RemoteAuthorizationError.__name__,
+                )
+                return
+            except Exception as error:  # noqa: BLE001 - report only the exception type
+                write_event(report, "error", error_type=type(error).__name__)
+                raise
+            if deadline is not None and time.monotonic() < deadline:
+                time.sleep(0.1)
+                continue
             error = AssertionError(f"surface {access} unexpectedly succeeded")
             write_event(report, "error", error_type=type(error).__name__)
             raise error
@@ -477,13 +482,13 @@ def exercise_remote_surfaces(
         synchronize("action_success")
 
         runtime.stop_surface_share(peer_id, surface_id)
-        denied("read", lambda: provider.read_surface(surface_id))
         synchronize("stopped_denied")
+        denied("read", lambda: provider.read_surface(surface_id), retry_success=True)
 
         runtime.grant_surface_access(peer_id, surface_id, access="read")
         runtime.revoke_surface_access(peer_id, surface_id, access="read")
-        denied("read", lambda: provider.read_surface(surface_id))
         synchronize("revoked_denied")
+        denied("read", lambda: provider.read_surface(surface_id), retry_success=True)
 
 
 def _surface_success_or_denial(
