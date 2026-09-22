@@ -18,6 +18,7 @@ from expra_connect import (  # noqa: F401 - staged runtime imports are intention
     NodeId,
     __version__,
 )
+from expra_connect.wire_protocol import RemoteAuthorizationError
 
 CAPABILITY = "test.read_state"
 _REPORT_LOCK = Lock()
@@ -357,6 +358,68 @@ def grant_harness_surface_access(runtime: ConnectRuntime, peer_id: NodeId) -> No
             runtime.grant_surface_access(peer_id, surface_id, access=access)
 
 
+def exercise_remote_surfaces(
+    runtime: ConnectRuntime,
+    provider: Any,
+    peer_id: NodeId,
+    report: Path,
+) -> None:
+    """Exercise each remote surface through every explicit authorization stage."""
+    surface_ids = ("desktop", "desktop/settings", "device/status")
+
+    def denied(access: str, operation: Any) -> None:
+        try:
+            operation()
+        except RemoteAuthorizationError:
+            write_event(
+                report,
+                "surface_denied",
+                surface_id=surface_id,
+                access=access,
+                outcome="denied",
+                error_type=RemoteAuthorizationError.__name__,
+            )
+        except Exception as error:  # noqa: BLE001 - report only the exception type
+            write_event(report, "error", error_type=type(error).__name__)
+            raise
+        else:
+            error = AssertionError(f"surface {access} unexpectedly succeeded")
+            write_event(report, "error", error_type=type(error).__name__)
+            raise error
+
+    def succeeded(access: str, operation: Any) -> None:
+        try:
+            operation()
+        except Exception as error:  # noqa: BLE001 - report only the exception type
+            write_event(report, "error", error_type=type(error).__name__)
+            raise
+        else:
+            record_surface_result(report, surface_id, access, "success")
+
+    for surface_id in surface_ids:
+        denied("read", lambda: provider.read_surface(surface_id))
+        denied("review", lambda: provider.review_surface(surface_id))
+        denied("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+
+        runtime.grant_surface_access(peer_id, surface_id, access="read")
+        succeeded("read", lambda: provider.read_surface(surface_id))
+        denied("review", lambda: provider.review_surface(surface_id))
+
+        runtime.grant_surface_access(peer_id, surface_id, access="review")
+        succeeded("review", lambda: provider.review_surface(surface_id))
+        denied("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+
+        runtime.grant_surface_access(peer_id, surface_id, access="action")
+        succeeded("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+
+        runtime.stop_surface_share(peer_id, surface_id)
+        denied("read", lambda: provider.read_surface(surface_id))
+
+        runtime.grant_surface_access(peer_id, surface_id, access="read")
+        runtime.revoke_surface_access(peer_id, surface_id, access="read")
+        denied("read", lambda: provider.read_surface(surface_id))
+
+
 def _diagnostics_values(diagnostics: Any) -> dict[str, Any]:
     if not isinstance(diagnostics, dict):
         return {}
@@ -419,7 +482,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
                     args.report, "discovery_timeout", peers_count=len(runtime.peers)
                 )
                 return 2
-            connect_bidirectionally(
+            provider = connect_bidirectionally(
                 runtime,
                 candidate,
                 on_paired=lambda: write_event(
@@ -427,6 +490,9 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
                 ),
             )
             write_event(args.report, "reverse_connected", outcome="success")
+            exercise_remote_surfaces(
+                runtime, provider, NodeId(candidate.stable_id), args.report
+            )
         rotate_after = getattr(args, "rotate_after", None)
         rotation_deadline = (
             time.monotonic() + max(rotate_after, 0.0)
@@ -490,7 +556,7 @@ def run_initiator(
         write_event(args.report, "discovered", **route)
         peer_id = NodeId(candidate.stable_id)
         if getattr(args, "bidirectional_surfaces", False):
-            connect_bidirectionally(
+            provider = connect_bidirectionally(
                 runtime,
                 candidate,
                 on_paired=lambda: write_event(
@@ -498,6 +564,7 @@ def run_initiator(
                 ),
             )
             write_event(args.report, "reverse_connected", outcome="success")
+            exercise_remote_surfaces(runtime, provider, peer_id, args.report)
             write_event(
                 args.report, "diagnostics", **_diagnostics_values(runtime.diagnostics())
             )

@@ -18,6 +18,7 @@ from run_peer_extended import (
     approve_surface_pairing,
     cleanup_runtime,
     connect_bidirectionally,
+    exercise_remote_surfaces,
     format_terminal_event,
     main,
     record_surface_result,
@@ -27,6 +28,7 @@ from run_peer_extended import (
     wait_for_matching_peer,
     write_event,
 )
+from expra_connect.wire_protocol import RemoteAuthorizationError
 
 
 class ExtendedPeerEventWriterTests(unittest.TestCase):
@@ -343,6 +345,106 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.pair_peer.assert_called_once_with(NodeId("peer"))
         runtime.connect_peer.assert_called_once_with(NodeId("peer"))
 
+    def test_exercise_remote_surfaces_stages_access_and_records_redacted_results(self) -> None:
+        runtime = Mock()
+        provider = Mock()
+        surface_ids = ("desktop", "desktop/settings", "device/status")
+        granted: dict[str, set[str]] = {surface_id: set() for surface_id in surface_ids}
+
+        def grant(_peer_id: NodeId, surface_id: str, *, access: str) -> None:
+            granted[surface_id].add(access)
+
+        def read(surface_id: str) -> dict[str, str]:
+            if "read" not in granted[surface_id]:
+                raise RemoteAuthorizationError("private denial detail")
+            return {"secret": "must not be logged"}
+
+        def review(surface_id: str) -> dict[str, str]:
+            if "review" not in granted[surface_id]:
+                raise RemoteAuthorizationError("private denial detail")
+            return {"secret": "must not be logged"}
+
+        def action(surface_id: str, _action: str) -> dict[str, str]:
+            if "action" not in granted[surface_id]:
+                raise RemoteAuthorizationError("private denial detail")
+            return {"secret": "must not be logged"}
+
+        runtime.grant_surface_access.side_effect = grant
+        runtime.stop_surface_share.side_effect = (
+            lambda _peer, surface_id: granted[surface_id].clear()
+        )
+        runtime.revoke_surface_access.side_effect = (
+            lambda _peer, surface_id, *, access: granted[surface_id].discard(access)
+        )
+        provider.read_surface.side_effect = read
+        provider.review_surface.side_effect = review
+        provider.invoke_surface_action.side_effect = action
+
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            with redirect_stdout(StringIO()):
+                exercise_remote_surfaces(runtime, provider, NodeId("peer"), report)
+
+            records = json.loads(report.read_text(encoding="utf-8"))
+            report_text = report.read_text(encoding="utf-8")
+
+        surface_records = [record for record in records if record["event"].startswith("surface_")]
+        self.assertEqual(
+            [(record["event"], record["access"], record["outcome"]) for record in surface_records],
+            [
+                (event, access, outcome)
+                for _surface_id in surface_ids
+                for event, access, outcome in (
+                    ("surface_denied", "read", "denied"),
+                    ("surface_denied", "review", "denied"),
+                    ("surface_denied", "action", "denied"),
+                    ("surface_result", "read", "success"),
+                    ("surface_denied", "review", "denied"),
+                    ("surface_result", "review", "success"),
+                    ("surface_denied", "action", "denied"),
+                    ("surface_result", "action", "success"),
+                    ("surface_denied", "read", "denied"),
+                    ("surface_denied", "read", "denied"),
+                )
+            ],
+        )
+        self.assertEqual(
+            [record["surface_id"] for record in surface_records],
+            [surface_id for surface_id in surface_ids for _ in range(10)],
+        )
+        self.assertEqual(
+            [
+                (call.args[1], call.kwargs["access"])
+                for call in runtime.grant_surface_access.call_args_list
+            ],
+            [
+                (surface_id, access)
+                for surface_id in surface_ids
+                for access in ("read", "review", "action", "read")
+            ],
+        )
+        self.assertNotIn("must not be logged", report_text)
+
+    def test_exercise_remote_surfaces_reports_unexpected_errors_by_type(self) -> None:
+        runtime = Mock()
+        provider = Mock()
+        provider.read_surface.side_effect = ValueError("secret detail")
+
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            with self.assertRaises(ValueError):
+                with redirect_stdout(StringIO()):
+                    exercise_remote_surfaces(runtime, provider, NodeId("peer"), report)
+
+            records = json.loads(report.read_text(encoding="utf-8"))
+            report_text = report.read_text(encoding="utf-8")
+
+        self.assertEqual(
+            records,
+            [{"event": "error", "error_type": "ValueError", "sequence": 1}],
+        )
+        self.assertNotIn("secret detail", report_text)
+
     def test_bidirectional_initiator_orders_reverse_pair_and_connect_events(self) -> None:
         runtime = Mock()
         runtime.start.return_value = self._status()
@@ -359,13 +461,49 @@ class ExtendedPeerStageTests(unittest.TestCase):
             bidirectional_surfaces=True,
         )
 
-        with unittest.mock.patch("run_peer_extended.write_event") as event:
+        with unittest.mock.patch("run_peer_extended.write_event") as event, unittest.mock.patch(
+            "run_peer_extended.exercise_remote_surfaces"
+        ) as exercise:
             self.assertEqual(run_initiator(args, runtime), 0)
 
         names = [call.args[1] for call in event.call_args_list]
         self.assertLess(names.index("reverse_paired"), names.index("reverse_connected"))
         self.assertNotIn("target", str(event.call_args_list))
         runtime.grant_surface_access.assert_not_called()
+        exercise.assert_called_once_with(
+            runtime,
+            runtime.connect_peer.return_value,
+            NodeId("target"),
+            args.report,
+        )
+
+    def test_bidirectional_target_exercises_reverse_provider_after_connect(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("target")
+        runtime.peers = (self._candidate("initiator"),)
+        runtime.pairing.trusted.get.return_value = None
+        runtime.pair_peer.return_value = SimpleNamespace()
+        runtime.connect_peer.return_value = Mock()
+        args = SimpleNamespace(
+            role="target",
+            peer_id="initiator",
+            wait=0,
+            report=Path("/tmp/target-report"),
+            bidirectional_surfaces=True,
+        )
+
+        with unittest.mock.patch("run_peer_extended.write_event"), unittest.mock.patch(
+            "run_peer_extended.exercise_remote_surfaces"
+        ) as exercise:
+            self.assertEqual(run_target(args, runtime), 0)
+
+        exercise.assert_called_once_with(
+            runtime,
+            runtime.connect_peer.return_value,
+            NodeId("initiator"),
+            args.report,
+        )
 
     def test_bidirectional_pair_failure_shuts_down_without_connecting(self) -> None:
         runtime = Mock()
