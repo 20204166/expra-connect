@@ -157,6 +157,12 @@ class ExtendedPeerEventWriterTests(unittest.TestCase):
             "[01] started role=target version=1.2.3 state=started",
         )
 
+    def test_reverse_events_do_not_render_surface_placeholders(self) -> None:
+        self.assertEqual(
+            format_terminal_event(4, "reverse_connected", outcome="success"),
+            "[04] reverse_connected outcome=success",
+        )
+
 
 class ExtendedPeerCleanupTests(unittest.TestCase):
     def test_cleanup_scaffold_shuts_down_runtime_after_failure(self) -> None:
@@ -710,6 +716,174 @@ class ExtendedPeerStageTests(unittest.TestCase):
         self.assertEqual(names[-3:-1], ["self_revoked", "post_revoke_denied"])
         self.assertEqual(event.call_args_list[-2].kwargs, {"error_type": "PermissionError"})
         provider.revoke_self.assert_called_once_with()
+
+    def test_bidirectional_optional_stages_follow_surface_matrix(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("initiator")
+        initial = self._candidate()
+        rotated = self._candidate()
+        rotated.transport_generation = 2
+        runtime.peers = (initial,)
+        runtime.pairing.trusted.get.return_value = None
+        provider = Mock()
+        reconnected = Mock()
+        runtime.connect_peer.return_value = provider
+        runtime.reconnect_peer.return_value = reconnected
+        restarted = Mock()
+        restarted.start.return_value = self._status()
+        restarted.pairing.trusted = {NodeId("target"): Mock()}
+        restarted_provider = Mock()
+        restarted_provider.read_surface.side_effect = [
+            RemoteAuthorizationError("session grant absent"),
+            {"private": "payload"},
+        ]
+        restarted.connect_peer.return_value = restarted_provider
+        args = SimpleNamespace(
+            peer_id="target",
+            wait=0,
+            report=Path("/tmp/report"),
+            bidirectional_surfaces=True,
+            reconnect_after_rotation=True,
+            rotation_wait=1,
+            revoke_self=True,
+            restart_check=True,
+        )
+        provider.read_surface.side_effect = [
+            RemoteAuthorizationError("revoked"),
+        ]
+        reconnected.read_surface.side_effect = [
+            {"private": "payload"},
+            RemoteAuthorizationError("revoked"),
+        ]
+        reconnected.review_surface.side_effect = RemoteAuthorizationError("denied")
+        reconnected.invoke_surface_action.side_effect = RemoteAuthorizationError("denied")
+        with unittest.mock.patch(
+            "run_peer_extended.exercise_remote_surfaces"
+        ) as exercise, unittest.mock.patch(
+            "run_peer_extended.wait_for_peer", side_effect=[initial, rotated]
+        ) as wait_for_peer, unittest.mock.patch(
+            "run_peer_extended.write_event"
+        ) as event:
+            result = run_initiator(
+                args, runtime, runtime_factory=Mock(return_value=restarted)
+            )
+
+        self.assertEqual(result, 0)
+        exercise.assert_called_once_with(
+            runtime, provider, NodeId("target"), args.report
+        )
+        self.assertEqual(wait_for_peer.call_count, 2)
+        runtime.reconnect_peer.assert_called_once_with(NodeId("target"))
+        self.assertEqual(
+            [call.args[1] for call in event.call_args_list],
+            [
+                "started",
+                "discovered",
+                "reverse_paired",
+                "reverse_connected",
+                "waiting_for_rotated_peer",
+                "reconnected_after_rotation",
+                "surface_result",
+                "surface_denied",
+                "surface_denied",
+                "shared_after_rotation",
+                "self_revoked",
+                "surface_denied",
+                "restored_trust",
+                "surface_denied",
+                "surface_result",
+                "diagnostics",
+            ],
+        )
+        self.assertEqual(
+            [call.kwargs.get("access") for call in runtime.grant_surface_access.call_args_list],
+            ["read"],
+        )
+        self.assertEqual(
+            [call.kwargs.get("access") for call in restarted.grant_surface_access.call_args_list],
+            ["read"],
+        )
+        runtime.shutdown.assert_called_once_with()
+        restarted.shutdown.assert_called_once_with()
+
+    def test_bidirectional_rotation_requires_changed_generation(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("initiator")
+        candidate = self._candidate()
+        runtime.peers = (candidate,)
+        runtime.pairing.trusted.get.return_value = Mock()
+        runtime.connect_peer.return_value = Mock()
+        args = SimpleNamespace(
+            peer_id="target",
+            wait=0,
+            report=Path("/tmp/report"),
+            bidirectional_surfaces=True,
+            reconnect_after_rotation=True,
+            rotation_wait=1,
+        )
+        with unittest.mock.patch(
+            "run_peer_extended.exercise_remote_surfaces"
+        ), unittest.mock.patch(
+            "run_peer_extended.wait_for_peer", side_effect=[candidate, candidate]
+        ):
+            self.assertEqual(run_initiator(args, runtime), 1)
+        runtime.reconnect_peer.assert_not_called()
+
+    def test_bidirectional_restart_denies_session_surface_until_regrant(self) -> None:
+        restarted = Mock()
+        restarted.start.return_value = self._status()
+        restarted.pairing.trusted = {NodeId("target"): Mock()}
+        provider = Mock()
+        provider.read_surface.side_effect = [
+            RemoteAuthorizationError("session grant absent"),
+            {"private": "payload"},
+        ]
+        restarted.connect_peer.return_value = provider
+        args = SimpleNamespace(
+            peer_id="target",
+            wait=0,
+            report=Path("/tmp/report"),
+            bidirectional_surfaces=True,
+            restart_check=True,
+        )
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("initiator")
+        runtime.peers = (self._candidate(),)
+        runtime.pairing.trusted.get.return_value = Mock()
+        runtime.connect_peer.return_value = Mock()
+        with unittest.mock.patch("run_peer_extended.exercise_remote_surfaces"), unittest.mock.patch(
+            "run_peer_extended.write_event"
+        ) as event:
+            self.assertEqual(
+                run_initiator(args, runtime, runtime_factory=Mock(return_value=restarted)),
+                0,
+            )
+        self.assertEqual(provider.read_surface.call_count, 2)
+        restarted.grant_surface_access.assert_called_once_with(
+            NodeId("target"), "desktop", access="read"
+        )
+
+
+class ExtendedPeerDocumentationTests(unittest.TestCase):
+    def test_readme_documents_bidirectional_commands_and_event_order(self) -> None:
+        readme = (Path(__file__).parents[1] / "examples" / "README.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("--bidirectional-surfaces", readme)
+        self.assertIn("--advertise-address 192.168.55.107", readme)
+        self.assertIn("fresh", readme.lower())
+        self.assertIn("structured data, not pixel streaming", readme)
+        self.assertIn("pairing alone grants no surface access", readme)
+        self.assertLess(
+            readme.rindex("reverse_connected"), readme.rindex("waiting_for_rotated_peer")
+        )
+        self.assertLess(
+            readme.rindex("waiting_for_rotated_peer"),
+            readme.rindex("reconnected_after_rotation"),
+        )
 
     def test_optional_candidate_and_diagnostics_state_is_malformed_safe(self) -> None:
         self.assertEqual(

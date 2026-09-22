@@ -126,6 +126,49 @@ must advertise a changed transport generation; timeout or unchanged
 generation is reported as a type-only error. Restart checking never deletes
 profile state.
 
+### Bidirectional Surface Run
+
+Surfaces are structured data, not pixel streaming, and pairing alone grants no surface access.
+Use two fresh profiles and reports, pin the reachable address,
+and run both terminals with the same current wheel.
+
+Terminal 1, target:
+
+```sh
+PYTHONPATH=src .venv/bin/python run_peer_extended.py \
+  --role target \
+  --profile /tmp/expra-bidirectional-target-fresh \
+  --report /tmp/expra-bidirectional-target.json \
+  --advertise-address 192.168.55.103 \
+  --wait 120 \
+  --rotate-after 30 \
+  --bidirectional-surfaces
+```
+
+Terminal 2, initiator:
+
+```sh
+PYTHONPATH=src .venv/bin/python run_peer_extended.py \
+  --role initiator \
+  --profile /tmp/expra-bidirectional-initiator-fresh \
+  --report /tmp/expra-bidirectional-initiator.json \
+  --peer-id TARGET_NODE_ID \
+  --advertise-address 192.168.55.107 \
+  --wait 60 \
+  --reconnect-after-rotation \
+  --rotation-wait 30 \
+  --restart-check \
+  --revoke-self \
+  --bidirectional-surfaces
+```
+
+The bidirectional order is `started`, `discovered`, `reverse_paired`,
+`reverse_connected`, the surface matrix, then optional
+`waiting_for_rotated_peer`, `reconnected_after_rotation`, explicit surface
+re-grants and checks, `self_revoked` with typed `surface_denied`, and
+`restored_trust` followed by denial until an explicit re-grant. Reports record
+surface metadata and error types only.
+
 Reports are JSON event arrays with ordered sequence numbers. Terminal output
 and reports contain only allowlisted operational fields; private keys, HMAC
 secrets, invitation material, fencing tokens, transport proofs, raw payloads,

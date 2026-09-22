@@ -131,13 +131,14 @@ def format_terminal_event(sequence: int, event: str, **values: Any) -> str:
             f"routes={_field(safe.get('routes_count'))} "
             f"connections={_field(safe.get('connections_count'))}"
         )
-    if event in {
-        "surface_request",
-        "surface_result",
-        "surface_denied",
-        "reverse_connected",
-        "reverse_paired",
-    }:
+    if event in {"reverse_connected", "reverse_paired"}:
+        line = f"{prefix} {event} outcome={_field(safe.get('outcome'))}"
+        return (
+            f"{line} error_type={_field(safe.get('error_type'))}"
+            if "error_type" in safe
+            else line
+        )
+    if event in {"surface_request", "surface_result", "surface_denied"}:
         line = (
             f"{prefix} {event} surface_id={_field(safe.get('surface_id'))} "
             f"access={_field(safe.get('access'))} "
@@ -420,6 +421,114 @@ def exercise_remote_surfaces(
         denied("read", lambda: provider.read_surface(surface_id))
 
 
+def _surface_success_or_denial(
+    report: Path,
+    surface_id: str,
+    access: str,
+    operation: Any,
+    expected: str,
+) -> None:
+    try:
+        operation()
+    except RemoteAuthorizationError:
+        if expected == "denied":
+            write_event(
+                report,
+                "surface_denied",
+                surface_id=surface_id,
+                access=access,
+                outcome="denied",
+                error_type=RemoteAuthorizationError.__name__,
+            )
+            return
+        write_event(
+            report,
+            "error",
+            error_type=RemoteAuthorizationError.__name__,
+        )
+        raise
+    except Exception as error:  # noqa: BLE001 - report only the exception type
+        write_event(report, "error", error_type=type(error).__name__)
+        raise
+    if expected == "success":
+        record_surface_result(report, surface_id, access, "success")
+        return
+    error = AssertionError(f"surface {access} unexpectedly succeeded")
+    write_event(report, "error", error_type=type(error).__name__)
+    raise error
+
+
+def _exercise_reconnected_surface(
+    runtime: ConnectRuntime, provider: Any, peer_id: NodeId, report: Path
+) -> None:
+    """Re-grant only read access, then prove the other levels remain denied."""
+    surface_id = "desktop"
+    runtime.grant_surface_access(peer_id, surface_id, access="read")
+    _surface_success_or_denial(
+        report, surface_id, "read", lambda: provider.read_surface(surface_id), "success"
+    )
+    _surface_success_or_denial(
+        report, surface_id, "review", lambda: provider.review_surface(surface_id), "denied"
+    )
+    _surface_success_or_denial(
+        report,
+        surface_id,
+        "action",
+        lambda: provider.invoke_surface_action(surface_id, "save"),
+        "denied",
+    )
+
+
+def _verify_bidirectional_revocation(
+    provider: Any, peer_id: NodeId, report: Path
+) -> None:
+    provider.revoke_self()
+    write_event(report, "self_revoked", peer_id=peer_id.value)
+    _surface_success_or_denial(
+        report,
+        "desktop",
+        "read",
+        lambda: provider.read_surface("desktop"),
+        "denied",
+    )
+
+
+def _restart_bidirectional_session(
+    args: Any,
+    runtime: ConnectRuntime,
+    peer_id: NodeId,
+    runtime_factory: Any,
+) -> tuple[ConnectRuntime, Any]:
+    """Restore trust but require a fresh explicit session surface grant."""
+    runtime.shutdown()
+    runtime = runtime_factory()
+    register_harness_surfaces(runtime)
+    status = runtime.start()
+    if _status_state(status) != "started":
+        raise RuntimeError("runtime did not restart")
+    restored = runtime.pairing and runtime.pairing.trusted.get(peer_id)
+    if restored is None:
+        raise RuntimeError("trusted peer was not restored")
+    write_event(args.report, "restored_trust", peer_id=peer_id.value)
+    provider = runtime.connect_peer(peer_id)
+    _surface_success_or_denial(
+        args.report,
+        "desktop",
+        "read",
+        lambda: provider.read_surface("desktop"),
+        "denied",
+    )
+    runtime.grant_surface_access(peer_id, "desktop", access="read")
+    _surface_success_or_denial(
+        args.report,
+        "desktop",
+        "read",
+        lambda: provider.read_surface("desktop"),
+        "success",
+    )
+    return runtime, provider
+
+
 def _diagnostics_values(diagnostics: Any) -> dict[str, Any]:
     if not isinstance(diagnostics, dict):
         return {}
@@ -565,6 +674,46 @@ def run_initiator(
             )
             write_event(args.report, "reverse_connected", outcome="success")
             exercise_remote_surfaces(runtime, provider, peer_id, args.report)
+            if getattr(args, "reconnect_after_rotation", False):
+                write_event(
+                    args.report,
+                    "waiting_for_rotated_peer",
+                    peer_id=peer_id.value,
+                    timeout=args.rotation_wait,
+                )
+                previous_generation = getattr(candidate, "transport_generation", None)
+                previous_fingerprint = getattr(candidate, "transport_fingerprint", None)
+                rotated_candidate = wait_for_peer(
+                    runtime,
+                    peer_id.value,
+                    args.rotation_wait,
+                    generation_not=previous_generation,
+                    fingerprint_not=previous_fingerprint,
+                )
+                if rotated_candidate is None:
+                    raise TimeoutError("rotated peer was not rediscovered")
+                rotated_generation = getattr(rotated_candidate, "transport_generation", None)
+                if rotated_generation == previous_generation:
+                    raise RuntimeError("transport generation did not change")
+                provider = runtime.reconnect_peer(peer_id)
+                write_event(
+                    args.report, "reconnected_after_rotation", peer_id=peer_id.value
+                )
+                _exercise_reconnected_surface(runtime, provider, peer_id, args.report)
+                write_event(
+                    args.report,
+                    "shared_after_rotation",
+                    capability=CAPABILITY,
+                    outcome="success",
+                )
+            if getattr(args, "revoke_self", False):
+                _verify_bidirectional_revocation(provider, peer_id, args.report)
+            if getattr(args, "restart_check", False):
+                if runtime_factory is None:
+                    raise RuntimeError("restart runtime factory is unavailable")
+                runtime, provider = _restart_bidirectional_session(
+                    args, runtime, peer_id, runtime_factory
+                )
             write_event(
                 args.report, "diagnostics", **_diagnostics_values(runtime.diagnostics())
             )
