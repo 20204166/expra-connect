@@ -73,7 +73,9 @@ Windows online installation from any PowerShell directory:
 ```powershell
 irm https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1 | iex
 ```
-```Or powershell
+Alternative with cache busting:
+
+```powershell
 irm "https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1?cache=$([guid]::NewGuid())" | iex
 ```
 The online installer detects when Windows has no Python and bootstraps Python
