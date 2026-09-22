@@ -1,6 +1,9 @@
 # Security Model
 
-Node IDs are stable identifiers, not credentials. TLS certificates are pinned
+Node IDs are stable identifiers, not credentials. Knowledge of a `NodeId` does
+not authenticate a device. `DeviceIdentity` is the additive durable Ed25519
+root bound to the existing `NodeId`; its private key is never exposed through
+runtime diagnostics or sent to peers. TLS certificates are pinned
 by generation fingerprint and replacement generations require a signature from
 the durable Ed25519 root identity. HMAC secrets authenticate protocol envelopes. Pairing is
 directional: a trusted-peer record and a peer-grant record have different
@@ -30,6 +33,19 @@ owner; it does not bypass target authorization. Logical session resumption is
 handled by the session owner only after the replacement transport has passed
 the normal identity, freshness, and authorization checks; retired connection
 generations are fenced.
+
+## Device Identity Foundation
+
+Phase 1 creates `device_identity.json` on first startup, including the existing
+`NodeId`, raw Ed25519 key material in canonical base64, a public-key fingerprint,
+creation time, and an optional digest of local hardware hints. Raw MAC addresses,
+machine identifiers, and the hardware digest are local-only and are not
+transmitted or used for authentication. Hardware changes never regenerate the
+cryptographic identity. Existing Pair, trust, transport, and cluster state is
+not migrated or rewritten.
+
+Malformed or mismatched device identity state fails closed. A missing file on a
+legacy profile is the only case that generates a new device identity.
 
 ## State Migration
 

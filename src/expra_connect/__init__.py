@@ -4,6 +4,13 @@ from ._version import __version__
 from .cluster import Cluster, ClusterRole
 from .connection_state import ConnectionState, RetryState
 from .discovery_full import NetworkDiscovery
+from .device_identity import (
+    DeviceHardwareHint,
+    DeviceHardwareProvider,
+    DeviceIdentity,
+    DeviceIdentityError,
+    DeviceIdentityView,
+)
 from .failover import FailoverCoordinator
 from .identity import (
     NodeId,
@@ -39,6 +46,11 @@ __all__ = [
     "ConnectRuntime",
     "ConnectionState",
     "DiscoveredNodeCandidate",
+    "DeviceHardwareHint",
+    "DeviceHardwareProvider",
+    "DeviceIdentity",
+    "DeviceIdentityError",
+    "DeviceIdentityView",
     "EndpointCandidate",
     "EndpointSource",
     "FailoverCoordinator",

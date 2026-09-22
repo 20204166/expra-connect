@@ -9,7 +9,7 @@ import platform
 import socket
 import threading
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from types import TracebackType
@@ -20,6 +20,7 @@ from typing_extensions import Self
 from ._version import __version__
 from .cluster import Cluster, ClusterState, ClusterStore, FailoverCoordinator, RoleState
 from .connection_manager import ConnectionManager
+from .device_identity import DeviceHardwareProvider, DeviceIdentityRuntimeMixin
 from .discovery_full import (
     REAP_TICK_SECONDS,
     SERVICE_TYPE,
@@ -50,6 +51,7 @@ from .remote_models import NodeStatus
 from .remote_role_operations import RuntimeClusterOperations
 from .remote_service import RemoteService
 from .role_engine import ClusterRole as RegistryClusterRole
+from .runtime_diagnostics import build_diagnostics
 from .runtime_persistence import (
     peer_grant_from_json,
     peer_grant_to_json,
@@ -128,6 +130,7 @@ class ConnectConfig:
     discovery_backend_factory: (
         Callable[[Callable[[str, str, Any], None]], DiscoveryBackend] | None
     ) = None
+    device_hardware_provider: DeviceHardwareProvider | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "profile_dir", Path(self.profile_dir).expanduser())
@@ -152,7 +155,9 @@ class ConnectConfig:
         return self.platform_name or platform.system().lower()
 
 
-class ConnectRuntime(SurfaceRuntimeMixin, RuntimeClusterOperations):
+class ConnectRuntime(
+    DeviceIdentityRuntimeMixin, SurfaceRuntimeMixin, RuntimeClusterOperations
+):
     """Compose the mature peer components without doing work in construction."""
 
     def __init__(self, config: ConnectConfig, *,
@@ -255,59 +260,7 @@ class ConnectRuntime(SurfaceRuntimeMixin, RuntimeClusterOperations):
 
     def diagnostics(self) -> dict[str, Any]:
         """Return operational state without credentials or invitation material."""
-
-        identity = self._identity
-        generations = self._transport_generations
-        result: dict[str, Any] = {
-            "status": asdict(self._status),
-            "generation": self._generation,
-            "identity": None,
-            "transport": {
-                "fingerprint": self._status.tls_fingerprint,
-                "current_generation": (
-                    generations.current_generation if generations is not None else None
-                ),
-                "pending_generation": (
-                    generations.next.generation
-                    if generations is not None and generations.next is not None
-                    else None
-                ),
-            },
-            "routes": [],
-            "connections": [],
-            "sessions": [], "observability": asdict(self._observer.snapshot()),
-        }
-        if identity is not None:
-            result["identity"] = {
-                "node_id": identity.node_id.value,
-                "root_fingerprint": node_identity_fingerprint(identity.root_public_key),
-            }
-        for candidate in self.peers:
-            result["routes"].append(
-                {
-                    "node_id": candidate.stable_id,
-                    "hostname": candidate.hostname,
-                    "addresses": candidate.addresses,
-                    "port": candidate.port,
-                    "transport_fingerprint": candidate.transport_fingerprint,
-                    "last_seen": candidate.last_seen,
-                }
-            )
-        if self._registry is not None:
-            for record in self._registry.records:
-                result["connections"].append(
-                    {
-                        "node_id": record.node_id.value,
-                        "state": record.connection.status.value,
-                        "reason": record.connection.reason,
-                        "changed_at": record.connection.changed_at,
-                    }
-                )
-        if self._connection_manager is not None:
-            result["sessions"] = [
-                node_id.value for node_id in self._connection_manager.providers
-            ]
-        return result
+        return build_diagnostics(self)
 
     def connect_peer(self, peer_id: NodeId) -> Any:
         manager = self._connection_manager
@@ -454,6 +407,10 @@ class ConnectRuntime(SurfaceRuntimeMixin, RuntimeClusterOperations):
         else:
             self._identity = NodeIdentity.create()
             self._identity.save(path)
+        assert self._identity is not None
+        self._load_device_identity(
+            profile, self._identity.node_id, self.config.device_hardware_provider
+        )
 
     def _load_persisted_state(self) -> None:
         if self._identity is None:

@@ -434,3 +434,19 @@ def verify_transport_proof(
     except (InvalidSignature, TypeError, ValueError):
         return False
     return True
+
+
+def __getattr__(name: str) -> object:
+    """Provide the additive device identity from the identity namespace too."""
+
+    if name in {
+        "DeviceHardwareHint",
+        "DeviceHardwareProvider",
+        "DeviceIdentity",
+        "DeviceIdentityError",
+        "DeviceIdentityView",
+    }:
+        from . import device_identity
+
+        return getattr(device_identity, name)
+    raise AttributeError(name)

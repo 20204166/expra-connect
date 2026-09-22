@@ -19,6 +19,7 @@ topology state, not a transport state.
 | Responsibility | Canonical owner | Runtime role |
 | --- | --- | --- |
 | Durable node identity and fingerprint | `identity.py` | Loads identity before listener startup |
+| Durable cryptographic device identity | `device_identity.py` | Creates or loads `device_identity.json` after the existing `NodeId` is loaded |
 | Root signing identity and transport generations | `identity.py`, `tls_material.py` | Signs and validates credential replacement without changing `NodeId` |
 | Candidate discovery and expiry | `discovery_full.py` | Serializes backend lifecycle, normalizes per-service observations, and forwards events |
 | Pairing, grants, trust, and revocation | `pairing.py` | Persists transitions and refreshes the listener ACL |
@@ -36,8 +37,15 @@ membership, and connection loss never removes it.
 
 ## Stable Identity and Transport Rotation
 
-`NodeId` is the stable logical identity. `NodeIdentity` retains the existing
-HMAC-compatible secret and now also persists an Ed25519 root signing key. TLS
+`NodeId` is the stable logical identity and is not a credential. `DeviceIdentity`
+is the additive durable Ed25519 identity in `device_identity.json`; its private
+key is the cryptographic proof, and its fingerprint is derived from the raw
+public key as `ed25519:<sha256>`. It is bound to the existing `NodeId`, survives
+restart and network changes, and is not currently sent over the wire or used by
+Pair, trust, discovery, transport, or cluster decisions.
+
+`NodeIdentity` retains the existing HMAC-compatible secret and transport root
+behavior unchanged. TLS
 credentials are replaceable transport generations, identified by their pinned
 certificate fingerprint. A generation proof is signed by the root and binds the
 `NodeId`, generation number, and fingerprint. An advertised replacement is not
