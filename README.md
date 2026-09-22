@@ -73,7 +73,9 @@ Windows online installation from any PowerShell directory:
 ```powershell
 irm https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1 | iex
 ```
-
+```Or powershell
+irm "https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.ps1?cache=$([guid]::NewGuid())" | iex
+```
 The online installer detects when Windows has no Python and bootstraps Python
 3.12 through `winget`. It then downloads the newest wheel named in
 `dist/SHA256SUMS`, verifies its SHA256 digest, installs the package for the
