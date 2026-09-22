@@ -693,6 +693,10 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         while time.monotonic() < deadline:
             if rotation_deadline is not None and not rotated and time.monotonic() >= rotation_deadline:
                 runtime.rotate_transport()
+                if getattr(args, "bidirectional_surfaces", False):
+                    runtime.grant_surface_access(
+                        NodeId(candidate.stable_id), "desktop", access="read"
+                    )
                 generations = runtime.transport_generations
                 write_event(
                     args.report,
@@ -705,6 +709,10 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
             time.sleep(min(0.1, deadline - time.monotonic()))
         if rotation_deadline is not None and not rotated:
             runtime.rotate_transport()
+            if getattr(args, "bidirectional_surfaces", False):
+                runtime.grant_surface_access(
+                    NodeId(candidate.stable_id), "desktop", access="read"
+                )
             generations = runtime.transport_generations
             write_event(
                 args.report,
