@@ -667,6 +667,10 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
                     args.report, "discovery_timeout", peers_count=len(runtime.peers)
                 )
                 return 2
+            if getattr(args, "bidirectional_surfaces", False):
+                runtime.sharing.allow(
+                    NodeId(candidate.stable_id), SURFACE_SYNC_CAPABILITY
+                )
             provider = connect_bidirectionally(
                 runtime,
                 candidate,
