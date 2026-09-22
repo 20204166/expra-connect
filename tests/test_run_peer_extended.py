@@ -14,13 +14,17 @@ from run_peer_extended import (
     _candidate_values,
     _diagnostics_values,
     _parser,
+    _runtime,
+    approve_surface_pairing,
     cleanup_runtime,
+    connect_bidirectionally,
     format_terminal_event,
     main,
     record_surface_result,
     register_harness_surfaces,
     run_initiator,
     run_target,
+    wait_for_matching_peer,
     write_event,
 )
 
@@ -278,6 +282,127 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.sharing.allow.assert_called_once_with(
             request.caller_node_id, CAPABILITY
         )
+
+    def test_surface_pairing_approves_trust_without_granting_surface_access(self) -> None:
+        runtime = Mock()
+        request = SimpleNamespace(
+            caller_node_id=SimpleNamespace(value="initiator"), permissions=()
+        )
+
+        with unittest.mock.patch("run_peer_extended.write_event") as event:
+            self.assertTrue(
+                approve_surface_pairing(runtime, Path("/tmp/report"), request)
+            )
+
+        runtime.sharing.allow.assert_not_called()
+        runtime.grant_surface_access.assert_not_called()
+        self.assertEqual(event.call_args.args[1], "pairing_request")
+        self.assertNotIn("caller_node_id", event.call_args.kwargs)
+
+    def test_bidirectional_runtime_installs_pairing_callback_for_both_roles(self) -> None:
+        for role in ("target", "initiator"):
+            args = SimpleNamespace(
+                role=role,
+                profile=Path(f"/tmp/{role}"),
+                report=Path(f"/tmp/{role}-report.json"),
+                advertise_address=None,
+                bidirectional_surfaces=True,
+            )
+            runtime = _runtime(args)
+            self.assertIsNotNone(runtime.config.on_pairing_request)
+
+    def test_one_way_initiator_does_not_install_pairing_callback(self) -> None:
+        args = SimpleNamespace(
+            role="initiator",
+            profile=Path("/tmp/initiator"),
+            report=Path("/tmp/initiator-report.json"),
+            advertise_address=None,
+            bidirectional_surfaces=False,
+        )
+        runtime = _runtime(args)
+        self.assertIsNone(runtime.config.on_pairing_request)
+
+    def test_wait_for_matching_peer_filters_by_public_stable_id(self) -> None:
+        runtime = Mock()
+        runtime.peers = (self._candidate("other"), self._candidate("target"))
+        self.assertEqual(
+            wait_for_matching_peer(runtime, "target", 0).stable_id,
+            "target",
+        )
+
+    def test_connect_bidirectionally_pairs_before_connecting(self) -> None:
+        runtime = Mock()
+        runtime.pairing.trusted.get.return_value = None
+        runtime.pair_peer.return_value = SimpleNamespace(peer_id=SimpleNamespace(value="peer"))
+        provider = Mock()
+        runtime.connect_peer.return_value = provider
+
+        result = connect_bidirectionally(runtime, self._candidate("peer"))
+
+        self.assertIs(result, provider)
+        runtime.pair_peer.assert_called_once_with(NodeId("peer"))
+        runtime.connect_peer.assert_called_once_with(NodeId("peer"))
+
+    def test_bidirectional_initiator_orders_reverse_pair_and_connect_events(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("initiator")
+        runtime.peers = (self._candidate("target"),)
+        runtime.pairing.trusted.get.return_value = None
+        runtime.pair_peer.return_value = SimpleNamespace()
+        runtime.connect_peer.return_value = Mock()
+        runtime.diagnostics.return_value = {"routes": [], "connections": []}
+        args = SimpleNamespace(
+            peer_id="target",
+            wait=0,
+            report=Path("/tmp/report"),
+            bidirectional_surfaces=True,
+        )
+
+        with unittest.mock.patch("run_peer_extended.write_event") as event:
+            self.assertEqual(run_initiator(args, runtime), 0)
+
+        names = [call.args[1] for call in event.call_args_list]
+        self.assertLess(names.index("reverse_paired"), names.index("reverse_connected"))
+        self.assertNotIn("target", str(event.call_args_list))
+        runtime.grant_surface_access.assert_not_called()
+
+    def test_bidirectional_pair_failure_shuts_down_without_connecting(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("initiator")
+        runtime.peers = (self._candidate("target"),)
+        runtime.pairing.trusted.get.return_value = None
+        runtime.pair_peer.side_effect = ValueError("private detail")
+        args = SimpleNamespace(
+            peer_id="target",
+            wait=0,
+            report=Path("/tmp/report"),
+            bidirectional_surfaces=True,
+        )
+
+        with unittest.mock.patch("run_peer_extended.write_event") as event:
+            self.assertEqual(run_initiator(args, runtime), 1)
+
+        self.assertEqual(event.call_args.kwargs, {"error_type": "ValueError"})
+        runtime.connect_peer.assert_not_called()
+        runtime.shutdown.assert_called_once_with()
+
+    def test_bidirectional_target_failure_shuts_down_runtime(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("target")
+        runtime.peers = ()
+        args = SimpleNamespace(
+            role="target",
+            report=Path("/tmp/target-report.json"),
+            wait=0,
+            bidirectional_surfaces=True,
+            peer_id=None,
+        )
+
+        self.assertEqual(run_target(args, runtime), 2)
+        runtime.shutdown.assert_called_once_with()
 
     def test_initiator_candidate_wait_timeout_gates_pair_and_connect(self) -> None:
         runtime = Mock()

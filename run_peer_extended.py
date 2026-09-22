@@ -54,12 +54,8 @@ _EVENT_FIELDS: dict[str, frozenset[str]] = {
     "surface_denied": frozenset(
         {"surface_id", "access", "outcome", "error_type"}
     ),
-    "reverse_connected": frozenset(
-        {"surface_id", "access", "outcome", "error_type"}
-    ),
-    "reverse_paired": frozenset(
-        {"surface_id", "access", "outcome", "error_type"}
-    ),
+    "reverse_connected": frozenset({"outcome", "error_type"}),
+    "reverse_paired": frozenset({"outcome", "error_type"}),
 }
 
 
@@ -246,6 +242,18 @@ def record_surface_result(
     write_event(report, "surface_result", **values)
 
 
+def approve_surface_pairing(
+    runtime: ConnectRuntime, report: Path, request: Any
+) -> bool:
+    """Approve the trust handshake without implicitly granting surface access."""
+    permissions = sorted(
+        getattr(permission, "value", permission)
+        for permission in getattr(request, "permissions", ())
+    )
+    write_event(report, "pairing_request", permissions=permissions)
+    return True
+
+
 @contextmanager
 def cleanup_runtime(runtime: ConnectRuntime) -> Iterator[ConnectRuntime]:
     """Provide the common shutdown boundary for later runtime stages."""
@@ -319,6 +327,36 @@ def wait_for_peer(
         time.sleep(min(0.1, max(0.0, deadline - time.monotonic())))
 
 
+def wait_for_matching_peer(
+    runtime: ConnectRuntime, peer_id: str | None, timeout: float
+) -> Any | None:
+    """Wait for a discovered candidate matching the requested peer, if given."""
+    return wait_for_peer(runtime, peer_id, timeout)
+
+
+def connect_bidirectionally(
+    runtime: ConnectRuntime,
+    candidate: Any,
+    *,
+    on_paired: Any | None = None,
+) -> Any:
+    """Pair and connect to a discovered peer using the public runtime APIs."""
+    peer_id = NodeId(candidate.stable_id)
+    trusted = runtime.pairing.trusted.get(peer_id) if runtime.pairing else None
+    if trusted is None:
+        runtime.pair_peer(peer_id)
+        if on_paired is not None:
+            on_paired()
+    return runtime.connect_peer(peer_id)
+
+
+def grant_harness_surface_access(runtime: ConnectRuntime, peer_id: NodeId) -> None:
+    """Grant each incoming surface level explicitly after the connection exists."""
+    for surface_id in ("desktop", "desktop/settings", "device/status"):
+        for access in ("read", "review", "action"):
+            runtime.grant_surface_access(peer_id, surface_id, access=access)
+
+
 def _diagnostics_values(diagnostics: Any) -> dict[str, Any]:
     if not isinstance(diagnostics, dict):
         return {}
@@ -354,7 +392,15 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         lambda peer_id, params: {"ok": True, "peer_id": peer_id.value, "params": params},
     )
     try:
-        setattr(runtime.config, "on_pairing_request", approve_pairing)
+        if getattr(args, "bidirectional_surfaces", False):
+            register_harness_surfaces(runtime)
+        setattr(
+            runtime.config,
+            "on_pairing_request",
+            approve_surface_pairing
+            if getattr(args, "bidirectional_surfaces", False)
+            else approve_pairing,
+        )
     except FrozenInstanceError:
         # The real public config is frozen; its callback is installed at build time.
         pass
@@ -364,6 +410,23 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         if _status_state(status) != "started":
             raise RuntimeError("runtime did not start")
         write_event(args.report, "target_ready")
+        if getattr(args, "bidirectional_surfaces", False):
+            candidate = wait_for_matching_peer(
+                runtime, getattr(args, "peer_id", None), args.wait
+            )
+            if candidate is None:
+                write_event(
+                    args.report, "discovery_timeout", peers_count=len(runtime.peers)
+                )
+                return 2
+            connect_bidirectionally(
+                runtime,
+                candidate,
+                on_paired=lambda: write_event(
+                    args.report, "reverse_paired", outcome="success"
+                ),
+            )
+            write_event(args.report, "reverse_connected", outcome="success")
         rotate_after = getattr(args, "rotate_after", None)
         rotation_deadline = (
             time.monotonic() + max(rotate_after, 0.0)
@@ -410,17 +473,35 @@ def run_initiator(
 ) -> int:
     """Run the ordered initiator discovery, trust, connection, and share stages."""
     try:
+        if getattr(args, "bidirectional_surfaces", False):
+            register_harness_surfaces(runtime)
         status = runtime.start()
         _write_started(args.report, "initiator", runtime, status)
         if _status_state(status) != "started":
             raise RuntimeError("runtime did not start")
-        candidate = wait_for_peer(runtime, args.peer_id, args.wait)
+        if getattr(args, "bidirectional_surfaces", False):
+            candidate = wait_for_matching_peer(runtime, args.peer_id, args.wait)
+        else:
+            candidate = wait_for_peer(runtime, args.peer_id, args.wait)
         if candidate is None:
             write_event(args.report, "discovery_timeout", peers_count=len(runtime.peers))
             return 2
         route = _candidate_values(candidate)
         write_event(args.report, "discovered", **route)
         peer_id = NodeId(candidate.stable_id)
+        if getattr(args, "bidirectional_surfaces", False):
+            connect_bidirectionally(
+                runtime,
+                candidate,
+                on_paired=lambda: write_event(
+                    args.report, "reverse_paired", outcome="success"
+                ),
+            )
+            write_event(args.report, "reverse_connected", outcome="success")
+            write_event(
+                args.report, "diagnostics", **_diagnostics_values(runtime.diagnostics())
+            )
+            return 0
         trusted = runtime.pairing.trusted.get(peer_id) if runtime.pairing else None
         if trusted is None:
             trusted = runtime.pair_peer(peer_id)
@@ -564,7 +645,15 @@ def _runtime(args: Any) -> ConnectRuntime:
             profile_dir=args.profile,
             advertised_addresses=(tuple(args.advertise_address) if args.advertise_address else None),
             on_route_attempt=route_attempt,
-            on_pairing_request=approve_pairing if args.role == "target" else None,
+            on_pairing_request=(
+                lambda request: approve_surface_pairing(
+                    runtime_holder[0], args.report, request
+                )
+                if getattr(args, "bidirectional_surfaces", False)
+                else approve_pairing(request)
+            )
+            if args.role == "target" or getattr(args, "bidirectional_surfaces", False)
+            else None,
         )
     )
     runtime_holder.append(runtime)
