@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from dataclasses import FrozenInstanceError
 from enum import Enum
 from pathlib import Path
-from threading import Lock
+from threading import Event, Lock
 from typing import Any, Iterator
 
 from expra_connect import (  # noqa: F401 - staged runtime imports are intentional
@@ -21,6 +21,8 @@ from expra_connect import (  # noqa: F401 - staged runtime imports are intention
 from expra_connect.wire_protocol import RemoteAuthorizationError
 
 CAPABILITY = "test.read_state"
+SURFACE_SYNC_CAPABILITY = "test.surface_sync"
+SURFACE_SYNC_TIMEOUT = 5.0
 _REPORT_LOCK = Lock()
 
 _EVENT_FIELDS: dict[str, frozenset[str]] = {
@@ -244,6 +246,22 @@ def record_surface_result(
     write_event(report, "surface_result", **values)
 
 
+def register_surface_sync(
+    runtime: ConnectRuntime, ready_events: dict[str, Event]
+) -> None:
+    """Register a private harness barrier without granting surface access."""
+
+    def wait_for_surface(_peer_id: Any, params: dict[str, Any]) -> dict[str, bool]:
+        surface_id = params.get("surface_id")
+        event = ready_events.get(surface_id)
+        return {"ready": event.wait(SURFACE_SYNC_TIMEOUT) if event else False}
+
+    runtime.sharing.register(
+        SURFACE_SYNC_CAPABILITY,
+        wait_for_surface,
+    )
+
+
 def _retry_surface_success(operation: Any, timeout: float = 5.0) -> Any:
     """Allow the opposite harness to publish its matching surface grant."""
     deadline = time.monotonic() + max(timeout, 0.0)
@@ -266,6 +284,7 @@ def approve_surface_pairing(
         for permission in getattr(request, "permissions", ())
     )
     write_event(report, "pairing_request", permissions=permissions)
+    runtime.sharing.allow(request.caller_node_id, SURFACE_SYNC_CAPABILITY)
     return True
 
 
@@ -377,6 +396,8 @@ def exercise_remote_surfaces(
     provider: Any,
     peer_id: NodeId,
     report: Path,
+    *,
+    ready_events: dict[str, Event] | None = None,
 ) -> None:
     """Exercise each remote surface through every explicit authorization stage."""
     surface_ids = ("desktop", "desktop/settings", "device/status")
@@ -414,6 +435,18 @@ def exercise_remote_surfaces(
         denied("read", lambda: provider.read_surface(surface_id))
         denied("review", lambda: provider.review_surface(surface_id))
         denied("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+
+        if ready_events is not None:
+            ready_events[surface_id].set()
+            ready = provider.request_shared(
+                SURFACE_SYNC_CAPABILITY,
+                {
+                    "phase": "initial_surface_denials",
+                    "surface_id": surface_id,
+                },
+            )
+            if not isinstance(ready, dict) or ready.get("ready") is not True:
+                raise RemoteAuthorizationError("surface synchronization is not ready")
 
         runtime.grant_surface_access(peer_id, surface_id, access="read")
         succeeded("read", lambda: provider.read_surface(surface_id))
@@ -558,6 +591,11 @@ def _diagnostics_values(diagnostics: Any) -> dict[str, Any]:
 
 def run_target(args: Any, runtime: ConnectRuntime) -> int:
     """Start a target, expose the test capability, and remain available."""
+    surface_ready = {
+        surface_id: Event()
+        for surface_id in ("desktop", "desktop/settings", "device/status")
+    }
+
     def approve_pairing(request: Any) -> bool:
         permissions = sorted(
             getattr(permission, "value", permission)
@@ -579,6 +617,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
     try:
         if getattr(args, "bidirectional_surfaces", False):
             register_harness_surfaces(runtime)
+            register_surface_sync(runtime, surface_ready)
         setattr(
             runtime.config,
             "on_pairing_request",
@@ -613,7 +652,11 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
             )
             write_event(args.report, "reverse_connected", outcome="success")
             exercise_remote_surfaces(
-                runtime, provider, NodeId(candidate.stable_id), args.report
+                runtime,
+                provider,
+                NodeId(candidate.stable_id),
+                args.report,
+                ready_events=surface_ready,
             )
         rotate_after = getattr(args, "rotate_after", None)
         rotation_deadline = (
@@ -660,9 +703,14 @@ def run_initiator(
     runtime_factory: Any | None = None,
 ) -> int:
     """Run the ordered initiator discovery, trust, connection, and share stages."""
+    surface_ready = {
+        surface_id: Event()
+        for surface_id in ("desktop", "desktop/settings", "device/status")
+    }
     try:
         if getattr(args, "bidirectional_surfaces", False):
             register_harness_surfaces(runtime)
+            register_surface_sync(runtime, surface_ready)
         status = runtime.start()
         _write_started(args.report, "initiator", runtime, status)
         if _status_state(status) != "started":
@@ -686,7 +734,13 @@ def run_initiator(
                 ),
             )
             write_event(args.report, "reverse_connected", outcome="success")
-            exercise_remote_surfaces(runtime, provider, peer_id, args.report)
+            exercise_remote_surfaces(
+                runtime,
+                provider,
+                peer_id,
+                args.report,
+                ready_events=surface_ready,
+            )
             if getattr(args, "reconnect_after_rotation", False):
                 write_event(
                     args.report,

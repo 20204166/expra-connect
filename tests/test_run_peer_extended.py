@@ -5,12 +5,14 @@ import unittest.mock
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from threading import Event
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 from expra_connect import NodeId
 from run_peer_extended import (
     CAPABILITY,
+    SURFACE_SYNC_CAPABILITY,
     _candidate_values,
     _diagnostics_values,
     _parser,
@@ -303,7 +305,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
                 approve_surface_pairing(runtime, Path("/tmp/report"), request)
             )
 
-        runtime.sharing.allow.assert_not_called()
+        runtime.sharing.allow.assert_called_once_with(
+            request.caller_node_id, SURFACE_SYNC_CAPABILITY
+        )
         runtime.grant_surface_access.assert_not_called()
         self.assertEqual(event.call_args.args[1], "pairing_request")
         self.assertNotIn("caller_node_id", event.call_args.kwargs)
@@ -386,11 +390,18 @@ class ExtendedPeerStageTests(unittest.TestCase):
         provider.read_surface.side_effect = read
         provider.review_surface.side_effect = review
         provider.invoke_surface_action.side_effect = action
+        provider.request_shared.return_value = {"ready": True}
 
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / "report.json"
             with redirect_stdout(StringIO()):
-                exercise_remote_surfaces(runtime, provider, NodeId("peer"), report)
+                exercise_remote_surfaces(
+                    runtime,
+                    provider,
+                    NodeId("peer"),
+                    report,
+                    ready_events={surface_id: Event() for surface_id in surface_ids},
+                )
 
             records = json.loads(report.read_text(encoding="utf-8"))
             report_text = report.read_text(encoding="utf-8")
@@ -431,6 +442,16 @@ class ExtendedPeerStageTests(unittest.TestCase):
             ],
         )
         self.assertNotIn("must not be logged", report_text)
+        self.assertEqual(
+            [call.args for call in provider.request_shared.call_args_list],
+            [
+                (
+                    SURFACE_SYNC_CAPABILITY,
+                    {"phase": "initial_surface_denials", "surface_id": surface_id},
+                )
+                for surface_id in surface_ids
+            ],
+        )
 
     def test_exercise_remote_surfaces_reports_unexpected_errors_by_type(self) -> None:
         runtime = Mock()
@@ -496,6 +517,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             runtime.connect_peer.return_value,
             NodeId("target"),
             args.report,
+            ready_events=unittest.mock.ANY,
         )
 
     def test_bidirectional_target_exercises_reverse_provider_after_connect(self) -> None:
@@ -524,6 +546,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             runtime.connect_peer.return_value,
             NodeId("initiator"),
             args.report,
+            ready_events=unittest.mock.ANY,
         )
 
     def test_bidirectional_pair_failure_shuts_down_without_connecting(self) -> None:
@@ -786,7 +809,11 @@ class ExtendedPeerStageTests(unittest.TestCase):
 
         self.assertEqual(result, 0)
         exercise.assert_called_once_with(
-            runtime, provider, NodeId("target"), args.report
+            runtime,
+            provider,
+            NodeId("target"),
+            args.report,
+            ready_events=unittest.mock.ANY,
         )
         self.assertEqual(wait_for_peer.call_count, 2)
         runtime.reconnect_peer.assert_called_once_with(NodeId("target"))
