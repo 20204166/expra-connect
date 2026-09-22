@@ -45,6 +45,15 @@ def _make_wheel(root: Path, version: str) -> Path:
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_published_checksum_manifest_references_local_wheels(self) -> None:
+        root = Path(__file__).parents[1]
+        sums = root / "dist" / "SHA256SUMS"
+        self.assertTrue(sums.is_file())
+        entries = [line.split() for line in sums.read_text(encoding="utf-8").splitlines() if line.strip()]
+        self.assertTrue(entries)
+        for _digest, filename in entries:
+            self.assertTrue((root / "dist" / filename).is_file(), filename)
+
     def test_bump_levels_and_carry(self) -> None:
         self.assertEqual(release._next_version("0.1.2.0", "patch"), "0.1.2.1")
         self.assertEqual(release._next_version("0.1.2.9", "patch"), "0.1.3.0")

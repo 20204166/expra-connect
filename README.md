@@ -144,6 +144,8 @@ expra-peer --profile "$env:LOCALAPPDATA\expra-connect" diagnostics
 The online installer is the standard Windows installation path. It downloads
 the wheel and checksum from this repository, verifies the wheel, installs the
 package for the current user, verifies the import, and updates the user PATH.
+Each release must commit the wheel named by `dist/SHA256SUMS`; otherwise the
+raw GitHub download URL returns `404` even when the wheel exists locally.
 
 ### CLI Runtime Smoke Test
 
