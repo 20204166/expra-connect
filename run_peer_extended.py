@@ -436,16 +436,21 @@ def exercise_remote_surfaces(
             return
         sync_key = f"{surface_id}:{phase}"
         ready_events.setdefault(sync_key, Event()).set()
-        ready = provider.request_shared(
-            SURFACE_SYNC_CAPABILITY,
-            {
-                "phase": phase,
-                "surface_id": surface_id,
-                "sync_key": sync_key,
-            },
-        )
-        if not isinstance(ready, dict) or ready.get("ready") is not True:
-            raise RemoteAuthorizationError("surface synchronization is not ready")
+
+        def request_sync() -> Any:
+            ready = provider.request_shared(
+                SURFACE_SYNC_CAPABILITY,
+                {
+                    "phase": phase,
+                    "surface_id": surface_id,
+                    "sync_key": sync_key,
+                },
+            )
+            if not isinstance(ready, dict) or ready.get("ready") is not True:
+                raise RemoteAuthorizationError("surface synchronization is not ready")
+            return ready
+
+        _retry_surface_success(request_sync)
 
     for surface_id in surface_ids:
         denied("read", lambda: provider.read_surface(surface_id))
