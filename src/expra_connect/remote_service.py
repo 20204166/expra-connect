@@ -1,21 +1,8 @@
 """Authenticated remote transport and remote-operation surface.
 
-This module is the high-level remote API. It keeps the client-side
-``AuthenticatedNodeProvider`` (a ``NodeProvider`` over an injected
-``RemoteTransport``) and ``RemoteProcessActionBackend``, plus the server-side
-``RemoteService`` (validates and solves via an injected provider). The
- lower-level remote-specific mechanics live in the protocol and transport modules:
-
-- ``wire_protocol`` — the versioned HMAC request/response envelope, freshness
-  window, bounded replay cache, and read-only operation/role metadata;
-- ``socket_transport`` — the loopback ``MemoryRemoteTransport`` and the concrete
-  ``SocketRemoteTransport``/``TLSRemoteTransport`` pair;
-- ``server`` — the listening ``RemoteSocketServer``.
-
-The transport is injected so tests and hosts never depend on sockets. Live
-remote data features remain intentionally deferred elsewhere:
-this module provides the secure contract and provider infrastructure, not the
-feature wiring.
+The transport is injected so tests and hosts never depend on sockets. Wire,
+socket, and server mechanics remain in their focused modules; this module
+provides the secure contract and provider infrastructure.
 """
 
 import hmac
@@ -65,6 +52,8 @@ from .server import (
     RemoteSocketServer,
 )
 from .session import LogicalSessionRegistry
+from .surface_protocol import SURFACE_OPERATIONS
+from .surface_provider import SurfaceProviderMixin, dispatch_surface_request
 from .socket_transport import (
     MemoryRemoteTransport,
     SocketRemoteTransport,
@@ -72,7 +61,6 @@ from .socket_transport import (
     build_trusted_transport,
     _invoke_with_optional_cancel,
 )
-from .surfaces import SurfaceRegistry
 from .wire_protocol import (
     DEFAULT_FRESHNESS_SECONDS,
     DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
@@ -201,7 +189,7 @@ class RemoteService:
         trust_revoke_commit: Callable[[], None] | None = None,
         require_dashboard_share: bool = False,
         capability_share: Any | None = None,
-        surface_registry: SurfaceRegistry | None = None,
+        surface_registry: Any | None = None,
         idempotency_cache: IdempotencyCache | None = None,
         idempotency_ttl_seconds: float = DEFAULT_IDEMPOTENCY_TTL_SECONDS,
         idempotency_max_entries: int = DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
@@ -278,7 +266,6 @@ class RemoteService:
             clock=clock, ttl_seconds=freshness_seconds * 10
         )
         self._grant_version = 0
-
     @staticmethod
     def _validate_secret(secret: str) -> None:
         if not isinstance(secret, str) or len(secret) != 64:
@@ -287,7 +274,6 @@ class RemoteService:
             bytes.fromhex(secret)
         except ValueError as error:
             raise ValueError("peer credentials must be hexadecimal") from error
-
     def handle(
         self, envelope_text: str, *, connection_generation: str | None = None
     ) -> str:
@@ -450,7 +436,6 @@ class RemoteService:
             self._grant_mode = True
             self._grants = validated
             self._grant_version += 1
-
     def update_cluster_capability_grants(self, grants: tuple[Any, ...]) -> None:
         """Replace the separate cluster ACL without changing Pair grants."""
         with self._grant_lock:
@@ -520,6 +505,13 @@ class RemoteService:
                 )
             except PermissionError as error:
                 raise RemoteAuthorizationError(str(error)) from error
+            return {"result": result}
+        if request.op in SURFACE_OPERATIONS:
+            result = dispatch_surface_request(
+                self._surface_registry,
+                request,
+                cluster_grant,
+            )
             return {"result": result}
         if request.op == "hello":
             return {
@@ -599,7 +591,6 @@ class RemoteService:
             candidates = self._provider.storage_candidates()
             return {"files": [file_candidate_to_dict(c) for c in candidates]}
         raise RemoteProtocolError(f"unknown operation: {request.op}")
-
     def _verify_role_fence(self, request: RemoteRequest) -> None:
         params = request.params
         if (
@@ -664,7 +655,9 @@ class RemoteService:
         )
 
 
-class AuthenticatedNodeProvider(ProviderRequestMixin, RemoteRoleOperations):
+class AuthenticatedNodeProvider(
+    SurfaceProviderMixin, ProviderRequestMixin, RemoteRoleOperations
+):
     """Client-side ``NodeProvider`` over one authenticated remote node.
 
     Builds and signs every request, verifies every response, enforces

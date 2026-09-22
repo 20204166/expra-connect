@@ -17,6 +17,11 @@ from .models import (
     NodePermission,
     ProcessActionKind,
 )
+from .surface_protocol import (
+    SURFACE_OPERATIONS,
+    SURFACE_REQUIRED_CAPABILITY,
+    validate_surface_operation_params,
+)
 
 REMOTE_PROTOCOL_VERSION = "1"
 PAIRING_MODE_TRANSACTIONAL = "transactional"
@@ -54,6 +59,7 @@ OP_REQUIRED_CAPABILITY: dict[str, NodeCapability] = {
     "worker_snapshot": NodeCapability.REMOTE_MANAGEMENT,
     "standby_batch": NodeCapability.REMOTE_MANAGEMENT,
     "capability_request": NodeCapability.READ_STATE,
+    **SURFACE_REQUIRED_CAPABILITY,
 }
 OP_REQUIRED_PERMISSION: dict[str, NodePermission] = {
     operation: NodePermission(capability.value)
@@ -135,8 +141,6 @@ def parse_hello_capabilities(payload: Any) -> frozenset[NodeCapability]:
             # Unknown values are forward metadata, never permissions.
             continue
     return frozenset(capabilities)
-
-
 def validate_hello_payload(
     payload: Any, *, expected_node_id: NodeId | None = None
 ) -> frozenset[NodeCapability]:
@@ -158,7 +162,6 @@ def validate_hello_payload(
     if not isinstance(fingerprint, str) or not fingerprint:
         raise RemoteAuthError("hello identity fingerprint is missing")
     return parse_hello_capabilities(payload)
-
 
 @dataclass(frozen=True, slots=True)
 class PeerGrant:
@@ -191,7 +194,6 @@ class PairingRequest:
         _validate_secret(self.proposed_secret)
         if not self.permissions <= READ_PERMISSIONS:
             raise RemoteAuthorizationError("pairing is read-only")
-
 
 @dataclass(frozen=True, slots=True)
 class PairingControlRequest:
@@ -228,7 +230,6 @@ class CapabilityElevationRequest:
         if not self.permissions:
             raise RemoteAuthorizationError("elevation requires a permission")
 
-
 def _validate_secret(secret: str) -> None:
     if not isinstance(secret, str) or len(secret) != 64:
         raise ValueError("peer credentials must be 256-bit hex text")
@@ -236,7 +237,6 @@ def _validate_secret(secret: str) -> None:
         bytes.fromhex(secret)
     except ValueError as error:
         raise ValueError("peer credentials must be hexadecimal") from error
-
 
 def validate_pairing_control_request(
     raw: Any, *, clock: Callable[[], float] = time.time
@@ -300,7 +300,6 @@ def validate_pairing_control_request(
         expires_at=float(expires_at),
     )
 
-
 @dataclass(frozen=True, slots=True)
 class RemoteRequest:
     """One verified authenticated request from a peer node."""
@@ -329,7 +328,6 @@ class RemoteResponse:
     timestamp: float
     session_id: str | None = None
     connection_generation: str | None = None
-
 
 def _canonical(fields: dict[str, Any]) -> str:
     return json.dumps(fields, sort_keys=True, separators=(",", ":"))
@@ -833,6 +831,9 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
             raise RemoteProtocolError("capability_request params must be an object")
         if set(params) != {"capability", "params"}:
             raise RemoteProtocolError("capability_request has unexpected parameters")
+        return
+    if op in SURFACE_OPERATIONS:
+        validate_surface_operation_params(op, params, RemoteProtocolError)
         return
     if op == "component_summary":
         key = params.get("key")

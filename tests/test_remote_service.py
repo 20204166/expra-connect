@@ -24,7 +24,7 @@ from expra_connect.remote_service import (
 from expra_connect.server import RemoteSocketServer
 from expra_connect.sharing import CapabilityShare
 from expra_connect.socket_transport import RemoteTransportError, SocketRemoteTransport
-from expra_connect.surfaces import SurfaceRegistry
+from expra_connect.surfaces import SurfaceHandlerError, SurfaceRegistry
 from expra_connect.wire_protocol import (
     IdempotencyCollisionError,
     PeerGrant,
@@ -53,6 +53,167 @@ class _Provider:
 
 
 class RemoteServiceTests(unittest.TestCase):
+    def test_typed_surface_operations_dispatch_identity_and_registered_handler(self) -> None:
+        caller = NodeId("caller")
+        surfaces = SurfaceRegistry(clock=lambda: 10.0)
+        seen: list[tuple[NodeId, dict[str, object]]] = []
+
+        def read(peer: NodeId, params: dict[str, object]) -> object:
+            seen.append((peer, params))
+            return {"nested": ["host", params["section"]]}
+
+        surfaces.register("dashboard/main", read=read)
+        surfaces.grant_peer(caller, "dashboard/main", access="read")
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            grants={caller: PeerGrant(caller, SECRET, frozenset({NodePermission.READ_STATE}))},
+            surface_registry=surfaces,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            caller_node_id=caller,
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+        )
+
+        self.assertEqual(
+            client.read_surface("dashboard/main", params={"section": "summary"}),
+            {"nested": ["host", "summary"]},
+        )
+        self.assertEqual(seen, [(caller, {"section": "summary"})])
+        surfaces.revoke_peer(caller, "dashboard/main")
+        with self.assertRaises(RemoteAuthorizationError):
+            client.read_surface("dashboard/main")
+
+    def test_surface_dispatch_accepts_only_an_explicit_cluster_surface_source(self) -> None:
+        caller = NodeId("caller")
+        surfaces = SurfaceRegistry(clock=lambda: 10.0)
+        surfaces.register("clustered", read=lambda _peer, _params: {"ok": True})
+        cluster_grant = CapabilityGrant(
+            caller,
+            NodeId("peer"),
+            frozenset({NodePermission.READ_STATE}),
+            1.0,
+            20.0,
+        )
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            clock=lambda: 10.0,
+            grants={caller: PeerGrant(caller, SECRET, frozenset({NodePermission.READ_STATE}))},
+            cluster_capability_grants=(cluster_grant,),
+            surface_registry=surfaces,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            caller_node_id=caller,
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+            clock=lambda: 10.0,
+        )
+        with self.assertRaises(RemoteAuthorizationError):
+            client.read_surface("clustered")
+        surfaces.grant_cluster(caller, "clustered", access="read", expires_at=20.0)
+        self.assertEqual(client.read_surface("clustered"), {"ok": True})
+
+    def test_surface_review_and_named_action_require_their_own_grants(self) -> None:
+        caller = NodeId("caller")
+        surfaces = SurfaceRegistry()
+        surfaces.register(
+            "settings",
+            read=lambda _peer, _params: {"read": True},
+            review=lambda _peer, _params: {"review": True},
+            actions={"save": lambda _peer, params: {"saved": params["value"]}},
+        )
+        surfaces.grant_peer(caller, "settings", access="review")
+        surfaces.grant_peer(caller, "settings", access="action")
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            grants={caller: PeerGrant(caller, SECRET, frozenset({NodePermission.READ_STATE}))},
+            surface_registry=surfaces,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            caller_node_id=caller,
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+        )
+
+        self.assertEqual(client.review_surface("settings"), {"review": True})
+        self.assertEqual(
+            client.invoke_surface_action("settings", "save", params={"value": 3}),
+            {"saved": 3},
+        )
+        with self.assertRaises(RemoteAuthorizationError):
+            client.read_surface("settings")
+
+    def test_surface_denial_expiry_unknown_and_handler_errors_are_typed(self) -> None:
+        now = [10.0]
+        caller = NodeId("caller")
+        surfaces = SurfaceRegistry(clock=lambda: now[0])
+        surfaces.register(
+            "settings",
+            read=lambda _peer, _params: (_ for _ in ()).throw(
+                SurfaceHandlerError("private handler detail")
+            ),
+            actions={"save": lambda _peer, _params: {"ok": True}},
+        )
+        surfaces.grant_peer(caller, "settings", access="read", expires_at=10.0)
+        surfaces.grant_peer(caller, "settings", access="action")
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            clock=lambda: now[0],
+            grants={caller: PeerGrant(caller, SECRET, frozenset({NodePermission.READ_STATE}))},
+            surface_registry=surfaces,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            caller_node_id=caller,
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+            clock=lambda: now[0],
+        )
+
+        with self.assertRaises(RemoteExecutionError) as handler_error:
+            client.read_surface("settings")
+        self.assertEqual(str(handler_error.exception), "execution_failed")
+        self.assertNotIn("private", str(handler_error.exception))
+        with self.assertRaises(RemoteExecutionError) as unknown_error:
+            client.invoke_surface_action("settings", "missing")
+        self.assertEqual(str(unknown_error.exception), "execution_failed")
+        now[0] = 11.0
+        with self.assertRaises(RemoteAuthorizationError):
+            client.read_surface("settings")
+        with self.assertRaises(RemoteAuthorizationError):
+            client.read_surface("missing")
+
     def test_service_receives_surface_registry_and_live_cluster_grants(self) -> None:
         surfaces = SurfaceRegistry()
         service = RemoteService(
