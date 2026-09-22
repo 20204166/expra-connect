@@ -113,12 +113,14 @@ surfaces. Both peers must include that flag for the full-share matrix.
 
 ## Device Identity Evidence
 
-The `1.2.0.0` runtime startup creates or loads `device_identity.json`, and the
-extended harness runs on that runtime. The acceptance event reports intentionally
-redact the device fingerprint, so the target output above does not by itself
-prove persistence of the device identity across restart. The extended
-`--restart-check` proves persisted trust restoration, not the device identity
-fingerprint specifically.
+The `1.2.0.0` runtime startup creates or loads `device_identity.json` from the
+active `NodeIdentity` root, and the extended harness runs on that runtime. The
+acceptance event reports intentionally redact the device fingerprint, so the
+target output above does not by itself prove persistence of the device identity
+across restart. The extended `--restart-check` proves persisted trust
+restoration, not the device identity fingerprint specifically. A profile that
+contains an older unrelated device root is migrated to the existing network
+root without changing `NodeId`, transport proofs, trust state, or cluster state.
 
 An explicit two-start diagnostics check was run against a fresh profile using
 the installed wheel. The result was:

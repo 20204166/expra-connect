@@ -9,7 +9,7 @@ import platform
 import socket
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 from types import TracebackType
@@ -408,9 +408,15 @@ class ConnectRuntime(
             self._identity = NodeIdentity.create()
             self._identity.save(path)
         assert self._identity is not None
+        device_path = profile / "device_identity.json"
+        if self._identity.device_identity_expected and not device_path.exists():
+            raise StateDataError("expected device identity is missing")
         self._load_device_identity(
-            profile, self._identity.node_id, self.config.device_hardware_provider
+            profile, self._identity, self.config.device_hardware_provider
         )
+        if not self._identity.device_identity_expected:
+            self._identity = replace(self._identity, device_identity_expected=True)
+            self._identity.save(path)
 
     def _load_persisted_state(self) -> None:
         if self._identity is None:

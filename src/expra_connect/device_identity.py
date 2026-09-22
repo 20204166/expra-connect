@@ -1,4 +1,4 @@
-"""Durable cryptographic device identity independent of network trust state."""
+"""Canonical local representation of the durable device root."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ import re
 import sys
 import time
 import uuid
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Protocol
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
@@ -22,7 +22,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
-from .identity import NodeId
+from .identity import NodeId, NodeIdentity, _decode_root_private_key
 from .persistence import StateDataError, _atomic_write
 
 
@@ -112,11 +112,12 @@ class DeviceIdentityView:
     fingerprint: str
     created_at: float
     hardware_hint_changed: bool = False
+    hardware_hint_status: str = "not_recorded"
 
 
 @dataclass(frozen=True, slots=True)
 class DeviceIdentity:
-    """Durable Ed25519 root bound to an existing logical ``NodeId``."""
+    """Canonical local Ed25519 root bound to an existing logical ``NodeId``."""
 
     node_id: NodeId
     public_key: bytes = field(repr=False)
@@ -125,6 +126,9 @@ class DeviceIdentity:
     schema_version: int = DEVICE_IDENTITY_SCHEMA_VERSION
     hardware_hint: DeviceHardwareHint | None = None
     hardware_hint_changed: bool = field(default=False, repr=False, compare=False)
+    hardware_hint_status: str = field(
+        default="not_recorded", repr=False, compare=False
+    )
     _private_key_bytes: bytes = field(repr=False, compare=False, default=b"")
 
     def __post_init__(self) -> None:
@@ -176,6 +180,47 @@ class DeviceIdentity:
         )
 
     @classmethod
+    def from_node_identity(
+        cls,
+        node_identity: NodeIdentity,
+        existing: DeviceIdentity | None = None,
+        *,
+        hardware_provider: DeviceHardwareProvider | None = None,
+        clock: Callable[[], float] = time.time,
+    ) -> DeviceIdentity:
+        """Represent the active network root as the local device identity."""
+
+        if existing is not None and existing.node_id != node_identity.node_id:
+            raise DeviceIdentityError("device identity NodeId does not match local NodeId")
+        try:
+            private_key = _decode_root_private_key(node_identity.root_private_key)
+            private_key_bytes = private_key.private_bytes(
+                serialization.Encoding.Raw,
+                serialization.PrivateFormat.Raw,
+                serialization.NoEncryption(),
+            )
+        except ValueError as error:
+            raise DeviceIdentityError("active node identity root is malformed") from error
+        public_key = private_key.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        current_hint = collect_hardware_hint(hardware_provider)
+        stored_hint = existing.hardware_hint if existing is not None else None
+        changed, hint_status = _hardware_hint_state(stored_hint, current_hint)
+        return cls(
+            node_id=node_identity.node_id,
+            public_key=public_key,
+            fingerprint=fingerprint_for_public_key(public_key),
+            created_at=(existing.created_at if existing is not None else float(clock())),
+            hardware_hint=(
+                stored_hint if existing is not None else current_hint
+            ),
+            hardware_hint_changed=changed,
+            hardware_hint_status=hint_status,
+            _private_key_bytes=private_key_bytes,
+        )
+
+    @classmethod
     def load(
         cls,
         path: Path,
@@ -213,11 +258,7 @@ class DeviceIdentity:
         if expected_node_id is not None and identity.node_id != expected_node_id:
             raise DeviceIdentityError("device identity NodeId does not match local NodeId")
         current_hint = collect_hardware_hint(hardware_provider)
-        changed = (
-            identity.hardware_hint is not None
-            and current_hint is not None
-            and identity.hardware_hint.digest != current_hint.digest
-        )
+        changed, hint_status = _hardware_hint_state(identity.hardware_hint, current_hint)
         return DeviceIdentity(
             node_id=identity.node_id,
             public_key=identity.public_key,
@@ -226,22 +267,9 @@ class DeviceIdentity:
             schema_version=identity.schema_version,
             hardware_hint=identity.hardware_hint,
             hardware_hint_changed=changed,
+            hardware_hint_status=hint_status,
             _private_key_bytes=identity._private_key_bytes,
         )
-
-    @classmethod
-    def load_or_create(
-        cls,
-        path: Path,
-        node_id: NodeId,
-        *,
-        hardware_provider: DeviceHardwareProvider | None = None,
-    ) -> DeviceIdentity:
-        if path.exists():
-            return cls.load(path, node_id, hardware_provider=hardware_provider)
-        identity = cls.create(node_id, hardware_provider=hardware_provider)
-        identity.save(path)
-        return identity
 
     def to_json(self) -> str:
         document: dict[str, object] = {
@@ -266,6 +294,7 @@ class DeviceIdentity:
             fingerprint=self.fingerprint,
             created_at=self.created_at,
             hardware_hint_changed=self.hardware_hint_changed,
+            hardware_hint_status=self.hardware_hint_status,
         )
 
     def sign(self, data: bytes) -> bytes:
@@ -359,6 +388,19 @@ def collect_hardware_hint(
     return DeviceHardwareHint(digest, tuple(sources))
 
 
+def _hardware_hint_state(
+    stored: DeviceHardwareHint | None,
+    current: DeviceHardwareHint | None,
+) -> tuple[bool, str]:
+    if stored is None:
+        return False, "not_recorded"
+    if current is None:
+        return False, "unavailable"
+    if stored.digest != current.digest:
+        return True, "changed"
+    return False, "match"
+
+
 def _safe_macs(provider: DeviceHardwareProvider) -> Iterable[str]:
     try:
         return provider.mac_addresses()
@@ -389,14 +431,27 @@ def _decode_bytes(value: object) -> bytes:
 
 def load_device_identity(
     profile: Path,
-    node_id: NodeId,
+    node_identity: NodeIdentity,
     provider: DeviceHardwareProvider | None = None,
 ) -> DeviceIdentity:
-    """Load or create the profile-owned device identity."""
+    """Load or migrate the profile-owned representation of the network root."""
 
-    return DeviceIdentity.load_or_create(
-        profile / "device_identity.json", node_id, hardware_provider=provider
+    path = profile / "device_identity.json"
+    if path.exists():
+        existing = DeviceIdentity.load(
+            path, node_identity.node_id, hardware_provider=provider
+        )
+        identity = DeviceIdentity.from_node_identity(
+            node_identity, existing, hardware_provider=provider
+        )
+        if identity.public_key != existing.public_key:
+            identity.save(path)
+        return identity
+    identity = DeviceIdentity.from_node_identity(
+        node_identity, hardware_provider=provider
     )
+    identity.save(path)
+    return identity
 
 
 def device_identity_diagnostics(identity: DeviceIdentity) -> dict[str, object]:
@@ -408,11 +463,12 @@ def device_identity_diagnostics(identity: DeviceIdentity) -> dict[str, object]:
         "fingerprint": view.fingerprint,
         "created_at": view.created_at,
         "hardware_hint_changed": view.hardware_hint_changed,
+        "hardware_hint_status": view.hardware_hint_status,
     }
 
 
 class DeviceIdentityRuntimeMixin:
-    """Runtime lifecycle seam for the additive device identity state."""
+    """Runtime lifecycle seam for the canonical device identity state."""
 
     _device_identity: DeviceIdentity | None = None
 
@@ -423,10 +479,10 @@ class DeviceIdentityRuntimeMixin:
     def _load_device_identity(
         self,
         profile: Path,
-        node_id: NodeId,
+        node_identity: NodeIdentity,
         provider: DeviceHardwareProvider | None,
     ) -> None:
-        self._device_identity = load_device_identity(profile, node_id, provider)
+        self._device_identity = load_device_identity(profile, node_identity, provider)
 
     def _device_identity_diagnostics(self) -> dict[str, object] | None:
         if self._device_identity is None:

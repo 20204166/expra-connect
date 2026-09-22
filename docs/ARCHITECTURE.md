@@ -18,9 +18,10 @@ topology state, not a transport state.
 
 | Responsibility | Canonical owner | Runtime role |
 | --- | --- | --- |
-| Durable node identity and fingerprint | `identity.py` | Loads identity before listener startup |
-| Durable cryptographic device identity | `device_identity.py` | Creates or loads `device_identity.json` after the existing `NodeId` is loaded |
-| Root signing identity and transport generations | `identity.py`, `tls_material.py` | Signs and validates credential replacement without changing `NodeId` |
+| Stable logical identifier | `identity.py` | `NodeId` is public and non-secret |
+| Canonical device cryptographic root | `device_identity.py` | Creates or migrates `device_identity.json` from the active root |
+| Network compatibility identity | `identity.py` | Retains `NodeId`, HMAC secret, and compatibility root APIs |
+| TLS generation lifecycle | `identity.py`, `tls_material.py` | Manages generation continuity without changing `NodeId` |
 | Candidate discovery and expiry | `discovery_full.py` | Serializes backend lifecycle, normalizes per-service observations, and forwards events |
 | Pairing, grants, trust, and revocation | `pairing.py` | Persists transitions and refreshes the listener ACL |
 | TLS/HMAC request security | `tls_material.py`, `wire_protocol.py`, `remote_service.py` | Composes the authenticated server boundary |
@@ -37,12 +38,21 @@ membership, and connection loss never removes it.
 
 ## Stable Identity and Transport Rotation
 
-`NodeId` is the stable logical identity and is not a credential. `DeviceIdentity`
-is the additive durable Ed25519 identity in `device_identity.json`; its private
-key is the cryptographic proof, and its fingerprint is derived from the raw
-public key as `ed25519:<sha256>`. It is bound to the existing `NodeId`, survives
-restart and network changes, and is not currently sent over the wire or used by
-Pair, trust, discovery, transport, or cluster decisions.
+`NodeId` is the stable logical identifier and is not a credential.
+`DeviceIdentity` is the canonical local meaning of the durable Ed25519 device
+root, persisted in `device_identity.json`; its private key is never exposed and
+its fingerprint is derived from the raw public key as `ed25519:<sha256>`.
+`NodeIdentity` remains the compatibility/protocol identity for the HMAC secret,
+persisted `NodeId`, and existing `root_public_key` and
+`sign_transport_proof(...)` callers. Those compatibility APIs use the same
+persisted root; they do not define a second device key. Transport generation
+lifecycle remains owned by `TransportGenerationManager`.
+
+Existing device files are migrated to the authoritative root without rewriting
+trust, transport, or cluster state. A successfully adopted profile records
+`device_identity_expected` in `identity.json`; later loss of
+`device_identity.json` fails closed instead of generating another root. A legacy
+profile without that marker may migrate once.
 
 `NodeIdentity` retains the existing HMAC-compatible secret and transport root
 behavior unchanged. TLS
@@ -55,8 +65,9 @@ trusted merely because its `NodeId` matches.
 generations, activation, explicit retirement, rollback, and atomic persistence.
 Activation grants a bounded grace period to the previous generation. Corrupt or
 unknown versioned transport state fails closed. Version-one state containing a
-single fingerprint migrates to generation one; old identity JSON migrates by
-generating a root key and persists it on its next save.
+single fingerprint migrates to generation one; old identity JSON without an
+explicit root is upgraded through the existing compatibility owner before the
+canonical `DeviceIdentity` view is adopted.
 
 `ConnectRuntime.rotate_transport()` prepares and activates a new generation,
 restarts the listener, and rolls back if the replacement listener cannot start.
@@ -72,10 +83,12 @@ request-ID result reuse so a lost response cannot execute the operation twice.
 
 ## Persistence And Diagnostics
 
-Identity, trust/pending pairing, transport generations, and optional cluster
-membership are separate files. Legacy documents without a schema marker are
-read through a fail-closed migration adapter and are written in the current
-schema only after successful validation. Malformed documents are not replaced
-automatically. Diagnostics report NodeId and fingerprints, route metadata,
-transport generations, connection states, and logical session presence, but
-never keys, pairing secrets, invitation tokens, or fencing tokens.
+Identity, device identity, trust/pending pairing, transport generations, and
+optional cluster membership are separate files. Legacy documents without a
+schema marker are read through a fail-closed migration adapter and are written
+in the current schema only after successful validation. Malformed documents are
+not replaced automatically. Diagnostics report NodeId, fingerprints, transport
+generations, connection states, logical session presence, and the non-secret
+hardware-hint status (`match`, `changed`, `unavailable`, or `not_recorded`), but
+never keys, pairing secrets, invitation tokens, raw hardware identifiers, or
+fencing tokens.

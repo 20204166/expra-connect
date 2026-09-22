@@ -8,7 +8,7 @@ import math
 import secrets
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
 
@@ -38,11 +38,12 @@ class NodeId:
 
 @dataclass(frozen=True, slots=True)
 class NodeIdentity:
-    """Persisted identity with HMAC compatibility and a signing root."""
+    """Persisted compatibility identity and access to the active device root."""
 
     node_id: NodeId
-    secret: str
-    root_private_key: str = ""
+    secret: str = field(repr=False)
+    root_private_key: str = field(default="", repr=False)
+    device_identity_expected: bool = field(default=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.secret, str) or len(self.secret) != 64:
@@ -65,25 +66,26 @@ class NodeIdentity:
                 ).decode("ascii"),
             )
         try:
-            private_key = base64.b64decode(self.root_private_key, validate=True)
-            if len(private_key) != 32:
-                raise ValueError
-        except (ValueError, TypeError) as error:
+            _decode_root_private_key(self.root_private_key)
+        except ValueError as error:
             raise ValueError("invalid root signing key") from error
+        if not isinstance(self.device_identity_expected, bool):
+            raise ValueError("device identity expectation marker is invalid")
 
     @classmethod
     def create(cls, node_id: NodeId | None = None) -> NodeIdentity:
         return cls(node_id or NodeId(secrets.token_hex(16)), secrets.token_hex(32))
 
     def to_json(self) -> str:
-        return json.dumps(
-            {
-                "version": 2,
-                "node_id": str(self.node_id),
-                "secret": self.secret,
-                "root_private_key": self.root_private_key,
-            }
-        )
+        document: dict[str, object] = {
+            "version": 2,
+            "node_id": str(self.node_id),
+            "secret": self.secret,
+            "root_private_key": self.root_private_key,
+        }
+        if self.device_identity_expected:
+            document["device_identity_expected"] = True
+        return json.dumps(document)
 
     @classmethod
     def from_json(cls, value: str) -> NodeIdentity:
@@ -92,6 +94,7 @@ class NodeIdentity:
             NodeId(str(document["node_id"])),
             str(document["secret"]),
             str(document.get("root_private_key", "")),
+            document.get("device_identity_expected", False),
         )
 
     def save(self, path: Path) -> None:
@@ -128,9 +131,17 @@ class NodeIdentity:
         )
 
     def _private_key(self) -> Ed25519PrivateKey:
-        return Ed25519PrivateKey.from_private_bytes(
-            base64.b64decode(self.root_private_key, validate=True)
-        )
+        return _decode_root_private_key(self.root_private_key)
+
+
+def _decode_root_private_key(value: str) -> Ed25519PrivateKey:
+    try:
+        private_key = base64.b64decode(value, validate=True)
+        if len(private_key) != 32:
+            raise ValueError
+        return Ed25519PrivateKey.from_private_bytes(private_key)
+    except (TypeError, ValueError) as error:
+        raise ValueError("invalid root signing key") from error
 
 
 def node_identity_fingerprint(node_id: NodeId | str) -> str:

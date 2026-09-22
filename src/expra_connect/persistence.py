@@ -20,7 +20,7 @@ CURRENT_SCHEMA_VERSION = 2
 
 def _atomic_write(
     path: Path,
-    writer: Callable[[TextIO], None],
+    writer: Callable[[TextIO], object],
     *,
     mode: int = 0o600,
     sync_directory: bool = True,

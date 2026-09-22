@@ -52,6 +52,22 @@ per-capability allowlist for an authenticated request. UI delivery and event
 loop marshalling remain host responsibilities. The library never imports Tk or
 application modules.
 
+## Identity Ownership
+
+`NodeId` is the stable public logical identifier. `DeviceIdentity` is the
+canonical local representation of the single durable Ed25519 device root and
+is exposed to normal consumers through `DeviceIdentityView`. `NodeIdentity`
+retains the HMAC-compatible protocol state and compatibility access to the same
+root through `root_public_key` and `sign_transport_proof(...)`; it does not
+represent a second device key. `TransportGenerationManager` owns TLS generation
+lifecycle only.
+
+The stable host API is `ConnectConfig`, `ConnectRuntime`, `NodeId`, and normal
+peer/status/view models. Pairing, transport, cluster, and security primitives
+remain available as advanced APIs for integrations that need them. Private keys,
+HMAC secrets, raw hardware identifiers, and machine identifiers are never part
+of diagnostics, CLI output, or reports.
+
 ## Development
 
 Install the local distribution with pip:
@@ -209,7 +225,10 @@ expra-peer --profile .expra-connect pair PEER_NODE_ID
 `demo loopback` starts a local framed listener and performs an authenticated
 hello request. The loopback authenticated-service integration is covered by
 `tests.test_remote_service`; it starts a framed server, signs a request, and
-verifies the response. The demo CLI does not advertise or pair real machines.
+verifies the response. `demo loopback` is intentionally local-only. The normal
+runtime CLI commands such as `serve`, `pair`, `peers`, and `diagnostics`,
+together with the acceptance harness, support real peer discovery, pairing, and
+authenticated operation.
 Diagnostics are backed by `ConnectRuntime` and report actual listener,
 identity, discovery, trust, peer, and optional cluster state.
 

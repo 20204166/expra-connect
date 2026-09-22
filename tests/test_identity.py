@@ -49,3 +49,11 @@ class IdentityTests(unittest.TestCase):
     def test_identity_rejects_invalid_root_key(self) -> None:
         with self.assertRaises(ValueError):
             NodeIdentity(NodeId("peer-a"), "0" * 64, "not-base64")
+
+    def test_identity_repr_and_str_do_not_expose_secrets(self) -> None:
+        identity = NodeIdentity.create(NodeId("peer-a"))
+
+        rendered = repr(identity) + str(identity)
+
+        self.assertNotIn(identity.secret, rendered)
+        self.assertNotIn(identity.root_private_key, rendered)
