@@ -314,6 +314,7 @@ class ConnectRuntime(
         previous_pending = dict(pairing.pending)
         pairing.revoke(peer_id)
         self._surface_registry.revoke_source(peer_id)
+        self._sharing.revoke_peer(peer_id)
         if not self._save_persisted_state():
             pairing.trusted = previous_trusted
             pairing.grants = previous_grants
@@ -367,6 +368,7 @@ class ConnectRuntime(
             self._connection_manager.disconnect_all()
         self._save_persisted_state()
         self._surface_registry.clear_grants()
+        self._sharing.clear_grants()
         self._stop_expiry_worker()
         discovery, server = self._discovery, self._server
         self._discovery = None
@@ -851,6 +853,7 @@ class ConnectRuntime(
 
     def _clear_components(self) -> None:
         self._stop_expiry_worker()
+        self._sharing.clear_grants()
         if self._connection_manager is not None:
             self._connection_manager.disconnect_all()
         if self._discovery is not None:

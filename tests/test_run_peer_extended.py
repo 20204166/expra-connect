@@ -9,7 +9,8 @@ from threading import Event
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from expra_connect import NodeId
+from expra_connect import ConnectConfig, NodeId
+from expra_connect.wire_protocol import RemoteAuthorizationError
 from run_peer_extended import (
     CAPABILITY,
     SURFACE_SYNC_CAPABILITY,
@@ -18,6 +19,7 @@ from run_peer_extended import (
     _parser,
     _retry_surface_success,
     _runtime,
+    _TrackedPairingCallback,
     approve_surface_pairing,
     cleanup_runtime,
     connect_bidirectionally,
@@ -31,7 +33,6 @@ from run_peer_extended import (
     wait_for_matching_peer,
     write_event,
 )
-from expra_connect.wire_protocol import RemoteAuthorizationError
 
 
 class ExtendedPeerEventWriterTests(unittest.TestCase):
@@ -287,7 +288,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
 
         callback = runtime.config.on_pairing_request
         request = SimpleNamespace(
-            caller_node_id=SimpleNamespace(value="initiator"), permissions=()
+            caller_node_id=NodeId("initiator"), permissions=()
         )
         self.assertTrue(callback(request))
         runtime.sharing.allow.assert_called_once_with(
@@ -688,6 +689,81 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.rotate_transport.assert_called_once_with()
         runtime.shutdown.assert_called_once_with()
 
+    def test_target_explicitly_reallows_capability_after_rotation(self) -> None:
+        runtime = Mock()
+        runtime.identity = self._identity("target")
+        peer_id = NodeId("initiator")
+        runtime.pairing.grants = {peer_id: object()}
+        runtime.transport_generations.current_generation = 2
+        args = SimpleNamespace(
+            role="target",
+            report=Path("/tmp/target-report.json"),
+            wait=0.02,
+            rotate_after=0,
+            bidirectional_surfaces=False,
+        )
+
+        def start() -> object:
+            callback = runtime.config.on_pairing_request
+            assert callable(callback)
+            callback(SimpleNamespace(caller_node_id=peer_id, permissions=()))
+            return self._status()
+
+        runtime.start.side_effect = start
+
+        with unittest.mock.patch("run_peer_extended.time.sleep"):
+            self.assertEqual(run_target(args, runtime), 0)
+
+        self.assertEqual(runtime.sharing.allow.call_count, 2)
+        runtime.sharing.allow.assert_called_with(peer_id, CAPABILITY)
+
+    def test_target_does_not_restore_capability_from_pair_grant_alone(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("target")
+        runtime.pairing.grants = {NodeId("initiator"): object()}
+        runtime.transport_generations.current_generation = 2
+        args = SimpleNamespace(
+            role="target",
+            report=Path("/tmp/target-report.json"),
+            wait=0.02,
+            rotate_after=0,
+            bidirectional_surfaces=False,
+        )
+
+        with unittest.mock.patch("run_peer_extended.time.sleep"):
+            self.assertEqual(run_target(args, runtime), 0)
+
+        runtime.sharing.allow.assert_not_called()
+
+    def test_target_reallows_peers_recorded_by_frozen_pairing_callback(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("target")
+        runtime.transport_generations.current_generation = 2
+        peer_id = NodeId("initiator")
+        capability_peers = {peer_id}
+
+        def callback(request: object) -> bool:
+            return True
+
+        callback = _TrackedPairingCallback(callback, capability_peers)
+        runtime.config = ConnectConfig(
+            profile_dir=Path("/tmp/target"), on_pairing_request=callback
+        )
+        args = SimpleNamespace(
+            role="target",
+            report=Path("/tmp/target-report.json"),
+            wait=0.02,
+            rotate_after=0,
+            bidirectional_surfaces=False,
+        )
+
+        with unittest.mock.patch("run_peer_extended.time.sleep"):
+            self.assertEqual(run_target(args, runtime), 0)
+
+        runtime.sharing.allow.assert_called_once_with(peer_id, CAPABILITY)
+
     def test_initiator_reconnect_requires_changed_transport_generation(self) -> None:
         runtime = Mock()
         runtime.start.return_value = self._status()
@@ -698,7 +774,11 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.peers = (initial,)
         runtime.pairing.trusted.get.return_value = Mock()
         provider = Mock()
-        provider.request_shared.return_value = {"ok": True}
+        provider.request_shared.side_effect = [
+            {"ok": True},
+            RemoteAuthorizationError("grant pending"),
+            {"ok": True},
+        ]
         runtime.connect_peer.return_value = provider
         runtime.reconnect_peer.return_value = provider
         args = SimpleNamespace(
@@ -708,13 +788,17 @@ class ExtendedPeerStageTests(unittest.TestCase):
             reconnect_after_rotation=True,
             rotation_wait=1,
         )
-        with unittest.mock.patch("run_peer_extended.write_event") as event, unittest.mock.patch(
-            "run_peer_extended.wait_for_peer", side_effect=[initial, rotated]
+        with (
+            unittest.mock.patch("run_peer_extended.write_event") as event,
+            unittest.mock.patch(
+                "run_peer_extended.wait_for_peer", side_effect=[initial, rotated]
+            ),
+            unittest.mock.patch("run_peer_extended.time.sleep"),
         ):
             self.assertEqual(run_initiator(args, runtime), 0)
         self.assertIn("reconnected_after_rotation", [call.args[1] for call in event.call_args_list])
         runtime.reconnect_peer.assert_called_once_with(NodeId("target"))
-        self.assertEqual(provider.request_shared.call_count, 2)
+        self.assertEqual(provider.request_shared.call_count, 3)
 
     def test_initiator_rotation_timeout_is_typed_error_and_gates_reconnect(self) -> None:
         runtime = Mock()

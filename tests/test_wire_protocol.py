@@ -2,9 +2,9 @@ import unittest
 
 from expra_connect.models import NodeCapability, NodePermission
 from expra_connect.wire_protocol import (
-    OPERATION_SAFETY,
     OP_REQUIRED_CAPABILITY,
     OP_REQUIRED_PERMISSION,
+    OPERATION_SAFETY,
     RemoteProtocolError,
     validate_operation_params,
 )
@@ -47,8 +47,9 @@ class SurfaceOperationProtocolTests(unittest.TestCase):
             ("surface_review", {"surface_id": "dashboard", "extra": True}),
         )
         for operation, params in invalid:
-            with self.subTest(operation=operation, params=params), self.assertRaises(
-                RemoteProtocolError
+            with (
+                self.subTest(operation=operation, params=params),
+                self.assertRaises(RemoteProtocolError),
             ):
                 validate_operation_params(operation, params)
 
@@ -56,3 +57,21 @@ class SurfaceOperationProtocolTests(unittest.TestCase):
         validate_operation_params("ping", {})
         with self.assertRaises(RemoteProtocolError):
             validate_operation_params("not_an_operation", {})
+
+    def test_capability_request_reuses_bounded_opaque_capability_validation(
+        self,
+    ) -> None:
+        validate_operation_params(
+            "capability_request", {"capability": "app/foo.v1", "params": {}}
+        )
+        validate_operation_params(
+            "capability_request", {"capability": "x" * 128, "params": {}}
+        )
+        for capability in ("", " ", "x" * 129, 1):
+            with (
+                self.subTest(capability=capability),
+                self.assertRaises(RemoteProtocolError),
+            ):
+                validate_operation_params(
+                    "capability_request", {"capability": capability, "params": {}}
+                )

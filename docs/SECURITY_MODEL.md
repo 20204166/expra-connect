@@ -16,6 +16,16 @@ Authorization is enforced by the target for every operation. Revoke is
 separate from ordinary connection detach. Private keys, HMAC secrets,
 invitation material, and fencing-token values are never logged.
 
+CapabilityShare is a generic, target-owned, read-only router. Pairing permits an
+authenticated request to reach capability authorization; it does not grant every
+registered capability. A capability must be explicitly allowed for that peer,
+and the target checks that grant on every request. CapabilityShare grants are
+ephemeral process state: `revoke_peer()` and runtime shutdown clear them while
+registered host handlers remain available. Persistence failure, revocation, and
+re-pairing fail closed and never restore a previous generic grant. Capability
+sharing does not authenticate peers, create trust, grant cluster authority, or
+grant SurfaceRegistry access.
+
 Cluster Join additionally requires a valid directional Pair relationship, a
 targeted one-time invite, the current cluster epoch and fence, and request
 freshness/idempotency. Cluster `CapabilityGrant` values are separate from

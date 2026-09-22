@@ -17,6 +17,7 @@ from .models import (
     NodePermission,
     ProcessActionKind,
 )
+from .sharing import _is_valid_capability_id
 from .surface_protocol import (
     SURFACE_OPERATIONS,
     SURFACE_REQUIRED_CAPABILITY,
@@ -113,7 +114,6 @@ class RemoteExecutionError(RuntimeError):
 
 class RemoteTransportError(RuntimeError):
     """Raised when the transport cannot complete an authenticated exchange."""
-
 
 class IdempotencyCollisionError(RemoteAuthError):
     """Raised when one request ID is reused for different operation content."""
@@ -825,7 +825,7 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
     if op == "capability_request":
         capability = params.get("capability")
         request_params = params.get("params", {})
-        if not isinstance(capability, str) or not capability:
+        if not _is_valid_capability_id(capability):
             raise RemoteProtocolError("capability_request requires a capability")
         if not isinstance(request_params, dict):
             raise RemoteProtocolError("capability_request params must be an object")

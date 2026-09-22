@@ -23,8 +23,8 @@ from expra_connect.runtime import (
     RuntimeState,
     RuntimeStatus,
 )
-from expra_connect.surfaces import SurfaceAccess
 from expra_connect.socket_transport import TLSRemoteTransport
+from expra_connect.surfaces import SurfaceAccess
 from expra_connect.wire_protocol import (
     CapabilityElevationRequest,
     PairingControlRequest,
@@ -518,6 +518,33 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             self.assertEqual(status.state.value, "persistence_failed")
             self.assertFalse(status.listener_started)
             self.assertFalse(runtime.started)
+
+    def test_failed_start_clears_generic_sharing_grants(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            peer_id = NodeId("failed-start-peer")
+            runtime.sharing.register("test.read_state", lambda _peer, _params: "ok")
+            runtime.sharing.allow(peer_id, "test.read_state")
+
+            with patch(
+                "expra_connect.runtime.RemoteSocketServer.start",
+                side_effect=OSError("listener unavailable"),
+            ):
+                status = runtime.start()
+
+            self.assertEqual(status.state, RuntimeState.LISTENER_UNAVAILABLE)
+            with self.assertRaises(PermissionError):
+                runtime.sharing.request(peer_id, "test.read_state")
+            runtime.sharing.allow(peer_id, "test.read_state")
+            self.assertEqual(
+                runtime.sharing.request(peer_id, "test.read_state"), "ok"
+            )
 
     def test_trusted_rediscovery_rejects_a_wrong_transport_fingerprint(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1213,6 +1240,77 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             record = runtime.registry.record(peer_id)
             assert record is not None
             self.assertEqual(record.trust.value, "revoked")
+            runtime.shutdown()
+
+    def test_revoke_peer_clears_generic_capability_grants(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            peer_id = NodeId("authorized-peer")
+            runtime.sharing.register("demo.read_state", lambda _peer, _params: "ok")
+            runtime.start()
+            runtime.sharing.allow(peer_id, "demo.read_state")
+            self.assertEqual(runtime.sharing.request(peer_id, "demo.read_state"), "ok")
+
+            runtime.revoke_peer(peer_id)
+
+            with self.assertRaises(PermissionError):
+                runtime.sharing.request(peer_id, "demo.read_state")
+            runtime.sharing.allow(peer_id, "demo.read_state")
+            self.assertEqual(runtime.sharing.request(peer_id, "demo.read_state"), "ok")
+            runtime.shutdown()
+
+    def test_shutdown_clears_generic_grants_but_keeps_handlers(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            peer_id = NodeId("peer")
+            runtime.sharing.register("demo.read_state", lambda _peer, _params: "ok")
+            runtime.start()
+            runtime.sharing.allow(peer_id, "demo.read_state")
+            runtime.shutdown()
+            runtime.shutdown()
+
+            runtime.start()
+            with self.assertRaises(PermissionError):
+                runtime.sharing.request(peer_id, "demo.read_state")
+            runtime.sharing.allow(peer_id, "demo.read_state")
+            self.assertEqual(
+                runtime.sharing.request(peer_id, "demo.read_state"), "ok"
+            )
+            runtime.shutdown()
+
+    def test_failed_pair_revocation_does_not_restore_generic_grant(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            peer_id = NodeId("peer")
+            runtime.sharing.register("demo.read_state", lambda _peer, _params: "ok")
+            runtime.start()
+            runtime.sharing.allow(peer_id, "demo.read_state")
+
+            with patch.object(
+                runtime, "_save_persisted_state", return_value=False
+            ), self.assertRaises(RuntimeError):
+                runtime.revoke_peer(peer_id)
+
+            with self.assertRaises(PermissionError):
+                runtime.sharing.request(peer_id, "demo.read_state")
             runtime.shutdown()
 
     def test_advertisement_uses_actual_listener_endpoint_and_tls_fingerprint(

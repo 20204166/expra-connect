@@ -1,6 +1,11 @@
 import unittest
+import unittest.mock
 from enum import Enum
+from unittest.mock import Mock
 
+import run_peer
+from expra_connect import NodeId
+from expra_connect.wire_protocol import RemoteAuthorizationError
 from run_peer import format_terminal_event
 
 
@@ -151,6 +156,24 @@ class RunPeerTerminalOutputTests(unittest.TestCase):
             format_terminal_event(11, "discovery_timeout", peers=[{"secret": 1}]),
             "[11] discovery_timeout peers=1",
         )
+
+    def test_target_rotation_reauthorizes_only_explicit_harness_grants(self) -> None:
+        runtime = Mock()
+        peer_id = NodeId("initiator")
+
+        run_peer._reallow_capability_after_rotation(runtime, {peer_id})
+
+        runtime.sharing.allow.assert_called_once_with(peer_id, run_peer.CAPABILITY)
+
+    def test_post_rotation_share_retries_bounded_authorization_window(self) -> None:
+        operation = Mock(side_effect=[RemoteAuthorizationError("pending"), "ok"])
+        retry = getattr(run_peer, "_retry_shared_capability", None)
+        self.assertTrue(callable(retry))
+
+        with unittest.mock.patch("run_peer.time.sleep"):
+            assert callable(retry)
+            self.assertEqual(retry(operation), "ok")
+        self.assertEqual(operation.call_count, 2)
 
 
 if __name__ == "__main__":

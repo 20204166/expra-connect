@@ -5,12 +5,13 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import FrozenInstanceError
 from enum import Enum
 from pathlib import Path
 from threading import Event, Lock
-from typing import Any, Iterator
+from typing import Any
 
 from expra_connect import (  # noqa: F401 - staged runtime imports are intentional
     ConnectConfig,
@@ -24,6 +25,17 @@ CAPABILITY = "test.read_state"
 SURFACE_SYNC_CAPABILITY = "test.surface_sync"
 SURFACE_SYNC_TIMEOUT = 5.0
 _REPORT_LOCK = Lock()
+
+
+class _TrackedPairingCallback:
+    def __init__(
+        self, callback: Callable[[Any], bool], capability_peers: set[NodeId]
+    ) -> None:
+        self._callback = callback
+        self.capability_peers = capability_peers
+
+    def __call__(self, request: Any) -> bool:
+        return self._callback(request)
 
 _EVENT_FIELDS: dict[str, frozenset[str]] = {
     "started": frozenset({"role", "version", "state"}),
@@ -262,7 +274,7 @@ def register_surface_sync(
 
 
 def _retry_surface_success(operation: Any, timeout: float = 5.0) -> Any:
-    """Allow the opposite harness to publish its matching surface grant."""
+    """Allow a target host to publish a matching ephemeral grant."""
     deadline = time.monotonic() + max(timeout, 0.0)
     while True:
         try:
@@ -617,6 +629,17 @@ def _diagnostics_values(diagnostics: Any) -> dict[str, Any]:
 
 def run_target(args: Any, runtime: ConnectRuntime) -> int:
     """Start a target, expose the test capability, and remain available."""
+
+    configured_callback = getattr(runtime.config, "on_pairing_request", None)
+    configured_peers = getattr(configured_callback, "capability_peers", None)
+    capability_peers = (
+        configured_peers if isinstance(configured_peers, set) else set()
+    )
+
+    def reallow_capability_after_rotation() -> None:
+        for peer_id in capability_peers:
+            runtime.sharing.allow(peer_id, CAPABILITY)
+
     surface_ready = {
         surface_id: Event()
         for surface_id in ("desktop", "desktop/settings", "device/status")
@@ -634,6 +657,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
             permissions=permissions,
         )
         runtime.sharing.allow(request.caller_node_id, CAPABILITY)
+        capability_peers.add(request.caller_node_id)
         return True
 
     runtime.sharing.register(
@@ -699,6 +723,8 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         while time.monotonic() < deadline:
             if rotation_deadline is not None and not rotated and time.monotonic() >= rotation_deadline:
                 runtime.rotate_transport()
+                if not getattr(args, "bidirectional_surfaces", False):
+                    reallow_capability_after_rotation()
                 if getattr(args, "bidirectional_surfaces", False):
                     runtime.grant_surface_access(
                         NodeId(candidate.stable_id), "desktop", access="read"
@@ -715,6 +741,8 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
             time.sleep(min(0.1, deadline - time.monotonic()))
         if rotation_deadline is not None and not rotated:
             runtime.rotate_transport()
+            if not getattr(args, "bidirectional_surfaces", False):
+                reallow_capability_after_rotation()
             if getattr(args, "bidirectional_surfaces", False):
                 runtime.grant_surface_access(
                     NodeId(candidate.stable_id), "desktop", access="read"
@@ -876,8 +904,11 @@ def run_initiator(
                 raise RuntimeError("transport generation did not change")
             provider = runtime.reconnect_peer(peer_id)
             write_event(args.report, "reconnected_after_rotation", peer_id=peer_id.value)
-            result = provider.request_shared(
-                CAPABILITY, {"source": "run_peer_extended.py", "after_rotation": True}
+            result = _retry_surface_success(
+                lambda: provider.request_shared(
+                    CAPABILITY,
+                    {"source": "run_peer_extended.py", "after_rotation": True},
+                )
             )
             write_event(
                 args.report,
@@ -926,6 +957,7 @@ def run_initiator(
 def _runtime(args: Any) -> ConnectRuntime:
     route_started: dict[tuple[str, str, int], float] = {}
     runtime_holder: list[ConnectRuntime] = []
+    capability_peers: set[NodeId] = set()
 
     def route_attempt(phase: str, endpoint: Any, outcome: str, _error: str | None) -> None:
         key = (phase, endpoint.address, endpoint.port)
@@ -959,20 +991,22 @@ def _runtime(args: Any) -> ConnectRuntime:
             permissions=permissions,
         )
         runtime.sharing.allow(request.caller_node_id, CAPABILITY)
+        capability_peers.add(request.caller_node_id)
         return True
+
+    def on_pairing_request(request: Any) -> bool:
+        if getattr(args, "bidirectional_surfaces", False):
+            return approve_surface_pairing(runtime_holder[0], args.report, request)
+        return approve_pairing(request)
+
+    pairing_callback = _TrackedPairingCallback(on_pairing_request, capability_peers)
 
     runtime = ConnectRuntime(
         ConnectConfig(
             profile_dir=args.profile,
             advertised_addresses=(tuple(args.advertise_address) if args.advertise_address else None),
             on_route_attempt=route_attempt,
-            on_pairing_request=(
-                lambda request: approve_surface_pairing(
-                    runtime_holder[0], args.report, request
-                )
-                if getattr(args, "bidirectional_surfaces", False)
-                else approve_pairing(request)
-            )
+            on_pairing_request=pairing_callback
             if args.role == "target" or getattr(args, "bidirectional_surfaces", False)
             else None,
         )

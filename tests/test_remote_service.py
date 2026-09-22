@@ -380,6 +380,71 @@ class RemoteServiceTests(unittest.TestCase):
         with self.assertRaises(RemoteAuthorizationError):
             client.request_shared("demo.read_state")
 
+    def test_pair_revocation_remains_outer_gate_for_shared_capability(self) -> None:
+        share = CapabilityShare()
+        caller = NodeId("caller")
+        share.register("demo.read_state", lambda _peer, _params: {"ok": True})
+        share.allow(caller, "demo.read_state")
+        grant = PeerGrant(caller, SECRET, frozenset({NodePermission.READ_STATE}))
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            grants={caller: grant},
+            capability_share=share,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            caller_node_id=caller,
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+        )
+        self.assertEqual(client.request_shared("demo.read_state"), {"ok": True})
+
+        service.update_grants({})
+
+        with self.assertRaises(RemoteAuthError):
+            client.request_shared("demo.read_state")
+
+    def test_shared_handler_failure_keeps_stable_remote_error(self) -> None:
+        share = CapabilityShare()
+        caller = NodeId("caller")
+
+        def broken(_peer: NodeId, _params: dict[str, object]) -> object:
+            raise RuntimeError("private handler detail")
+
+        share.register("demo.read_state", broken)
+        share.allow(caller, "demo.read_state")
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            grants={
+                caller: PeerGrant(caller, SECRET, frozenset({NodePermission.READ_STATE}))
+            },
+            capability_share=share,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            caller_node_id=caller,
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+        )
+        with self.assertRaises(RemoteExecutionError) as error:
+            client.request_shared("demo.read_state")
+        self.assertEqual(str(error.exception), "execution_failed")
+        self.assertNotIn("private handler detail", str(error.exception))
+
     def test_authenticated_provider_round_trips_over_loopback_socket(self) -> None:
         service = RemoteService(
             node_id=NodeId("peer"),

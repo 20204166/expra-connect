@@ -16,10 +16,32 @@ from threading import Lock
 from typing import Any
 
 from expra_connect import ConnectConfig, ConnectRuntime, NodeId, __version__
+from expra_connect.wire_protocol import RemoteAuthorizationError
 
 CAPABILITY = "test.read_state"
 _REPORT_LOCK = Lock()
 _TERMINAL_SEQUENCE = 0
+
+
+def _reallow_capability_after_rotation(
+    runtime: ConnectRuntime, peer_ids: set[NodeId]
+) -> None:
+    """Re-apply only the harness's explicit grants after transport restart."""
+    for peer_id in peer_ids:
+        runtime.sharing.allow(peer_id, CAPABILITY)
+
+
+def _retry_shared_capability(operation: Any, timeout: float = 5.0) -> Any:
+    """Wait briefly for a target harness to re-apply its explicit grant."""
+    deadline = time.monotonic() + max(timeout, 0.0)
+    while True:
+        try:
+            return operation()
+        except RemoteAuthorizationError:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            time.sleep(min(0.1, remaining))
 
 
 def json_default(value: Any) -> Any:
@@ -233,6 +255,7 @@ def main() -> int:
 
     runtime: ConnectRuntime
     route_started: dict[tuple[str, str, int], float] = {}
+    capability_peers: set[NodeId] = set()
 
     def approve_pairing(request: Any) -> bool:
         write_event(
@@ -242,6 +265,7 @@ def main() -> int:
             permissions=sorted(permission.value for permission in request.permissions),
         )
         runtime.sharing.allow(request.caller_node_id, CAPABILITY)
+        capability_peers.add(request.caller_node_id)
         return True
 
     def route_attempt(
@@ -323,6 +347,7 @@ def main() -> int:
             while True:
                 if rotation_deadline is not None and time.monotonic() >= rotation_deadline:
                     rotated = runtime.rotate_transport()
+                    _reallow_capability_after_rotation(runtime, capability_peers)
                     write_event(
                         args.report,
                         "rotated",
@@ -392,8 +417,10 @@ def main() -> int:
                 raise TimeoutError("rotated peer advertisement was not rediscovered")
             provider = runtime.reconnect_peer(peer_id)
             write_event(args.report, "reconnected_after_rotation", peer_id=peer_id.value)
-            result = provider.request_shared(
-                CAPABILITY, {"source": "run_peer.py", "after_rotation": True}
+            result = _retry_shared_capability(
+                lambda: provider.request_shared(
+                    CAPABILITY, {"source": "run_peer.py", "after_rotation": True}
+                )
             )
             write_event(args.report, "shared_after_rotation", result=result)
         if args.revoke_self:
