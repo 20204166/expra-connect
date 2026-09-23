@@ -52,15 +52,15 @@ from .server import (
     RemoteSocketServer,
 )
 from .session import LogicalSessionRegistry
-from .surface_protocol import SURFACE_OPERATIONS
-from .surface_provider import SurfaceProviderMixin, dispatch_surface_request
 from .socket_transport import (
     MemoryRemoteTransport,
     SocketRemoteTransport,
     TLSRemoteTransport,
-    build_trusted_transport,
     _invoke_with_optional_cancel,
+    build_trusted_transport,
 )
+from .surface_protocol import SURFACE_OPERATIONS
+from .surface_provider import SurfaceProviderMixin, dispatch_surface_request
 from .wire_protocol import (
     DEFAULT_FRESHNESS_SECONDS,
     DEFAULT_IDEMPOTENCY_MAX_ENTRIES,
@@ -148,13 +148,7 @@ __all__ = [
 
 
 class RemoteService:
-    """Server-side boundary: verify, authorize, and solve one request.
-
-    Serves one machine's read data through an injected ``NodeProvider``. Every
-    response is signed with the peer's secret, so a client can always tell an
-    authentic denial from a forgery. Auth failures raise (the transport closes
-    silently); authorised-but-failed executions return a signed error envelope.
-    """
+    """Server-side authenticated request boundary."""
 
     def __init__(
         self,
@@ -217,6 +211,7 @@ class RemoteService:
         self._secret = secret
         self._grant_mode = grants is not None
         self._grant_lock = threading.RLock()
+        self._fence_lock = threading.Lock()
         self._grants = dict(grants or {})
         self._cluster_capability_grants = tuple(cluster_capability_grants)
         for grant in self._grants.values():
@@ -256,16 +251,14 @@ class RemoteService:
         self._dashboard_shares: dict[NodeId, float] = {}
         self._capability_share = capability_share
         self._surface_registry = surface_registry
-        self._idempotency = idempotency_cache or IdempotencyCache(
-            clock=clock,
-            ttl_seconds=idempotency_ttl_seconds,
-            max_entries=idempotency_max_entries,
-            state_store=idempotency_store,
-        )
+        if idempotency_cache is None:
+            idempotency_cache = IdempotencyCache(clock=clock, ttl_seconds=idempotency_ttl_seconds, max_entries=idempotency_max_entries, state_store=idempotency_store)  # fmt: skip
+        self._idempotency = idempotency_cache
         self._sessions = LogicalSessionRegistry(
             clock=clock, ttl_seconds=freshness_seconds * 10
         )
         self._grant_version = 0
+
     @staticmethod
     def _validate_secret(secret: str) -> None:
         if not isinstance(secret, str) or len(secret) != 64:
@@ -274,6 +267,7 @@ class RemoteService:
             bytes.fromhex(secret)
         except ValueError as error:
             raise ValueError("peer credentials must be hexadecimal") from error
+
     def handle(
         self, envelope_text: str, *, connection_generation: str | None = None
     ) -> str:
@@ -306,6 +300,7 @@ class RemoteService:
             op = envelope.get("op") if isinstance(envelope, dict) else None
             operation_safety = OPERATION_SAFETY.get(op) if isinstance(op, str) else None
             if "replayed" not in str(error) or operation_safety not in {
+                "read",
                 "retry_safe",
                 "unsafe",
             }:
@@ -411,17 +406,25 @@ class RemoteService:
             return json.dumps(response)
         if request.op == "revoke_self" and self._trust_revoke_commit is not None:
             self._trust_revoke_commit()
+        response_status = "ok"
+        response_error = None
+        try:
+            json.dumps(payload, allow_nan=False)
+        except (TypeError, ValueError):
+            LOGGER.warning("Remote operation %s returned an invalid result", request.op)
+            response_status, response_error, payload = "error", "execution_failed", None
         response = sign_response(
             node_id=self._node_id.value,
             request_id=request.request_id,
-            status="ok",
+            status=response_status,
             payload=payload,
+            error=response_error,
             timestamp=self._clock(),
             secret=response_secret,
             session_id=session_id,
             connection_generation=connection_generation,
         )
-        return json.dumps(response)
+        return json.dumps(response, allow_nan=False)
 
     def update_grants(self, grants: dict[NodeId, PeerGrant]) -> None:
         """Replace the live target ACL after an atomic settings update."""
@@ -436,17 +439,22 @@ class RemoteService:
             self._grant_mode = True
             self._grants = validated
             self._grant_version += 1
+
     def update_cluster_capability_grants(self, grants: tuple[Any, ...]) -> None:
         """Replace the separate cluster ACL without changing Pair grants."""
         with self._grant_lock:
             self._cluster_capability_grants = tuple(grants)
             self._grant_version += 1
+
     @staticmethod
     def _caller_from_json(envelope: Any) -> NodeId | None:
         if not isinstance(envelope, dict):
             return None
         caller = envelope.get("caller_node_id")
-        return NodeId(caller) if isinstance(caller, str) and caller else None
+        try:
+            return NodeId(caller) if isinstance(caller, str) and caller else None
+        except ValueError:
+            return None
 
     def _solve(
         self, request: RemoteRequest, *, grant: PeerGrant | None = None
@@ -458,6 +466,7 @@ class RemoteService:
             raise RemoteAuthorizationError(f"node is not authorised for {request.op}")
         permission = OP_REQUIRED_PERMISSION[request.op]
         permissions = grant.permissions if grant is not None else self._permissions
+        cluster_grant = None
         if request.caller_node_id is not None:
             cluster_grant = next(
                 (
@@ -591,42 +600,42 @@ class RemoteService:
             candidates = self._provider.storage_candidates()
             return {"files": [file_candidate_to_dict(c) for c in candidates]}
         raise RemoteProtocolError(f"unknown operation: {request.op}")
+
     def _verify_role_fence(self, request: RemoteRequest) -> None:
         params = request.params
-        if (
-            self._cluster_id is not None
-            and params.get("cluster_id") != self._cluster_id
-        ):
+        with self._fence_lock:
+            cluster_id = self._cluster_id
+            coordinator_epoch = self._coordinator_epoch
+            fencing_token = self._fencing_token
+        if cluster_id is not None and params.get("cluster_id") != cluster_id:
             raise RemoteAuthorizationError("cluster identity is invalid")
-        if (
-            self._coordinator_epoch is not None
-            and params.get("epoch") != self._coordinator_epoch
-        ):
+        if coordinator_epoch is not None and params.get("epoch") != coordinator_epoch:
             raise RemoteAuthorizationError("coordinator epoch is stale")
-        if self._fencing_token is not None and not hmac.compare_digest(
-            str(params.get("fencing_token")), self._fencing_token
+        if fencing_token is not None and not hmac.compare_digest(
+            str(params.get("fencing_token")), fencing_token
         ):
             raise RemoteAuthorizationError("coordinator fencing token is stale")
 
     def update_cluster_fence(
         self, *, cluster_id: str, coordinator_epoch: int, fencing_token: str
     ) -> None:
-        if self._cluster_id == cluster_id and self._coordinator_epoch is not None:
-            if coordinator_epoch < self._coordinator_epoch:
-                raise RemoteAuthorizationError(
-                    "cannot install an older coordinator epoch"
-                )
-            if coordinator_epoch == self._coordinator_epoch:
-                if self._fencing_token is None or not hmac.compare_digest(
-                    fencing_token, self._fencing_token
-                ):
+        with self._fence_lock:
+            if self._cluster_id == cluster_id and self._coordinator_epoch is not None:
+                if coordinator_epoch < self._coordinator_epoch:
                     raise RemoteAuthorizationError(
-                        "coordinator fencing token conflicts"
+                        "cannot install an older coordinator epoch"
                     )
-                return
-        self._cluster_id = cluster_id
-        self._coordinator_epoch = coordinator_epoch
-        self._fencing_token = fencing_token
+                if coordinator_epoch == self._coordinator_epoch:
+                    if self._fencing_token is None or not hmac.compare_digest(
+                        fencing_token, self._fencing_token
+                    ):
+                        raise RemoteAuthorizationError(
+                            "coordinator fencing token conflicts"
+                        )
+                    return
+            self._cluster_id = cluster_id
+            self._coordinator_epoch = coordinator_epoch
+            self._fencing_token = fencing_token
 
     def clear_dashboard_share(self, caller_node_id: NodeId) -> None:
         self._dashboard_shares.pop(caller_node_id, None)
@@ -658,13 +667,7 @@ class RemoteService:
 class AuthenticatedNodeProvider(
     SurfaceProviderMixin, ProviderRequestMixin, RemoteRoleOperations
 ):
-    """Client-side ``NodeProvider`` over one authenticated remote node.
-
-    Builds and signs every request, verifies every response, enforces
-    freshness and request-id correlation, and maps transport/auth failures to
-    clear exceptions. ``reset_component_sample``/``stop_background_workers``
-    are local-only concerns and are read-only no-ops here.
-    """
+    """Client-side provider for one authenticated remote node."""
 
     def __init__(
         self,

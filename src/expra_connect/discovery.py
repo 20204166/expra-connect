@@ -38,11 +38,22 @@ def normalize_port(value: object) -> int | None:
 def validate_candidate(
     candidate: DiscoveryCandidate, *, self_id: str | None = None
 ) -> None:
-    if not candidate.stable_id or candidate.stable_id == "local":
+    if not isinstance(candidate, DiscoveryCandidate):
+        raise TypeError("invalid discovery candidate")
+    if (
+        not isinstance(candidate.stable_id, str)
+        or not candidate.stable_id
+        or candidate.stable_id == "local"
+    ):
         raise ValueError("invalid discovery identity")
     if self_id is not None and candidate.stable_id == self_id:
         raise ValueError("self discovery is not a peer")
     if normalize_port(candidate.port) is None or not candidate.addresses:
+        raise ValueError("invalid discovery endpoint")
+    if any(
+        not isinstance(address, str) or not address.strip()
+        for address in candidate.addresses
+    ):
         raise ValueError("invalid discovery endpoint")
 
 
@@ -118,12 +129,19 @@ class DiscoveryRegistry:
     def add(self, candidate: DiscoveryCandidate) -> bool:
         try:
             validate_candidate(candidate, self_id=self._self_id)
-        except ValueError:
+        except (TypeError, ValueError):
             return False
-        self._items[candidate.stable_id] = replace(candidate, seen_at=self._clock())
+        item = replace(
+            candidate,
+            port=normalize_port(candidate.port),
+            seen_at=self._clock(),
+        )
+        self._items[item.stable_id] = item
         return True
 
     def remove(self, stable_id: str) -> None:
+        if not isinstance(stable_id, str):
+            return
         self._items.pop(stable_id, None)
 
     def candidates(self) -> tuple[DiscoveryCandidate, ...]:

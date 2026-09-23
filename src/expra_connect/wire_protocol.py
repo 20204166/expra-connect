@@ -19,6 +19,7 @@ from .models import (
 )
 from .sharing import _is_valid_capability_id
 from .surface_protocol import (
+    SURFACE_OPERATION_SAFETY,
     SURFACE_OPERATIONS,
     SURFACE_REQUIRED_CAPABILITY,
     validate_surface_operation_params,
@@ -85,15 +86,12 @@ ROLE_OPERATIONS = frozenset(
         "standby_batch",
     }
 )
-OPERATION_SAFETY: dict[str, str] = {
-    operation: "read" for operation in OP_REQUIRED_CAPABILITY
-}
-for _operation in ("process_request_quit", "revoke_self"):
-    OPERATION_SAFETY[_operation] = "retry_safe"
-for _operation in ("process_force_quit",):
-    OPERATION_SAFETY[_operation] = "unsafe"
-for _operation in ROLE_OPERATIONS:
-    OPERATION_SAFETY[_operation] = "retry_safe"
+NO_PARAM_OPERATIONS = frozenset(("hello", "ping", "echo", "demo.read_state", "dashboard_snapshot", "process_candidates", "storage_candidates", "revoke_self"))  # fmt: skip
+OPERATION_SAFETY: dict[str, str] = dict.fromkeys(OP_REQUIRED_CAPABILITY, "read")
+OPERATION_SAFETY.update(SURFACE_OPERATION_SAFETY)
+for operation in ROLE_OPERATIONS | {"process_request_quit", "revoke_self"}:
+    OPERATION_SAFETY[operation] = "retry_safe"
+OPERATION_SAFETY["process_force_quit"] = "unsafe"
 
 
 class RemoteProtocolError(ValueError):
@@ -114,6 +112,7 @@ class RemoteExecutionError(RuntimeError):
 
 class RemoteTransportError(RuntimeError):
     """Raised when the transport cannot complete an authenticated exchange."""
+
 
 class IdempotencyCollisionError(RemoteAuthError):
     """Raised when one request ID is reused for different operation content."""
@@ -141,6 +140,8 @@ def parse_hello_capabilities(payload: Any) -> frozenset[NodeCapability]:
             # Unknown values are forward metadata, never permissions.
             continue
     return frozenset(capabilities)
+
+
 def validate_hello_payload(
     payload: Any, *, expected_node_id: NodeId | None = None
 ) -> frozenset[NodeCapability]:
@@ -162,6 +163,7 @@ def validate_hello_payload(
     if not isinstance(fingerprint, str) or not fingerprint:
         raise RemoteAuthError("hello identity fingerprint is missing")
     return parse_hello_capabilities(payload)
+
 
 @dataclass(frozen=True, slots=True)
 class PeerGrant:
@@ -194,6 +196,7 @@ class PairingRequest:
         _validate_secret(self.proposed_secret)
         if not self.permissions <= READ_PERMISSIONS:
             raise RemoteAuthorizationError("pairing is read-only")
+
 
 @dataclass(frozen=True, slots=True)
 class PairingControlRequest:
@@ -230,6 +233,7 @@ class CapabilityElevationRequest:
         if not self.permissions:
             raise RemoteAuthorizationError("elevation requires a permission")
 
+
 def _validate_secret(secret: str) -> None:
     if not isinstance(secret, str) or len(secret) != 64:
         raise ValueError("peer credentials must be 256-bit hex text")
@@ -237,6 +241,7 @@ def _validate_secret(secret: str) -> None:
         bytes.fromhex(secret)
     except ValueError as error:
         raise ValueError("peer credentials must be hexadecimal") from error
+
 
 def validate_pairing_control_request(
     raw: Any, *, clock: Callable[[], float] = time.time
@@ -300,6 +305,7 @@ def validate_pairing_control_request(
         expires_at=float(expires_at),
     )
 
+
 @dataclass(frozen=True, slots=True)
 class RemoteRequest:
     """One verified authenticated request from a peer node."""
@@ -329,8 +335,9 @@ class RemoteResponse:
     session_id: str | None = None
     connection_generation: str | None = None
 
+
 def _canonical(fields: dict[str, Any]) -> str:
-    return json.dumps(fields, sort_keys=True, separators=(",", ":"))
+    return json.dumps(fields, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
 def _signature(secret: str, fields: dict[str, Any]) -> str:
@@ -339,6 +346,17 @@ def _signature(secret: str, fields: dict[str, Any]) -> str:
         _canonical(fields).encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
+
+
+def _verify_signature(
+    signature: str, secret: str, fields: dict[str, Any], kind: str
+) -> None:
+    try:
+        expected = _signature(secret, fields)
+    except (TypeError, ValueError) as error:
+        raise RemoteProtocolError(f"{kind} contains invalid JSON values") from error
+    if not hmac.compare_digest(signature, expected):
+        raise RemoteAuthError(f"{kind} signature is invalid")
 
 
 def sign_request(
@@ -512,8 +530,7 @@ def verify_request(
     if not isinstance(signature, str):
         raise RemoteAuthError("request is missing its signature")
     fields = {key: value for key, value in envelope.items() if key != "sig"}
-    if not hmac.compare_digest(signature, _signature(secret, fields)):
-        raise RemoteAuthError("request signature is invalid")
+    _verify_signature(signature, secret, fields, "request")
     node_id = envelope.get("node_id")
     caller_node_id = envelope.get("caller_node_id")
     op = envelope.get("op")
@@ -556,11 +573,16 @@ def verify_request(
     age = now - float(timestamp)
     if age > freshness_seconds or age < -freshness_seconds:
         raise RemoteAuthError("request timestamp is outside the freshness window")
+    try:
+        verified_node_id = NodeId(node_id)
+        verified_caller_node_id = NodeId(caller_node_id) if caller_node_id else None
+    except ValueError as error:
+        raise RemoteAuthError("request identity is invalid") from error
     if not replay_cache.check_and_record(node_id, request_id, nonce, now):
         raise RemoteAuthError("request has been replayed")
     return RemoteRequest(
-        node_id=NodeId(node_id),
-        caller_node_id=(NodeId(caller_node_id) if caller_node_id else None),
+        node_id=verified_node_id,
+        caller_node_id=verified_caller_node_id,
         op=op,
         params=params,
         request_id=request_id,
@@ -601,8 +623,7 @@ def verify_response(
     if not isinstance(signature, str):
         raise RemoteAuthError("response is missing its signature")
     fields = {key: value for key, value in envelope.items() if key != "sig"}
-    if not hmac.compare_digest(signature, _signature(secret, fields)):
-        raise RemoteAuthError("response signature is invalid")
+    _verify_signature(signature, secret, fields, "response")
     node_id = envelope.get("node_id")
     request_id = envelope.get("request_id")
     status = envelope.get("status")
@@ -639,8 +660,12 @@ def verify_response(
     age = clock() - float(timestamp)
     if age > freshness_seconds or age < -freshness_seconds:
         raise RemoteAuthError("response timestamp is outside the freshness window")
+    try:
+        verified_node_id = NodeId(node_id)
+    except ValueError as error:
+        raise RemoteAuthError("response identity is invalid") from error
     return RemoteResponse(
-        node_id=NodeId(node_id),
+        node_id=verified_node_id,
         request_id=request_id,
         status=status,
         payload=payload,
@@ -727,13 +752,17 @@ class IdempotencyCache:
                 entry.error = error
                 entry.complete = True
                 entry.event.set()
-                self._entries.pop(key, None)
             raise
         with self._lock:
             entry.result = dict(result)
             entry.complete = True
+            try:
+                self._save_state()
+            except BaseException as error:
+                entry.error = error
+                entry.event.set()
+                raise
             entry.event.set()
-            self._save_state()
         return result
 
     def _prune(self, now: float) -> None:
@@ -749,21 +778,32 @@ class IdempotencyCache:
             raw = state_store.load()
         except Exception:  # noqa: BLE001 - corrupt cache must fail closed.
             return
-        for item in raw.get("entries", []):
+        if not isinstance(raw, dict):
+            return
+        entries = raw.get("entries", [])
+        if not isinstance(entries, list):
+            return
+        for item in entries:
             if not isinstance(item, dict):
                 continue
             key = item.get("key")
             fingerprint = item.get("fingerprint")
             result = item.get("result")
             remaining = item.get("remaining")
+            if not isinstance(remaining, (int, float)) or isinstance(remaining, bool):
+                continue
+            try:
+                remaining_seconds = float(remaining)
+            except (OverflowError, ValueError):
+                continue
             if (
                 not isinstance(key, list)
                 or len(key) != 2
                 or not all(isinstance(part, str) for part in key)
                 or not isinstance(fingerprint, str)
                 or not isinstance(result, dict)
-                or not isinstance(remaining, (int, float))
-                or remaining <= 0
+                or not math.isfinite(remaining_seconds)
+                or remaining_seconds <= 0
             ):
                 continue
             if len(self._entries) >= self._max_entries:
@@ -807,18 +847,11 @@ class IdempotencyCache:
 
 
 def validate_operation_params(op: str, params: dict[str, Any]) -> None:
-    if op not in OP_REQUIRED_CAPABILITY:
+    if not isinstance(op, str) or op not in OP_REQUIRED_CAPABILITY:
         raise RemoteProtocolError(f"unknown operation: {op}")
-    if op in {
-        "hello",
-        "ping",
-        "echo",
-        "demo.read_state",
-        "dashboard_snapshot",
-        "process_candidates",
-        "storage_candidates",
-        "revoke_self",
-    }:
+    if not isinstance(params, dict):
+        raise RemoteProtocolError("operation parameters must be an object")
+    if op in NO_PARAM_OPERATIONS:
         if params:
             raise RemoteProtocolError(f"{op} accepts no parameters")
         return
@@ -871,21 +904,7 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
         if set(params) != {"processes", "action"}:
             raise RemoteProtocolError(f"{op} has unexpected parameters")
         return
-    if op in {
-        "consume_invite",
-        "assign_role",
-        "renew_coordinator_lease",
-        "worker_snapshot",
-        "standby_batch",
-        "pause_worker",
-        "revoke_worker",
-        "resume_worker",
-        "remove_connection",
-        "remove_job",
-        "grant_capabilities",
-        "revoke_capabilities",
-        "sync_capability_grant",
-    }:
+    if op in ROLE_OPERATIONS:
         required = {"cluster_id", "epoch", "fencing_token"}
         if not required <= set(params):
             raise RemoteProtocolError(f"{op} requires cluster fencing fields")
@@ -914,18 +933,14 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
             ):
                 raise RemoteProtocolError("role list is invalid")
             return
-        if op in {"pause_worker", "resume_worker", "revoke_worker", "revoke_member"}:
-            if not isinstance(params.get("target_node_id"), str):
-                raise RemoteProtocolError("role target is invalid")
-            return
-        if op in {"remove_connection", "remove_job"}:
-            if (
-                not isinstance(params.get("target_node_id"), str)
-                or not params["target_node_id"]
+        if op in {"pause_worker", "resume_worker", "revoke_worker", "revoke_member", "remove_connection", "remove_job"}:  # fmt: skip
+            target_node_id = params.get("target_node_id")
+            if not isinstance(target_node_id, str) or (
+                op in {"remove_connection", "remove_job"} and not target_node_id
             ):
                 raise RemoteProtocolError("role target is invalid")
             return
-        if op in {"grant_capabilities", "revoke_capabilities"}:
+        if op in {"grant_capabilities", "revoke_capabilities", "sync_capability_grant"}:
             expected_fields = {
                 "cluster_id",
                 "epoch",
@@ -942,47 +957,23 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
             for field in ("subject_node_id", "target_node_id"):
                 if not isinstance(params.get(field), str) or not params[field]:
                     raise RemoteProtocolError(f"{op} target identity is invalid")
-            if op == "grant_capabilities":
-                permissions = params.get("permissions")
-                if (
-                    not isinstance(permissions, list)
-                    or not permissions
-                    or any(
-                        not isinstance(item, str) or item not in _KNOWN_PERMISSION_VALUES
-                        for item in permissions
-                    )
-                ):
-                    raise RemoteProtocolError(
-                        "capability grant permissions are invalid"
-                    )
-                if (
-                    not isinstance(params.get("expires_at"), (int, float))
-                    or isinstance(params["expires_at"], bool)
-                    or not math.isfinite(float(params["expires_at"]))
-                ):
-                    raise RemoteProtocolError("capability grant expiry is invalid")
-            return
-        if op == "sync_capability_grant":
-            expected_fields = {
-                "cluster_id",
-                "epoch",
-                "fencing_token",
-                "subject_node_id",
-                "target_node_id",
-                "permissions",
-                "expires_at",
-            }
-            if set(params) != expected_fields:
-                raise RemoteProtocolError(f"{op} has unexpected parameters")
-            for field in ("subject_node_id", "target_node_id"):
-                if not isinstance(params.get(field), str) or not params[field]:
-                    raise RemoteProtocolError(f"{op} target identity is invalid")
+            if op == "revoke_capabilities":
+                return
             permissions = params.get("permissions")
-            if not isinstance(permissions, list) or any(
-                not isinstance(item, str) or item not in _KNOWN_PERMISSION_VALUES
-                for item in permissions
+            if (
+                not isinstance(permissions, list)
+                or (op == "grant_capabilities" and not permissions)
+                or any(
+                    not isinstance(item, str) or item not in _KNOWN_PERMISSION_VALUES
+                    for item in permissions
+                )
             ):
-                raise RemoteProtocolError(f"{op} permissions are invalid")
+                message = (
+                    "capability grant permissions are invalid"
+                    if op == "grant_capabilities"
+                    else f"{op} permissions are invalid"
+                )
+                raise RemoteProtocolError(message)
             if (
                 not isinstance(params.get("expires_at"), (int, float))
                 or isinstance(params["expires_at"], bool)
@@ -993,7 +984,13 @@ def validate_operation_params(op: str, params: dict[str, Any]) -> None:
         payload = params.get("payload")
         if not isinstance(payload, dict):
             raise RemoteProtocolError("snapshot payload is invalid")
-        if len(json.dumps(payload, separators=(",", ":"))) > MAX_ENVELOPE_BYTES // 2:
+        try:
+            serialized_payload = json.dumps(
+                payload, separators=(",", ":"), allow_nan=False
+            )
+        except (OverflowError, TypeError, ValueError) as error:
+            raise RemoteProtocolError("snapshot payload is not JSON-safe") from error
+        if len(serialized_payload) > MAX_ENVELOPE_BYTES // 2:
             raise RemoteProtocolError("snapshot payload is too large")
         return
     if params:

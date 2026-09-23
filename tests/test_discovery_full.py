@@ -1,11 +1,13 @@
 import unittest
-from collections.abc import Callable
+from collections import UserDict
+from collections.abc import Callable, MutableMapping
 from threading import Event, Thread
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 from expra_connect.discovery_full import (
+    DEFAULT_TTL_SECONDS,
     EVENT_CANDIDATE,
     EVENT_LOST,
     SERVICE_TYPE,
@@ -25,8 +27,8 @@ class _Info:
         address: bytes = b"192.168.1.10",
         fingerprint: bytes | None = None,
     ) -> None:
-        self.addresses = [address]
-        self.properties = {
+        self.addresses: list[Any] = [address]
+        self.properties: MutableMapping[Any, Any] = {
             b"id": node_id.encode(),
             b"name": b"Peer B",
             b"app_version": b"1.0",
@@ -62,6 +64,42 @@ class _SynchronousBackend(_Backend):
         )
 
 
+def _make_discovery(
+    *,
+    backend_type: type[_Backend] = _Backend,
+    available: bool = True,
+    clock: Callable[[], float] | None = None,
+    ttl_seconds: float = DEFAULT_TTL_SECONDS,
+    on_event: Callable[[str, Any], None] | None = None,
+) -> tuple[NetworkDiscovery, _Backend]:
+    backend: _Backend | None = None
+
+    def factory(listener: Callable[..., None]) -> _Backend:
+        nonlocal backend
+        backend = backend_type(listener)
+        backend.available = available
+        return backend
+
+    kwargs: dict[str, Any] = {}
+    if clock is not None:
+        kwargs["clock"] = clock
+    discovery = NetworkDiscovery(
+        "local-node",
+        advertisement=DiscoveryAdvertisement(
+            stable_id="local-node",
+            display_name="Local",
+            hostname="localhost",
+            app_version="1.0",
+        ),
+        backend_factory=factory,
+        ttl_seconds=ttl_seconds,
+        on_event=on_event,
+        **kwargs,
+    )
+    assert backend is not None
+    return discovery, backend
+
+
 class FullDiscoveryTests(unittest.TestCase):
     def test_rotated_transport_gets_a_new_service_instance_name(self) -> None:
         base = DiscoveryAdvertisement(
@@ -89,6 +127,11 @@ class FullDiscoveryTests(unittest.TestCase):
             {address for address in addresses},
             {b"\xc0\xa8\x01\x14", bytes.fromhex("20010db8000000000000000000000020")},
         )
+
+    def test_invalid_advertised_addresses_are_skipped(self) -> None:
+        addresses = _service_addresses(("127.0.0.1", "not-an-address", "10.0.0.20"))
+
+        self.assertEqual(addresses, [b"\x0a\x00\x00\x14"])
 
     def test_zeroconf_start_does_not_require_optional_address_helpers(self) -> None:
         registered: list[Any] = []
@@ -245,6 +288,103 @@ class FullDiscoveryTests(unittest.TestCase):
         self.assertEqual(events[-1][0], EVENT_LOST)
         discovery.stop()
         self.assertFalse(discovery.active)
+
+    def test_repeated_start_and_stop_are_idempotent(self) -> None:
+        class CountingBackend(_Backend):
+            def __init__(self, listener: Callable[..., None]) -> None:
+                super().__init__(listener)
+                self.start_count = 0
+                self.stop_count = 0
+
+            def start(self, advertisement: Any) -> None:
+                self.start_count += 1
+                super().start(advertisement)
+
+            def stop(self) -> None:
+                self.stop_count += 1
+                super().stop()
+
+        discovery, backend = _make_discovery(backend_type=CountingBackend)
+        self.assertTrue(discovery.start())
+        self.assertTrue(discovery.start())
+        discovery.stop()
+        discovery.stop()
+
+        counting_backend = cast(CountingBackend, backend)
+        self.assertEqual(counting_backend.start_count, 1)
+        self.assertEqual(counting_backend.stop_count, 1)
+
+    def test_malformed_ports_become_non_connectable(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        for index, port in enumerate(("not-a-port", 1.5, True, 65536)):
+            info = _Info(f"bad-{index}")
+            info.port = port  # type: ignore[assignment]
+            backend.listener("add", f"bad-{index}.{SERVICE_TYPE}", info)
+
+        self.assertEqual(
+            {item.stable_id for item in discovery.peers()},
+            {f"bad-{index}" for index in range(4)},
+        )
+        self.assertTrue(all(item.port is None for item in discovery.peers()))
+        self.assertTrue(all(not item.connectable for item in discovery.peers()))
+
+    def test_unavailable_backend_does_not_start_discovery(self) -> None:
+        discovery, backend = _make_discovery(available=False)
+
+        self.assertFalse(discovery.start())
+        self.assertFalse(discovery.active)
+        self.assertIsNotNone(discovery.unavailable_reason)
+        self.assertFalse(backend.started)
+
+    def test_failed_start_closes_partial_backend_state(self) -> None:
+        class FailingBackend(_Backend):
+            def start(self, advertisement: Any) -> None:
+                super().start(advertisement)
+                raise RuntimeError("bind failed")
+
+        discovery, backend = _make_discovery(backend_type=FailingBackend)
+
+        self.assertFalse(discovery.start())
+        self.assertFalse(discovery.active)
+        self.assertFalse(backend.started)
+        self.assertEqual(discovery.peers(), ())
+
+    def test_expiry_keeps_peer_at_exact_ttl_boundary(self) -> None:
+        now = [100.0]
+        discovery, backend = _make_discovery(clock=lambda: now[0], ttl_seconds=5.0)
+        self.assertTrue(discovery.start())
+        backend.listener("add", f"peer.{SERVICE_TYPE}", _Info("peer"))
+
+        discovery.expire_stale(now=105.0)
+        self.assertEqual(len(discovery.peers()), 1)
+        discovery.expire_stale(now=105.1)
+        self.assertEqual(discovery.peers(), ())
+
+    def test_concurrent_transport_callbacks_keep_peer_map_consistent(self) -> None:
+        errors: list[RuntimeError] = []
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+
+        def add_peer(index: int) -> None:
+            try:
+                backend.listener(
+                    "add", f"peer-{index}.{SERVICE_TYPE}", _Info(f"peer-{index}")
+                )
+            except RuntimeError as error:
+                errors.append(error)
+
+        threads = [Thread(target=add_peer, args=(index,)) for index in range(4)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(1.0)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(
+            {item.stable_id for item in discovery.peers()},
+            {f"peer-{index}" for index in range(4)},
+        )
 
     def test_synchronous_start_callback_is_retained(self) -> None:
         discovery = NetworkDiscovery(
@@ -465,6 +605,56 @@ class FullDiscoveryTests(unittest.TestCase):
 
         self.assertEqual(discovery.peers()[0].addresses, ("2001:db8::9",))
 
+    def test_scalar_service_addresses_are_ignored(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        info = _Info("scalar")
+        info.addresses = 123  # type: ignore[assignment]
+
+        backend.listener("add", f"scalar.{SERVICE_TYPE}", info)
+
+        self.assertEqual(discovery.peers()[0].addresses, ())
+
+    def test_stop_during_synchronous_start_reports_inactive(self) -> None:
+        holder: dict[str, NetworkDiscovery] = {}
+
+        class StopOnStartBackend(_Backend):
+            def start(self, advertisement: Any) -> None:
+                super().start(advertisement)
+                self.listener("add", f"peer.{SERVICE_TYPE}", _Info("peer"))
+
+        discovery, _backend = _make_discovery(
+            backend_type=StopOnStartBackend,
+            on_event=lambda _kind, _payload: holder["discovery"].stop(),
+        )
+        holder["discovery"] = discovery
+
+        self.assertFalse(discovery.start())
+        self.assertFalse(discovery.active)
+
+    def test_stop_from_expiry_callback_does_not_break_remaining_stale_peers(
+        self,
+    ) -> None:
+        holder: dict[str, NetworkDiscovery] = {}
+
+        def on_event(kind: str, _payload: Any) -> None:
+            if kind == EVENT_LOST:
+                holder["discovery"].stop()
+
+        discovery, backend = _make_discovery(
+            clock=lambda: 100.0,
+            ttl_seconds=1.0,
+            on_event=on_event,
+        )
+        holder["discovery"] = discovery
+        self.assertTrue(discovery.start())
+        backend.listener("add", f"peer-a.{SERVICE_TYPE}", _Info("peer-a"))
+        backend.listener("add", f"peer-b.{SERVICE_TYPE}", _Info("peer-b"))
+
+        discovery.expire_stale(now=102.0)
+
+        self.assertEqual(discovery.peers(), ())
+
     def test_late_event_after_stop_cannot_repopulate_candidates(self) -> None:
         holder: dict[str, _Backend] = {}
         events: list[tuple[str, Any]] = []
@@ -491,6 +681,71 @@ class FullDiscoveryTests(unittest.TestCase):
 
         self.assertEqual(discovery.peers(), ())
         self.assertEqual(events, [])
+
+    def test_unknown_transport_event_is_ignored(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+
+        backend.listener("unexpected", f"peer.{SERVICE_TYPE}", _Info("peer"))
+
+        self.assertEqual(discovery.peers(), ())
+
+    def test_none_property_id_is_not_coerced_into_a_peer(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        info = _Info("peer")
+        info.properties[b"id"] = None
+
+        backend.listener("add", f"peer.{SERVICE_TYPE}", info)
+
+        self.assertEqual(discovery.peers(), ())
+
+    def test_mapping_like_properties_are_normalized(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        info = _Info("peer")
+        info.properties = UserDict(info.properties)
+
+        backend.listener("add", f"peer.{SERVICE_TYPE}", info)
+
+        self.assertEqual([item.stable_id for item in discovery.peers()], ["peer"])
+
+    def test_empty_service_addresses_are_dropped(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        info = _Info("peer")
+        info.addresses = ["", "192.168.1.20"]
+
+        backend.listener("add", f"peer.{SERVICE_TYPE}", info)
+
+        self.assertEqual(discovery.peers()[0].addresses, ("192.168.1.20",))
+
+    def test_callback_failure_does_not_interrupt_expiry(self) -> None:
+        discovery, backend = _make_discovery(
+            clock=lambda: 100.0,
+            ttl_seconds=1.0,
+            on_event=lambda _kind, _payload: (_ for _ in ()).throw(
+                RuntimeError("consumer failed")
+            ),
+        )
+        self.assertTrue(discovery.start())
+        backend.listener("add", f"peer-a.{SERVICE_TYPE}", _Info("peer-a"))
+        backend.listener("add", f"peer-b.{SERVICE_TYPE}", _Info("peer-b"))
+
+        discovery.expire_stale(now=102.0)
+
+        self.assertEqual(discovery.peers(), ())
+
+    def test_successful_retry_clears_unavailable_reason(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        discovery.stop()
+        backend.available = False
+        self.assertFalse(discovery.start())
+        backend.available = True
+
+        self.assertTrue(discovery.start())
+        self.assertIsNone(discovery.unavailable_reason)
 
     def test_malformed_remove_event_is_ignored(self) -> None:
         discovery = NetworkDiscovery(

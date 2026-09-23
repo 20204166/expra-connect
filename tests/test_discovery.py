@@ -53,12 +53,55 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(registry.candidates()[0].addresses, ("10.0.0.2",))
         self.assertEqual(registry.expire(now=16.0), ("peer",))
 
+    def test_registry_keeps_candidate_at_exact_ttl_boundary(self) -> None:
+        registry = DiscoveryRegistry(clock=lambda: 10.0, ttl=5.0)
+        registry.add(DiscoveryCandidate("peer", ("10.0.0.1",), 27321))
+
+        self.assertEqual(registry.expire(now=15.0), ())
+        self.assertEqual(registry.expire(now=15.1), ("peer",))
+
     def test_registry_ignores_self_and_malformed_events(self) -> None:
         registry = DiscoveryRegistry(self_id="local")
         self.assertFalse(
             registry.add(DiscoveryCandidate("local", ("127.0.0.1",), 27321))
         )
         self.assertFalse(registry.add(DiscoveryCandidate("peer", (), 27321)))
+
+    def test_registry_rejects_none_and_blank_addresses(self) -> None:
+        registry = DiscoveryRegistry()
+        self.assertFalse(registry.add(None))  # type: ignore[arg-type]
+        self.assertFalse(registry.add(DiscoveryCandidate("peer", ("",), 27321)))
+        self.assertFalse(
+            registry.add(
+                DiscoveryCandidate("peer", (None,), 27321)  # type: ignore[arg-type]
+            )
+        )
+        self.assertEqual(registry.candidates(), ())
+
+    def test_registry_stores_normalized_integral_float_port(self) -> None:
+        registry = DiscoveryRegistry()
+
+        self.assertTrue(
+            registry.add(
+                DiscoveryCandidate(
+                    "peer",
+                    ("10.0.0.1",),
+                    27321.0,  # type: ignore[arg-type]
+                )
+            )
+        )
+
+        candidate = registry.candidates()[0]
+        self.assertEqual(candidate.port, 27321)
+        self.assertIs(type(candidate.port), int)
+
+    def test_registry_remove_ignores_unhashable_ids(self) -> None:
+        registry = DiscoveryRegistry()
+        self.assertTrue(registry.add(DiscoveryCandidate("peer", ("10.0.0.1",), 27321)))
+
+        registry.remove([])  # type: ignore[arg-type]
+
+        self.assertEqual(len(registry.candidates()), 1)
 
     def test_port_normalization_rejects_boolean_fractional_and_out_of_range(
         self,

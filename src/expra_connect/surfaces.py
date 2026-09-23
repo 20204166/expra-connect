@@ -8,8 +8,10 @@ from collections.abc import Callable, Hashable, Iterable, Mapping
 from dataclasses import dataclass
 from enum import Enum
 from types import MappingProxyType
+from typing import cast
 
 from .identity import NodeId
+from .surface_protocol import MAX_SURFACE_ID_LENGTH
 
 SurfaceHandler = Callable[[NodeId, dict[str, object]], object]
 
@@ -44,7 +46,7 @@ class SurfaceGrant:
 class SurfaceRegistry:
     """Keep ephemeral surface handlers and their explicit access grants."""
 
-    MAX_ID_LENGTH = 128
+    MAX_ID_LENGTH = MAX_SURFACE_ID_LENGTH
 
     def __init__(self, *, clock: Callable[[], float] = time.time) -> None:
         self._clock = clock
@@ -69,12 +71,15 @@ class SurfaceRegistry:
             raise ValueError("duplicate surface")
         if not callable(read) or (review is not None and not callable(review)):
             raise TypeError("surface handlers must be callable")
+        action_items: list[tuple[str, SurfaceHandler]]
         if actions is None:
             action_items = []
         elif isinstance(actions, Mapping):
-            action_items = list(actions.items())
+            action_items = list(
+                cast(Iterable[tuple[str, SurfaceHandler]], actions.items())
+            )
         else:
-            action_items = list(actions)
+            action_items = list(cast(Iterable[tuple[str, SurfaceHandler]], actions))
         action_handlers: dict[str, SurfaceHandler] = {}
         for action_id, handler in action_items:
             self._validate_id(action_id, "action")
@@ -102,9 +107,7 @@ class SurfaceRegistry:
     ) -> SurfaceGrant:
         if not isinstance(peer_id, NodeId):
             raise TypeError("peer id must be a NodeId")
-        grant = self._new_grant(
-            peer_id, surface_id, access, expires_at, cluster=False
-        )
+        grant = self._new_grant(peer_id, surface_id, access, expires_at, cluster=False)
         self._peer_grants[(peer_id, surface_id, grant.access)] = grant
         return grant
 
@@ -117,9 +120,7 @@ class SurfaceRegistry:
         expires_at: float | None = None,
     ) -> SurfaceGrant:
         self._validate_source(source)
-        grant = self._new_grant(
-            source, surface_id, access, expires_at, cluster=True
-        )
+        grant = self._new_grant(source, surface_id, access, expires_at, cluster=True)
         self._cluster_grants[(source, surface_id, grant.access)] = grant
         return grant
 
@@ -147,7 +148,9 @@ class SurfaceRegistry:
             key: grant for key, grant in self._peer_grants.items() if key[0] != source
         }
         self._cluster_grants = {
-            key: grant for key, grant in self._cluster_grants.items() if key[0] != source
+            key: grant
+            for key, grant in self._cluster_grants.items()
+            if key[0] != source
         }
 
     def clear_grants(self) -> None:
@@ -225,7 +228,7 @@ class SurfaceRegistry:
     def _validate_id(cls, value: str, kind: str) -> None:
         if not isinstance(value, str):
             raise TypeError(f"{kind} id must be text")
-        if not value.strip() or len(value) > cls.MAX_ID_LENGTH:
+        if not value.strip() or len(value) > MAX_SURFACE_ID_LENGTH:
             raise ValueError(f"invalid {kind} id")
 
     @staticmethod
@@ -280,18 +283,28 @@ class SurfaceRuntimeMixin:
 
     _surface_registry: SurfaceRegistry
 
-    def register_surface(self, surface_id: str, *, read: SurfaceHandler,
-                         review: SurfaceHandler | None = None,
-                         actions: Mapping[str, SurfaceHandler]
-                         | Iterable[tuple[str, SurfaceHandler]]
-                         | None = None) -> SurfaceDefinition:
+    def register_surface(
+        self,
+        surface_id: str,
+        *,
+        read: SurfaceHandler,
+        review: SurfaceHandler | None = None,
+        actions: Mapping[str, SurfaceHandler]
+        | Iterable[tuple[str, SurfaceHandler]]
+        | None = None,
+    ) -> SurfaceDefinition:
         return self._surface_registry.register(
             surface_id, read=read, review=review, actions=actions
         )
 
-    def grant_surface_access(self, peer_id: NodeId, surface_id: str, *,
-                             access: SurfaceAccess | str,
-                             expires_at: float | None = None) -> SurfaceGrant:
+    def grant_surface_access(
+        self,
+        peer_id: NodeId,
+        surface_id: str,
+        *,
+        access: SurfaceAccess | str,
+        expires_at: float | None = None,
+    ) -> SurfaceGrant:
         return self._surface_registry.grant_peer(
             peer_id, surface_id, access=access, expires_at=expires_at
         )
@@ -309,8 +322,13 @@ class SurfaceRuntimeMixin:
             source, surface_id, access=access, expires_at=expires_at
         )
 
-    def revoke_surface_access(self, peer_id: NodeId, surface_id: str, *,
-                              access: SurfaceAccess | str | None = None) -> None:
+    def revoke_surface_access(
+        self,
+        peer_id: NodeId,
+        surface_id: str,
+        *,
+        access: SurfaceAccess | str | None = None,
+    ) -> None:
         self._surface_registry.revoke_peer(peer_id, surface_id, access=access)
 
     def stop_surface_share(self, peer_id: NodeId, surface_id: str) -> None:

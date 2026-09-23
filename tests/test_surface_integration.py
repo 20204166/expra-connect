@@ -6,6 +6,7 @@ from pathlib import Path
 from expra_connect.cluster.models import CapabilityGrant
 from expra_connect.identity import NodeId
 from expra_connect.models import READ_CAPABILITIES, NodePermission
+from expra_connect.remote_models import NodeStatus
 from expra_connect.remote_service import (
     AuthenticatedNodeProvider,
     MemoryRemoteTransport,
@@ -13,11 +14,9 @@ from expra_connect.remote_service import (
     RemoteExecutionError,
     RemoteService,
 )
-from expra_connect.remote_models import NodeStatus
 from expra_connect.runtime import ConnectConfig, ConnectRuntime
 from expra_connect.surfaces import SurfaceAccess, SurfaceHandlerError
 from expra_connect.wire_protocol import PeerGrant
-
 
 SECRET = "a" * 64
 
@@ -95,12 +94,10 @@ class SurfaceIntegrationTests(unittest.TestCase):
             )
 
         runtime.grant_surface_access(caller, "desktop/settings", access="action")
-        self.assertEqual(
+        with self.assertRaises(RemoteAuthorizationError):
             client.invoke_surface_action(
                 "desktop/settings", "save", params={"theme": "light"}
-            ),
-            {"saved": "light"},
-        )
+            )
 
     def test_nested_ids_expiry_stop_revoke_and_restart_cleanup(self) -> None:
         now = [10.0]
@@ -135,7 +132,9 @@ class SurfaceIntegrationTests(unittest.TestCase):
         with self.assertRaises(RemoteAuthorizationError):
             restarted.read_surface(surface_id)
 
-    def test_cluster_surface_grants_require_explicit_context_not_membership(self) -> None:
+    def test_cluster_surface_grants_require_explicit_context_not_membership(
+        self,
+    ) -> None:
         runtime = self._runtime()
         self.addCleanup(runtime.shutdown)
         caller = NodeId("cluster-caller")

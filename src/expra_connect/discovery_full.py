@@ -27,7 +27,7 @@ import logging
 import socket
 import time
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 from threading import RLock
 from typing import Any, Protocol, cast
@@ -309,41 +309,45 @@ class NetworkDiscovery:
 
     def start(self) -> bool:
         with self._peer_lock:
-            return self._start_locked()
-
-    def _start_locked(self) -> bool:
-        """Advertise this instance and begin browsing peers.
-
-        Returns whether discovery became active. When the transport is
-        unavailable the component records the reason and stays inactive without
-        raising, so the application continues as a single-node app.
-        """
-
-        if self._active:
-            return True
-        if not self._backend.available:
-            self._unavailable_reason = "python-zeroconf is not installed"
-            LOGGER.info("Network discovery unavailable: %s", self._unavailable_reason)
-            return False
-        # Mark the transaction active before invoking backend code. Some
-        # Zeroconf implementations synchronously deliver an initial callback
-        # from ServiceBrowser construction; that observation must not be lost.
-        self._active = True
+            if self._active:
+                return True
+            if not self._backend.available:
+                self._unavailable_reason = "python-zeroconf is not installed"
+                LOGGER.info(
+                    "Network discovery unavailable: %s", self._unavailable_reason
+                )
+                return False
+            # Mark active before backend code so synchronous initial callbacks
+            # are retained, then release the lock before backend callbacks.
+            self._active = True
         try:
             self._backend.start(self._advertisement)
         except Exception as error:  # noqa: BLE001 - discovery must not fail the app.
-            self._active = False
             try:
                 self._backend.stop()
             except Exception:
                 LOGGER.debug(
                     "Discovery cleanup after failed start also failed", exc_info=True
                 )
-            self._peers.clear()
-            self._service_nodes.clear()
-            self._service_candidates.clear()
-            self._unavailable_reason = f"Discovery start failed: {error}"
+            with self._peer_lock:
+                self._active = False
+                self._peers.clear()
+                self._service_nodes.clear()
+                self._service_candidates.clear()
+                self._unavailable_reason = f"Discovery start failed: {error}"
             LOGGER.warning("Network discovery failed to start: %s", error)
+            return False
+        with self._peer_lock:
+            still_active = self._active
+            if still_active:
+                self._unavailable_reason = None
+        if not still_active:
+            try:
+                self._backend.stop()
+            except Exception:
+                LOGGER.debug(
+                    "Discovery cleanup after concurrent stop failed", exc_info=True
+                )
             return False
         LOGGER.info("Network discovery active for %s", self._advertisement.stable_id)
         return True
@@ -373,13 +377,21 @@ class NetworkDiscovery:
     def _handle_transport_event(
         self, event: EventKind, service_name: str, info: Any
     ) -> None:
+        emitted: list[tuple[EventKind, Any]] = []
         with self._peer_lock:
-            self._handle_transport_event_locked(event, service_name, info)
+            self._handle_transport_event_locked(event, service_name, info, emitted)
+        self._emit_events(emitted)
 
     def _handle_transport_event_locked(
-        self, event: EventKind, service_name: str, info: Any
+        self,
+        event: EventKind,
+        service_name: str,
+        info: Any,
+        emitted: list[tuple[EventKind, Any]],
     ) -> None:
         if not self._active:
+            return
+        if event not in ("add", "update", "remove"):
             return
         try:
             if event == "remove":
@@ -388,7 +400,7 @@ class NetworkDiscovery:
                 node_id = self._service_nodes.pop(service_name, None)
                 self._service_candidates.pop(service_name, None)
                 if node_id is not None:
-                    self._rebuild_peer(node_id)
+                    self._rebuild_peer(node_id, emitted)
                 return
             candidate = self._normalize(service_name, info)
         except _MalformedAdvertisement as error:
@@ -401,19 +413,19 @@ class NetworkDiscovery:
         previous_node_id = self._service_nodes.get(service_name)
         if previous_node_id is not None and previous_node_id != candidate.stable_id:
             self._service_candidates.pop(service_name, None)
-            self._rebuild_peer(previous_node_id)
+            self._rebuild_peer(previous_node_id, emitted)
         self._service_nodes[service_name] = candidate.stable_id
         self._service_candidates[service_name] = candidate
-        self._rebuild_peer(candidate.stable_id)
+        self._rebuild_peer(candidate.stable_id, emitted)
 
-    def _rebuild_peer(self, node_id: str) -> None:
+    def _rebuild_peer(self, node_id: str, emitted: list[tuple[EventKind, Any]]) -> None:
         observations = tuple(
             candidate
             for service_name, candidate in self._service_candidates.items()
             if self._service_nodes.get(service_name) == node_id
         )
         if not observations:
-            self._drop_peer(node_id)
+            self._drop_peer(node_id, emitted)
             return
         latest = max(observations, key=lambda item: item.last_seen)
         addresses = tuple(
@@ -438,19 +450,18 @@ class NetworkDiscovery:
         record = self._peers.get(node_id)
         if record is None:
             self._peers[node_id] = _PeerRecord(updated, latest.last_seen)
-            self._emit(EVENT_CANDIDATE, updated)
+            emitted.append((EVENT_CANDIDATE, updated))
             return
         existing = record.candidate
         self._peers[node_id] = _PeerRecord(updated, latest.last_seen)
         changed = replace(existing, last_seen=updated.last_seen) != updated
         if changed:
-            self._emit(EVENT_CANDIDATE, updated)
+            emitted.append((EVENT_CANDIDATE, updated))
 
-    def _drop_peer(self, node_id: str) -> None:
-        with self._peer_lock:
-            if node_id in self._peers:
-                del self._peers[node_id]
-                self._emit(EVENT_LOST, node_id)
+    def _drop_peer(self, node_id: str, emitted: list[tuple[EventKind, Any]]) -> None:
+        if node_id in self._peers:
+            del self._peers[node_id]
+            emitted.append((EVENT_LOST, node_id))
 
     def expire_stale(self, now: float | None = None) -> None:
         """Drop peers whose TTL has lapsed, emitting one lost event each.
@@ -461,25 +472,36 @@ class NetworkDiscovery:
 
         if now is None:
             now = self._clock()
+        emitted: list[tuple[EventKind, Any]] = []
         with self._peer_lock:
             stale = [
-                node_id
+                (node_id, record)
                 for node_id, record in self._peers.items()
                 if now - record.last_seen > self._ttl_seconds
             ]
-            for node_id in stale:
-                age = now - self._peers[node_id].last_seen
+            for node_id, record in stale:
+                if node_id not in self._peers:
+                    continue
+                age = now - record.last_seen
                 LOGGER.info(
                     "Dropping stale peer %s (last_seen %.0f s ago, ttl %.0f s)",
                     node_id,
                     age,
                     self._ttl_seconds,
                 )
-                self._drop_peer(node_id)
+                self._drop_peer(node_id, emitted)
+        self._emit_events(emitted)
+
+    def _emit_events(self, events: list[tuple[EventKind, Any]]) -> None:
+        for kind, payload in events:
+            self._emit(kind, payload)
 
     def _emit(self, kind: EventKind, payload: Any) -> None:
         if self._on_event is not None:
-            self._on_event(kind, payload)
+            try:
+                self._on_event(kind, payload)
+            except Exception:
+                LOGGER.debug("Discovery event callback failed", exc_info=True)
 
     def _node_id_for_service(self, service_name: str) -> str | None:
         if not service_name.endswith(self._service_type):
@@ -547,7 +569,7 @@ class NetworkDiscovery:
             app_version=app_version,
             protocol_version=protocol_version,
             platform=platform,
-            connectable=connectable,
+            connectable=connectable and port is not None,
             compatible=protocol_version in SUPPORTED_PROTOCOL_VERSIONS,
             last_seen=self._clock(),
             identity_fingerprint=identity_fingerprint,
@@ -637,8 +659,10 @@ def _property_map(info: Any) -> dict[str, str]:
     if not raw:
         return {}
     result: dict[str, str] = {}
-    if isinstance(raw, dict):
+    if isinstance(raw, Mapping):
         for key, value in raw.items():
+            if key is None or value is None:
+                continue
             result[_to_text(key)] = _to_text(value)
     return result
 
@@ -670,16 +694,28 @@ def _service_instance_id(advertisement: DiscoveryAdvertisement) -> str:
 def _address_texts(addresses: Any) -> list[str]:
     if not addresses:
         return []
+    if isinstance(addresses, (str, bytes)):
+        addresses = (addresses,)
+    else:
+        try:
+            addresses = iter(addresses)
+        except TypeError:
+            return []
     texts: list[str] = []
     for address in addresses:
+        if address is None:
+            continue
         if isinstance(address, bytes):
             try:
                 family = socket.AF_INET if len(address) == 4 else socket.AF_INET6
-                texts.append(socket.inet_ntop(family, address))
-                continue
+                text = socket.inet_ntop(family, address)
             except Exception:
                 LOGGER.debug("Failed to convert address %r", address, exc_info=True)
-        texts.append(str(address))
+                text = str(address)
+        else:
+            text = str(address)
+        if text.strip():
+            texts.append(text)
     return texts
 
 
@@ -695,5 +731,11 @@ def _service_address_texts(info: Any) -> list[str]:
                 LOGGER.debug("Failed to parse service addresses", exc_info=True)
             else:
                 if parsed:
-                    return [str(address) for address in cast(Iterable[Any], parsed)]
+                    try:
+                        return _address_texts(cast(Iterable[Any], parsed))
+                    except TypeError:
+                        LOGGER.debug(
+                            "Parsed service addresses are not iterable",
+                            exc_info=True,
+                        )
     return _address_texts(_attr(info, "addresses"))
