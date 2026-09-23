@@ -1,6 +1,7 @@
 import unittest
 from dataclasses import replace
 from threading import Thread
+from typing import cast
 from unittest.mock import patch
 
 from expra_connect.connection_manager import ConnectionManager
@@ -125,7 +126,9 @@ class ConnectionManagerTests(unittest.TestCase):
                 "expra_connect.connection_manager.TLSRemoteTransport",
                 return_value=object(),
             ),
-            patch.object(AuthenticatedNodeProvider, "__init__", return_value=None) as init,
+            patch.object(
+                AuthenticatedNodeProvider, "__init__", return_value=None
+            ) as init,
             patch.object(
                 AuthenticatedNodeProvider,
                 "hello",
@@ -227,6 +230,51 @@ class ConnectionManagerTests(unittest.TestCase):
         manager.disconnect(self.peer)
         self.assertFalse(manager.is_current_generation(self.peer, generation))
 
+    def test_unknown_generation_is_not_current(self) -> None:
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+        )
+
+        self.assertFalse(manager.is_current_generation(NodeId("ghost"), 0))
+
+    def test_non_connectable_candidate_is_rejected_before_transport(self) -> None:
+        self.candidates[self.peer.value] = replace(
+            self.candidates[self.peer.value], connectable=False
+        )
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+        )
+
+        with self.assertRaises(ConnectionError):
+            manager.connect(self.peer)
+        self.assertEqual(manager.providers, ())
+
+    def test_candidate_identity_mismatch_is_rejected(self) -> None:
+        self.candidates[self.peer.value] = replace(
+            self.candidates[self.peer.value], stable_id="different-peer"
+        )
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+        )
+
+        with self.assertRaises(RemoteAuthError):
+            manager.connect(self.peer)
+        record = self.registry.record(self.peer)
+        assert record is not None
+        self.assertEqual(
+            record.connection.status,
+            ConnectionStatus.IDENTITY_CHANGED,
+        )
+
     def test_repeated_connect_deduplicates_the_live_provider(self) -> None:
         class Provider:
             def hello(self) -> dict[str, object]:
@@ -325,6 +373,38 @@ class ConnectionManagerTests(unittest.TestCase):
             ConnectionStatus.OFFLINE,
         )
 
+    def test_invalid_transport_endpoint_falls_back_to_another_route(self) -> None:
+        attempts: list[str] = []
+
+        class Provider:
+            def __init__(self, address: str) -> None:
+                self.address = address
+
+            def hello(self) -> dict[str, object]:
+                attempts.append(self.address)
+                return {"capabilities": []}
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **kwargs: Provider(kwargs["transport"].address),
+        )
+
+        def build_transport(host: str, _port: int, **_: object) -> object:
+            if host == "192.168.1.2":
+                raise ValueError("invalid endpoint")
+            return type("T", (), {"address": host})()
+
+        with patch(
+            "expra_connect.connection_manager.TLSRemoteTransport",
+            side_effect=build_transport,
+        ):
+            manager.connect(self.peer)
+
+        self.assertEqual(attempts, ["10.8.0.2"])
+
     def test_malformed_hello_marks_authentication_failed(self) -> None:
         class Provider:
             def hello(self) -> dict[str, object]:
@@ -387,9 +467,7 @@ class ConnectionManagerTests(unittest.TestCase):
             transport_fingerprint="replacement-fingerprint",
             root_public_key=identity.root_public_key,
             transport_generation=2,
-            transport_proof=identity.sign_transport_proof(
-                2, "replacement-fingerprint"
-            ),
+            transport_proof=identity.sign_transport_proof(2, "replacement-fingerprint"),
         )
         self.candidates[self.peer.value] = candidate
         return identity, candidate
@@ -474,6 +552,87 @@ class ConnectionManagerTests(unittest.TestCase):
             manager.connect(self.peer)
         self.assertEqual(events, ["started", "failed"])
 
+    def test_generation_persistence_exception_rolls_back_and_translates(self) -> None:
+        identity, _ = self._replacement_candidate()
+        previous = self.pairing.trusted[self.peer]
+
+        def persist() -> bool:
+            raise OSError("state store unavailable")
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: SuccessfulProvider(identity),
+            persist=persist,
+        )
+        with (
+            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            self.assertRaises(RemoteAuthError),
+        ):
+            manager.connect(self.peer)
+
+        self.assertEqual(self.pairing.trusted[self.peer], previous)
+
+    def test_observer_finish_failure_does_not_block_route_fallback(self) -> None:
+        attempts: list[str] = []
+
+        class FailingObserver:
+            def begin(self, _target: str) -> object:
+                return object()
+
+            def finish(self, *_args: object, **_kwargs: object) -> None:
+                raise RuntimeError("observer unavailable")
+
+        class Provider:
+            def __init__(self, address: str) -> None:
+                self.address = address
+
+            def hello(self) -> dict[str, object]:
+                attempts.append(self.address)
+                if self.address == "192.168.1.2":
+                    raise RemoteTransportError("route failed")
+                return {"capabilities": []}
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **kwargs: Provider(kwargs["transport"].address),
+            observer=FailingObserver(),  # type: ignore[arg-type]
+        )
+        with patch(
+            "expra_connect.connection_manager.TLSRemoteTransport",
+            side_effect=lambda host, _port, **_: type("T", (), {"address": host})(),
+        ):
+            manager.connect(self.peer)
+
+        self.assertEqual(attempts, ["192.168.1.2", "10.8.0.2"])
+
+    def test_observer_begin_failure_does_not_block_connection(self) -> None:
+        class FailingObserver:
+            def begin(self, _target: str) -> object:
+                raise RuntimeError("observer unavailable")
+
+        class Provider:
+            def hello(self) -> dict[str, object]:
+                return {"capabilities": []}
+
+        manager = ConnectionManager(
+            local_id=NodeId("local-node"),
+            pairing=self.pairing,
+            registry=self.registry,
+            candidates=self.candidates,
+            provider_factory=lambda **_: Provider(),
+            observer=FailingObserver(),  # type: ignore[arg-type]
+        )
+        with patch("expra_connect.connection_manager.TLSRemoteTransport"):
+            manager.connect(self.peer)
+
+        self.assertEqual(manager.providers, (self.peer,))
+
     def test_disconnect_all_uses_a_stable_provider_snapshot(self) -> None:
         manager = ConnectionManager(
             local_id=NodeId("local-node"),
@@ -481,12 +640,14 @@ class ConnectionManagerTests(unittest.TestCase):
             registry=self.registry,
             candidates=self.candidates,
         )
-        manager._providers[self.peer] = object()
+        manager._providers[self.peer] = cast(AuthenticatedNodeProvider, object())
         disconnected: list[NodeId] = []
 
         def disconnect(peer_id: NodeId) -> None:
             disconnected.append(peer_id)
-            manager._providers[NodeId("another-peer")] = object()
+            manager._providers[NodeId("another-peer")] = cast(
+                AuthenticatedNodeProvider, object()
+            )
 
         manager.disconnect = disconnect  # type: ignore[method-assign]
         manager.disconnect_all()

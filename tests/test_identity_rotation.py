@@ -88,6 +88,51 @@ class IdentityRotationTests(unittest.TestCase):
             manager.prepare("two")
         self.assertIsNone(manager.next)
 
+    def test_persistence_exception_does_not_commit_rotation(self) -> None:
+        identity = NodeIdentity.create(NodeId("peer-a"))
+        saves = 0
+
+        def fail_rotation(_: dict[str, object]) -> None:
+            nonlocal saves
+            saves += 1
+            if saves == 1:
+                return
+            raise RuntimeError("persistence service failed")
+
+        manager = TransportGenerationManager(identity, persist=fail_rotation)
+        manager.initialize("one")
+        with self.assertRaises(TransportStateError):
+            manager.prepare("two")
+        self.assertEqual(manager.current.fingerprint, "one")
+        self.assertIsNone(manager.next)
+
+    def test_persisted_generation_relationships_must_be_consistent(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "transport.json"
+            identity = NodeIdentity.create(NodeId("peer-a"))
+            manager = TransportGenerationManager(identity, store=JsonStateStore(path))
+            current = manager.initialize("one")
+            document = {
+                "version": 2,
+                "current": {
+                    "generation": current.generation,
+                    "fingerprint": current.fingerprint,
+                    "proof": current.proof,
+                },
+                "accepted": [
+                    {
+                        "generation": current.generation,
+                        "fingerprint": current.fingerprint,
+                        "proof": current.proof,
+                        "expires_at": None,
+                    }
+                ],
+                "next": None,
+            }
+            JsonStateStore(path).save(document)
+            with self.assertRaises(StateDataError):
+                TransportGenerationManager(identity, store=JsonStateStore(path))
+
     def test_restart_restores_generations_and_corruption_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             identity = NodeIdentity.create(NodeId("peer-a"))
@@ -131,9 +176,7 @@ class IdentityRotationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "transport.json"
             identity = NodeIdentity.create(NodeId("peer-a"))
-            manager = TransportGenerationManager(
-                identity, store=JsonStateStore(path)
-            )
+            manager = TransportGenerationManager(identity, store=JsonStateStore(path))
             current = manager.initialize("one")
             document = {
                 "version": 2,
@@ -156,6 +199,4 @@ class IdentityRotationTests(unittest.TestCase):
                 document["accepted"][0]["expires_at"] = expiry
                 JsonStateStore(path).save(document)
                 with self.assertRaises(StateDataError):
-                    TransportGenerationManager(
-                        identity, store=JsonStateStore(path)
-                    )
+                    TransportGenerationManager(identity, store=JsonStateStore(path))

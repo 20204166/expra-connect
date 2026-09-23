@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from expra_connect.device_identity import (
+    DeviceHardwareHint,
     DeviceIdentity,
     DeviceIdentityError,
     DeviceIdentityView,
@@ -61,7 +62,9 @@ class DeviceIdentityTests(unittest.TestCase):
             with self.assertRaises(DeviceIdentityError):
                 DeviceIdentity.load(path, NodeId("peer-b"))
 
-    def test_legacy_profile_creates_device_identity_without_changing_node_id(self) -> None:
+    def test_legacy_profile_creates_device_identity_without_changing_node_id(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("legacy-node"))
@@ -71,6 +74,7 @@ class DeviceIdentityTests(unittest.TestCase):
             runtime._load_identity()
 
             self.assertIsNotNone(runtime.identity)
+            assert runtime.identity is not None
             self.assertEqual(runtime.identity.node_id, NodeId("legacy-node"))
             self.assertTrue((profile / "device_identity.json").exists())
             self.assertEqual(
@@ -82,7 +86,9 @@ class DeviceIdentityTests(unittest.TestCase):
             device_identity = DeviceIdentity.load(
                 profile / "device_identity.json", NodeId("legacy-node")
             )
-            self.assertEqual(device_identity.public_key, _root_public_bytes(node_identity))
+            self.assertEqual(
+                device_identity.public_key, _root_public_bytes(node_identity)
+            )
             self.assertEqual(
                 device_identity._private_key_bytes,
                 base64.b64decode(node_identity.root_private_key, validate=True),
@@ -137,7 +143,9 @@ class DeviceIdentityTests(unittest.TestCase):
 
             self.assertEqual(status.state.value, "persistence_failed")
 
-    def test_existing_profile_without_marker_is_adopted_without_regenerating_root(self) -> None:
+    def test_existing_profile_without_marker_is_adopted_without_regenerating_root(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("old-profile"))
@@ -263,10 +271,14 @@ class DeviceIdentityTests(unittest.TestCase):
             node_identity = NodeIdentity.create(NodeId("restart-node"))
             node_identity.save(profile / "identity.json")
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
-            first = DeviceIdentity.load(profile / "device_identity.json", node_identity.node_id)
+            first = DeviceIdentity.load(
+                profile / "device_identity.json", node_identity.node_id
+            )
 
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
-            second = DeviceIdentity.load(profile / "device_identity.json", node_identity.node_id)
+            second = DeviceIdentity.load(
+                profile / "device_identity.json", node_identity.node_id
+            )
 
             self.assertEqual(second.node_id, node_identity.node_id)
             self.assertEqual(second.public_key, first.public_key)
@@ -285,7 +297,9 @@ class DeviceIdentityTests(unittest.TestCase):
 
             document = json.loads(node_identity.to_json())
             document["root_private_key"] = "corrupt"
-            (profile / "identity.json").write_text(json.dumps(document), encoding="utf-8")
+            (profile / "identity.json").write_text(
+                json.dumps(document), encoding="utf-8"
+            )
             corrupt_root = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
             self.assertEqual(corrupt_root.state.value, "persistence_failed")
 
@@ -309,7 +323,9 @@ class DeviceIdentityTests(unittest.TestCase):
             node_identity.save(profile / "identity.json")
             existing = DeviceIdentity.create(
                 node_identity.node_id,
-                hardware_provider=_HardwareProvider(("aa:bb:cc:dd:ee:01",), "machine-a"),
+                hardware_provider=_HardwareProvider(
+                    ("aa:bb:cc:dd:ee:01",), "machine-a"
+                ),
             )
             existing.save(profile / "device_identity.json")
 
@@ -340,7 +356,9 @@ class DeviceIdentityTests(unittest.TestCase):
             path = Path(directory) / "device_identity.json"
             first = DeviceIdentity.create(
                 NodeId("hardware-unavailable"),
-                hardware_provider=_HardwareProvider(("aa:bb:cc:dd:ee:01",), "machine-a"),
+                hardware_provider=_HardwareProvider(
+                    ("aa:bb:cc:dd:ee:01",), "machine-a"
+                ),
             )
             first.save(path)
 
@@ -397,9 +415,9 @@ class DeviceIdentityTests(unittest.TestCase):
         first = DeviceIdentity.create(NodeId("peer-a"))
         second = DeviceIdentity.create(NodeId("peer-a"))
         document = json.loads(first.to_json())
-        document["private_key"] = base64.b64encode(
-            second._private_key_bytes
-        ).decode("ascii")
+        document["private_key"] = base64.b64encode(second._private_key_bytes).decode(
+            "ascii"
+        )
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "device_identity.json"
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -464,6 +482,28 @@ class DeviceIdentityTests(unittest.TestCase):
 
         self.assertIsNone(identity.hardware_hint)
 
+    def test_hardware_iterator_failure_does_not_block_creation(self) -> None:
+        class FailingIteratorProvider:
+            def mac_addresses(self):
+                def values():
+                    yield "aa:bb:cc:dd:ee:01"
+                    raise RuntimeError("hardware iterator failed")
+
+                return values()
+
+            def machine_id(self) -> str | None:
+                return None
+
+        identity = DeviceIdentity.create(
+            NodeId("iterator-failure"), hardware_provider=FailingIteratorProvider()
+        )
+
+        self.assertIsNone(identity.hardware_hint)
+
+    def test_hardware_hint_rejects_non_tuple_sources(self) -> None:
+        with self.assertRaises(ValueError):
+            DeviceHardwareHint("a" * 64, None)  # type: ignore[arg-type]
+
     def test_wrong_key_encoding_fails_closed(self) -> None:
         self._assert_invalid_document(private_key="not-base64")
 
@@ -527,13 +567,17 @@ class DeviceIdentityTests(unittest.TestCase):
             path = Path(directory) / "device_identity.json"
             first = DeviceIdentity.create(
                 NodeId("peer-a"),
-                hardware_provider=_HardwareProvider(("aa:bb:cc:dd:ee:01",), "machine-a"),
+                hardware_provider=_HardwareProvider(
+                    ("aa:bb:cc:dd:ee:01",), "machine-a"
+                ),
             )
             first.save(path)
             restored = DeviceIdentity.load(
                 path,
                 NodeId("peer-a"),
-                hardware_provider=_HardwareProvider(("aa:bb:cc:dd:ee:02",), "machine-b"),
+                hardware_provider=_HardwareProvider(
+                    ("aa:bb:cc:dd:ee:02",), "machine-b"
+                ),
             )
 
             self.assertEqual(restored.fingerprint, first.fingerprint)
@@ -574,7 +618,9 @@ class DeviceIdentityTests(unittest.TestCase):
             self.assertTrue(restored.hardware_hint_changed)
 
     def test_missing_hardware_hints_still_allow_creation(self) -> None:
-        identity = DeviceIdentity.create(NodeId("peer-a"), hardware_provider=_HardwareProvider())
+        identity = DeviceIdentity.create(
+            NodeId("peer-a"), hardware_provider=_HardwareProvider()
+        )
         self.assertIsNone(identity.hardware_hint)
 
     def test_multiple_and_duplicate_macs_normalize_deterministically(self) -> None:
@@ -650,17 +696,21 @@ class DeviceIdentityTests(unittest.TestCase):
 
         self.assertTrue(identity.verify(message, signature))
         self.assertFalse(identity.verify(b"mutated", signature))
-        self.assertFalse(DeviceIdentity.create(NodeId("peer-a")).verify(message, signature))
+        self.assertFalse(
+            DeviceIdentity.create(NodeId("peer-a")).verify(message, signature)
+        )
 
     def test_persistence_failure_does_not_leave_identity_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "device_identity.json"
-            with patch(
-                "expra_connect.device_identity._atomic_write",
-                side_effect=OSError("disk full"),
+            with (
+                patch(
+                    "expra_connect.device_identity._atomic_write",
+                    side_effect=OSError("disk full"),
+                ),
+                self.assertRaises(OSError),
             ):
-                with self.assertRaises(OSError):
-                    DeviceIdentity.create(NodeId("peer-a")).save(path)
+                DeviceIdentity.create(NodeId("peer-a")).save(path)
             self.assertFalse(path.exists())
 
     def _assert_invalid_document(self, **updates: str) -> None:

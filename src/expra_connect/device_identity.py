@@ -25,7 +25,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 from .identity import NodeId, NodeIdentity, _decode_root_private_key
 from .persistence import StateDataError, _atomic_write
 
-
 DEVICE_IDENTITY_SCHEMA_VERSION = 1
 _FINGERPRINT_PREFIX = "ed25519:"
 _HARDWARE_HINT_DOMAIN = b"expra-connect/device-hardware-hint/v1\0"
@@ -56,9 +55,13 @@ class _SystemHardwareProvider:
             except (OSError, UnicodeError):
                 pass
         try:
-            values.append(":%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % tuple(
-                (uuid.getnode() >> shift) & 0xFF for shift in range(40, -1, -8)
-            ))
+            node = uuid.getnode()
+            values.append(
+                ":"
+                + ":".join(
+                    f"{(node >> shift) & 0xFF:02x}" for shift in range(40, -1, -8)
+                )
+            )
         except (OSError, ValueError, TypeError):
             pass
         return tuple(values)
@@ -79,7 +82,9 @@ class _SystemHardwareProvider:
                     r"SOFTWARE\Microsoft\Cryptography",
                 ) as key:
                     value, _ = winreg.QueryValueEx(key, "MachineGuid")
-                return value.strip() if isinstance(value, str) and value.strip() else None
+                return (
+                    value.strip() if isinstance(value, str) and value.strip() else None
+                )
             except (OSError, TypeError):
                 return None
         return None
@@ -93,8 +98,14 @@ class DeviceHardwareHint:
     sources_present: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        if not re.fullmatch(r"[0-9a-f]{64}", self.digest):
+        if not isinstance(self.digest, str) or not re.fullmatch(
+            r"[0-9a-f]{64}", self.digest
+        ):
             raise ValueError("hardware hint digest is invalid")
+        if not isinstance(self.sources_present, tuple) or not all(
+            isinstance(source, str) for source in self.sources_present
+        ):
+            raise ValueError("hardware hint sources are invalid")
         if tuple(sorted(set(self.sources_present))) != self.sources_present:
             raise ValueError("hardware hint sources are invalid")
         if any(
@@ -126,27 +137,36 @@ class DeviceIdentity:
     schema_version: int = DEVICE_IDENTITY_SCHEMA_VERSION
     hardware_hint: DeviceHardwareHint | None = None
     hardware_hint_changed: bool = field(default=False, repr=False, compare=False)
-    hardware_hint_status: str = field(
-        default="not_recorded", repr=False, compare=False
-    )
+    hardware_hint_status: str = field(default="not_recorded", repr=False, compare=False)
     _private_key_bytes: bytes = field(repr=False, compare=False, default=b"")
 
     def __post_init__(self) -> None:
         if not isinstance(self.node_id, NodeId):
-            raise ValueError("device identity node id is invalid")
+            raise ValueError(  # noqa: TRY004 - preserve malformed-state contract.
+                "device identity node id is invalid"
+            )
         if self.schema_version != DEVICE_IDENTITY_SCHEMA_VERSION:
             raise ValueError("unsupported device identity schema")
         if not isinstance(self.public_key, bytes) or len(self.public_key) != 32:
             raise ValueError("device identity public key is invalid")
-        if not isinstance(self._private_key_bytes, bytes) or len(self._private_key_bytes) != 32:
+        if (
+            not isinstance(self._private_key_bytes, bytes)
+            or len(self._private_key_bytes) != 32
+        ):
             raise ValueError("device identity private key is invalid")
-        if not isinstance(self.created_at, (int, float)) or isinstance(self.created_at, bool):
-            raise ValueError("device identity creation time is invalid")
+        if not isinstance(self.created_at, (int, float)) or isinstance(
+            self.created_at, bool
+        ):
+            raise ValueError(  # noqa: TRY004 - preserve malformed-state contract.
+                "device identity creation time is invalid"
+            )
         if not math.isfinite(float(self.created_at)) or self.created_at <= 0:
             raise ValueError("device identity creation time is invalid")
         if self.fingerprint != fingerprint_for_public_key(self.public_key):
             raise ValueError("device identity fingerprint is invalid")
-        derived = Ed25519PrivateKey.from_private_bytes(self._private_key_bytes).public_key()
+        derived = Ed25519PrivateKey.from_private_bytes(
+            self._private_key_bytes
+        ).public_key()
         derived_public = derived.public_bytes(
             serialization.Encoding.Raw, serialization.PublicFormat.Raw
         )
@@ -191,7 +211,9 @@ class DeviceIdentity:
         """Represent the active network root as the local device identity."""
 
         if existing is not None and existing.node_id != node_identity.node_id:
-            raise DeviceIdentityError("device identity NodeId does not match local NodeId")
+            raise DeviceIdentityError(
+                "device identity NodeId does not match local NodeId"
+            )
         try:
             private_key = _decode_root_private_key(node_identity.root_private_key)
             private_key_bytes = private_key.private_bytes(
@@ -200,7 +222,9 @@ class DeviceIdentity:
                 serialization.NoEncryption(),
             )
         except ValueError as error:
-            raise DeviceIdentityError("active node identity root is malformed") from error
+            raise DeviceIdentityError(
+                "active node identity root is malformed"
+            ) from error
         public_key = private_key.public_key().public_bytes(
             serialization.Encoding.Raw, serialization.PublicFormat.Raw
         )
@@ -211,10 +235,10 @@ class DeviceIdentity:
             node_id=node_identity.node_id,
             public_key=public_key,
             fingerprint=fingerprint_for_public_key(public_key),
-            created_at=(existing.created_at if existing is not None else float(clock())),
-            hardware_hint=(
-                stored_hint if existing is not None else current_hint
+            created_at=(
+                existing.created_at if existing is not None else float(clock())
             ),
+            hardware_hint=(stored_hint if existing is not None else current_hint),
             hardware_hint_changed=changed,
             hardware_hint_status=hint_status,
             _private_key_bytes=private_key_bytes,
@@ -249,16 +273,20 @@ class DeviceIdentity:
         try:
             document = json.loads(value)
             if not isinstance(document, dict):
-                raise ValueError
+                raise ValueError  # noqa: TRY004 - normalize malformed JSON state.
             identity = cls._from_document(document)
         except DeviceIdentityError:
             raise
         except (TypeError, ValueError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
         if expected_node_id is not None and identity.node_id != expected_node_id:
-            raise DeviceIdentityError("device identity NodeId does not match local NodeId")
+            raise DeviceIdentityError(
+                "device identity NodeId does not match local NodeId"
+            )
         current_hint = collect_hardware_hint(hardware_provider)
-        changed, hint_status = _hardware_hint_state(identity.hardware_hint, current_hint)
+        changed, hint_status = _hardware_hint_state(
+            identity.hardware_hint, current_hint
+        )
         return DeviceIdentity(
             node_id=identity.node_id,
             public_key=identity.public_key,
@@ -314,7 +342,7 @@ class DeviceIdentity:
         try:
             raw_node_id = document["node_id"]
             if not isinstance(raw_node_id, str):
-                raise ValueError
+                raise ValueError  # noqa: TRY004 - normalize malformed persisted state.
             node_id = NodeId(raw_node_id)
             public_key = _decode_bytes(document["public_key"])
             private_key = _decode_bytes(document["private_key"])
@@ -322,11 +350,15 @@ class DeviceIdentity:
             created_at = document["created_at"]
             digest = document.get("hardware_hint_digest")
             sources = document.get("hardware_hint_sources", [])
-            if not isinstance(fingerprint, str) or not isinstance(created_at, (int, float)):
-                raise ValueError
+            if not isinstance(fingerprint, str) or not isinstance(
+                created_at, (int, float)
+            ):
+                raise ValueError  # noqa: TRY004 - normalize malformed persisted state.
             if isinstance(created_at, bool):
-                raise ValueError
-            if not isinstance(sources, list) or not all(isinstance(item, str) for item in sources):
+                raise ValueError  # noqa: TRY004 - normalize malformed persisted state.
+            if not isinstance(sources, list) or not all(
+                isinstance(item, str) for item in sources
+            ):
                 raise ValueError
             if digest is not None and not isinstance(digest, str):
                 raise ValueError
@@ -348,7 +380,7 @@ class DeviceIdentity:
 
 
 def fingerprint_for_public_key(public_key: bytes) -> str:
-    if len(public_key) != 32:
+    if not isinstance(public_key, bytes) or len(public_key) != 32:
         raise ValueError("device identity public key is invalid")
     return _FINGERPRINT_PREFIX + sha256(public_key).hexdigest()
 
@@ -384,7 +416,9 @@ def collect_hardware_hint(
         sources.append("machine-id")
     if not values:
         return None
-    digest = sha256(_HARDWARE_HINT_DOMAIN + "\0".join(values).encode("utf-8")).hexdigest()
+    digest = sha256(
+        _HARDWARE_HINT_DOMAIN + "\0".join(values).encode("utf-8")
+    ).hexdigest()
     return DeviceHardwareHint(digest, tuple(sources))
 
 
@@ -403,7 +437,7 @@ def _hardware_hint_state(
 
 def _safe_macs(provider: DeviceHardwareProvider) -> Iterable[str]:
     try:
-        return provider.mac_addresses()
+        return tuple(provider.mac_addresses())
     except Exception:  # noqa: BLE001 - hardware hints are best effort.
         return ()
 
@@ -411,9 +445,9 @@ def _safe_macs(provider: DeviceHardwareProvider) -> Iterable[str]:
 def _safe_machine_id(provider: DeviceHardwareProvider) -> str | None:
     try:
         value = provider.machine_id()
+        return value.strip() if isinstance(value, str) and value.strip() else None
     except Exception:  # noqa: BLE001 - hardware hints are best effort.
         return None
-    return value.strip() if isinstance(value, str) and value.strip() else None
 
 
 def _encode_bytes(value: bytes) -> str:
@@ -422,7 +456,7 @@ def _encode_bytes(value: bytes) -> str:
 
 def _decode_bytes(value: object) -> bytes:
     if not isinstance(value, str):
-        raise ValueError
+        raise ValueError  # noqa: TRY004 - normalize malformed persisted state.
     decoded = base64.b64decode(value, validate=True)
     if len(decoded) != 32:
         raise ValueError

@@ -29,7 +29,12 @@ class NodeId:
     value: str
 
     def __post_init__(self) -> None:
-        if not self.value or self.value == "local" or len(self.value) > 128:
+        if (
+            not isinstance(self.value, str)
+            or not self.value
+            or self.value == "local"
+            or len(self.value) > 128
+        ):
             raise ValueError("invalid node id")
 
     def __str__(self) -> str:
@@ -46,12 +51,20 @@ class NodeIdentity:
     device_identity_expected: bool = field(default=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
+        if not isinstance(self.node_id, NodeId):
+            raise ValueError(  # noqa: TRY004 - preserve malformed-state contract.
+                "identity node id is invalid"
+            )
         if not isinstance(self.secret, str) or len(self.secret) != 64:
             raise ValueError("identity secret must be 256-bit hex text")
         try:
             bytes.fromhex(self.secret)
         except ValueError as error:
             raise ValueError("identity secret must be hexadecimal") from error
+        if not isinstance(self.root_private_key, str):
+            raise ValueError(  # noqa: TRY004 - preserve malformed-state contract.
+                "invalid root signing key"
+            )
         if not self.root_private_key:
             key = Ed25519PrivateKey.generate()
             object.__setattr__(
@@ -70,7 +83,9 @@ class NodeIdentity:
         except ValueError as error:
             raise ValueError("invalid root signing key") from error
         if not isinstance(self.device_identity_expected, bool):
-            raise ValueError("device identity expectation marker is invalid")
+            raise ValueError(  # noqa: TRY004 - preserve malformed-state contract.
+                "device identity expectation marker is invalid"
+            )
 
     @classmethod
     def create(cls, node_id: NodeId | None = None) -> NodeIdentity:
@@ -89,12 +104,51 @@ class NodeIdentity:
 
     @classmethod
     def from_json(cls, value: str) -> NodeIdentity:
-        document = json.loads(value)
+        try:
+            document = json.loads(value)
+        except (TypeError, ValueError) as error:
+            raise ValueError("identity document is malformed") from error
+        if not isinstance(document, dict):
+            raise ValueError(  # noqa: TRY004 - normalize malformed JSON state.
+                "identity document is malformed"
+            )
+        for name in ("version", "schema_version"):
+            if name in document and (
+                isinstance(document[name], bool)
+                or not isinstance(document[name], int)
+                or document[name] not in (1, 2)
+            ):
+                raise ValueError("identity schema version is invalid")
+        if (
+            "version" in document
+            and "schema_version" in document
+            and document["version"] != document["schema_version"]
+        ):
+            raise ValueError("identity schema versions conflict")
+        try:
+            node_id = document["node_id"]
+            secret = document["secret"]
+        except KeyError as error:
+            raise ValueError("identity document is malformed") from error
+        if not isinstance(node_id, str) or not isinstance(secret, str):
+            raise ValueError(  # noqa: TRY004 - normalize malformed JSON state.
+                "identity document is malformed"
+            )
+        root_private_key = document.get("root_private_key", "")
+        if not isinstance(root_private_key, str) or (
+            "root_private_key" in document and not root_private_key
+        ):
+            raise ValueError("identity document is malformed")
+        device_identity_expected = document.get("device_identity_expected", False)
+        if not isinstance(device_identity_expected, bool):
+            raise ValueError(  # noqa: TRY004 - normalize malformed JSON state.
+                "identity document is malformed"
+            )
         return cls(
-            NodeId(str(document["node_id"])),
-            str(document["secret"]),
-            str(document.get("root_private_key", "")),
-            document.get("device_identity_expected", False),
+            NodeId(node_id),
+            secret,
+            root_private_key,
+            device_identity_expected,
         )
 
     def save(self, path: Path) -> None:
@@ -118,6 +172,14 @@ class NodeIdentity:
         return base64.b64encode(public).decode("ascii")
 
     def sign_transport_proof(self, generation: int, fingerprint: str) -> str:
+        if (
+            not isinstance(generation, int)
+            or isinstance(generation, bool)
+            or generation < 1
+            or not isinstance(fingerprint, str)
+            or not fingerprint
+        ):
+            raise ValueError("invalid transport proof input")
         signature = self._private_key().sign(
             _proof_payload(self.node_id, generation, fingerprint)
         )
@@ -283,7 +345,12 @@ class TransportGenerationManager:
         *,
         root_public_key: str | None = None,
     ) -> TransportGeneration:
-        if node_id != self.identity.node_id or generation < 1:
+        if (
+            node_id != self.identity.node_id
+            or not isinstance(generation, int)
+            or isinstance(generation, bool)
+            or generation < 1
+        ):
             raise TransportStateError("transport identity binding mismatch")
         if not verify_transport_proof(
             node_id,
@@ -296,7 +363,7 @@ class TransportGenerationManager:
         return TransportGeneration(generation, fingerprint, proof)
 
     def _generation(self, generation: int, fingerprint: str) -> TransportGeneration:
-        if not fingerprint:
+        if not isinstance(fingerprint, str) or not fingerprint:
             raise TransportStateError("transport fingerprint is required")
         return TransportGeneration(
             generation,
@@ -324,7 +391,7 @@ class TransportGenerationManager:
             result = self._save()
             if result is False:
                 raise OSError("transport state persistence was rejected")
-        except (OSError, StateDataError, TypeError, ValueError) as error:
+        except Exception as error:
             self._restore(old)
             raise TransportStateError("transport state was not persisted") from error
 
@@ -365,28 +432,35 @@ class TransportGenerationManager:
                 return
             if version != self.VERSION:
                 raise ValueError
-            self._current = self._decode(document["current"])
+            current = self._decode(document["current"])
             raw_accepted = document["accepted"]
             raw_next = document.get("next")
             if not isinstance(raw_accepted, list):
                 raise TypeError
-            self._accepted = {}
+            accepted: dict[int, tuple[TransportGeneration, float | None]] = {}
             for raw in raw_accepted:
                 if not isinstance(raw, dict):
                     raise TypeError
                 item = self._decode(raw)
+                if item.generation in accepted or item.generation >= current.generation:
+                    raise ValueError
                 expiry = raw.get("expires_at")
-                if (
-                    expiry is not None
-                    and (
-                        not isinstance(expiry, (int, float))
-                        or isinstance(expiry, bool)
-                        or not math.isfinite(float(expiry))
-                    )
+                if expiry is not None and (
+                    not isinstance(expiry, (int, float))
+                    or isinstance(expiry, bool)
+                    or not math.isfinite(float(expiry))
                 ):
                     raise ValueError
-                self._accepted[item.generation] = (item, expiry)
-            self._next = None if raw_next is None else self._decode(raw_next)
+                accepted[item.generation] = (item, expiry)
+            next_generation = None if raw_next is None else self._decode(raw_next)
+            if next_generation is not None and (
+                next_generation.generation <= current.generation
+                or next_generation.generation in accepted
+            ):
+                raise ValueError
+            self._current = current
+            self._accepted = accepted
+            self._next = next_generation
         except (KeyError, OverflowError, TypeError, ValueError) as error:
             raise StateDataError("transport state is malformed") from error
 
@@ -436,13 +510,24 @@ def verify_transport_proof(
     proof: str,
 ) -> bool:
     """Verify a transport proof using a previously trusted root public key."""
+    if (
+        not isinstance(node_id, NodeId)
+        or not isinstance(root_public_key, str)
+        or not isinstance(generation, int)
+        or isinstance(generation, bool)
+        or generation < 1
+        or not isinstance(fingerprint, str)
+        or not fingerprint
+        or not isinstance(proof, str)
+    ):
+        return False
     try:
         public_bytes = base64.b64decode(root_public_key, validate=True)
         signature = base64.b64decode(proof, validate=True)
         Ed25519PublicKey.from_public_bytes(public_bytes).verify(
             signature, _proof_payload(node_id, generation, fingerprint)
         )
-    except (InvalidSignature, TypeError, ValueError):
+    except (InvalidSignature, OverflowError, TypeError, ValueError):
         return False
     return True
 

@@ -13,7 +13,7 @@ from .connection_state import ConnectionState, ConnectionStatus
 from .discovery import endpoint_rank
 from .identity import NodeId, verify_transport_proof
 from .models import DiscoveredNodeCandidate, EndpointCandidate
-from .observability import ObservationToken, ObservabilityWatcher
+from .observability import ObservabilityWatcher, ObservationToken
 from .pairing import PairingManager
 from .registry import NodeRegistry
 from .remote_service import AuthenticatedNodeProvider
@@ -69,7 +69,10 @@ class ConnectionManager:
 
     def is_current_generation(self, peer_id: NodeId, generation: int) -> bool:
         with self._lock:
-            return self._generations.get(peer_id, 0) == generation
+            return (
+                peer_id in self._generations
+                and self._generations[peer_id] == generation
+            )
 
     def reconnect(self, peer_id: NodeId) -> AuthenticatedNodeProvider:
         """Replace the physical route while retaining the logical peer."""
@@ -92,6 +95,19 @@ class ConnectionManager:
             candidate = self._candidates.get(peer_id.value)
             if trusted is None or candidate is None or not candidate.compatible:
                 raise PermissionError("peer must be discovered and trusted first")
+            if not candidate.connectable:
+                raise ConnectionError("peer is not connectable")
+            if candidate.stable_id != peer_id.value:
+                self._registry.observe(peer_id, frozenset())
+                self._set_state(
+                    peer_id,
+                    ConnectionState(
+                        ConnectionStatus.IDENTITY_CHANGED,
+                        reason="discovered peer identity does not match route",
+                        changed_at=time.time(),
+                    ),
+                )
+                raise RemoteAuthError("discovered peer identity does not match route")
             endpoints = tuple(
                 endpoint
                 for endpoint in candidate.endpoint_candidates
@@ -100,6 +116,7 @@ class ConnectionManager:
             if not endpoints:
                 raise ConnectionError("peer has no connectable endpoint")
             if not self._candidate_generation_allowed(trusted, candidate):
+                self._registry.observe(peer_id, frozenset())
                 self._set_state(
                     peer_id,
                     ConnectionState(
@@ -125,17 +142,26 @@ class ConnectionManager:
             observer = self._observer
             for endpoint in sorted(endpoints, key=endpoint_rank):
                 self._report_route_attempt("connection", endpoint, "started", None)
-                observation: ObservationToken | None = (
-                    observer.begin(f"connection:{peer_id.value}")
-                    if observer is not None
-                    else None
-                )
+                observation = self._begin_observation(observer, peer_id)
                 try:
                     transport = TLSRemoteTransport(
                         endpoint.address,
                         endpoint.port,
                         expected_fingerprint=candidate.transport_fingerprint,
                     )
+                except (
+                    OSError,
+                    ConnectionError,
+                    RemoteExecutionError,
+                    RemoteTransportError,
+                    TypeError,
+                    ValueError,
+                ) as error:
+                    self._record_route_failure(
+                        peer_id, endpoint, error, errors, observer, observation
+                    )
+                    continue
+                try:
                     provider_kwargs: dict[str, Any] = {
                         "node_id": peer_id,
                         "caller_node_id": self._local_id,
@@ -152,12 +178,7 @@ class ConnectionManager:
                     capabilities = parse_hello_capabilities(hello)
                     self._record_generation(peer_id, trusted, candidate)
                 except RemoteProtocolError as error:
-                    if observation is not None:
-                        observer.finish(
-                            observation,
-                            outcome="failure",
-                            detail=type(error).__name__,
-                        )
+                    self._finish_observation(observer, observation, error)
                     self._report_route_attempt(
                         "connection", endpoint, "failed", str(error)
                     )
@@ -176,28 +197,14 @@ class ConnectionManager:
                     RemoteExecutionError,
                     RemoteTransportError,
                 ) as error:
-                    errors.append(error)
-                    if observation is not None:
-                        observer.finish(
-                            observation,
-                            outcome="failure",
-                            detail=type(error).__name__,
-                        )
-                    self._mark_failure(peer_id, endpoint)
-                    self._report_route_attempt(
-                        "connection", endpoint, "failed", str(error)
+                    self._record_route_failure(
+                        peer_id, endpoint, error, errors, observer, observation
                     )
                     continue
                 except Exception as error:
-                    if observation is not None:
-                        observer.finish(
-                            observation,
-                            outcome="failure",
-                            detail=type(error).__name__,
-                        )
+                    self._finish_observation(observer, observation, error)
                     raise
-                if observation is not None:
-                    observer.finish(observation)
+                self._finish_observation(observer, observation)
                 self._registry.observe(peer_id, capabilities)
                 self._registry.promote(peer_id, permissions=capabilities)
                 self._providers[peer_id] = provider
@@ -228,6 +235,52 @@ class ConnectionManager:
             self._on_route_attempt(phase, endpoint, outcome, error)
         except Exception:
             LOGGER.debug("Connection route callback failed", exc_info=True)
+
+    @staticmethod
+    def _begin_observation(
+        observer: ObservabilityWatcher | None, peer_id: NodeId
+    ) -> ObservationToken | None:
+        if observer is None:
+            return None
+        try:
+            return observer.begin(f"connection:{peer_id.value}")
+        except Exception:
+            LOGGER.debug("Connection observer begin failed", exc_info=True)
+            return None
+
+    @staticmethod
+    def _finish_observation(
+        observer: ObservabilityWatcher | None,
+        observation: ObservationToken | None,
+        error: BaseException | None = None,
+    ) -> None:
+        if observer is None or observation is None:
+            return
+        try:
+            if error is None:
+                observer.finish(observation)
+            else:
+                observer.finish(
+                    observation,
+                    outcome="failure",
+                    detail=type(error).__name__,
+                )
+        except Exception:
+            LOGGER.debug("Connection observer finish failed", exc_info=True)
+
+    def _record_route_failure(
+        self,
+        peer_id: NodeId,
+        endpoint: EndpointCandidate,
+        error: BaseException,
+        errors: list[BaseException],
+        observer: ObservabilityWatcher | None,
+        observation: ObservationToken | None,
+    ) -> None:
+        errors.append(error)
+        self._finish_observation(observer, observation, error)
+        self._mark_failure(peer_id, endpoint)
+        self._report_route_attempt("connection", endpoint, "failed", str(error))
 
     @staticmethod
     def _candidate_generation_allowed(
@@ -292,7 +345,16 @@ class ConnectionManager:
             transport_proof=candidate.transport_proof,
         )
         self._pairing.trusted[peer_id] = updated
-        if self._persist is not None and not self._persist():
+        if self._persist is None:
+            return
+        try:
+            persisted = self._persist()
+        except Exception as error:
+            self._pairing.trusted[peer_id] = trusted
+            raise RemoteAuthError(
+                "transport generation was not durably persisted"
+            ) from error
+        if not persisted:
             self._pairing.trusted[peer_id] = trusted
             raise RemoteAuthError("transport generation was not durably persisted")
 

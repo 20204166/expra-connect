@@ -17,6 +17,41 @@ class IdentityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             NodeId("x" * 129)
 
+    def test_node_id_rejects_non_string_values(self) -> None:
+        with self.assertRaises(ValueError):
+            NodeId(["peer-a"])  # type: ignore[arg-type]
+
+    def test_identity_rejects_non_node_id_values(self) -> None:
+        with self.assertRaises(ValueError):
+            NodeIdentity("peer-a", "0" * 64)  # type: ignore[arg-type]
+
+    def test_identity_rejects_malformed_json_schema_and_field_types(self) -> None:
+        secret = "0" * 64
+        cases = (
+            "[]",
+            json.dumps({"version": 99, "node_id": "peer-a", "secret": secret}),
+            json.dumps(
+                {
+                    "version": 1,
+                    "schema_version": 2,
+                    "node_id": "peer-a",
+                    "secret": secret,
+                }
+            ),
+            json.dumps({"node_id": 1, "secret": secret}),
+            json.dumps({"node_id": "peer-a", "secret": 1}),
+            json.dumps(
+                {
+                    "node_id": "peer-a",
+                    "secret": secret,
+                    "root_private_key": "",
+                }
+            ),
+        )
+        for value in cases:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                NodeIdentity.from_json(value)
+
     def test_node_id_is_value_equal(self) -> None:
         self.assertEqual(NodeId("peer-a"), NodeId("peer-a"))
         self.assertNotEqual(NodeId("peer-a"), NodeId("peer-b"))
