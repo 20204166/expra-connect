@@ -16,6 +16,14 @@ Authorization is enforced by the target for every operation. Revoke is
 separate from ordinary connection detach. Private keys, HMAC secrets,
 invitation material, and fencing-token values are never logged.
 
+The socket transport validates its endpoint configuration at construction. A
+certificate pin is rejected without TLS, and a `CERT_NONE` TLS context is
+rejected without a pin. TLS handshake and pin verification complete before any
+application envelope bytes are sent. A transport instance targets one endpoint
+and one request/response exchange; route fallback, sessions, and credential
+rotation remain above it. Its timeout is one total request deadline, while
+cancellation is cooperative at explicit phase checks and receive polling.
+
 CapabilityShare is a generic, target-owned, read-only router. Pairing permits an
 authenticated request to reach capability authorization; it does not grant every
 registered capability. A capability must be explicitly allowed for that peer,

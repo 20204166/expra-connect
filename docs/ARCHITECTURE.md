@@ -25,6 +25,7 @@ topology state, not a transport state.
 | Candidate discovery and expiry | `discovery_full.py` | Serializes backend lifecycle, normalizes per-service observations, and forwards events |
 | Pairing, grants, trust, and revocation | `pairing.py` | Persists transitions and refreshes the listener ACL |
 | TLS/HMAC request security | `tls_material.py`, `wire_protocol.py`, `remote_service.py` | Composes the authenticated server boundary |
+| One-endpoint socket exchange | `socket_transport.py` | Connects, pins TLS before sending, frames one request/response, and closes the socket |
 | Outgoing connection state and providers | `connection_manager.py`, `connection_state.py` | Connects only discovered trusted peers |
 | Logical sessions and request safety | `session.py`, `provider_requests.py`, `wire_protocol.py` | Authenticates resume, fences old sockets, and bounds idempotent results |
 | Target-owned capability policy | `sharing.py` | Keeps explicit, ephemeral per-peer read-only grants and injects the allowlist into `RemoteService` |
@@ -41,6 +42,14 @@ restart or re-pair never restores capability access without a new explicit
 allow. Structured read/review/action sharing belongs to `SurfaceRegistry`.
 Cluster Join is explicit and Pair-gated. Discovery and Pairing never create
 membership, and connection loss never removes it.
+
+`SocketRemoteTransport` owns one endpoint and one framed request/response
+exchange. Its configured timeout is one absolute budget shared by connect, TLS
+handshake, pin validation, send, and receive. Cancellation is cooperative: it
+is checked at phase boundaries and polled during receive, but it does not claim
+to interrupt an arbitrary DNS, OS connect, TLS, or send syscall immediately.
+Route selection, fallback, reconnect, logical sessions, and transport
+generation acceptance remain owned by their higher-level modules.
 
 ## Stable Identity and Transport Rotation
 

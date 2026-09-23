@@ -12,7 +12,8 @@ from expra_connect.server import (
     _elevation_response,
     _pair_request_response,
 )
-from expra_connect.socket_transport import SocketRemoteTransport
+from expra_connect.socket_transport import SocketRemoteTransport, _recv_frame
+from expra_connect.wire_protocol import MAX_ENVELOPE_BYTES
 
 
 class _Service:
@@ -190,6 +191,44 @@ class ServerTests(unittest.TestCase):
                 peer.sendall(b"\x00\x00\x00\x01x")
                 time.sleep(0.05)
                 self.assertEqual(peer.recv(1), b"")
+        finally:
+            server.stop()
+
+    def test_fragmented_request_and_malformed_connections_do_not_stop_listener(
+        self,
+    ) -> None:
+        server = RemoteSocketServer(_Service())
+        server.start()
+        try:
+            payload = b'{"ok":true}'
+            frame = len(payload).to_bytes(4, "big") + payload
+            with socket.create_connection(
+                ("127.0.0.1", server.bound_port or 0)
+            ) as peer:
+                for part in (frame[:1], frame[1:3], frame[3:]):
+                    peer.sendall(part)
+                self.assertEqual(
+                    _recv_frame(
+                        peer,
+                        max_bytes=MAX_ENVELOPE_BYTES,
+                        closed_message="closed",
+                    ),
+                    payload,
+                )
+
+            with socket.create_connection(
+                ("127.0.0.1", server.bound_port or 0)
+            ) as peer:
+                peer.sendall((MAX_ENVELOPE_BYTES + 1).to_bytes(4, "big"))
+                peer.settimeout(1.0)
+                self.assertEqual(peer.recv(1), b"")
+
+            with socket.create_connection(("127.0.0.1", server.bound_port or 0)):
+                pass
+            transport = SocketRemoteTransport("127.0.0.1", server.bound_port or 0)
+            self.assertEqual(
+                transport.request('{"still":"alive"}'), '{"still":"alive"}'
+            )
         finally:
             server.stop()
 
