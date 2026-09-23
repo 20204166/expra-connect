@@ -22,3 +22,6 @@ build/
 .opencode/
 .claude/
 **/AGENTS.md
+docs/bug_hunts/
+docs/plans/
+docs/specs/
