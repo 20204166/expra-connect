@@ -25,3 +25,10 @@ build/
 docs/bug_hunts/
 docs/plans/
 docs/specs/
+
+# Local MCP client configuration and generated endpoint state
+.expra-connect-mcp.toml
+.mcp.json
+opencode.json
+.expra-endpoint-*/
+.expra-windows-target/

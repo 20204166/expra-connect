@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "expra-connect-dev-mcp"
+version = "0.1.0"
+description = "Development MCP server for inspecting Expra Connect"
+requires-python = ">=3.10"
+dependencies = ["mcp>=2.2,<3", "tomli>=2; python_version < '3.11'"]
+
+[project.optional-dependencies]
+dev = ["mypy>=1.10", "pyright>=1.1.350", "ruff>=0.6"]
+
+[project.scripts]
+expra-connect-mcp = "expra_connect_dev_mcp.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.pyright]
+include = ["src", "tests"]
+typeCheckingMode = "standard"
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+
+[[tool.mypy.overrides]]
+module = ["expra_connect", "expra_connect.*"]
+ignore_missing_imports = true

@@ -1,0 +1,19 @@
+schema_version = 1
+
+[workspace]
+connect_root = "."
+python = "auto"
+
+[references.exp_ui]
+path = "../exp"
+read_only = true
+
+[execution]
+allow_network = false
+allow_lan_discovery = false
+allow_pairing = false
+allow_trust_mutation = false
+allow_cluster_mutation = false
+command_timeout_seconds = 600
+max_output_kb = 256
+max_parallel_commands = 2

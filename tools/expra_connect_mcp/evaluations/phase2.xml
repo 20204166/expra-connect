@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<evaluation>
+  <qa_pair>
+    <question>Inspect the default ConnectConfig capability set and the exported read-only capability constants. What exact capability value is advertised by default? Answer with the value only.</question>
+    <answer>read_state</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Compare the default ConnectConfig discovery setting with the runtime's discovery lifecycle evidence. Is discovery enabled by default? Answer True or False only.</question>
+    <answer>True</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Trace the default ConnectConfig port through the server constant that defines the peer service port. What is the default preferred port? Answer with the integer only.</question>
+    <answer>27321</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Use the runtime configuration and discovery definitions to identify the fully qualified service type used for peer discovery. Answer with the exact service type only.</question>
+    <answer>_expra-peer._tcp.local.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Inspect failure classification and RetryState.record_failure. When the failure is authentication_failed or identity_changed, what is the resulting automatic_retry boolean? Answer True or False only.</question>
+    <answer>False</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Follow the bounded retry calculation for three consecutive connection_refused failures using the default base delay and no jitter. List the three delays in seconds, in order, separated by comma and space.</question>
+    <answer>1.0, 2.0, 4.0</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Inspect RoleAssignment normalization and the cluster role enum. If a node is assigned coordinator, which additional role is implicitly included? Answer with the role value only.</question>
+    <answer>worker</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Compare the default runtime cluster setting with the MCP cluster audit permissions. Is cluster participation enabled by default? Answer True or False only.</question>
+    <answer>False</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Inspect the MCP annotations, configuration defaults, and the cluster audit documentation. What exact execution flag gates an actual failover transition? Answer with the flag name only.</question>
+    <answer>allow_cluster_mutation</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Compare the default capability and permission enums, then identify the shared read-only value used for the default grant. Answer with the exact value only.</question>
+    <answer>read_state</answer>
+  </qa_pair>
+</evaluation>
