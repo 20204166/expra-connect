@@ -177,8 +177,11 @@ class ConnectionManager:
                     self._validate_hello_generation(trusted, candidate, hello)
                     capabilities = parse_hello_capabilities(hello)
                     self._record_generation(peer_id, trusted, candidate)
+                    self._pairing.mark_auth_ok(peer_id)
                 except RemoteProtocolError as error:
                     self._finish_observation(observer, observation, error)
+                    if isinstance(error, RemoteAuthError):
+                        self._pairing.mark_auth_failure(peer_id)
                     self._report_route_attempt(
                         "connection", endpoint, "failed", str(error)
                     )

@@ -187,8 +187,11 @@ class PairingRequest:
     root_public_key: str | None = None
     transport_generation: int | None = None
     transport_proof: str | None = None
+    intent: str = "pair"
 
     def __post_init__(self) -> None:
+        if self.intent not in {"pair", "repair"}:
+            raise RemoteProtocolError("pairing intent is invalid")
         if not self.caller_node_id.value or not self.identity_fingerprint:
             raise RemoteAuthError("pairing identity is missing")
         if not self.transport_fingerprint:

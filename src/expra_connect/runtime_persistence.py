@@ -83,6 +83,8 @@ def pending_pairing_to_json(
         "root_public_key": pending.root_public_key,
         "transport_generation": pending.transport_generation,
         "transport_proof": pending.transport_proof,
+        "direction": pending.direction,
+        "intent": pending.intent,
         "permissions": sorted(permissions),
     }
 
@@ -105,6 +107,12 @@ def pending_pairing_from_json(
         not isinstance(item, str) for item in permissions
     ):
         raise TypeError("persisted pending pairing permissions are invalid")
+    direction = value.get("direction", "outbound")
+    if direction not in {"outbound", "inbound"}:
+        raise TypeError("persisted pending pairing direction is invalid")
+    intent = value.get("intent", "pair")
+    if intent not in {"pair", "repair"}:
+        raise TypeError("persisted pending pairing intent is invalid")
     return (
         PendingPairing(
             transaction_id=str(value["transaction_id"]),
@@ -116,6 +124,8 @@ def pending_pairing_from_json(
             root_public_key=optional_text(value.get("root_public_key")),
             transport_generation=optional_generation(value.get("transport_generation")),
             transport_proof=optional_text(value.get("transport_proof")),
+            direction=direction,
+            intent=intent,
         ),
         permissions_from_json(permissions),
     )

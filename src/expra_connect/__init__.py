@@ -3,7 +3,6 @@
 from ._version import __version__
 from .cluster import Cluster, ClusterRole
 from .connection_state import ConnectionState, RetryState
-from .discovery_full import NetworkDiscovery
 from .device_identity import (
     DeviceHardwareHint,
     DeviceHardwareProvider,
@@ -11,6 +10,7 @@ from .device_identity import (
     DeviceIdentityError,
     DeviceIdentityView,
 )
+from .discovery_full import NetworkDiscovery
 from .failover import FailoverCoordinator
 from .identity import (
     NodeId,
@@ -28,7 +28,18 @@ from .models import (
     NodeCapability,
     NodePermission,
 )
-from .pairing import PairingManager, PeerGrant, PendingPairing, TrustedPeer
+from .pairing import (
+    IdentityConflict,
+    PairingBusy,
+    PairingConflict,
+    PairingManager,
+    PeerGrant,
+    PendingPairing,
+    RelationshipState,
+    RepairNotRequired,
+    RepairRequired,
+    TrustedPeer,
+)
 from .persistence import JsonStateStore
 from .registry import NodeRegistry
 from .remote_service import AuthenticatedNodeProvider, RemoteService
@@ -45,15 +56,16 @@ __all__ = [
     "ConnectConfig",
     "ConnectRuntime",
     "ConnectionState",
-    "DiscoveredNodeCandidate",
     "DeviceHardwareHint",
     "DeviceHardwareProvider",
     "DeviceIdentity",
     "DeviceIdentityError",
     "DeviceIdentityView",
+    "DiscoveredNodeCandidate",
     "EndpointCandidate",
     "EndpointSource",
     "FailoverCoordinator",
+    "IdentityConflict",
     "JsonStateStore",
     "NetworkDiscovery",
     "NodeCapability",
@@ -61,11 +73,16 @@ __all__ = [
     "NodeIdentity",
     "NodePermission",
     "NodeRegistry",
+    "PairingBusy",
+    "PairingConflict",
     "PairingManager",
     "PeerGrant",
     "PendingPairing",
+    "RelationshipState",
     "RemoteService",
     "RemoteSocketServer",
+    "RepairNotRequired",
+    "RepairRequired",
     "RetryState",
     "RoleState",
     "RotationConflict",

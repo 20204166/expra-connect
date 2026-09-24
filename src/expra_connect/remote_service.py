@@ -753,6 +753,7 @@ class AuthenticatedNodeProvider(
         transport_proof: str | None = None,
         permissions: frozenset[NodePermission],
         cancel_event: Any | None = None,
+        intent: str = "pair",
     ) -> bool | dict[str, Any]:
         """Ask the target to approve and persist a pending pairing."""
 
@@ -771,6 +772,7 @@ class AuthenticatedNodeProvider(
                 "transport_proof": transport_proof,
                 "secret": proposed_secret,
                 "permissions": sorted(permission.value for permission in permissions),
+                "intent": intent,
             }
         )
         response_text = _invoke_with_optional_cancel(

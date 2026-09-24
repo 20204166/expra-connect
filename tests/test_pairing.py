@@ -1,7 +1,13 @@
 import unittest
 
-from expra_connect.identity import NodeId
-from expra_connect.pairing import PairingManager, PeerGrant, TrustedPeer
+from expra_connect.identity import NodeId, NodeIdentity
+from expra_connect.pairing import (
+    PairingBusy,
+    PairingManager,
+    PeerGrant,
+    RelationshipState,
+    TrustedPeer,
+)
 
 
 class PairingTests(unittest.TestCase):
@@ -104,3 +110,119 @@ class PairingTests(unittest.TestCase):
         self.assertFalse(manager.can_call(NodeId("peer-b"), "ping"))
         self.assertFalse(manager.pending)
         self.assertNotIn(pending.transaction_id, manager.pending)
+
+    def test_begin_rejects_a_competing_transaction_for_the_same_direction(
+        self,
+    ) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        manager.begin(peer, "secret-one", direction="outbound")
+        with self.assertRaises(PairingBusy):
+            manager.begin(peer, "secret-two", direction="outbound")
+        # The opposite direction is an independent relationship axis.
+        manager.begin(peer, "secret-three", direction="inbound")
+
+    def test_exact_replay_returns_the_existing_transaction(self) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        first = manager.begin(peer, "replayed-secret", direction="outbound")
+        replay = manager.begin(peer, "replayed-secret", direction="outbound")
+        self.assertEqual(replay.transaction_id, first.transaction_id)
+        self.assertEqual(len(manager.pending), 1)
+
+    def test_relationship_distinguishes_directions(self) -> None:
+        peer = NodeId("peer-b")
+        manager = PairingManager(NodeId("peer-a"))
+        self.assertIs(manager.relationship(peer), RelationshipState.UNPAIRED)
+        manager.grants[peer] = PeerGrant(peer, "s" * 64, frozenset())
+        self.assertIs(manager.relationship(peer), RelationshipState.INBOUND_GRANTED)
+        manager.trusted[peer] = TrustedPeer(peer, "t" * 64, frozenset())
+        self.assertIs(manager.relationship(peer), RelationshipState.BIDIRECTIONAL)
+        del manager.grants[peer]
+        self.assertIs(manager.relationship(peer), RelationshipState.OUTBOUND_TRUSTED)
+
+    def test_auth_failure_marks_outbound_trust_for_repair_only(self) -> None:
+        peer = NodeId("peer-b")
+        manager = PairingManager(NodeId("peer-a"))
+        manager.trusted[peer] = TrustedPeer(peer, "t" * 64, frozenset())
+        manager.mark_auth_failure(peer)
+        self.assertIs(manager.relationship(peer), RelationshipState.REPAIR_REQUIRED)
+        self.assertTrue(manager.is_auth_broken(peer))
+        manager.mark_auth_ok(peer)
+        self.assertIs(manager.relationship(peer), RelationshipState.OUTBOUND_TRUSTED)
+
+    def test_auth_failure_without_outbound_trust_is_ignored(self) -> None:
+        peer = NodeId("peer-b")
+        manager = PairingManager(NodeId("peer-a"))
+        manager.mark_auth_failure(peer)
+        self.assertFalse(manager.is_auth_broken(peer))
+
+    def test_classify_trusted_candidate_requires_stored_root_proof(self) -> None:
+        local = NodeIdentity.create(NodeId("peer-a"))
+        peer_identity = NodeIdentity.create(NodeId("peer-b"))
+        peer = peer_identity.node_id
+        manager = PairingManager(local.node_id)
+        manager.trusted[peer] = TrustedPeer(
+            peer,
+            "t" * 64,
+            frozenset(),
+            root_public_key=peer_identity.root_public_key,
+            transport_fingerprint="tls-old",
+            transport_generation=1,
+        )
+        # A valid forward rotation is healthy, not a repair.
+        self.assertIs(
+            manager.classify_trusted_candidate(
+                peer,
+                candidate_root_public_key=peer_identity.root_public_key,
+                candidate_transport_fingerprint="tls-new",
+                candidate_transport_generation=2,
+                candidate_transport_proof=peer_identity.sign_transport_proof(
+                    2, "tls-new"
+                ),
+            ),
+            RelationshipState.OUTBOUND_TRUSTED,
+        )
+        # Same claimed root but an unprovable binding is not trusted.
+        self.assertIs(
+            manager.classify_trusted_candidate(
+                peer,
+                candidate_root_public_key=peer_identity.root_public_key,
+                candidate_transport_fingerprint="tls-rogue",
+                candidate_transport_generation=3,
+                candidate_transport_proof="forged",
+            ),
+            RelationshipState.IDENTITY_CONFLICT,
+        )
+        # A different root is a hard identity conflict.
+        other = NodeIdentity.create(NodeId("peer-b"))
+        self.assertIs(
+            manager.classify_trusted_candidate(
+                peer,
+                candidate_root_public_key=other.root_public_key,
+                candidate_transport_fingerprint="tls-old",
+                candidate_transport_generation=1,
+                candidate_transport_proof=other.sign_transport_proof(1, "tls-old"),
+            ),
+            RelationshipState.IDENTITY_CONFLICT,
+        )
+
+    def test_revoke_trusted_preserves_the_inbound_grant(self) -> None:
+        peer = NodeId("peer-b")
+        manager = PairingManager(NodeId("peer-a"))
+        manager.trusted[peer] = TrustedPeer(peer, "t" * 64, frozenset())
+        manager.grants[peer] = PeerGrant(peer, "g" * 64, frozenset())
+        manager.revoke_trusted(peer)
+        self.assertNotIn(peer, manager.trusted)
+        self.assertIn(peer, manager.grants)
+
+    def test_expiring_a_repair_transaction_keeps_established_trust(self) -> None:
+        now = [100.0]
+        peer = NodeId("peer-b")
+        manager = PairingManager(NodeId("peer-a"), clock=lambda: now[0], ttl=5.0)
+        manager.trusted[peer] = TrustedPeer(peer, "t" * 64, frozenset())
+        manager.begin(peer, "repair-secret", direction="outbound", intent="repair")
+        now[0] = 200.0
+        self.assertEqual(manager.prune_expired(), 1)
+        self.assertIn(peer, manager.trusted)
+        self.assertIs(manager.relationship(peer), RelationshipState.OUTBOUND_TRUSTED)

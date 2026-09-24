@@ -16,7 +16,17 @@ from .models import (
     EndpointCandidate,
     NodePermission,
 )
-from .pairing import PairingManager, PeerGrant, TrustedPeer
+from .pairing import (
+    IdentityConflict,
+    PairingBusy,
+    PairingConflict,
+    PairingManager,
+    PeerGrant,
+    RelationshipState,
+    RepairNotRequired,
+    RepairRequired,
+    TrustedPeer,
+)
 from .remote_service import AuthenticatedNodeProvider, PairingTransaction
 from .socket_transport import TLSRemoteTransport
 from .wire_protocol import RemoteTransportError
@@ -58,6 +68,37 @@ class NetworkPairing:
         permissions: frozenset[str],
         cancel_event: threading.Event | None = None,
     ) -> TrustedPeer:
+        """Establish a missing outbound relationship, never replacing trust."""
+        return self._establish(
+            peer_id,
+            permissions=permissions,
+            cancel_event=cancel_event,
+            intent="pair",
+        )
+
+    def repair(
+        self,
+        peer_id: NodeId,
+        *,
+        permissions: frozenset[str],
+        cancel_event: threading.Event | None = None,
+    ) -> TrustedPeer:
+        """Replace broken directional credentials for a proven identity."""
+        return self._establish(
+            peer_id,
+            permissions=permissions,
+            cancel_event=cancel_event,
+            intent="repair",
+        )
+
+    def _establish(
+        self,
+        peer_id: NodeId,
+        *,
+        permissions: frozenset[str],
+        cancel_event: threading.Event | None,
+        intent: str,
+    ) -> TrustedPeer:
         if cancel_event is not None and cancel_event.is_set():
             raise RuntimeError("pairing cancelled")
         candidate = self._candidates.get(peer_id.value)
@@ -72,6 +113,62 @@ class NetworkPairing:
             raise ValueError("peer advertisement has no transport fingerprint")
         if not permissions <= {permission.value for permission in READ_PERMISSIONS}:
             raise ValueError("pairing permissions must be read-only")
+        previous = self._pairing.trusted.get(peer_id)
+        previous_broken = self._pairing.is_auth_broken(peer_id)
+        state = self._classify_candidate(peer_id, candidate)
+        if intent == "pair":
+            if state is RelationshipState.IDENTITY_CONFLICT:
+                raise IdentityConflict(
+                    "peer identity conflicts with stored trust",
+                    peer_id=peer_id,
+                    state=state,
+                )
+            if state in {
+                RelationshipState.OUTBOUND_TRUSTED,
+                RelationshipState.BIDIRECTIONAL,
+            }:
+                assert previous is not None
+                return previous
+            if state is RelationshipState.REPAIR_REQUIRED:
+                raise RepairRequired(
+                    "peer credentials require explicit repair",
+                    peer_id=peer_id,
+                    state=state,
+                )
+            if state is RelationshipState.PENDING_OUTBOUND:
+                raise PairingBusy(
+                    "a pairing transaction is already active for this peer",
+                    peer_id=peer_id,
+                    state=state,
+                )
+        else:
+            if previous is None:
+                raise PairingConflict(
+                    "peer has no outbound relationship to repair",
+                    peer_id=peer_id,
+                    state=state,
+                )
+            if state is RelationshipState.IDENTITY_CONFLICT:
+                raise IdentityConflict(
+                    "peer cannot prove continuity of the stored root",
+                    peer_id=peer_id,
+                    state=state,
+                )
+            if state in {
+                RelationshipState.OUTBOUND_TRUSTED,
+                RelationshipState.BIDIRECTIONAL,
+            }:
+                raise RepairNotRequired(
+                    "peer relationship does not require repair",
+                    peer_id=peer_id,
+                    state=state,
+                )
+            if state is not RelationshipState.REPAIR_REQUIRED:
+                raise PairingConflict(
+                    "peer relationship cannot be repaired",
+                    peer_id=peer_id,
+                    state=state,
+                )
         pending = self._pairing.begin(
             peer_id,
             secret=secrets.token_hex(32),
@@ -83,6 +180,8 @@ class NetworkPairing:
             or self._identity.sign_transport_proof(
                 self._transport_generation, self._transport_fingerprint
             ),
+            direction="outbound",
+            intent=intent,
         )
         errors: list[BaseException] = []
         transport: Any | None = None
@@ -109,6 +208,7 @@ class NetworkPairing:
                         NodePermission(permission) for permission in permissions
                     ),
                     cancel_event=cancel_event,
+                    intent=intent,
                 )
                 break
             except (OSError, ConnectionError, RemoteTransportError) as error:
@@ -116,14 +216,14 @@ class NetworkPairing:
                 self._report_route_attempt("pairing", endpoint, "failed", str(error))
 
         if response is None:
-            self._abort(pending.transaction_id)
+            self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
             raise errors[-1] if errors else ConnectionError("pairing routes failed")
         if not isinstance(response, dict):
             if last_endpoint is not None:
                 self._report_route_attempt(
                     "pairing", last_endpoint, "rejected", "peer rejected pairing"
                 )
-            self._abort(pending.transaction_id)
+            self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
             if cancel_event is not None and cancel_event.is_set():
                 raise RuntimeError("pairing cancelled")
             raise PermissionError("peer rejected pairing")
@@ -132,7 +232,7 @@ class NetworkPairing:
                 NodePermission(item) for item in response["permissions"]
             )
         except (KeyError, TypeError, ValueError) as error:
-            self._abort(pending.transaction_id)
+            self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
             raise ValueError("pairing response permissions are malformed") from error
         if (
             not accepted_permissions
@@ -140,7 +240,7 @@ class NetworkPairing:
             or not accepted_permissions
             <= frozenset(NodePermission(item) for item in permissions)
         ):
-            self._abort(pending.transaction_id)
+            self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
             raise PermissionError("peer returned permissions outside the request")
         if last_endpoint is not None:
             self._report_route_attempt("pairing", last_endpoint, "succeeded", None)
@@ -186,15 +286,16 @@ class NetworkPairing:
         )
         self._pairing.trusted[peer_id] = trusted
         if cancel_event is not None and cancel_event.is_set():
-            self._pairing.revoke(peer_id)
-            self._persist()
+            self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
             AuthenticatedNodeProvider.abort_pairing(transaction)
             raise RuntimeError("pairing cancelled")
         if not self._persist():
             try:
                 AuthenticatedNodeProvider.abort_pairing(transaction)
             finally:
-                self._pairing.revoke(peer_id)
+                self._rollback(
+                    peer_id, previous, previous_broken, pending.transaction_id
+                )
             raise RuntimeError("pairing was not durably persisted")
         try:
             confirmed = AuthenticatedNodeProvider.confirm_pairing(
@@ -204,17 +305,48 @@ class NetworkPairing:
             try:
                 AuthenticatedNodeProvider.abort_pairing(transaction)
             finally:
-                self._pairing.revoke(peer_id)
-                self._persist()
+                self._rollback(
+                    peer_id, previous, previous_broken, pending.transaction_id
+                )
             raise
         if not confirmed:
             try:
                 AuthenticatedNodeProvider.abort_pairing(transaction)
             finally:
-                self._pairing.revoke(peer_id)
-                self._persist()
+                self._rollback(
+                    peer_id, previous, previous_broken, pending.transaction_id
+                )
             raise PermissionError("peer did not confirm pairing")
         return trusted
+
+    def _classify_candidate(
+        self, peer_id: NodeId, candidate: DiscoveredNodeCandidate
+    ) -> RelationshipState:
+        return self._pairing.classify_trusted_candidate(
+            peer_id,
+            candidate_root_public_key=candidate.root_public_key,
+            candidate_transport_fingerprint=candidate.transport_fingerprint,
+            candidate_transport_generation=candidate.transport_generation,
+            candidate_transport_proof=candidate.transport_proof,
+        )
+
+    def _rollback(
+        self,
+        peer_id: NodeId,
+        previous: TrustedPeer | None,
+        previous_broken: bool,
+        transaction_id: str,
+    ) -> None:
+        self._pairing.abort(transaction_id)
+        if previous is None:
+            self._pairing.revoke_trusted(peer_id)
+        else:
+            self._pairing.trusted[peer_id] = previous
+            if previous_broken:
+                self._pairing.mark_auth_failure(peer_id)
+            else:
+                self._pairing.mark_auth_ok(peer_id)
+        self._persist()
 
     def _abort(self, transaction_id: str) -> None:
         self._pairing.abort(transaction_id)

@@ -43,15 +43,22 @@ from .models import (
     NodePermission,
 )
 from .observability import ObservabilityWatcher
-from .pairing import PairingManager, PeerGrant, PendingPairing, TrustedPeer
+from .pairing import (
+    PairingManager,
+    PeerGrant,
+    PendingPairing,
+    RelationshipState,
+    TrustedPeer,
+)
 from .pairing_flow import NetworkPairing
+from .pairing_target import handle_pairing_request
 from .persistence import JsonStateStore, StateDataError, migrate_state
 from .registry import NodeRegistry, TrustState
 from .remote_models import NodeStatus
 from .remote_role_operations import RuntimeClusterOperations
 from .remote_service import RemoteService
 from .role_engine import ClusterRole as RegistryClusterRole
-from .runtime_diagnostics import build_diagnostics
+from .runtime_diagnostics import build_diagnostics, build_peer_diagnostics
 from .runtime_persistence import (
     peer_grant_from_json,
     peer_grant_to_json,
@@ -160,8 +167,9 @@ class ConnectRuntime(
 ):
     """Compose the mature peer components without doing work in construction."""
 
-    def __init__(self, config: ConnectConfig, *,
-                 observer: ObservabilityWatcher | None = None) -> None:
+    def __init__(
+        self, config: ConnectConfig, *, observer: ObservabilityWatcher | None = None
+    ) -> None:
         self.config = config
         self._observer = observer if observer is not None else ObservabilityWatcher()
         self._identity: NodeIdentity | None = None
@@ -208,18 +216,23 @@ class ConnectRuntime(
     @property
     def pairing(self) -> PairingManager | None:
         return self._pairing
+
     @property
     def sharing(self) -> CapabilityShare:
         return self._sharing
+
     @property
     def cluster(self) -> Cluster | None:
         return self._cluster
+
     @property
     def peers(self) -> tuple[DiscoveredNodeCandidate, ...]:
         return tuple(self._peers.values())
+
     @property
     def connections(self) -> tuple[NodeId, ...]:
         return self._connection_manager.providers if self._connection_manager else ()
+
     @property
     def transport_generations(self) -> TransportGenerationManager | None:
         return self._transport_generations
@@ -287,6 +300,37 @@ class ConnectRuntime(
         if pairing is None:
             raise RuntimeError("runtime must be started before pairing")
         return pairing.pair(peer_id, permissions=permissions, cancel_event=cancel_event)
+
+    def repair_peer(
+        self,
+        peer_id: NodeId,
+        *,
+        permissions: frozenset[str] = frozenset({NodePermission.READ_STATE.value}),
+        cancel_event: threading.Event | None = None,
+    ) -> TrustedPeer:
+        """Replace broken directional credentials for the same proven identity.
+
+        Repair is explicit and directional: it replaces only the outbound
+        ``TrustedPeer`` and the target's matching inbound ``PeerGrant``. It never
+        establishes a relationship (use :meth:`pair_peer`), never restores
+        connectivity (use :meth:`reconnect_peer`), and never removes an
+        unrelated reverse-direction relationship.
+        """
+
+        pairing = self._network_pairing
+        if pairing is None:
+            raise RuntimeError("runtime must be started before repair")
+        return pairing.repair(
+            peer_id, permissions=permissions, cancel_event=cancel_event
+        )
+
+    def peer_relationship(self, peer_id: NodeId) -> RelationshipState:
+        """Return the canonical directional relationship with one peer."""
+        return self._require_pairing().relationship(peer_id)
+
+    def pairing_diagnostics(self, peer_id: NodeId) -> dict[str, Any]:
+        """Return deterministic, secret-free directional pairing evidence."""
+        return build_peer_diagnostics(self, peer_id)
 
     def begin_pairing(self, peer_id: NodeId, **kwargs: Any) -> PendingPairing:
         pairing = self._require_pairing()
@@ -483,7 +527,8 @@ class ConnectRuntime(
             registry=self._registry,
             candidates=self._peers,
             persist=self._save_persisted_state,
-            on_route_attempt=self.config.on_route_attempt, observer=self._observer,
+            on_route_attempt=self.config.on_route_attempt,
+            observer=self._observer,
         )
         self._transport_generations = TransportGenerationManager(
             self._identity,
@@ -697,39 +742,7 @@ class ConnectRuntime(
         )
 
     def _handle_pairing_request(self, request: PairingRequest) -> dict[str, Any]:
-        callback = self.config.on_pairing_request
-        if callback is None or not callback(request):
-            return {"approved": False}
-        pairing = self._require_pairing()
-        pending = pairing.begin(
-            request.caller_node_id,
-            secret=request.proposed_secret,
-            identity_fingerprint=request.identity_fingerprint,
-            transport_fingerprint=request.transport_fingerprint,
-            root_public_key=request.root_public_key,
-            transport_generation=request.transport_generation,
-            transport_proof=request.transport_proof,
-        )
-        self._pending_permissions[pending.transaction_id] = frozenset(
-            permission.value for permission in request.permissions
-        )
-        if not self._save_persisted_state():
-            pairing.abort(pending.transaction_id)
-            self._pending_permissions.pop(pending.transaction_id, None)
-            return {"approved": False}
-        return {
-            "approved": True,
-            "transaction_id": pending.transaction_id,
-            "caller_node_id": pending.peer_id.value,
-            "identity_fingerprint": request.identity_fingerprint,
-            "transport_fingerprint": request.transport_fingerprint,
-            "root_public_key": request.root_public_key,
-            "transport_generation": request.transport_generation,
-            "transport_proof": request.transport_proof,
-            "secret": pending.secret,
-            "permissions": sorted(self._pending_permissions[pending.transaction_id]),
-            "expires_at": pending.expires_at,
-        }
+        return handle_pairing_request(self, request)
 
     def _handle_pairing_control(self, request: PairingControlRequest) -> bool:
         with self._pairing_transition_lock:

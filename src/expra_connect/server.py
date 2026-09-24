@@ -271,6 +271,7 @@ def _pair_request_response(
         "root_public_key",
         "transport_generation",
         "transport_proof",
+        "intent",
     }
     if (
         handler is None
@@ -284,6 +285,9 @@ def _pair_request_response(
         not isinstance(item, str) for item in permissions
     ):
         return json.dumps({"approved": False, "error": "invalid_pairing"})
+    intent = raw.get("intent", "pair")
+    if not isinstance(intent, str) or intent not in {"pair", "repair"}:
+        return json.dumps({"approved": False, "error": "invalid_pairing"})
     try:
         request = PairingRequest(
             caller_node_id=NodeId(raw["caller_node_id"]),
@@ -291,6 +295,7 @@ def _pair_request_response(
             transport_fingerprint=raw["transport_fingerprint"],
             proposed_secret=raw["secret"],
             permissions=frozenset(NodePermission(item) for item in permissions),
+            intent=intent,
             root_public_key=(
                 raw.get("root_public_key")
                 if isinstance(raw.get("root_public_key"), str)
