@@ -36,6 +36,7 @@ from expra_connect.wire_protocol import (
     RemoteProtocolError,
     RemoteRequest,
     sign_request,
+    sign_response,
 )
 
 SECRET = "a" * 64
@@ -1415,3 +1416,175 @@ class RemoteServiceTests(unittest.TestCase):
         worker.join(1.0)
         self.assertEqual(len(errors), 1)
         self.assertIsInstance(errors[0], RemoteAuthorizationError)
+
+
+class ProviderRequestMechanicsTests(unittest.TestCase):
+    class _ScriptedTransport:
+        def __init__(self, builder: Callable[[dict[str, Any]], str]) -> None:
+            self._builder = builder
+            self.requests: list[dict[str, Any]] = []
+
+        def request(self, envelope_text: str, cancel_event: Any | None = None) -> str:
+            envelope = json.loads(envelope_text)
+            self.requests.append(envelope)
+            return self._builder(envelope)
+
+    class _CountingTransport:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def request(self, envelope_text: str, cancel_event: Any | None = None) -> str:
+            self.calls += 1
+            raise RemoteTransportError("transport down")
+
+    def _client(self, transport: Any) -> AuthenticatedNodeProvider:
+        return AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            secret=SECRET,
+            transport=transport,
+        )
+
+    @staticmethod
+    def _respond(
+        request_id: str,
+        *,
+        node_id: str = "peer",
+        status: str = "ok",
+        payload: dict[str, Any] | None = None,
+        error: str | None = None,
+        session_id: str | None = None,
+    ) -> str:
+        return json.dumps(
+            sign_response(
+                node_id=node_id,
+                request_id=request_id,
+                status=status,
+                payload=payload,
+                error=error,
+                secret=SECRET,
+                timestamp=time.time(),
+                session_id=session_id,
+            )
+        )
+
+    def test_non_json_response_is_protocol_error(self) -> None:
+        transport = self._ScriptedTransport(lambda _envelope: "not json")
+        client = self._client(transport)
+        with self.assertRaises(RemoteProtocolError) as error:
+            client._request("hello", {})
+        self.assertIn("not valid JSON", str(error.exception))
+
+    def test_signed_response_from_wrong_node_is_auth_error(self) -> None:
+        transport = self._ScriptedTransport(
+            lambda envelope: self._respond(
+                envelope["request_id"],
+                node_id="other",
+                payload={"node_id": "other"},
+            )
+        )
+        client = self._client(transport)
+        with self.assertRaises(RemoteAuthError) as error:
+            client._request("hello", {})
+        self.assertIn("wrong node", str(error.exception))
+
+    def test_mismatched_request_id_is_auth_error(self) -> None:
+        transport = self._ScriptedTransport(
+            lambda _envelope: self._respond(
+                "different-request-id", payload={"node_id": "peer"}
+            )
+        )
+        client = self._client(transport)
+        with self.assertRaises(RemoteAuthError) as error:
+            client._request("hello", {})
+        self.assertIn("request id does not match", str(error.exception))
+
+    def test_ok_response_without_payload_is_protocol_error(self) -> None:
+        transport = self._ScriptedTransport(
+            lambda envelope: self._respond(envelope["request_id"], payload=None)
+        )
+        client = self._client(transport)
+        with self.assertRaises(RemoteProtocolError) as error:
+            client._request("hello", {})
+        self.assertIn("no payload", str(error.exception))
+
+    def test_capability_unavailable_is_authorization_error(self) -> None:
+        transport = self._ScriptedTransport(
+            lambda envelope: self._respond(
+                envelope["request_id"],
+                status="error",
+                error="capability_unavailable",
+            )
+        )
+        client = self._client(transport)
+        with self.assertRaises(RemoteAuthorizationError) as error:
+            client._request("hello", {})
+        self.assertIs(type(error.exception), RemoteAuthorizationError)
+
+    def test_target_offline_is_unavailable_error(self) -> None:
+        transport = self._ScriptedTransport(
+            lambda envelope: self._respond(
+                envelope["request_id"],
+                status="error",
+                error="target_offline",
+            )
+        )
+        client = self._client(transport)
+        with self.assertRaises(RemoteUnavailableError) as error:
+            client._request("hello", {})
+        self.assertIs(type(error.exception), RemoteUnavailableError)
+        self.assertIn("target is offline", str(error.exception))
+
+    def test_error_without_detail_is_execution_error(self) -> None:
+        transport = self._ScriptedTransport(
+            lambda envelope: self._respond(
+                envelope["request_id"],
+                status="error",
+                error=None,
+            )
+        )
+        client = self._client(transport)
+        with self.assertRaises(RemoteExecutionError) as error:
+            client._request("hello", {})
+        self.assertIs(type(error.exception), RemoteExecutionError)
+        self.assertIn("remote operation failed", str(error.exception))
+
+    def test_session_id_propagates_and_marks_resume(self) -> None:
+        transport = self._ScriptedTransport(
+            lambda envelope: self._respond(
+                envelope["request_id"],
+                payload={"node_id": "peer"},
+                session_id="session-1",
+            )
+        )
+        client = self._client(transport)
+        self.assertIsNone(client._session_id)
+        client._request("hello", {})
+        self.assertEqual(client._session_id, "session-1")
+        client._request("hello", {})
+        first, second = transport.requests
+        self.assertNotIn("session_id", first)
+        self.assertFalse(first.get("resume", False))
+        self.assertEqual(second["session_id"], "session-1")
+        self.assertIs(second["resume"], True)
+
+    def test_unsafe_operation_is_not_retried_but_safe_operation_is(self) -> None:
+        unsafe_transport = self._CountingTransport()
+        unsafe_client = self._client(unsafe_transport)
+        with self.assertRaises(RemoteTransportError):
+            unsafe_client._request("process_force_quit", {})
+        self.assertEqual(unsafe_transport.calls, 1)
+
+        safe_transport = self._CountingTransport()
+        safe_client = self._client(safe_transport)
+        with self.assertRaises(RemoteTransportError):
+            safe_client._request("hello", {})
+        self.assertEqual(safe_transport.calls, 2)
+
+    def test_cancelled_request_never_reaches_transport(self) -> None:
+        transport = self._ScriptedTransport(lambda _envelope: "unused")
+        client = self._client(transport)
+        cancelled = threading.Event()
+        cancelled.set()
+        with self.assertRaises(RemoteExecutionError):
+            client.hello(cancelled)
+        self.assertEqual(transport.requests, [])

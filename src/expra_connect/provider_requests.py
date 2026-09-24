@@ -6,7 +6,7 @@ import json
 import secrets
 from typing import Any
 
-from .socket_transport import request_with_retry
+from .socket_transport import _check_cancelled, request_with_retry
 from .wire_protocol import (
     OPERATION_SAFETY,
     RemoteAuthError,
@@ -30,8 +30,8 @@ class ProviderRequestMixin:
     _session_id: str | None
 
     def _check_cancel(self, cancel_event: Any | None) -> None:
-        if cancel_event is not None and cancel_event.is_set():
-            raise RemoteExecutionError("cancelled")
+        """Delegate to the shared transport cancellation guard."""
+        _check_cancelled(cancel_event)
 
     def _request(
         self,
