@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import unittest.mock
 from contextlib import redirect_stdout
+from dataclasses import FrozenInstanceError
 from io import StringIO
 from pathlib import Path
 from threading import Event
@@ -16,9 +17,11 @@ from run_peer_extended import (
     SURFACE_SYNC_CAPABILITY,
     _candidate_values,
     _diagnostics_values,
+    _next_sequence,
     _parser,
     _retry_surface_success,
     _runtime,
+    _surface_success_or_denial,
     _TrackedPairingCallback,
     approve_surface_pairing,
     cleanup_runtime,
@@ -108,6 +111,65 @@ class ExtendedPeerEventWriterTests(unittest.TestCase):
             records = json.loads(report.read_text(encoding="utf-8"))
             self.assertEqual(len(records), 2)
             self.assertEqual(records[-1], {"event": "stopping", "sequence": 8})
+
+    def test_write_event_recovers_from_corrupt_report_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            report.write_text("{not valid json", encoding="utf-8")
+
+            with redirect_stdout(StringIO()):
+                write_event(report, "stopping")
+
+            self.assertEqual(
+                json.loads(report.read_text(encoding="utf-8")),
+                [{"event": "stopping", "sequence": 1}],
+            )
+
+    def test_write_event_resets_history_when_existing_json_is_not_records(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            for existing in (
+                {"event": "started", "sequence": 9},
+                [{"event": "started", "sequence": 9}, "not-a-record"],
+            ):
+                report.write_text(json.dumps(existing), encoding="utf-8")
+
+                with redirect_stdout(StringIO()):
+                    write_event(report, "stopping")
+
+                self.assertEqual(
+                    json.loads(report.read_text(encoding="utf-8")),
+                    [{"event": "stopping", "sequence": 1}],
+                )
+
+    def test_write_event_creates_missing_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "missing" / "nested" / "report.json"
+            self.assertFalse(report.parent.exists())
+
+            with redirect_stdout(StringIO()):
+                write_event(report, "started", role="target")
+
+            self.assertEqual(
+                json.loads(report.read_text(encoding="utf-8")),
+                [{"event": "started", "sequence": 1, "role": "target"}],
+            )
+
+    def test_next_sequence_ignores_non_integer_sequences(self) -> None:
+        self.assertEqual(
+            _next_sequence(
+                [
+                    {"sequence": "5"},
+                    {"sequence": None},
+                    {"sequence": 2},
+                    {},
+                    {"sequence": 4},
+                ]
+            ),
+            5,
+        )
+        self.assertEqual(_next_sequence([]), 1)
+        self.assertEqual(_next_sequence([{"event": "started"}]), 1)
 
     def test_report_and_terminal_output_allowlist_sensitive_values(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -517,6 +579,94 @@ class ExtendedPeerStageTests(unittest.TestCase):
         with unittest.mock.patch("run_peer_extended.time.sleep"):
             self.assertEqual(_retry_surface_success(operation), {"ok": True})
         self.assertEqual(attempts, 2)
+
+    def test_retry_surface_success_reraises_same_error_after_timeout(self) -> None:
+        error = RemoteAuthorizationError("still pending")
+        with self.assertRaises(RemoteAuthorizationError) as caught:
+            _retry_surface_success(Mock(side_effect=error), timeout=0)
+        self.assertIs(caught.exception, error)
+
+    def test_surface_expected_denial_rejects_unexpected_success(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            with redirect_stdout(StringIO()), self.assertRaises(AssertionError):
+                _surface_success_or_denial(
+                    report,
+                    "desktop",
+                    "read",
+                    lambda: {"private": "payload"},
+                    "denied",
+                )
+
+            records = json.loads(report.read_text(encoding="utf-8"))
+            report_text = report.read_text(encoding="utf-8")
+
+        self.assertEqual(
+            records,
+            [{"event": "error", "error_type": "AssertionError", "sequence": 1}],
+        )
+        self.assertNotIn("payload", report_text)
+
+    def test_target_tolerates_frozen_config_assignment(self) -> None:
+        class FrozenConfig:
+            def __getattr__(self, _name: str) -> None:
+                return None
+
+            def __setattr__(self, name: str, value: object) -> None:
+                raise FrozenInstanceError(name)
+
+        runtime = Mock()
+        runtime.config = FrozenConfig()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("target")
+        runtime.peers = ()
+
+        with tempfile.TemporaryDirectory() as directory:
+            args = SimpleNamespace(
+                role="target",
+                report=Path(directory) / "report.json",
+                wait=0,
+            )
+            with redirect_stdout(StringIO()):
+                self.assertEqual(run_target(args, runtime), 0)
+            events = [
+                record["event"]
+                for record in json.loads(args.report.read_text(encoding="utf-8"))
+            ]
+
+        self.assertIn("started", events)
+        self.assertIn("target_ready", events)
+        runtime.start.assert_called_once_with()
+        runtime.shutdown.assert_called_once_with()
+
+    def test_revoke_self_asserts_when_capability_still_accessible(self) -> None:
+        runtime = Mock()
+        runtime.start.return_value = self._status()
+        runtime.identity = self._identity("initiator")
+        runtime.peers = (self._candidate(),)
+        runtime.pairing.trusted.get.return_value = Mock()
+        provider = Mock()
+        provider.request_shared.side_effect = [{"ok": True}, {"ok": True}]
+        runtime.connect_peer.return_value = provider
+
+        with tempfile.TemporaryDirectory() as directory:
+            args = SimpleNamespace(
+                peer_id="target",
+                wait=0,
+                report=Path(directory) / "report.json",
+                revoke_self=True,
+            )
+            with redirect_stdout(StringIO()):
+                self.assertEqual(run_initiator(args, runtime), 1)
+
+            records = json.loads(args.report.read_text(encoding="utf-8"))
+
+        self.assertEqual(records[-1]["event"], "error")
+        self.assertEqual(records[-1]["error_type"], "AssertionError")
+        self.assertNotIn(
+            "post_revoke_denied", [record["event"] for record in records]
+        )
+        provider.revoke_self.assert_called_once_with()
 
     def test_bidirectional_initiator_orders_reverse_pair_and_connect_events(self) -> None:
         runtime = Mock()
@@ -1051,6 +1201,20 @@ class ExtendedPeerDocumentationTests(unittest.TestCase):
             "routes_count": None,
             "connections_count": None,
         })
+
+    def test_diagnostics_values_returns_generation_and_counts_for_dicts(self) -> None:
+        self.assertEqual(_diagnostics_values("not-a-dict"), {})
+        self.assertEqual(_diagnostics_values(None), {})
+        self.assertEqual(
+            _diagnostics_values(
+                {
+                    "generation": 3,
+                    "routes": ["a", "b"],
+                    "connections": ["c"],
+                }
+            ),
+            {"generation": 3, "routes_count": 2, "connections_count": 1},
+        )
 
 
 if __name__ == "__main__":

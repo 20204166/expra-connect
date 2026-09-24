@@ -299,6 +299,28 @@ def approve_surface_pairing(
     return True
 
 
+def _approve_capability_pairing(
+    runtime: ConnectRuntime,
+    report: Path,
+    request: Any,
+    capability_peers: set[NodeId],
+) -> bool:
+    """Approve the shared capability and remember the caller for re-allowance."""
+    permissions = sorted(
+        getattr(permission, "value", permission)
+        for permission in getattr(request, "permissions", ())
+    )
+    write_event(
+        report,
+        "pairing_request",
+        caller_node_id=getattr(getattr(request, "caller_node_id", None), "value", None),
+        permissions=permissions,
+    )
+    runtime.sharing.allow(request.caller_node_id, CAPABILITY)
+    capability_peers.add(request.caller_node_id)
+    return True
+
+
 @contextmanager
 def cleanup_runtime(runtime: ConnectRuntime) -> Iterator[ConnectRuntime]:
     """Provide the common shutdown boundary for later runtime stages."""
@@ -396,13 +418,6 @@ def connect_bidirectionally(
     provider = runtime.connect_peer(peer_id)
     runtime.sharing.allow(peer_id, SURFACE_SYNC_CAPABILITY)
     return provider
-
-
-def grant_harness_surface_access(runtime: ConnectRuntime, peer_id: NodeId) -> None:
-    """Grant each incoming surface level explicitly after the connection exists."""
-    for surface_id in ("desktop", "desktop/settings", "device/status"):
-        for access in ("read", "review", "action"):
-            runtime.grant_surface_access(peer_id, surface_id, access=access)
 
 
 def exercise_remote_surfaces(
@@ -629,6 +644,7 @@ def _diagnostics_values(diagnostics: Any) -> dict[str, Any]:
 
 def run_target(args: Any, runtime: ConnectRuntime) -> int:
     """Start a target, expose the test capability, and remain available."""
+    bidirectional = getattr(args, "bidirectional_surfaces", False)
 
     configured_callback = getattr(runtime.config, "on_pairing_request", None)
     configured_peers = getattr(configured_callback, "capability_peers", None)
@@ -646,34 +662,20 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
     }
 
     def approve_pairing(request: Any) -> bool:
-        permissions = sorted(
-            getattr(permission, "value", permission)
-            for permission in getattr(request, "permissions", ())
-        )
-        write_event(
-            args.report,
-            "pairing_request",
-            caller_node_id=getattr(getattr(request, "caller_node_id", None), "value", None),
-            permissions=permissions,
-        )
-        runtime.sharing.allow(request.caller_node_id, CAPABILITY)
-        capability_peers.add(request.caller_node_id)
-        return True
+        return _approve_capability_pairing(runtime, args.report, request, capability_peers)
 
     runtime.sharing.register(
         CAPABILITY,
         lambda peer_id, params: {"ok": True, "peer_id": peer_id.value, "params": params},
     )
     try:
-        if getattr(args, "bidirectional_surfaces", False):
+        if bidirectional:
             register_harness_surfaces(runtime)
             register_surface_sync(runtime, surface_ready)
         setattr(
             runtime.config,
             "on_pairing_request",
-            approve_surface_pairing
-            if getattr(args, "bidirectional_surfaces", False)
-            else approve_pairing,
+            approve_surface_pairing if bidirectional else approve_pairing,
         )
     except FrozenInstanceError:
         # The real public config is frozen; its callback is installed at build time.
@@ -684,7 +686,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         if _status_state(status) != "started":
             raise RuntimeError("runtime did not start")
         write_event(args.report, "target_ready")
-        if getattr(args, "bidirectional_surfaces", False):
+        if bidirectional:
             candidate = wait_for_matching_peer(
                 runtime, getattr(args, "peer_id", None), args.wait
             )
@@ -693,10 +695,9 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
                     args.report, "discovery_timeout", peers_count=len(runtime.peers)
                 )
                 return 2
-            if getattr(args, "bidirectional_surfaces", False):
-                runtime.sharing.allow(
-                    NodeId(candidate.stable_id), SURFACE_SYNC_CAPABILITY
-                )
+            runtime.sharing.allow(
+                NodeId(candidate.stable_id), SURFACE_SYNC_CAPABILITY
+            )
             provider = connect_bidirectionally(
                 runtime,
                 candidate,
@@ -718,35 +719,15 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
             if rotate_after is not None
             else None
         )
-        rotated = False
-        deadline = time.monotonic() + max(args.wait, 0.0)
-        while time.monotonic() < deadline:
-            if rotation_deadline is not None and not rotated and time.monotonic() >= rotation_deadline:
-                runtime.rotate_transport()
-                if not getattr(args, "bidirectional_surfaces", False):
-                    reallow_capability_after_rotation()
-                if getattr(args, "bidirectional_surfaces", False):
-                    runtime.grant_surface_access(
-                        NodeId(candidate.stable_id), "desktop", access="read"
-                    )
-                generations = runtime.transport_generations
-                write_event(
-                    args.report,
-                    "rotated",
-                    generation=(
-                        generations.current_generation if generations is not None else None
-                    ),
-                )
-                rotated = True
-            time.sleep(min(0.1, deadline - time.monotonic()))
-        if rotation_deadline is not None and not rotated:
+
+        def rotate_once() -> None:
             runtime.rotate_transport()
-            if not getattr(args, "bidirectional_surfaces", False):
-                reallow_capability_after_rotation()
-            if getattr(args, "bidirectional_surfaces", False):
+            if bidirectional:
                 runtime.grant_surface_access(
                     NodeId(candidate.stable_id), "desktop", access="read"
                 )
+            else:
+                reallow_capability_after_rotation()
             generations = runtime.transport_generations
             write_event(
                 args.report,
@@ -755,6 +736,16 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
                     generations.current_generation if generations is not None else None
                 ),
             )
+
+        rotated = False
+        deadline = time.monotonic() + max(args.wait, 0.0)
+        while time.monotonic() < deadline:
+            if rotation_deadline is not None and not rotated and time.monotonic() >= rotation_deadline:
+                rotate_once()
+                rotated = True
+            time.sleep(min(0.1, deadline - time.monotonic()))
+        if rotation_deadline is not None and not rotated:
+            rotate_once()
         return 0
     except Exception as error:  # noqa: BLE001 - report only the exception type
         write_event(args.report, "error", error_type=type(error).__name__)
@@ -763,25 +754,58 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         runtime.shutdown()
 
 
+def _reconnect_after_rotation(
+    runtime: ConnectRuntime,
+    peer_id: NodeId,
+    candidate: Any,
+    rotation_wait: float,
+    report: Path,
+) -> Any:
+    """Wait for the rotated peer, prove the generation changed, and reconnect."""
+    write_event(
+        report,
+        "waiting_for_rotated_peer",
+        peer_id=peer_id.value,
+        timeout=rotation_wait,
+    )
+    previous_generation = getattr(candidate, "transport_generation", None)
+    previous_fingerprint = getattr(candidate, "transport_fingerprint", None)
+    rotated_candidate = wait_for_peer(
+        runtime,
+        peer_id.value,
+        rotation_wait,
+        generation_not=previous_generation,
+        fingerprint_not=previous_fingerprint,
+    )
+    if rotated_candidate is None:
+        raise TimeoutError("rotated peer was not rediscovered")
+    if getattr(rotated_candidate, "transport_generation", None) == previous_generation:
+        raise RuntimeError("transport generation did not change")
+    provider = runtime.reconnect_peer(peer_id)
+    write_event(report, "reconnected_after_rotation", peer_id=peer_id.value)
+    return provider
+
+
 def run_initiator(
     args: Any,
     runtime: ConnectRuntime,
     runtime_factory: Any | None = None,
 ) -> int:
     """Run the ordered initiator discovery, trust, connection, and share stages."""
+    bidirectional = getattr(args, "bidirectional_surfaces", False)
     surface_ready = {
         surface_id: Event()
         for surface_id in ("desktop", "desktop/settings", "device/status")
     }
     try:
-        if getattr(args, "bidirectional_surfaces", False):
+        if bidirectional:
             register_harness_surfaces(runtime)
             register_surface_sync(runtime, surface_ready)
         status = runtime.start()
         _write_started(args.report, "initiator", runtime, status)
         if _status_state(status) != "started":
             raise RuntimeError("runtime did not start")
-        if getattr(args, "bidirectional_surfaces", False):
+        if bidirectional:
             candidate = wait_for_matching_peer(runtime, args.peer_id, args.wait)
         else:
             candidate = wait_for_peer(runtime, args.peer_id, args.wait)
@@ -791,7 +815,7 @@ def run_initiator(
         route = _candidate_values(candidate)
         write_event(args.report, "discovered", **route)
         peer_id = NodeId(candidate.stable_id)
-        if getattr(args, "bidirectional_surfaces", False):
+        if bidirectional:
             provider = connect_bidirectionally(
                 runtime,
                 candidate,
@@ -808,29 +832,8 @@ def run_initiator(
                 ready_events=surface_ready,
             )
             if getattr(args, "reconnect_after_rotation", False):
-                write_event(
-                    args.report,
-                    "waiting_for_rotated_peer",
-                    peer_id=peer_id.value,
-                    timeout=args.rotation_wait,
-                )
-                previous_generation = getattr(candidate, "transport_generation", None)
-                previous_fingerprint = getattr(candidate, "transport_fingerprint", None)
-                rotated_candidate = wait_for_peer(
-                    runtime,
-                    peer_id.value,
-                    args.rotation_wait,
-                    generation_not=previous_generation,
-                    fingerprint_not=previous_fingerprint,
-                )
-                if rotated_candidate is None:
-                    raise TimeoutError("rotated peer was not rediscovered")
-                rotated_generation = getattr(rotated_candidate, "transport_generation", None)
-                if rotated_generation == previous_generation:
-                    raise RuntimeError("transport generation did not change")
-                provider = runtime.reconnect_peer(peer_id)
-                write_event(
-                    args.report, "reconnected_after_rotation", peer_id=peer_id.value
+                provider = _reconnect_after_rotation(
+                    runtime, peer_id, candidate, args.rotation_wait, args.report
                 )
                 _exercise_reconnected_surface(runtime, provider, peer_id, args.report)
                 write_event(
@@ -880,30 +883,9 @@ def run_initiator(
             outcome="success" if isinstance(result, dict) and result.get("ok") is True else "failure",
         )
         if getattr(args, "reconnect_after_rotation", False):
-            write_event(
-                args.report,
-                "waiting_for_rotated_peer",
-                peer_id=peer_id.value,
-                timeout=args.rotation_wait,
+            provider = _reconnect_after_rotation(
+                runtime, peer_id, candidate, args.rotation_wait, args.report
             )
-            previous_generation = getattr(candidate, "transport_generation", None)
-            previous_fingerprint = getattr(candidate, "transport_fingerprint", None)
-            rotated_candidate = wait_for_peer(
-                runtime,
-                peer_id.value,
-                args.rotation_wait,
-                generation_not=previous_generation,
-                fingerprint_not=previous_fingerprint,
-            )
-            if rotated_candidate is None:
-                raise TimeoutError("rotated peer was not rediscovered")
-            if (
-                getattr(rotated_candidate, "transport_generation", None)
-                == previous_generation
-            ):
-                raise RuntimeError("transport generation did not change")
-            provider = runtime.reconnect_peer(peer_id)
-            write_event(args.report, "reconnected_after_rotation", peer_id=peer_id.value)
             result = _retry_surface_success(
                 lambda: provider.request_shared(
                     CAPABILITY,
@@ -979,20 +961,9 @@ def _runtime(args: Any) -> ConnectRuntime:
         )
 
     def approve_pairing(request: Any) -> bool:
-        runtime = runtime_holder[0]
-        permissions = sorted(
-            getattr(permission, "value", permission)
-            for permission in getattr(request, "permissions", ())
+        return _approve_capability_pairing(
+            runtime_holder[0], args.report, request, capability_peers
         )
-        write_event(
-            args.report,
-            "pairing_request",
-            caller_node_id=getattr(getattr(request, "caller_node_id", None), "value", None),
-            permissions=permissions,
-        )
-        runtime.sharing.allow(request.caller_node_id, CAPABILITY)
-        capability_peers.add(request.caller_node_id)
-        return True
 
     def on_pairing_request(request: Any) -> bool:
         if getattr(args, "bidirectional_surfaces", False):
