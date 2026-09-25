@@ -54,6 +54,16 @@ handled by the session owner only after the replacement transport has passed
 the normal identity, freshness, and authorization checks; retired connection
 generations are fenced.
 
+A logical session is never a credential or an authorization. It binds an
+authenticated owner to one active opaque connection generation, expires on an
+absolute TTL, and is validated with the same expiry rule for `generation=None`
+(no physical socket generation). Retired generations stay retired permanently,
+so an old socket cannot become authoritative again (no ABA). The active-session
+count and per-session retired-generation history are bounded; a bound failure
+invalidates the session instead of evicting a healthy one or forgetting a
+retired generation. Logical sessions are process-local and ephemeral: they are
+never persisted and never survive a service restart.
+
 ## Device Identity Foundation
 
 Phase 1 creates `device_identity.json` on first startup from the active

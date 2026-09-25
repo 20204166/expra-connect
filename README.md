@@ -205,12 +205,17 @@ repo-specific patch/feature/minor bump, updates `_version.py`, then builds and
 verifies the wheel. Use `--bump none` for an intentional baseline build.
 
 ```sh
-PYTHONPATH=src python -m unittest discover -s tests -v
+.venv/bin/python -m unittest discover -s tests -t .
 ruff check .
 ruff format --check .
 pyright
-mypy --ignore-missing-imports src tests
+.venv/bin/mypy --ignore-missing-imports src tests
 ```
+
+Install editable before running the suite so no `PYTHONPATH` is needed:
+`.venv/bin/pip install -e . --no-build-isolation`. The development MCP server
+(`tools/expra_connect_mcp/`, configured in `.mcp.json` and `opencode.json`)
+exposes read-only diagnostics only; it is never part of the wheel.
 
 The CLI includes diagnostics and a deliberately small demo surface:
 
@@ -232,8 +237,9 @@ authenticated operation.
 Diagnostics are backed by `ConnectRuntime` and report actual listener,
 identity, discovery, trust, peer, and optional cluster state.
 
-See `docs/ARCHITECTURE.md`, `docs/SECURITY_MODEL.md`, and
-`docs/TESTING.md` for boundaries and validation rules.
+See `docs/ARCHITECTURE.md`, `docs/SESSION_MODEL.md`,
+`docs/SECURITY_MODEL.md`, and `docs/TESTING.md` for boundaries and validation
+rules.
 
 ## Hosted Runtime
 

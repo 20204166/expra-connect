@@ -93,8 +93,18 @@ successful reconnect.
 
 Logical sessions are separate from sockets. Every replacement connection still
 passes TLS pinning, HMAC authentication, identity validation, and authorization;
-only the session registry state is resumed. Mutating requests use bounded
-request-ID result reuse so a lost response cannot execute the operation twice.
+only the session registry state is resumed. A session has an absolute TTL that
+use and resume never extend, an owner bound to the authenticated identity, one
+active opaque connection generation, and a permanent set of retired generations.
+`assert_current` always checks that the session exists and has not expired, even
+for `generation=None` (no external socket generation), and rejects any retired
+or stale generation so an old in-flight handler cannot publish after a resume.
+The active-session count and per-session retired-generation history are bounded;
+when a bound is reached the registry fails closed and the caller must establish a
+new session rather than evicting or forgetting state. The session clock defaults
+to monotonic time and is separate from the wall-clock freshness clock. Mutating
+requests use bounded request-ID result reuse so a lost response cannot execute
+the operation twice. See `docs/SESSION_MODEL.md`.
 
 ## Persistence And Diagnostics
 

@@ -13,12 +13,21 @@ or System Analyzer.
 Run the complete local gate with:
 
 ```sh
-PYTHONPATH=src python -m unittest discover -s tests -v
+.venv/bin/python -m unittest discover -s tests -t .
 ruff check .
 ruff format --check .
 pyright
-mypy --ignore-missing-imports src tests
+.venv/bin/mypy --ignore-missing-imports src tests
 ```
+
+Install editable first (`.venv/bin/pip install -e . --no-build-isolation`) so
+the suite imports this checkout without `PYTHONPATH`.
+
+The development MCP server exposes read-only diagnostics only. `run_checks`
+accepts the profiles `focused`, `full`, `lint`, and `types`; it is an evidence
+surface, not the source of truth. `workspace_doctor` reports
+`READY_WITH_LIMITATIONS` when the configured venv lacks `pytest`, `ruff`, or
+`pyright`, and the `focused` profile can exceed the MCP request timeout.
 
 These are deterministic loopback tests. They do not replace a physical
 two-machine Linux/Windows acceptance run.

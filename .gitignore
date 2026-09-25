@@ -21,6 +21,7 @@ build/
 *.log
 .opencode/
 .claude/
+CLAUDE.local.md
 **/AGENTS.md
 docs/bug_hunts/
 docs/plans/
