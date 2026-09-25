@@ -1027,6 +1027,53 @@ class RemoteServiceTests(unittest.TestCase):
                 fencing_token="old-fence",
             )
 
+    def test_old_coordinator_request_is_fenced_after_failover(self) -> None:
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            cluster_id="cluster",
+            coordinator_epoch=8,
+            fencing_token="new-fence",
+        )
+        stale = RemoteRequest(
+            node_id=NodeId("peer"),
+            caller_node_id=NodeId("old-coordinator"),
+            op="pause_worker",
+            params={
+                "target_node_id": "worker",
+                "cluster_id": "cluster",
+                "epoch": 7,
+                "fencing_token": "old-fence",
+            },
+            request_id="request",
+            nonce="nonce",
+            timestamp=0.0,
+        )
+        with self.assertRaises(RemoteAuthorizationError):
+            service._verify_role_fence(stale)
+        wrong_token = RemoteRequest(
+            node_id=NodeId("peer"),
+            caller_node_id=NodeId("coordinator"),
+            op="pause_worker",
+            params={
+                "target_node_id": "worker",
+                "cluster_id": "cluster",
+                "epoch": 8,
+                "fencing_token": "old-fence",
+            },
+            request_id="request",
+            nonce="nonce",
+            timestamp=0.0,
+        )
+        with self.assertRaises(RemoteAuthorizationError):
+            service._verify_role_fence(wrong_token)
+
     def test_authenticated_hello_and_component_request(self) -> None:
         client = self._client()
         hello = client.hello()

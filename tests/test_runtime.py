@@ -86,7 +86,9 @@ class RuntimeConfigurationTests(unittest.TestCase):
                 advertised_addresses=(),
             )
 
-    def test_runtime_shares_observer_with_connection_manager_and_diagnostics(self) -> None:
+    def test_runtime_shares_observer_with_connection_manager_and_diagnostics(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             observer = ObservabilityWatcher()
             runtime = ConnectRuntime(
@@ -103,10 +105,14 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertIn("observability", runtime.diagnostics())
 
     def test_runtime_surface_registration_grant_revoke_and_stop(self) -> None:
-        runtime = ConnectRuntime(ConnectConfig(profile_dir=Path("/tmp/expra-connect-test")))
+        runtime = ConnectRuntime(
+            ConnectConfig(profile_dir=Path("/tmp/expra-connect-test"))
+        )
         peer_id = NodeId("surface-peer")
         runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
-        runtime.grant_surface_access(peer_id, "dashboard/main", access=SurfaceAccess.READ)
+        runtime.grant_surface_access(
+            peer_id, "dashboard/main", access=SurfaceAccess.READ
+        )
 
         self.assertEqual(
             runtime._surface_registry.dispatch(
@@ -127,7 +133,9 @@ class RuntimeConfigurationTests(unittest.TestCase):
             )
 
     def test_shutdown_clears_surface_grants_but_keeps_definitions(self) -> None:
-        runtime = ConnectRuntime(ConnectConfig(profile_dir=Path("/tmp/expra-connect-test")))
+        runtime = ConnectRuntime(
+            ConnectConfig(profile_dir=Path("/tmp/expra-connect-test"))
+        )
         peer_id = NodeId("surface-peer")
         runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
         runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
@@ -140,7 +148,9 @@ class RuntimeConfigurationTests(unittest.TestCase):
             )
         runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
 
-    def test_self_revocation_invalidates_direct_and_cluster_surface_access(self) -> None:
+    def test_self_revocation_invalidates_direct_and_cluster_surface_access(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             runtime = ConnectRuntime(ConnectConfig(profile_dir=Path(directory)))
             runtime._load_identity()
@@ -264,6 +274,80 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             runtime._handle_role_request(self._request("assign_role", "coord", params))
 
         self.assertFalse(cluster.is_member(NodeId("worker")))
+
+    def _role_request_params(
+        self, cluster: Any, target: str, role: str
+    ) -> dict[str, Any]:
+        return {
+            "target_node_id": target,
+            "roles": [role],
+            "cluster_id": cluster.cluster_id,
+            "epoch": cluster.epoch.epoch,
+            "fencing_token": cluster.epoch.fencing_token,
+        }
+
+    def test_role_handler_prunes_grants_when_subcoordinator_is_demoted(self) -> None:
+        from expra_connect.cluster import CapabilityGrant
+
+        runtime = self._runtime_with_cluster()
+        cluster = runtime.cluster
+        assert cluster is not None
+        cluster.assign(NodeId("sub"), ClusterRole.SUBCOORDINATOR)
+        cluster.assign(NodeId("worker"), ClusterRole.WORKER)
+        grant = CapabilityGrant(
+            NodeId("sub"),
+            NodeId("worker"),
+            frozenset({NodePermission.READ_STATE}),
+            1.0,
+            100.0,
+        )
+        runtime._cluster_capability_grants = (grant,)
+        cluster.capability_grants = (grant,)
+
+        with patch.object(runtime, "_save_persisted_state", return_value=True):
+            runtime._handle_role_request(
+                self._request(
+                    "assign_role",
+                    "coord",
+                    self._role_request_params(cluster, "sub", ClusterRole.WORKER.value),
+                )
+            )
+
+        self.assertEqual(runtime._cluster_capability_grants, ())
+        self.assertEqual(cluster.capability_grants, ())
+
+    def test_role_handler_rolls_back_grants_when_cluster_save_fails(self) -> None:
+        from expra_connect.cluster import CapabilityGrant
+
+        runtime = self._runtime_with_cluster()
+        cluster = runtime.cluster
+        assert cluster is not None
+        cluster.assign(NodeId("sub"), ClusterRole.SUBCOORDINATOR)
+        cluster.assign(NodeId("worker"), ClusterRole.WORKER)
+        grant = CapabilityGrant(
+            NodeId("sub"),
+            NodeId("worker"),
+            frozenset({NodePermission.READ_STATE}),
+            1.0,
+            100.0,
+        )
+        runtime._cluster_capability_grants = (grant,)
+        cluster.capability_grants = (grant,)
+
+        with (
+            patch.object(runtime, "_save_persisted_state", return_value=False),
+            self.assertRaises(RuntimeError),
+        ):
+            runtime._handle_role_request(
+                self._request(
+                    "assign_role",
+                    "coord",
+                    self._role_request_params(cluster, "sub", ClusterRole.WORKER.value),
+                )
+            )
+
+        self.assertEqual(runtime._cluster_capability_grants, (grant,))
+        self.assertEqual(cluster.capability_grants, (grant,))
 
     def test_join_rejects_malformed_response_without_local_mutation(self) -> None:
         runtime = self._runtime_with_cluster()
@@ -542,9 +626,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 runtime.sharing.request(peer_id, "test.read_state")
             runtime.sharing.allow(peer_id, "test.read_state")
-            self.assertEqual(
-                runtime.sharing.request(peer_id, "test.read_state"), "ok"
-            )
+            self.assertEqual(runtime.sharing.request(peer_id, "test.read_state"), "ok")
 
     def test_trusted_rediscovery_rejects_a_wrong_transport_fingerprint(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1285,9 +1367,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 runtime.sharing.request(peer_id, "demo.read_state")
             runtime.sharing.allow(peer_id, "demo.read_state")
-            self.assertEqual(
-                runtime.sharing.request(peer_id, "demo.read_state"), "ok"
-            )
+            self.assertEqual(runtime.sharing.request(peer_id, "demo.read_state"), "ok")
             runtime.shutdown()
 
     def test_failed_pair_revocation_does_not_restore_generic_grant(self) -> None:
@@ -1304,9 +1384,10 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             runtime.start()
             runtime.sharing.allow(peer_id, "demo.read_state")
 
-            with patch.object(
-                runtime, "_save_persisted_state", return_value=False
-            ), self.assertRaises(RuntimeError):
+            with (
+                patch.object(runtime, "_save_persisted_state", return_value=False),
+                self.assertRaises(RuntimeError),
+            ):
                 runtime.revoke_peer(peer_id)
 
             with self.assertRaises(PermissionError):

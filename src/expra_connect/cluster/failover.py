@@ -61,6 +61,7 @@ class FailoverCoordinator:
                 epoch=decision.epoch,
                 promotion_epochs=self.state.promotion_epochs
                 | {decision.epoch.epoch - 1},
+                capability_grants=decision.capability_grants,
             )
             self._commit(candidate)
             return True

@@ -30,6 +30,8 @@ class RoleAssignment:
             roles |= {ClusterRole.WORKER}
         if not roles:
             roles = frozenset({ClusterRole.WORKER})
+        if ClusterRole.COORDINATOR in roles and ClusterRole.SUBCOORDINATOR in roles:
+            raise ValueError("a node cannot be both Coordinator and Subcoordinator")
         if self.revoked and self.paused:
             raise ValueError("a revoked node cannot also be paused")
         object.__setattr__(self, "roles", roles)
@@ -101,12 +103,21 @@ class RoleChange:
     changed_at: float
     actor_id: NodeId
 
+    def __post_init__(self) -> None:
+        if (
+            isinstance(self.changed_at, bool)
+            or not isinstance(self.changed_at, (int, float))
+            or not math.isfinite(float(self.changed_at))
+        ):
+            raise ValueError("invalid role change time")
+
 
 @dataclass(frozen=True, slots=True)
 class PromotionDecision:
     role_assignment: RoleAssignment
     epoch: CoordinatorEpoch
     assignments: tuple[RoleAssignment, ...]
+    capability_grants: tuple[CapabilityGrant, ...] = ()
 
     @property
     def role(self) -> ClusterRole:

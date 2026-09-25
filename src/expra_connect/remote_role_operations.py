@@ -546,6 +546,8 @@ def dispatch_role_request(runtime: Any, request: Any) -> dict[str, Any]:
             raise PermissionError("only the Coordinator may perform this operation")
         old = dict(cluster.assignments)
         old_online = dict(cluster._online)
+        old_grants = runtime._cluster_capability_grants
+        old_cluster_grants = cluster.capability_grants
         updated, _ = state.assign(
             actor=actor,
             target=target,
@@ -557,11 +559,16 @@ def dispatch_role_request(runtime: Any, request: Any) -> dict[str, Any]:
             for item in updated.assignments
             if item.node_id is not None
         }
+        runtime._cluster_capability_grants = updated.capability_grants
+        cluster.capability_grants = updated.capability_grants
         if not runtime._save_persisted_state():
             cluster.assignments = old
             cluster._online = old_online
+            runtime._cluster_capability_grants = old_grants
+            cluster.capability_grants = old_cluster_grants
             raise RuntimeError("cluster role was not durably persisted")
         runtime._hydrate_registry_membership()
+        runtime._refresh_live_grants()
         return {"ok": True, "node_id": target.value, "role": roles[0]}
     if request.op in {
         "revoke_member",

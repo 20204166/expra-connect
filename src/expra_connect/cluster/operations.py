@@ -456,7 +456,12 @@ class Cluster:
         if not self.is_active_coordinator:
             raise PermissionError("only an active local Coordinator may revoke roles")
         if node_id in self.assignments:
-            self.assignments[node_id] = replace(self.assignments[node_id], revoked=True)
+            self.assignments[node_id] = replace(
+                self.assignments[node_id],
+                revoked=True,
+                paused=False,
+                has_active_job=False,
+            )
             self.capability_grants = tuple(
                 grant
                 for grant in self.capability_grants
