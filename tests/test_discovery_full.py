@@ -615,6 +615,54 @@ class FullDiscoveryTests(unittest.TestCase):
 
         self.assertEqual(discovery.peers()[0].addresses, ())
 
+    def test_malformed_raw_packed_address_is_not_stringified(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        info = _Info("peer")
+        info.addresses = [b"\x01\x02\x03", b"\xc0\xa8\x01\x02"]
+        info.parsed_addresses = None
+
+        backend.listener("add", f"peer.{SERVICE_TYPE}", info)
+
+        self.assertEqual(discovery.peers()[0].addresses, ("192.168.1.2",))
+
+    def test_arbitrary_object_address_is_skipped(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        info = _Info("peer")
+        info.addresses = [object()]
+
+        backend.listener("add", f"peer.{SERVICE_TYPE}", info)
+
+        self.assertEqual(discovery.peers()[0].addresses, ())
+
+    def test_scoped_ipv6_address_is_preserved(self) -> None:
+        discovery, backend = _make_discovery()
+        self.assertTrue(discovery.start())
+        info = _Info("peer")
+        info.addresses = []
+        info.parsed_scoped_addresses = lambda: ["fe80::1234%3"]  # type: ignore[attr-defined]
+
+        backend.listener("add", f"peer.{SERVICE_TYPE}", info)
+
+        self.assertEqual(discovery.peers()[0].addresses, ("fe80::1234%3",))
+
+    def test_old_listener_after_restart_is_rejected(self) -> None:
+        first, first_backend = _make_discovery()
+        self.assertTrue(first.start())
+        first_backend.listener("add", f"peer-1.{SERVICE_TYPE}", _Info("peer-1"))
+        self.assertEqual([item.stable_id for item in first.peers()], ["peer-1"])
+        first.stop()
+
+        second, second_backend = _make_discovery()
+        self.assertTrue(second.start())
+
+        first_backend.listener("add", f"peer-1.{SERVICE_TYPE}", _Info("peer-1"))
+        self.assertEqual(second.peers(), ())
+
+        second_backend.listener("add", f"peer-2.{SERVICE_TYPE}", _Info("peer-2"))
+        self.assertEqual([item.stable_id for item in second.peers()], ["peer-2"])
+
     def test_stop_during_synchronous_start_reports_inactive(self) -> None:
         holder: dict[str, NetworkDiscovery] = {}
 

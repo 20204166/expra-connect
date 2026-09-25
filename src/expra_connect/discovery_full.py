@@ -27,11 +27,12 @@ import logging
 import socket
 import time
 import warnings
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from threading import RLock
 from typing import Any, Protocol, cast
 
+from .discovery_backend import _service_address_texts
 from .models import DiscoveredNodeCandidate
 
 LOGGER = logging.getLogger(__name__)
@@ -689,53 +690,3 @@ def _service_instance_id(advertisement: DiscoveryAdvertisement) -> str:
     ):
         return f"{advertisement.stable_id}-g{advertisement.transport_generation}"
     return advertisement.stable_id
-
-
-def _address_texts(addresses: Any) -> list[str]:
-    if not addresses:
-        return []
-    if isinstance(addresses, (str, bytes)):
-        addresses = (addresses,)
-    else:
-        try:
-            addresses = iter(addresses)
-        except TypeError:
-            return []
-    texts: list[str] = []
-    for address in addresses:
-        if address is None:
-            continue
-        if isinstance(address, bytes):
-            try:
-                family = socket.AF_INET if len(address) == 4 else socket.AF_INET6
-                text = socket.inet_ntop(family, address)
-            except Exception:
-                LOGGER.debug("Failed to convert address %r", address, exc_info=True)
-                text = str(address)
-        else:
-            text = str(address)
-        if text.strip():
-            texts.append(text)
-    return texts
-
-
-def _service_address_texts(info: Any) -> list[str]:
-    """Read all resolved service addresses across Zeroconf IP versions."""
-
-    for method_name in ("parsed_scoped_addresses", "parsed_addresses"):
-        method = _attr(info, method_name)
-        if callable(method):
-            try:
-                parsed = method()
-            except Exception:
-                LOGGER.debug("Failed to parse service addresses", exc_info=True)
-            else:
-                if parsed:
-                    try:
-                        return _address_texts(cast(Iterable[Any], parsed))
-                    except TypeError:
-                        LOGGER.debug(
-                            "Parsed service addresses are not iterable",
-                            exc_info=True,
-                        )
-    return _address_texts(_attr(info, "addresses"))
