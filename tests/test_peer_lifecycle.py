@@ -569,6 +569,98 @@ class TargetPairRequestTests(unittest.TestCase):
         with self.assertRaises(RemoteProtocolError):
             self._request("upgrade")
 
+    def test_approval_callback_exception_fails_closed_without_escaping(self) -> None:
+        assert self.runtime.pairing is not None
+        self.runtime.pairing.grants.clear()
+
+        def explode(_request: PairingRequest) -> bool:
+            raise RuntimeError("callback failed")
+
+        self.runtime.config = replace(self.runtime.config, on_pairing_request=explode)
+        response = self.runtime._handle_pairing_request(self._request("pair"))
+        self.assertFalse(response["approved"])
+        self.assertEqual(response["outcome"], "denied")
+        assert self.runtime.pairing is not None
+        self.assertFalse(self.runtime.pairing.pending)
+
+    def test_approval_callback_must_return_true_not_merely_truthy(self) -> None:
+        for value in (1, "yes", object()):
+            with self.subTest(value=value):
+                assert self.runtime.pairing is not None
+                self.runtime.pairing.grants.clear()
+                self.runtime.config = replace(
+                    self.runtime.config,
+                    on_pairing_request=lambda _request, _value=value: _value,
+                )
+                response = self.runtime._handle_pairing_request(self._request("pair"))
+                self.assertFalse(response["approved"])
+                self.assertEqual(response["outcome"], "denied")
+
+    def test_self_targeted_pairing_request_is_refused(self) -> None:
+        assert self.runtime.identity is not None
+        local_id = self.runtime.identity.node_id
+        local_identity = NodeIdentity.create(local_id)
+        request = PairingRequest(
+            caller_node_id=local_id,
+            identity_fingerprint=node_identity_fingerprint(local_id),
+            transport_fingerprint="caller-tls",
+            proposed_secret="b" * 64,
+            permissions=frozenset({NodePermission.READ_STATE}),
+            root_public_key=local_identity.root_public_key,
+            transport_generation=1,
+            transport_proof=local_identity.sign_transport_proof(1, "caller-tls"),
+            intent="pair",
+        )
+        response = self.runtime._handle_pairing_request(request)
+        self.assertFalse(response["approved"])
+        self.assertEqual(response["outcome"], "denied")
+        assert self.runtime.pairing is not None
+        self.assertFalse(self.runtime.pairing.pending)
+
+    def test_replay_does_not_echo_unverified_request_material(self) -> None:
+        assert self.runtime.pairing is not None
+        self.runtime.pairing.grants.clear()
+        first = self.runtime._handle_pairing_request(self._request("pair"))
+        assert self.runtime.pairing is not None
+        pending = self.runtime.pairing.pending[first["transaction_id"]]
+        impostor = NodeIdentity.create(self.caller.node_id)
+        replay = self.runtime._handle_pairing_request(
+            self._request(
+                "pair",
+                secret=first["secret"],
+                root=impostor.root_public_key,
+                proof=impostor.sign_transport_proof(1, "caller-tls"),
+            )
+        )
+        self.assertTrue(replay["approved"])
+        self.assertEqual(replay["root_public_key"], pending.root_public_key)
+        self.assertEqual(replay["transport_proof"], pending.transport_proof)
+
+    def test_concurrent_requests_create_at_most_one_inbound_pending(self) -> None:
+        assert self.runtime.pairing is not None
+        self.runtime.pairing.grants.clear()
+        barrier = threading.Barrier(8)
+        responses = []
+
+        def worker(index: int) -> None:
+            barrier.wait()
+            responses.append(
+                self.runtime._handle_pairing_request(
+                    self._request("pair", secret=f"{index:064x}")
+                )
+            )
+
+        threads = [threading.Thread(target=worker, args=(index,)) for index in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        assert self.runtime.pairing is not None
+        self.assertEqual(sum(1 for item in responses if item["approved"]), 1)
+        self.assertEqual(len(self.runtime.pairing.pending), 1)
+        self.assertEqual(len(self.runtime._pending_permissions), 1)
+
 
 class TransportRotationTests(unittest.TestCase):
     def test_rotation_never_requires_pair_or_repair(self) -> None:
