@@ -19,8 +19,13 @@ from expra_connect.pairing import (
     RepairNotRequired,
     RepairRequired,
 )
+from expra_connect.remote_service import AuthenticatedNodeProvider
 from expra_connect.runtime import ConnectConfig, ConnectRuntime
-from expra_connect.wire_protocol import PairingRequest, RemoteProtocolError
+from expra_connect.wire_protocol import (
+    PairingRequest,
+    RemoteProtocolError,
+    RemoteTransportError,
+)
 
 
 def _candidate(target: ConnectRuntime) -> DiscoveredNodeCandidate:
@@ -331,6 +336,123 @@ class PeerLifecycleTests(unittest.TestCase):
 
                 self.assertEqual(nodes.count, callback_count)
                 self.assertFalse(nodes.first.pairing.pending)
+            finally:
+                nodes.close()
+
+    def test_incompatible_candidate_cannot_pair(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            nodes = _Pair(directory)
+            try:
+                nodes.observe()
+                nodes.first._peers[nodes.peer.value] = replace(
+                    _candidate(nodes.second), compatible=False
+                )
+
+                with self.assertRaises(ConnectionError):
+                    nodes.first.pair_peer(nodes.peer)
+
+                assert nodes.first.pairing is not None
+                self.assertNotIn(nodes.peer, nodes.first.pairing.trusted)
+                self.assertFalse(nodes.first.pairing.pending)
+            finally:
+                nodes.close()
+
+    def test_lost_confirm_rolls_back_without_silent_success(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            nodes = _Pair(directory)
+            try:
+                nodes.observe()
+                with (
+                    patch.object(
+                        AuthenticatedNodeProvider,
+                        "confirm_pairing",
+                        side_effect=RemoteTransportError("confirm response lost"),
+                    ),
+                    self.assertRaises(RemoteTransportError),
+                ):
+                    nodes.first.pair_peer(nodes.peer)
+
+                assert nodes.first.pairing is not None
+                assert nodes.second.pairing is not None
+                self.assertNotIn(nodes.peer, nodes.first.pairing.trusted)
+                self.assertFalse(nodes.first.pairing.pending)
+                self.assertNotIn(nodes.first_id, nodes.second.pairing.grants)
+                self.assertFalse(
+                    any(
+                        p.peer_id == nodes.first_id
+                        for p in nodes.second.pairing.pending.values()
+                    )
+                )
+            finally:
+                nodes.close()
+
+    def test_cancellation_after_local_persist_rolls_back(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            nodes = _Pair(directory)
+            try:
+                nodes.observe()
+                assert nodes.first._network_pairing is not None
+                real_persist = nodes.first._network_pairing._persist
+                cancelled = threading.Event()
+
+                def persist_then_cancel() -> bool:
+                    result = real_persist()
+                    cancelled.set()
+                    return result
+
+                with (
+                    patch.object(
+                        nodes.first._network_pairing,
+                        "_persist",
+                        side_effect=persist_then_cancel,
+                    ),
+                    self.assertRaises(RuntimeError),
+                ):
+                    nodes.first.pair_peer(nodes.peer, cancel_event=cancelled)
+
+                assert nodes.first.pairing is not None
+                assert nodes.second.pairing is not None
+                self.assertNotIn(nodes.peer, nodes.first.pairing.trusted)
+                self.assertFalse(nodes.first.pairing.pending)
+                self.assertNotIn(nodes.first_id, nodes.second.pairing.grants)
+                self.assertFalse(
+                    any(
+                        p.peer_id == nodes.first_id
+                        for p in nodes.second.pairing.pending.values()
+                    )
+                )
+            finally:
+                nodes.close()
+
+    def test_revoke_during_confirm_prevents_activation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            nodes = _Pair(directory)
+            try:
+                nodes.observe()
+                real_confirm = AuthenticatedNodeProvider.confirm_pairing
+
+                def revoke_then_confirm(
+                    transaction: object, cancel_event: object = None
+                ) -> bool:
+                    nodes.second.revoke_peer(nodes.first_id)
+                    return real_confirm(transaction, cancel_event=cancel_event)  # type: ignore[arg-type]
+
+                with (
+                    patch.object(
+                        AuthenticatedNodeProvider,
+                        "confirm_pairing",
+                        new=revoke_then_confirm,
+                    ),
+                    self.assertRaises(PermissionError),
+                ):
+                    nodes.first.pair_peer(nodes.peer)
+
+                assert nodes.first.pairing is not None
+                assert nodes.second.pairing is not None
+                self.assertNotIn(nodes.peer, nodes.first.pairing.trusted)
+                self.assertFalse(nodes.first.pairing.pending)
+                self.assertNotIn(nodes.first_id, nodes.second.pairing.grants)
+                self.assertFalse(nodes.second.pairing.pending)
             finally:
                 nodes.close()
 

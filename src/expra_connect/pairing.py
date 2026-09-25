@@ -174,7 +174,11 @@ class PairingManager:
             raise ValueError("pairing intent is invalid")
         if secret is not None:
             replay = self.find_pending(peer_id, secret)
-            if replay is not None and replay.direction == direction:
+            if (
+                replay is not None
+                and replay.direction == direction
+                and replay.intent == intent
+            ):
                 return replay
         if self.find_pending_for(peer_id, direction=direction) is not None:
             raise PairingBusy(
@@ -217,7 +221,7 @@ class PairingManager:
     def receive_request(
         self, caller_id: NodeId, transaction: PendingPairing
     ) -> PendingPairing:
-        if transaction.expires_at < self._clock():
+        if transaction.expires_at <= self._clock():
             raise ValueError("pairing transaction is expired")
         pending = PendingPairing(
             transaction.transaction_id,
@@ -337,7 +341,7 @@ class PairingManager:
                 for transaction in self.pending.values()
                 if transaction.peer_id == peer_id
                 and transaction.secret == secret
-                and transaction.expires_at >= current
+                and transaction.expires_at > current
             ),
             None,
         )
@@ -352,7 +356,7 @@ class PairingManager:
                 transaction
                 for transaction in self.pending.values()
                 if transaction.peer_id == peer_id
-                and transaction.expires_at >= current
+                and transaction.expires_at > current
                 and (direction is None or transaction.direction == direction)
             ),
             None,
@@ -477,6 +481,6 @@ class PairingManager:
     ) -> PendingPairing:
         transaction = self.pending.get(transaction_id)
         current = self._clock() if now is None else now
-        if transaction is None or transaction.expires_at < current:
+        if transaction is None or transaction.expires_at <= current:
             raise ValueError("pairing transaction is missing or expired")
         return transaction

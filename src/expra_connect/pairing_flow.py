@@ -297,6 +297,10 @@ class NetworkPairing:
                     peer_id, previous, previous_broken, pending.transaction_id
                 )
             raise RuntimeError("pairing was not durably persisted")
+        if cancel_event is not None and cancel_event.is_set():
+            self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
+            AuthenticatedNodeProvider.abort_pairing(transaction)
+            raise RuntimeError("pairing cancelled")
         try:
             confirmed = AuthenticatedNodeProvider.confirm_pairing(
                 transaction, cancel_event=cancel_event

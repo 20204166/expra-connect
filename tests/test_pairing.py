@@ -226,3 +226,137 @@ class PairingTests(unittest.TestCase):
         self.assertEqual(manager.prune_expired(), 1)
         self.assertIn(peer, manager.trusted)
         self.assertIs(manager.relationship(peer), RelationshipState.OUTBOUND_TRUSTED)
+
+
+class PairingTransactionBindingTests(unittest.TestCase):
+    """Confirm/abort binding, replay, direction, and expiry-boundary invariants."""
+
+    def _approved(self, manager: PairingManager, peer: NodeId) -> str:
+        transaction = manager.begin(peer, "s" * 64)
+        manager.approve(transaction.transaction_id, frozenset({"ping"}))
+        return transaction.transaction_id
+
+    def _grant(self, **overrides: object) -> PeerGrant:
+        fields: dict[str, object] = {
+            "caller_id": NodeId("peer-a"),
+            "secret": "s" * 64,
+            "permissions": frozenset({"ping"}),
+            "identity_fingerprint": "identity",
+            "transport_fingerprint": "transport",
+            "root_public_key": "root",
+            "transport_generation": 1,
+            "transport_proof": "proof",
+        }
+        fields.update(overrides)
+        return PeerGrant(**fields)  # type: ignore[arg-type]
+
+    def test_accept_grant_rejects_each_field_substitution(self) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        transaction = manager.begin(
+            peer,
+            "s" * 64,
+            identity_fingerprint="identity",
+            transport_fingerprint="transport",
+            root_public_key="root",
+            transport_generation=1,
+            transport_proof="proof",
+        )
+        substitutions: tuple[dict[str, object], ...] = (
+            {"identity_fingerprint": "other-identity"},
+            {"transport_fingerprint": "other-transport"},
+            {"root_public_key": "other-root"},
+            {"transport_generation": 2},
+            {"transport_proof": "other-proof"},
+            {"caller_id": NodeId("peer-x")},
+        )
+        for override in substitutions:
+            with self.subTest(override=override):
+                with self.assertRaises(ValueError):
+                    manager.accept_grant(
+                        transaction.transaction_id, peer, self._grant(**override)
+                    )
+                self.assertNotIn(peer, manager.trusted)
+                self.assertIn(transaction.transaction_id, manager.pending)
+
+        with self.assertRaises(ValueError):
+            manager.accept_grant(
+                transaction.transaction_id, NodeId("peer-x"), self._grant()
+            )
+
+    def test_confirm_replay_after_commit_is_rejected(self) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        transaction_id = self._approved(manager, peer)
+        trusted = manager.confirm(transaction_id)
+        with self.assertRaises(ValueError):
+            manager.confirm(transaction_id)
+        self.assertIs(manager.trusted[peer], trusted)
+        self.assertNotIn(transaction_id, manager.pending)
+
+    def test_confirm_after_abort_is_rejected(self) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        transaction_id = self._approved(manager, peer)
+        manager.abort(transaction_id)
+        with self.assertRaises(ValueError):
+            manager.confirm(transaction_id)
+        self.assertNotIn(peer, manager.trusted)
+
+    def test_stale_confirm_cannot_activate_a_newer_transaction(self) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        stale = self._approved(manager, peer)
+        manager.abort(stale)
+        newer = manager.begin(peer, "n" * 64)
+
+        with self.assertRaises(ValueError):
+            manager.confirm(stale)
+
+        self.assertNotIn(peer, manager.trusted)
+        self.assertIn(newer.transaction_id, manager.pending)
+
+    def test_same_direction_pair_and_repair_are_mutually_exclusive(self) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        first = manager.begin(peer, "p" * 64, direction="outbound", intent="pair")
+        with self.assertRaises(PairingBusy):
+            manager.begin(peer, "r" * 64, direction="outbound", intent="repair")
+        self.assertEqual(manager.begin(peer, "p" * 64, intent="pair"), first)
+
+        repair = PairingManager(NodeId("peer-a"))
+        repair.begin(peer, "r" * 64, direction="outbound", intent="repair")
+        with self.assertRaises(PairingBusy):
+            repair.begin(peer, "r" * 64, direction="outbound", intent="pair")
+
+    def test_replay_does_not_cross_pair_and_repair_intent(self) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        manager.begin(peer, "shared" * 8, direction="outbound", intent="pair")
+        with self.assertRaises(PairingBusy):
+            manager.begin(peer, "shared" * 8, direction="outbound", intent="repair")
+
+    def test_revoke_trusted_clears_only_the_outbound_pending_transaction(self) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        outbound = manager.begin(peer, "o" * 64, direction="outbound")
+        inbound = manager.begin(peer, "i" * 64, direction="inbound")
+
+        manager.revoke_trusted(peer)
+
+        self.assertNotIn(outbound.transaction_id, manager.pending)
+        self.assertIn(inbound.transaction_id, manager.pending)
+        manager.revoke_grant(peer)
+        self.assertNotIn(inbound.transaction_id, manager.pending)
+
+    def test_confirm_at_exact_expiry_boundary_is_rejected(self) -> None:
+        now = [100.0]
+        manager = PairingManager(NodeId("peer-a"), clock=lambda: now[0], ttl=5.0)
+        peer = NodeId("peer-b")
+        transaction = manager.begin(peer, "s" * 64)
+        manager.approve(transaction.transaction_id, frozenset({"ping"}))
+
+        with self.assertRaises(ValueError):
+            manager.confirm(transaction.transaction_id, now=105.0)
+
+        self.assertNotIn(peer, manager.trusted)
