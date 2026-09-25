@@ -13,7 +13,8 @@ def _parser() -> argparse.ArgumentParser:
         prog="peer_harness",
         description="Run an Expra Connect peer as a target or initiator.",
     )
-    parser.add_argument("--role", choices=("target", "initiator"), required=True)
+    parser.add_argument("role_pos", nargs="?", choices=("target", "initiator"))
+    parser.add_argument("--role", dest="role_option", choices=("target", "initiator"))
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--report", type=Path, default=Path("peer-report.json"))
     parser.add_argument("--peer-id", help="expected target node ID")
@@ -70,7 +71,13 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.role_pos and args.role_option and args.role_pos != args.role_option:
+        parser.error("positional role and --role must match")
+    args.role = args.role_option or args.role_pos
+    if args.role is None:
+        parser.error("a role is required: use target or initiator")
     runtime = _runtime(args)
     if args.role == "target":
         return run_target(args, runtime)

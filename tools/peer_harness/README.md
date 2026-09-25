@@ -32,7 +32,7 @@ On the other machine, download that one file and run it directly:
 
 ```powershell
 irm https://raw.githubusercontent.com/20204166/expra-connect/main/dist/peer_harness.pyz -OutFile peer_harness.pyz
-py peer_harness.pyz --role initiator --profile "$env:LOCALAPPDATA\expra-initiator" --wait 60 --report endpoint-2-windows.json
+py peer_harness.pyz initiator --profile "$env:LOCALAPPDATA\expra-initiator" --wait 60 --report endpoint-2-windows.json
 ```
 
 The archive bundles only the harness and imports `expra_connect` from the
@@ -42,8 +42,7 @@ environment, so it stays a single downloadable file. Rebuild and commit
 ## Usage
 
 ```sh
-python -m peer_harness \
-  --role target \
+python -m peer_harness target \
   --profile /tmp/expra-target \
   --report /tmp/expra-target.json \
   --advertise-address 192.168.55.103 \
@@ -52,8 +51,7 @@ python -m peer_harness \
 ```
 
 ```sh
-python -m peer_harness \
-  --role initiator \
+python -m peer_harness initiator \
   --profile /tmp/expra-initiator \
   --report /tmp/expra-initiator.json \
   --peer-id TARGET_NODE_ID \

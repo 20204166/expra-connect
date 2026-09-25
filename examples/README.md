@@ -43,7 +43,7 @@ the initiator (the machine needs Python 3.10+ and the installed
 ```powershell
 irm https://raw.githubusercontent.com/20204166/expra-connect/main/dist/peer_harness.pyz -OutFile peer_harness.pyz
 py peer_harness.pyz `
-  --role initiator `
+  initiator `
   --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" `
   --wait 60 `
   --report endpoint-2-windows.json
@@ -92,8 +92,7 @@ streaming, or cluster operations.
 Start the target and leave it running:
 
 ```sh
-PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
-  --role target \
+PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness target \
   --profile /tmp/expra-extended-target \
   --report /tmp/expra-extended-target.json \
   --advertise-address 192.168.55.107 \
@@ -104,8 +103,7 @@ PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
 Run the initiator with a separate durable profile:
 
 ```sh
-PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
-  --role initiator \
+PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness initiator \
   --profile /tmp/expra-extended-initiator \
   --report /tmp/expra-extended-initiator.json \
   --peer-id TARGET_NODE_ID \
@@ -141,8 +139,7 @@ and run both terminals with the same current wheel.
 Terminal 1, target:
 
 ```sh
-PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
-  --role target \
+PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness target \
   --profile /tmp/expra-bidirectional-target-fresh \
   --report /tmp/expra-bidirectional-target.json \
   --advertise-address 192.168.55.103 \
@@ -154,8 +151,7 @@ PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
 Terminal 2, initiator:
 
 ```sh
-PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
-  --role initiator \
+PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness initiator \
   --profile /tmp/expra-bidirectional-initiator-fresh \
   --report /tmp/expra-bidirectional-initiator.json \
   --peer-id TARGET_NODE_ID \

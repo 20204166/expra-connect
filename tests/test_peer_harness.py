@@ -36,6 +36,20 @@ class ExplicitApprovalTests(unittest.TestCase):
         self.assertEqual(args.approval_file, Path("/tmp/approve"))
         self.assertEqual(args.approval_wait, 5.0)
 
+    def test_parser_accepts_positional_role_and_preserves_role_option(self) -> None:
+        try:
+            target = _parser().parse_args(["target", "--profile", "/tmp/target"])
+        except SystemExit:
+            self.fail("parser rejected the positional role shorthand")
+        legacy = _parser().parse_args(
+            ["--role", "initiator", "--profile", "/tmp/initiator"]
+        )
+
+        self.assertEqual(target.role_pos, "target")
+        self.assertIsNone(target.role_option)
+        self.assertIsNone(legacy.role_pos)
+        self.assertEqual(legacy.role_option, "initiator")
+
     def test_missing_approval_file_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / "report.json"
