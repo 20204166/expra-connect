@@ -933,6 +933,78 @@ class RemoteServiceTests(unittest.TestCase):
         self.assertEqual(set(service_metrics), {"service:hello"})
         self.assertEqual(service_metrics["service:hello"].count, 1)
 
+    def test_service_handler_rejected_by_grant_fence_is_not_success(self) -> None:
+        observer = ObservabilityWatcher()
+        service_holder: list[RemoteService] = []
+
+        class _MutatingProvider:
+            def dashboard_snapshot(self) -> DashboardSnapshot:
+                service_holder[0].update_grants({})
+                return DashboardSnapshot(
+                    system_label="peer",
+                    scanned_at=datetime.now(timezone.utc),
+                    resources=(
+                        ResourceSummary("cpu", "CPU", "10%", "ok", 10.0, ("ok",)),
+                    ),
+                )
+
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_MutatingProvider(),
+            secret=SECRET,
+            grants={
+                NodeId("caller"): PeerGrant(
+                    NodeId("caller"), SECRET, frozenset({NodePermission.READ_STATE})
+                )
+            },
+            observer=observer,
+        )
+        service_holder.append(service)
+        request = sign_request(
+            node_id="peer",
+            caller_node_id="caller",
+            op="dashboard_snapshot",
+            params={},
+            request_id="commit-fence",
+            nonce="commit-fence-nonce",
+            timestamp=time.time(),
+            secret=SECRET,
+        )
+        response = json.loads(service.handle(json.dumps(request)))
+        self.assertEqual(response["status"], "error")
+        metric = observer.snapshot().metrics[0]
+        self.assertEqual(metric.target, "service:dashboard_snapshot")
+        self.assertEqual(metric.failures, 1)
+        self.assertEqual(metric.successes, 0)
+
+    def test_saturated_observer_does_not_affect_service_result(self) -> None:
+        observer = ObservabilityWatcher(max_active=1)
+        observer.begin("pre-saturate")
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=_Provider(),
+            secret=SECRET,
+            observer=observer,
+        )
+        client = AuthenticatedNodeProvider(
+            node_id=NodeId("peer"),
+            secret=SECRET,
+            transport=MemoryRemoteTransport(service),
+            observer=observer,
+        )
+        hello = client.hello()
+        self.assertEqual(hello["node_id"], "peer")
+
     def test_cluster_fence_cannot_move_backwards(self) -> None:
         service = RemoteService(
             node_id=NodeId("peer"),

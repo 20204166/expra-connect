@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import statistics
 import threading
 import time
-from contextlib import contextmanager
 from collections import deque
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Literal
+
+LOGGER = logging.getLogger(__name__)
 
 Outcome = Literal["success", "failure", "cancelled"]
 EventKind = Literal[
@@ -35,12 +38,49 @@ _EVENT_KINDS: frozenset[str] = frozenset(
 )
 _COUNTED_EVENT_KINDS: frozenset[str] = frozenset({"coalesced", "stale", "rejected"})
 
+_NO_WATCHER: object = object()
+
 
 @dataclass(frozen=True, slots=True)
 class ObservationToken:
     target: str
     started: float
     identifier: int
+    watcher_id: object = _NO_WATCHER
+    tracked: bool = True
+
+
+class FrozenDistribution(Mapping[str, float | int]):
+    """Deeply read-only mapping that deserializes back to a plain dict."""
+
+    __slots__ = ("_data",)
+
+    def __init__(self, data: Mapping[str, float | int]) -> None:
+        self._data = dict(data)
+
+    def __getitem__(self, key: str) -> float | int:
+        return self._data[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __reduce__(
+        self,
+    ) -> tuple[type[dict[str, float | int]], tuple[dict[str, float | int]]]:
+        return (dict, (self._data,))
+
+    def __repr__(self) -> str:
+        return repr(self._data)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, FrozenDistribution):
+            return self._data == other._data
+        if isinstance(other, dict):
+            return self._data == other
+        return NotImplemented
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,7 +97,7 @@ class MetricSnapshot:
     in_flight: int
     peak_in_flight: int
     samples: tuple[float, ...]
-    distribution: dict[str, float | int]
+    distribution: Mapping[str, float | int]
     last_error: str | None
 
 
@@ -99,6 +139,13 @@ def summarize_samples(samples: tuple[float, ...]) -> dict[str, float | int]:
 
     if not samples:
         raise ValueError("at least one sample is required")
+    for value in samples:
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+        ):
+            raise ValueError("samples must be finite real numbers")
     ordered = sorted(samples)
     p25 = _percentile(ordered, 0.25)
     p75 = _percentile(ordered, 0.75)
@@ -119,23 +166,43 @@ def summarize_samples(samples: tuple[float, ...]) -> dict[str, float | int]:
 
 @contextmanager
 def observation_scope(
-    observer: "ObservabilityWatcher | None",
+    observer: ObservabilityWatcher | None,
     target: str,
     *,
     cancelled: Callable[[], bool] | None = None,
 ) -> Iterator[None]:
-    """Finish one observation with a stable outcome when a scope raises."""
+    """Finish one observation with a stable outcome when a scope raises.
 
-    token = observer.begin(target) if observer is not None else None
+    Observability is non-authoritative: a failing observer (or ``cancelled``
+    predicate) must never replace the application's own result.  ``begin``,
+    ``finish`` and ``cancelled`` failures are contained so the wrapped body's
+    outcome is preserved verbatim.
+    """
+
+    token: ObservationToken | None = None
+    if observer is not None:
+        try:
+            token = observer.begin(target)
+        except Exception:  # noqa: BLE001 - observability is non-authoritative.
+            token = None
     outcome: Outcome = "success"
     try:
         yield
-    except Exception:
-        outcome = "cancelled" if cancelled is not None and cancelled() else "failure"
+    except BaseException:
+        outcome = "failure"
+        if cancelled is not None:
+            try:
+                if cancelled():
+                    outcome = "cancelled"
+            except Exception:  # noqa: BLE001 - a broken cancel check must not mask the app error.
+                outcome = "failure"
         raise
     finally:
-        if token is not None:
-            observer.finish(token, outcome=outcome)
+        if observer is not None and token is not None:
+            try:
+                observer.finish(token, outcome=outcome)
+            except Exception:
+                LOGGER.debug("Observability finish failed", exc_info=True)
 
 
 class ObservabilityWatcher:
@@ -145,29 +212,58 @@ class ObservabilityWatcher:
         self,
         *,
         sample_limit: int = 128,
+        max_targets: int = 512,
+        max_active: int = 1024,
         clock: Callable[[], float] = time.perf_counter,
         wall_clock: Callable[[], float] = time.time,
     ) -> None:
-        if sample_limit <= 0:
-            raise ValueError("sample_limit must be positive")
+        if (
+            isinstance(sample_limit, bool)
+            or not isinstance(sample_limit, int)
+            or sample_limit <= 0
+        ):
+            raise ValueError("sample_limit must be a positive integer")
+        if (
+            isinstance(max_targets, bool)
+            or not isinstance(max_targets, int)
+            or max_targets <= 0
+        ):
+            raise ValueError("max_targets must be a positive integer")
+        if (
+            isinstance(max_active, bool)
+            or not isinstance(max_active, int)
+            or max_active <= 0
+        ):
+            raise ValueError("max_active must be a positive integer")
         self._sample_limit = sample_limit
+        self._max_targets = max_targets
+        self._max_active = max_active
         self._clock = clock
         self._wall_clock = wall_clock
-        self._session_started_at = wall_clock()
+        self._session_started_at = self._require_finite_clock(
+            wall_clock(), name="wall_clock"
+        )
         self._lock = threading.RLock()
         self._metrics: dict[str, _Metric] = {}
         self._active_tokens: dict[int, ObservationToken] = {}
         self._next_token = 0
+        self._watcher_id = object()
 
     def begin(self, target: str) -> ObservationToken:
         self._validate_target(target)
         with self._lock:
-            metric = self._metric(target)
-            metric.in_flight += 1
-            metric.peak_in_flight = max(metric.peak_in_flight, metric.in_flight)
+            started = self._require_finite_clock(self._clock(), name="clock")
+            metric = self._get_or_create_metric(target)
             self._next_token += 1
-            token = ObservationToken(target, self._clock(), self._next_token)
-            self._active_tokens[token.identifier] = token
+            tracked = len(self._active_tokens) < self._max_active
+            if tracked and metric is not None:
+                metric.in_flight += 1
+                metric.peak_in_flight = max(metric.peak_in_flight, metric.in_flight)
+            token = ObservationToken(
+                target, started, self._next_token, self._watcher_id, tracked
+            )
+            if tracked:
+                self._active_tokens[token.identifier] = token
         return token
 
     def finish(
@@ -183,16 +279,22 @@ class ObservabilityWatcher:
             if duration_seconds is None
             else duration_seconds
         )
+        detail_text = self._sanitize_detail(detail)
         with self._lock:
             active_token = self._active_tokens.get(token.identifier)
             if active_token != token:
+                if not token.tracked:
+                    return
                 raise ValueError("observation token was already finished")
             self._validate_duration(duration)
             self._validate_outcome(outcome)
             del self._active_tokens[token.identifier]
-            metric = self._metric(token.target)
-            metric.in_flight = max(metric.in_flight - 1, 0)
-        self.record(token.target, duration, outcome=outcome, detail=detail)
+            metric = self._get_or_create_metric(token.target)
+            if metric is not None:
+                metric.in_flight -= 1
+                self._record_locked(
+                    metric, float(duration), outcome=outcome, detail_text=detail_text
+                )
 
     def record(
         self,
@@ -205,33 +307,32 @@ class ObservabilityWatcher:
         self._validate_target(target)
         self._validate_duration(duration_seconds)
         self._validate_outcome(outcome)
+        detail_text = self._sanitize_detail(detail)
         with self._lock:
-            metric = self._metric(target)
-            metric.count += 1
-            metric.samples.append(float(duration_seconds))
-            if outcome == "success":
-                metric.successes += 1
-            elif outcome == "failure":
-                metric.failures += 1
-                metric.last_error = (detail or "failure")[:160]
-            else:
-                metric.cancellations += 1
+            metric = self._get_or_create_metric(target)
+            if metric is not None:
+                self._record_locked(
+                    metric,
+                    float(duration_seconds),
+                    outcome=outcome,
+                    detail_text=detail_text,
+                )
 
     def record_event(self, target: str, event: EventKind) -> None:
         self._validate_target(target)
         if event not in _EVENT_KINDS:
             raise ValueError(f"invalid event: {event}")
         with self._lock:
-            metric = self._metric(target)
-            metric.events[event] = metric.events.get(event, 0) + 1
-            if event in _COUNTED_EVENT_KINDS:
-                setattr(metric, event, getattr(metric, event) + 1)
+            metric = self._get_or_create_metric(target)
+            if metric is not None:
+                metric.events[event] = metric.events.get(event, 0) + 1
+                if event in _COUNTED_EVENT_KINDS:
+                    setattr(metric, event, getattr(metric, event) + 1)
 
     def event_count(self, target: str, event: str) -> int:
         with self._lock:
-            return self._metrics.get(target, _Metric(deque(maxlen=1))).events.get(
-                event, 0
-            )
+            metric = self._metrics.get(target)
+            return metric.events.get(event, 0) if metric is not None else 0
 
     def event_total(self, prefix: str, event: str) -> int:
         with self._lock:
@@ -248,7 +349,9 @@ class ObservabilityWatcher:
                 self._snapshot_metric(target, metric)
                 for target, metric in sorted(self._metrics.items())
             )
-            captured_at = self._wall_clock()
+            captured_at = self._require_finite_clock(
+                self._wall_clock(), name="wall_clock"
+            )
             return ObservabilitySnapshot(
                 session_started_at,
                 captured_at,
@@ -260,14 +363,47 @@ class ObservabilityWatcher:
         """Start a fresh in-memory observation session."""
 
         with self._lock:
+            new_started_at = self._require_finite_clock(
+                self._wall_clock(), name="wall_clock"
+            )
             self._metrics.clear()
             self._active_tokens.clear()
-            self._session_started_at = self._wall_clock()
+            self._session_started_at = new_started_at
 
-    def _metric(self, target: str) -> _Metric:
-        return self._metrics.setdefault(
-            target, _Metric(deque(maxlen=self._sample_limit))
-        )
+    def _record_locked(
+        self,
+        metric: _Metric,
+        duration: float,
+        *,
+        outcome: Outcome,
+        detail_text: str | None,
+    ) -> None:
+        metric.count += 1
+        metric.samples.append(float(duration))
+        if outcome == "success":
+            metric.successes += 1
+        elif outcome == "failure":
+            metric.failures += 1
+            metric.last_error = detail_text or "failure"
+        else:
+            metric.cancellations += 1
+
+    def _get_or_create_metric(self, target: str) -> _Metric | None:
+        metric = self._metrics.get(target)
+        if metric is not None:
+            return metric
+        if len(self._metrics) >= self._max_targets:
+            return None
+        metric = _Metric(deque(maxlen=self._sample_limit))
+        self._metrics[target] = metric
+        return metric
+
+    @staticmethod
+    def _sanitize_detail(detail: object) -> str | None:
+        if detail is None:
+            return None
+        text = str(detail)
+        return text[:160] if text else None
 
     @staticmethod
     def _validate_duration(duration_seconds: float) -> None:
@@ -281,12 +417,33 @@ class ObservabilityWatcher:
 
     @staticmethod
     def _validate_target(target: str) -> None:
-        if not target or len(target) > 160:
-            raise ValueError("target must be non-empty and at most 160 characters")
+        if not isinstance(target, str):
+            raise ValueError(  # noqa: TRY004 - preserve the ValueError contract.
+                "target must be a string"
+            )
+        if not target.strip():
+            raise ValueError("target must be non-empty")
+        if len(target) > 160:
+            raise ValueError("target must be at most 160 characters")
+
+    @staticmethod
+    def _require_finite_clock(value: float, *, name: str) -> float:
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+        ):
+            raise ValueError(f"{name} returned a non-finite value")
+        return value
 
     @staticmethod
     def _snapshot_metric(target: str, metric: _Metric) -> MetricSnapshot:
         samples = tuple(metric.samples)
+        distribution: Mapping[str, float | int] = (
+            FrozenDistribution(summarize_samples(samples))
+            if samples
+            else FrozenDistribution({})
+        )
         return MetricSnapshot(
             target,
             metric.count,
@@ -300,6 +457,6 @@ class ObservabilityWatcher:
             metric.in_flight,
             metric.peak_in_flight,
             samples,
-            summarize_samples(samples) if samples else {},
+            distribution,
             metric.last_error,
         )
