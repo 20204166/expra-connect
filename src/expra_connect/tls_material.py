@@ -87,7 +87,9 @@ def ensure_tls_material_generation(
 ) -> TLSMaterial:
     """Load or create replaceable TLS material for one transport generation."""
     if generation is not None and (
-        isinstance(generation, bool) or not isinstance(generation, int) or generation < 1
+        isinstance(generation, bool)
+        or not isinstance(generation, int)
+        or generation < 1
     ):
         raise ValueError("TLS generation must be a positive integer")
     directory.mkdir(parents=True, exist_ok=True)

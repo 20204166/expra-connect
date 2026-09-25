@@ -11,9 +11,9 @@ from dataclasses import FrozenInstanceError
 from enum import Enum
 from pathlib import Path
 from threading import Event, Lock
-from typing import Any
+from typing import Any, cast
 
-from expra_connect import (  # noqa: F401 - staged runtime imports are intentional
+from expra_connect import (
     ConnectConfig,
     ConnectRuntime,
     NodeId,
@@ -36,6 +36,7 @@ class _TrackedPairingCallback:
 
     def __call__(self, request: Any) -> bool:
         return self._callback(request)
+
 
 _EVENT_FIELDS: dict[str, frozenset[str]] = {
     "started": frozenset({"role", "version", "state"}),
@@ -60,15 +61,9 @@ _EVENT_FIELDS: dict[str, frozenset[str]] = {
     "waiting_for_rotated_peer": frozenset({"peer_id", "timeout"}),
     "reconnected_after_rotation": frozenset({"peer_id"}),
     "diagnostics": frozenset({"generation", "routes_count", "connections_count"}),
-    "surface_request": frozenset(
-        {"surface_id", "access", "outcome", "error_type"}
-    ),
-    "surface_result": frozenset(
-        {"surface_id", "access", "outcome", "error_type"}
-    ),
-    "surface_denied": frozenset(
-        {"surface_id", "access", "outcome", "error_type"}
-    ),
+    "surface_request": frozenset({"surface_id", "access", "outcome", "error_type"}),
+    "surface_result": frozenset({"surface_id", "access", "outcome", "error_type"}),
+    "surface_denied": frozenset({"surface_id", "access", "outcome", "error_type"}),
     "reverse_connected": frozenset({"outcome", "error_type"}),
     "reverse_paired": frozenset({"outcome", "error_type"}),
 }
@@ -167,8 +162,8 @@ def format_terminal_event(sequence: int, event: str, **values: Any) -> str:
 
 
 def _next_sequence(history: list[dict[str, Any]]) -> int:
-    sequences = [
-        record.get("sequence")
+    sequences: list[int] = [
+        record["sequence"]
         for record in history
         if isinstance(record.get("sequence"), int)
     ]
@@ -221,15 +216,20 @@ def register_harness_surfaces(runtime: ConnectRuntime) -> None:
         ),
     )
     for surface_id, read_result, review_result in surfaces:
-        def read(_peer_id: Any, _params: dict[str, Any], result=read_result) -> dict[str, Any]:
-            return dict(result)
 
-        def review(
-            _peer_id: Any, _params: dict[str, Any], result=review_result
+        def read(
+            _peer_id: Any, _params: dict[str, Any], result: Any = read_result
         ) -> dict[str, Any]:
             return dict(result)
 
-        def save(_peer_id: Any, _params: dict[str, Any], name=surface_id) -> dict[str, Any]:
+        def review(
+            _peer_id: Any, _params: dict[str, Any], result: Any = review_result
+        ) -> dict[str, Any]:
+            return dict(result)
+
+        def save(
+            _peer_id: Any, _params: dict[str, Any], name: str = surface_id
+        ) -> dict[str, Any]:
             return {"surface_id": name, "saved": True}
 
         runtime.register_surface(
@@ -264,7 +264,8 @@ def register_surface_sync(
     """Register a private harness barrier without granting surface access."""
 
     def wait_for_surface(_peer_id: Any, params: dict[str, Any]) -> dict[str, bool]:
-        event = ready_events.get(params.get("sync_key"))
+        sync_key = params.get("sync_key")
+        event = ready_events.get(sync_key) if isinstance(sync_key, str) else None
         return {"ready": event.wait(SURFACE_SYNC_TIMEOUT) if event else False}
 
     runtime.sharing.register(
@@ -332,13 +333,13 @@ def cleanup_runtime(runtime: ConnectRuntime) -> Iterator[ConnectRuntime]:
 
 def _candidate_values(candidate: Any) -> dict[str, Any]:
     endpoints = getattr(candidate, "endpoint_candidates", ()) or ()
-    endpoint = endpoints[0] if isinstance(endpoints, (list, tuple)) and endpoints else None
+    endpoint = (
+        endpoints[0] if isinstance(endpoints, (list, tuple)) and endpoints else None
+    )
     addresses = getattr(candidate, "addresses", ()) or ()
     if not isinstance(addresses, (list, tuple)):
         addresses = ()
-    address = getattr(endpoint, "address", None) or next(
-        iter(addresses), None
-    )
+    address = getattr(endpoint, "address", None) or next(iter(addresses), None)
     port = getattr(endpoint, "port", None) or getattr(candidate, "port", None)
     source = getattr(endpoint, "source", None)
     if source is None:
@@ -350,7 +351,9 @@ def _candidate_values(candidate: Any) -> dict[str, Any]:
     }
 
 
-def _write_started(report: Path, role: str, runtime: ConnectRuntime, status: Any) -> None:
+def _write_started(
+    report: Path, role: str, runtime: ConnectRuntime, status: Any
+) -> None:
     identity = runtime.identity
     if identity is None:
         raise RuntimeError("runtime identity is unavailable")
@@ -446,8 +449,8 @@ def exercise_remote_surfaces(
                     error_type=RemoteAuthorizationError.__name__,
                 )
                 return
-            except Exception as error:  # noqa: BLE001 - report only the exception type
-                write_event(report, "error", error_type=type(error).__name__)
+            except Exception as exc:
+                write_event(report, "error", error_type=type(exc).__name__)
                 raise
             if deadline is not None and time.monotonic() < deadline:
                 time.sleep(0.1)
@@ -459,8 +462,8 @@ def exercise_remote_surfaces(
     def succeeded(access: str, operation: Any) -> None:
         try:
             _retry_surface_success(operation)
-        except Exception as error:  # noqa: BLE001 - report only the exception type
-            write_event(report, "error", error_type=type(error).__name__)
+        except Exception as exc:
+            write_event(report, "error", error_type=type(exc).__name__)
             raise
         else:
             record_surface_result(report, surface_id, access, "success")
@@ -487,37 +490,47 @@ def exercise_remote_surfaces(
         _retry_surface_success(request_sync)
 
     for surface_id in surface_ids:
-        denied("read", lambda: provider.read_surface(surface_id))
-        denied("review", lambda: provider.review_surface(surface_id))
-        denied("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+
+        def _read(sid: str = surface_id) -> Any:
+            return provider.read_surface(sid)
+
+        def _review(sid: str = surface_id) -> Any:
+            return provider.review_surface(sid)
+
+        def _action(sid: str = surface_id) -> Any:
+            return provider.invoke_surface_action(sid, "save")
+
+        denied("read", _read)
+        denied("review", _review)
+        denied("action", _action)
 
         if ready_events is not None:
             synchronize("initial_denials")
 
         runtime.grant_surface_access(peer_id, surface_id, access="read")
-        succeeded("read", lambda: provider.read_surface(surface_id))
+        succeeded("read", _read)
         synchronize("read_success")
-        denied("review", lambda: provider.review_surface(surface_id))
+        denied("review", _review)
         synchronize("review_denied")
 
         runtime.grant_surface_access(peer_id, surface_id, access="review")
-        succeeded("review", lambda: provider.review_surface(surface_id))
+        succeeded("review", _review)
         synchronize("review_success")
-        denied("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+        denied("action", _action)
         synchronize("action_denied")
 
         runtime.grant_surface_access(peer_id, surface_id, access="action")
-        succeeded("action", lambda: provider.invoke_surface_action(surface_id, "save"))
+        succeeded("action", _action)
         synchronize("action_success")
 
         runtime.stop_surface_share(peer_id, surface_id)
         synchronize("stopped_denied")
-        denied("read", lambda: provider.read_surface(surface_id), retry_success=True)
+        denied("read", _read, retry_success=True)
 
         runtime.grant_surface_access(peer_id, surface_id, access="read")
         runtime.revoke_surface_access(peer_id, surface_id, access="read")
         synchronize("revoked_denied")
-        denied("read", lambda: provider.read_surface(surface_id), retry_success=True)
+        denied("read", _read, retry_success=True)
 
 
 def _surface_success_or_denial(
@@ -546,8 +559,8 @@ def _surface_success_or_denial(
             error_type=RemoteAuthorizationError.__name__,
         )
         raise
-    except Exception as error:  # noqa: BLE001 - report only the exception type
-        write_event(report, "error", error_type=type(error).__name__)
+    except Exception as exc:
+        write_event(report, "error", error_type=type(exc).__name__)
         raise
     if expected == "success":
         record_surface_result(report, surface_id, access, "success")
@@ -567,7 +580,11 @@ def _exercise_reconnected_surface(
         report, surface_id, "read", lambda: provider.read_surface(surface_id), "success"
     )
     _surface_success_or_denial(
-        report, surface_id, "review", lambda: provider.review_surface(surface_id), "denied"
+        report,
+        surface_id,
+        "review",
+        lambda: provider.review_surface(surface_id),
+        "denied",
     )
     _surface_success_or_denial(
         report,
@@ -648,9 +665,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
 
     configured_callback = getattr(runtime.config, "on_pairing_request", None)
     configured_peers = getattr(configured_callback, "capability_peers", None)
-    capability_peers = (
-        configured_peers if isinstance(configured_peers, set) else set()
-    )
+    capability_peers = configured_peers if isinstance(configured_peers, set) else set()
 
     def reallow_capability_after_rotation() -> None:
         for peer_id in capability_peers:
@@ -662,20 +677,24 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
     }
 
     def approve_pairing(request: Any) -> bool:
-        return _approve_capability_pairing(runtime, args.report, request, capability_peers)
+        return _approve_capability_pairing(
+            runtime, args.report, request, capability_peers
+        )
 
     runtime.sharing.register(
         CAPABILITY,
-        lambda peer_id, params: {"ok": True, "peer_id": peer_id.value, "params": params},
+        lambda peer_id, params: {
+            "ok": True,
+            "peer_id": peer_id.value,
+            "params": params,
+        },
     )
     try:
         if bidirectional:
             register_harness_surfaces(runtime)
             register_surface_sync(runtime, surface_ready)
-        setattr(
-            runtime.config,
-            "on_pairing_request",
-            approve_surface_pairing if bidirectional else approve_pairing,
+        cast(Any, runtime.config).on_pairing_request = (
+            approve_surface_pairing if bidirectional else approve_pairing
         )
     except FrozenInstanceError:
         # The real public config is frozen; its callback is installed at build time.
@@ -686,6 +705,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         if _status_state(status) != "started":
             raise RuntimeError("runtime did not start")
         write_event(args.report, "target_ready")
+        candidate: Any | None = None
         if bidirectional:
             candidate = wait_for_matching_peer(
                 runtime, getattr(args, "peer_id", None), args.wait
@@ -695,9 +715,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
                     args.report, "discovery_timeout", peers_count=len(runtime.peers)
                 )
                 return 2
-            runtime.sharing.allow(
-                NodeId(candidate.stable_id), SURFACE_SYNC_CAPABILITY
-            )
+            runtime.sharing.allow(NodeId(candidate.stable_id), SURFACE_SYNC_CAPABILITY)
             provider = connect_bidirectionally(
                 runtime,
                 candidate,
@@ -722,7 +740,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
 
         def rotate_once() -> None:
             runtime.rotate_transport()
-            if bidirectional:
+            if bidirectional and candidate is not None:
                 runtime.grant_surface_access(
                     NodeId(candidate.stable_id), "desktop", access="read"
                 )
@@ -740,7 +758,11 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         rotated = False
         deadline = time.monotonic() + max(args.wait, 0.0)
         while time.monotonic() < deadline:
-            if rotation_deadline is not None and not rotated and time.monotonic() >= rotation_deadline:
+            if (
+                rotation_deadline is not None
+                and not rotated
+                and time.monotonic() >= rotation_deadline
+            ):
                 rotate_once()
                 rotated = True
             time.sleep(min(0.1, deadline - time.monotonic()))
@@ -810,7 +832,9 @@ def run_initiator(
         else:
             candidate = wait_for_peer(runtime, args.peer_id, args.wait)
         if candidate is None:
-            write_event(args.report, "discovery_timeout", peers_count=len(runtime.peers))
+            write_event(
+                args.report, "discovery_timeout", peers_count=len(runtime.peers)
+            )
             return 2
         route = _candidate_values(candidate)
         write_event(args.report, "discovered", **route)
@@ -873,14 +897,14 @@ def run_initiator(
             tls_verified=True,
             generation=getattr(candidate, "transport_generation", None),
         )
-        result = provider.request_shared(
-            CAPABILITY, {"source": "run_peer_extended.py"}
-        )
+        result = provider.request_shared(CAPABILITY, {"source": "run_peer_extended.py"})
         write_event(
             args.report,
             "shared_capability_result",
             capability=CAPABILITY,
-            outcome="success" if isinstance(result, dict) and result.get("ok") is True else "failure",
+            outcome="success"
+            if isinstance(result, dict) and result.get("ok") is True
+            else "failure",
         )
         if getattr(args, "reconnect_after_rotation", False):
             provider = _reconnect_after_rotation(
@@ -927,7 +951,9 @@ def run_initiator(
             if restored is None:
                 raise RuntimeError("trusted peer was not restored")
             write_event(args.report, "restored_trust", peer_id=peer_id.value)
-        write_event(args.report, "diagnostics", **_diagnostics_values(runtime.diagnostics()))
+        write_event(
+            args.report, "diagnostics", **_diagnostics_values(runtime.diagnostics())
+        )
         return 0
     except Exception as error:  # noqa: BLE001 - report only the exception type
         write_event(args.report, "error", error_type=type(error).__name__)
@@ -941,7 +967,9 @@ def _runtime(args: Any) -> ConnectRuntime:
     runtime_holder: list[ConnectRuntime] = []
     capability_peers: set[NodeId] = set()
 
-    def route_attempt(phase: str, endpoint: Any, outcome: str, _error: str | None) -> None:
+    def route_attempt(
+        phase: str, endpoint: Any, outcome: str, _error: str | None
+    ) -> None:
         key = (phase, endpoint.address, endpoint.port)
         now = time.monotonic()
         duration_ms = None
@@ -975,7 +1003,9 @@ def _runtime(args: Any) -> ConnectRuntime:
     runtime = ConnectRuntime(
         ConnectConfig(
             profile_dir=args.profile,
-            advertised_addresses=(tuple(args.advertise_address) if args.advertise_address else None),
+            advertised_addresses=(
+                tuple(args.advertise_address) if args.advertise_address else None
+            ),
             on_route_attempt=route_attempt,
             on_pairing_request=pairing_callback
             if args.role == "target" or getattr(args, "bidirectional_surfaces", False)

@@ -79,7 +79,7 @@ class SurfaceRegistry:
                 cast(Iterable[tuple[str, SurfaceHandler]], actions.items())
             )
         else:
-            action_items = list(cast(Iterable[tuple[str, SurfaceHandler]], actions))
+            action_items = list(actions)
         action_handlers: dict[str, SurfaceHandler] = {}
         for action_id, handler in action_items:
             self._validate_id(action_id, "action")

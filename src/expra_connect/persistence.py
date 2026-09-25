@@ -30,7 +30,12 @@ def _atomic_write(
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as file:
+        try:
+            file = os.fdopen(fd, "w", encoding="utf-8")
+        except OSError:
+            os.close(fd)
+            raise
+        with file:
             writer(file)
             file.flush()
             os.fsync(file.fileno())

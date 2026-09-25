@@ -19,6 +19,7 @@ from expra_connect.pairing import (
     RepairNotRequired,
     RepairRequired,
 )
+from expra_connect.registry import TrustState
 from expra_connect.remote_service import AuthenticatedNodeProvider
 from expra_connect.runtime import ConnectConfig, ConnectRuntime
 from expra_connect.wire_protocol import (
@@ -336,6 +337,38 @@ class PeerLifecycleTests(unittest.TestCase):
 
                 self.assertEqual(nodes.count, callback_count)
                 self.assertFalse(nodes.first.pairing.pending)
+            finally:
+                nodes.close()
+
+    def test_fresh_pair_after_revoke_restores_registry_trust(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            nodes = _Pair(directory)
+            try:
+                nodes.observe()
+                nodes.first.pair_peer(nodes.peer)
+                nodes.first.connect_peer(nodes.peer)
+                registry = nodes.first.registry
+                assert registry is not None
+                before = registry.record(nodes.peer)
+                assert before is not None
+                self.assertEqual(before.trust, TrustState.AUTHORIZED)
+
+                nodes.first.revoke_peer(nodes.peer)
+                nodes.second.revoke_peer(nodes.first_id)
+                revoked = registry.record(nodes.peer)
+                assert revoked is not None
+                self.assertEqual(revoked.trust, TrustState.REVOKED)
+
+                nodes.observe()
+                nodes.first.pair_peer(nodes.peer)
+
+                restored = registry.record(nodes.peer)
+                assert restored is not None
+                self.assertEqual(restored.trust, TrustState.AUTHORIZED)
+                nodes.first.connect_peer(nodes.peer)
+                after = registry.record(nodes.peer)
+                assert after is not None
+                self.assertEqual(after.trust, TrustState.AUTHORIZED)
             finally:
                 nodes.close()
 

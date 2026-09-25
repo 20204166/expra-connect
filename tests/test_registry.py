@@ -62,3 +62,30 @@ class RegistryTests(unittest.TestCase):
         self.registry.revoke(self.peer)
         with self.assertRaises(PermissionError):
             self.registry.promote(self.peer, permissions=frozenset())
+
+    def test_reestablished_trust_clears_the_revoked_tombstone(self) -> None:
+        self.registry.observe(self.peer, frozenset())
+        self.registry.promote(self.peer, permissions=frozenset())
+        self.registry.revoke(self.peer)
+
+        record = self.registry.hydrate_trust(self.peer)
+
+        self.assertEqual(record.trust, TrustState.AUTHORIZED)
+        self.assertEqual(record.membership, MembershipState.NOT_JOINED)
+        self.assertEqual(record.connection.status, ConnectionStatus.UNKNOWN)
+
+    def test_reestablished_trust_does_not_delete_membership_or_connection(self) -> None:
+        self.registry.observe(self.peer, frozenset())
+        self.registry.promote(self.peer, permissions=frozenset())
+        self.registry.join(
+            self.peer, role=ClusterRole.WORKER, coordinator_id=NodeId("local-node")
+        )
+        self.registry.set_connection(self.peer, ConnectionState.offline("test"))
+        self.registry.revoke(self.peer)
+
+        record = self.registry.hydrate_trust(self.peer)
+
+        self.assertEqual(record.trust, TrustState.AUTHORIZED)
+        self.assertEqual(record.membership, MembershipState.WORKER)
+        self.assertEqual(record.coordinator_id, NodeId("local-node"))
+        self.assertEqual(record.connection.status, ConnectionStatus.OFFLINE)

@@ -20,7 +20,7 @@ Examples:
 from __future__ import annotations
 
 import argparse
-import hashlib
+import itertools
 import json
 import math
 import sys
@@ -65,8 +65,15 @@ def _safe_dict(data: dict[str, Any], *, full_ids: bool = False) -> dict[str, Any
         if any(fragment in lower for fragment in SENSITIVE_FRAGMENTS):
             continue
         value = data[key]
-        if key in {"node_id", "peer_id", "stable_id", "identity_fingerprint",
-                   "transport_fingerprint", "tls_fingerprint", "service_name"}:
+        if key in {
+            "node_id",
+            "peer_id",
+            "stable_id",
+            "identity_fingerprint",
+            "transport_fingerprint",
+            "tls_fingerprint",
+            "service_name",
+        }:
             out[key] = _stable_short(value, full_ids)
         elif isinstance(value, dict):
             out[key] = _safe_dict(value, full_ids=full_ids)
@@ -100,12 +107,16 @@ def _load_events(path: Path) -> list[dict[str, Any]]:
     elif isinstance(raw, dict):
         events = [raw]
     else:
-        raise ValueError(f"{path}: root must be an object, event array, or object with events[]")
+        raise ValueError(  # noqa: TRY004 - normalize malformed JSON document.
+            f"{path}: root must be an object, event array, or object with events[]"
+        )
 
     result: list[dict[str, Any]] = []
     for index, item in enumerate(events):
         if not isinstance(item, dict):
-            raise ValueError(f"{path}: event #{index + 1} is not an object")
+            raise ValueError(  # noqa: TRY004 - normalize malformed JSON document.
+                f"{path}: event #{index + 1} is not an object"
+            )
         result.append(item)
     return result
 
@@ -159,7 +170,9 @@ def _route_stats(events: list[dict[str, Any]]) -> dict[str, Any]:
                 "min": round(min(durations), 3),
                 "max": round(max(durations), 3),
                 "mean": round(sum(durations) / len(durations), 3),
-            } if durations else None,
+            }
+            if durations
+            else None,
         }
     return phases
 
@@ -181,7 +194,11 @@ def _run_report(
             continue
         candidate_observations += 1
         stable_id = candidate.get("stable_id")
-        key = str(stable_id) if stable_id is not None else f"<unknown-{candidate_observations}>"
+        key = (
+            str(stable_id)
+            if stable_id is not None
+            else f"<unknown-{candidate_observations}>"
+        )
         candidate_records.setdefault(key, candidate)
 
     paired = [e for e in events if e.get("event") == "paired"]
@@ -191,39 +208,77 @@ def _run_report(
     findings: list[dict[str, str]] = []
 
     if started is None:
-        findings.append({"severity": "warning", "code": "run_missing_started",
-                         "message": "Run has no started event."})
+        findings.append(
+            {
+                "severity": "warning",
+                "code": "run_missing_started",
+                "message": "Run has no started event.",
+            }
+        )
     else:
         if started.get("state") != "started":
-            findings.append({"severity": "warning", "code": "unexpected_start_state",
-                             "message": f"Start state is {started.get('state')!r}, not 'started'."})
+            findings.append(
+                {
+                    "severity": "warning",
+                    "code": "unexpected_start_state",
+                    "message": f"Start state is {started.get('state')!r}, not 'started'.",
+                }
+            )
         if started.get("discovery_disabled") is True:
-            findings.append({"severity": "info", "code": "discovery_disabled",
-                             "message": "Discovery was explicitly disabled."})
+            findings.append(
+                {
+                    "severity": "info",
+                    "code": "discovery_disabled",
+                    "message": "Discovery was explicitly disabled.",
+                }
+            )
         elif (
             started.get("discovery_disabled") is False
             and "discovery_started" in started
             and started.get("discovery_started") is not True
         ):
-            findings.append({"severity": "warning", "code": "discovery_not_started",
-                             "message": "Discovery was enabled but did not report started=true."})
+            findings.append(
+                {
+                    "severity": "warning",
+                    "code": "discovery_not_started",
+                    "message": "Discovery was enabled but did not report started=true.",
+                }
+            )
 
     for stable_id, candidate in sorted(candidate_records.items()):
         if candidate.get("compatible") is False:
-            findings.append({"severity": "warning", "code": "peer_incompatible",
-                             "message": f"Peer {_stable_short(stable_id, full_ids)} is incompatible."})
+            findings.append(
+                {
+                    "severity": "warning",
+                    "code": "peer_incompatible",
+                    "message": f"Peer {_stable_short(stable_id, full_ids)} is incompatible.",
+                }
+            )
         if candidate.get("connectable") is False:
-            findings.append({"severity": "warning", "code": "peer_not_connectable",
-                             "message": f"Peer {_stable_short(stable_id, full_ids)} is not connectable."})
+            findings.append(
+                {
+                    "severity": "warning",
+                    "code": "peer_not_connectable",
+                    "message": f"Peer {_stable_short(stable_id, full_ids)} is not connectable.",
+                }
+            )
         endpoints = candidate.get("endpoint_candidates")
         if isinstance(endpoints, list) and not endpoints:
-            findings.append({"severity": "warning", "code": "peer_has_no_routes",
-                             "message": f"Peer {_stable_short(stable_id, full_ids)} has no endpoint candidates."})
+            findings.append(
+                {
+                    "severity": "warning",
+                    "code": "peer_has_no_routes",
+                    "message": f"Peer {_stable_short(stable_id, full_ids)} has no endpoint candidates.",
+                }
+            )
 
     for event in events:
-        if event.get("event") == "route_attempt":
-            if event.get("outcome") not in {"started", "succeeded"}:
-                findings.append({
+        if event.get("event") == "route_attempt" and event.get("outcome") not in {
+            "started",
+            "succeeded",
+        }:
+            findings.append(
+                {
                     "severity": "warning",
                     "code": "route_attempt_failed",
                     "message": (
@@ -231,22 +286,38 @@ def _run_report(
                         f"{event.get('address')}:{event.get('port')} -> {event.get('outcome')}"
                         + (f" ({event.get('error')})" if event.get("error") else "")
                     ),
-                })
+                }
+            )
 
     for event in connected:
         if event.get("tls_verified") is not True:
-            findings.append({"severity": "error", "code": "connection_not_tls_verified",
-                             "message": "Connected event did not report tls_verified=true."})
+            findings.append(
+                {
+                    "severity": "error",
+                    "code": "connection_not_tls_verified",
+                    "message": "Connected event did not report tls_verified=true.",
+                }
+            )
 
     for event in shared:
         result = event.get("result")
         if isinstance(result, dict) and result.get("ok") is False:
-            findings.append({"severity": "warning", "code": "shared_capability_failed",
-                             "message": f"Capability {event.get('capability')!r} returned ok=false."})
+            findings.append(
+                {
+                    "severity": "warning",
+                    "code": "shared_capability_failed",
+                    "message": f"Capability {event.get('capability')!r} returned ok=false.",
+                }
+            )
 
     if paired and not connected:
-        findings.append({"severity": "warning", "code": "paired_not_connected",
-                         "message": "Pairing completed in this run but no connected event followed."})
+        findings.append(
+            {
+                "severity": "warning",
+                "code": "paired_not_connected",
+                "message": "Pairing completed in this run but no connected event followed.",
+            }
+        )
 
     candidates_out = []
     for stable_id, candidate in sorted(candidate_records.items()):
@@ -255,32 +326,42 @@ def _run_report(
         if isinstance(endpoints, list):
             for endpoint in endpoints:
                 if isinstance(endpoint, dict):
-                    endpoint_out.append({
-                        "address": endpoint.get("address"),
-                        "port": endpoint.get("port"),
-                        "source": endpoint.get("source"),
-                        "priority": endpoint.get("priority"),
-                        "validation": endpoint.get("validation"),
-                    })
-        candidates_out.append({
-            "stable_id": _stable_short(stable_id, full_ids),
-            "hostname": candidate.get("hostname"),
-            "platform": candidate.get("platform"),
-            "app_version": candidate.get("app_version"),
-            "protocol_version": candidate.get("protocol_version"),
-            "compatible": candidate.get("compatible"),
-            "connectable": candidate.get("connectable"),
-            "transport_generation": candidate.get("transport_generation"),
-            "identity_fingerprint": _stable_short(candidate.get("identity_fingerprint"), full_ids),
-            "transport_fingerprint": _stable_short(candidate.get("transport_fingerprint"), full_ids),
-            "endpoints": endpoint_out,
-        })
+                    endpoint_out.append(
+                        {
+                            "address": endpoint.get("address"),
+                            "port": endpoint.get("port"),
+                            "source": endpoint.get("source"),
+                            "priority": endpoint.get("priority"),
+                            "validation": endpoint.get("validation"),
+                        }
+                    )
+        candidates_out.append(
+            {
+                "stable_id": _stable_short(stable_id, full_ids),
+                "hostname": candidate.get("hostname"),
+                "platform": candidate.get("platform"),
+                "app_version": candidate.get("app_version"),
+                "protocol_version": candidate.get("protocol_version"),
+                "compatible": candidate.get("compatible"),
+                "connectable": candidate.get("connectable"),
+                "transport_generation": candidate.get("transport_generation"),
+                "identity_fingerprint": _stable_short(
+                    candidate.get("identity_fingerprint"), full_ids
+                ),
+                "transport_fingerprint": _stable_short(
+                    candidate.get("transport_fingerprint"), full_ids
+                ),
+                "endpoints": endpoint_out,
+            }
+        )
 
     return {
         "run": run_no,
         "event_count": len(events),
         "event_counts": dict(sorted(event_counts.items())),
-        "start": None if started is None else {
+        "start": None
+        if started is None
+        else {
             "version": started.get("version"),
             "role": started.get("role"),
             "state": started.get("state"),
@@ -298,7 +379,8 @@ def _run_report(
             {
                 "peer_id": _stable_short(e.get("peer_id"), full_ids),
                 "permissions": sorted(e.get("permissions", []))
-                if isinstance(e.get("permissions"), list) else e.get("permissions"),
+                if isinstance(e.get("permissions"), list)
+                else e.get("permissions"),
             }
             for e in paired
         ],
@@ -315,7 +397,8 @@ def _run_report(
             {
                 "capability": e.get("capability"),
                 "ok": e.get("result", {}).get("ok")
-                if isinstance(e.get("result"), dict) else None,
+                if isinstance(e.get("result"), dict)
+                else None,
             }
             for e in shared
         ],
@@ -331,20 +414,27 @@ def _continuity_findings(
 
     local_ids = {str(e["node_id"]) for e in starts if e.get("node_id") is not None}
     if len(local_ids) > 1:
-        findings.append({
-            "severity": "warning",
-            "code": "local_node_id_changed",
-            "message": "Local NodeId changed across runs: "
-                       + ", ".join(sorted(_stable_short(x, full_ids) or "" for x in local_ids)),
-        })
+        findings.append(
+            {
+                "severity": "warning",
+                "code": "local_node_id_changed",
+                "message": "Local NodeId changed across runs: "
+                + ", ".join(
+                    sorted(_stable_short(x, full_ids) or "" for x in local_ids)
+                ),
+            }
+        )
 
     versions = [str(e["version"]) for e in starts if e.get("version") is not None]
     if len(set(versions)) > 1:
-        findings.append({
-            "severity": "info",
-            "code": "multiple_versions",
-            "message": "Log contains multiple app versions: " + ", ".join(sorted(set(versions))),
-        })
+        findings.append(
+            {
+                "severity": "info",
+                "code": "multiple_versions",
+                "message": "Log contains multiple app versions: "
+                + ", ".join(sorted(set(versions))),
+            }
+        )
 
     peer_records: dict[str, list[dict[str, Any]]] = defaultdict(list)
     peer_order: list[str] = []
@@ -358,31 +448,41 @@ def _continuity_findings(
             peer_order.append(sid)
 
     if len(peer_records) > 1:
-        findings.append({
-            "severity": "info",
-            "code": "multiple_peer_identities",
-            "message": (
-                "Different peer stable IDs appear across the log: "
-                + ", ".join(sorted(_stable_short(x, full_ids) or "" for x in peer_records))
-            ),
-        })
+        findings.append(
+            {
+                "severity": "info",
+                "code": "multiple_peer_identities",
+                "message": (
+                    "Different peer stable IDs appear across the log: "
+                    + ", ".join(
+                        sorted(_stable_short(x, full_ids) or "" for x in peer_records)
+                    )
+                ),
+            }
+        )
 
     for sid, records in sorted(peer_records.items()):
-        roots = {str(r["root_public_key"]) for r in records if r.get("root_public_key") is not None}
+        roots = {
+            str(r["root_public_key"])
+            for r in records
+            if r.get("root_public_key") is not None
+        }
         identities = {
             str(r["identity_fingerprint"])
             for r in records
             if r.get("identity_fingerprint") is not None
         }
         if len(roots) > 1 or len(identities) > 1:
-            findings.append({
-                "severity": "error",
-                "code": "stable_id_identity_conflict",
-                "message": (
-                    f"Peer {_stable_short(sid, full_ids)} was observed with conflicting "
-                    "root/identity material."
-                ),
-            })
+            findings.append(
+                {
+                    "severity": "error",
+                    "code": "stable_id_identity_conflict",
+                    "message": (
+                        f"Peer {_stable_short(sid, full_ids)} was observed with conflicting "
+                        "root/identity material."
+                    ),
+                }
+            )
 
         by_generation: dict[int, set[str]] = defaultdict(set)
         sequence: list[int] = []
@@ -395,22 +495,28 @@ def _continuity_findings(
                     by_generation[generation].add(str(fingerprint))
         for generation, fingerprints in sorted(by_generation.items()):
             if len(fingerprints) > 1:
-                findings.append({
-                    "severity": "error",
-                    "code": "transport_generation_conflict",
+                findings.append(
+                    {
+                        "severity": "error",
+                        "code": "transport_generation_conflict",
+                        "message": (
+                            f"Peer {_stable_short(sid, full_ids)} generation {generation} "
+                            "was observed with multiple TLS fingerprints."
+                        ),
+                    }
+                )
+        if any(
+            current < previous for previous, current in itertools.pairwise(sequence)
+        ):
+            findings.append(
+                {
+                    "severity": "warning",
+                    "code": "transport_generation_regressed",
                     "message": (
-                        f"Peer {_stable_short(sid, full_ids)} generation {generation} "
-                        "was observed with multiple TLS fingerprints."
+                        f"Peer {_stable_short(sid, full_ids)} transport generation moved backwards."
                     ),
-                })
-        if any(b < a for a, b in zip(sequence, sequence[1:])):
-            findings.append({
-                "severity": "warning",
-                "code": "transport_generation_regressed",
-                "message": (
-                    f"Peer {_stable_short(sid, full_ids)} transport generation moved backwards."
-                ),
-            })
+                }
+            )
 
     return findings
 
@@ -422,12 +528,11 @@ def analyze_file(path: Path, *, full_ids: bool = False) -> dict[str, Any]:
         "file": path.name,
         "event_count": len(events),
         "run_count": len(runs),
-        "event_counts": dict(sorted(Counter(
-            str(e.get("event") or "<missing>") for e in events
-        ).items())),
+        "event_counts": dict(
+            sorted(Counter(str(e.get("event") or "<missing>") for e in events).items())
+        ),
         "runs": [
-            _run_report(i + 1, run, full_ids=full_ids)
-            for i, run in enumerate(runs)
+            _run_report(i + 1, run, full_ids=full_ids) for i, run in enumerate(runs)
         ],
         "continuity_findings": _continuity_findings(events, full_ids=full_ids),
     }
@@ -501,7 +606,9 @@ def _print_text(report: dict[str, Any]) -> None:
     for file_report in report["files"]:
         print()
         print(f"FILE: {file_report['file']}")
-        print(f"  Events: {file_report['event_count']} | Runs: {file_report['run_count']}")
+        print(
+            f"  Events: {file_report['event_count']} | Runs: {file_report['run_count']}"
+        )
         for run in file_report["runs"]:
             start = run["start"] or {}
             print()
@@ -509,7 +616,10 @@ def _print_text(report: dict[str, Any]) -> None:
                 f"  Run {run['run']}: version={start.get('version')} "
                 f"role={start.get('role')} node={start.get('node_id')}"
             )
-            if start.get("bound_host") is not None or start.get("bound_port") is not None:
+            if (
+                start.get("bound_host") is not None
+                or start.get("bound_port") is not None
+            ):
                 listener = f"{start.get('bound_host')}:{start.get('bound_port')}"
             else:
                 listener = "not reported"
@@ -531,10 +641,13 @@ def _print_text(report: dict[str, Any]) -> None:
             print("    events=" + ", ".join(run["observed_events"]))
 
             for candidate in run["candidates"]:
-                routes = ", ".join(
-                    f"{x.get('source')}:{x.get('address')}:{x.get('port')}"
-                    for x in candidate["endpoints"]
-                ) or "none"
+                routes = (
+                    ", ".join(
+                        f"{x.get('source')}:{x.get('address')}:{x.get('port')}"
+                        for x in candidate["endpoints"]
+                    )
+                    or "none"
+                )
                 print(
                     f"    peer={candidate['stable_id']} platform={candidate['platform']} "
                     f"version={candidate['app_version']} gen={candidate['transport_generation']} "
@@ -545,11 +658,10 @@ def _print_text(report: dict[str, Any]) -> None:
                 timing = stats["successful_duration_ms"]
                 timing_text = (
                     f"mean={timing['mean']}ms min={timing['min']}ms max={timing['max']}ms"
-                    if timing else "no durations"
+                    if timing
+                    else "no durations"
                 )
-                print(
-                    f"    route/{phase}: {stats['outcomes']} {timing_text}"
-                )
+                print(f"    route/{phase}: {stats['outcomes']} {timing_text}")
 
             for conn in run["connections"]:
                 print(
@@ -558,9 +670,7 @@ def _print_text(report: dict[str, Any]) -> None:
                 )
 
             for shared in run["shared_capabilities"]:
-                print(
-                    f"    capability={shared['capability']} ok={shared['ok']}"
-                )
+                print(f"    capability={shared['capability']} ok={shared['ok']}")
 
             for finding in run["findings"]:
                 print(
@@ -580,7 +690,9 @@ def main(argv: list[str] | None = None) -> int:
         description="Deterministically analyze Expra Connect JSON event logs."
     )
     parser.add_argument("inputs", nargs="+", help="JSON files and/or directories")
-    parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    parser.add_argument(
+        "--json", action="store_true", help="emit machine-readable JSON"
+    )
     parser.add_argument(
         "--full-identifiers",
         action="store_true",

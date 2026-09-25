@@ -131,9 +131,12 @@ class DiscoveryRegistry:
             validate_candidate(candidate, self_id=self._self_id)
         except (TypeError, ValueError):
             return False
+        port = normalize_port(candidate.port)
+        if port is None:
+            return False
         item = replace(
             candidate,
-            port=normalize_port(candidate.port),
+            port=port,
             seen_at=self._clock(),
         )
         self._items[item.stable_id] = item

@@ -1,7 +1,7 @@
 import socket
 import time
 import unittest
-from typing import Any
+from typing import Any, cast
 
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
@@ -46,7 +46,7 @@ class ServerTests(unittest.TestCase):
         server = RemoteSocketServer(_Service())
         broken = BrokenServer()
         server._server = broken
-        server._thread = object()
+        server._thread = cast(Any, object())
 
         server.stop()
 

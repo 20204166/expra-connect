@@ -49,7 +49,11 @@ class ReleaseTests(unittest.TestCase):
         root = Path(__file__).parents[1]
         sums = root / "dist" / "SHA256SUMS"
         self.assertTrue(sums.is_file())
-        entries = [line.split() for line in sums.read_text(encoding="utf-8").splitlines() if line.strip()]
+        entries = [
+            line.split()
+            for line in sums.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
         self.assertTrue(entries)
         for _digest, filename in entries:
             self.assertTrue((root / "dist" / filename).is_file(), filename)

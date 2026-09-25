@@ -94,7 +94,10 @@ class ExtendedPeerEventWriterTests(unittest.TestCase):
 
             records = json.loads(report.read_text(encoding="utf-8"))
             self.assertEqual([record["sequence"] for record in records], [1, 2])
-            self.assertEqual(output.getvalue().splitlines()[0], "[01] started role=target version=- state=started")
+            self.assertEqual(
+                output.getvalue().splitlines()[0],
+                "[01] started role=target version=- state=started",
+            )
             self.assertEqual(output.getvalue().splitlines()[1], "[02] target_ready")
 
     def test_write_event_appends_existing_report_records(self) -> None:
@@ -190,7 +193,9 @@ class ExtendedPeerEventWriterTests(unittest.TestCase):
                 )
 
             record = json.loads(report.read_text(encoding="utf-8"))[0]
-            self.assertEqual(record, {"event": "error", "error_type": "TimeoutError", "sequence": 1})
+            self.assertEqual(
+                record, {"event": "error", "error_type": "TimeoutError", "sequence": 1}
+            )
             self.assertEqual(output.getvalue().strip(), "[01] error type=TimeoutError")
             for secret in (
                 "private exception detail",
@@ -235,19 +240,25 @@ class ExtendedPeerCleanupTests(unittest.TestCase):
         runtime = Mock()
         runtime.config = SimpleNamespace()
         try:
-            with self.assertRaisesRegex(RuntimeError, "operation failed"):
-                with cleanup_runtime(runtime):
-                    raise RuntimeError("operation failed")
+            with (
+                self.assertRaisesRegex(RuntimeError, "operation failed"),
+                cleanup_runtime(runtime),
+            ):
+                raise RuntimeError("operation failed")
         finally:
             runtime.shutdown.assert_called_once_with()
 
 
 class ExtendedPeerArgumentTests(unittest.TestCase):
-    def test_parser_accepts_bidirectional_surfaces_without_changing_default(self) -> None:
+    def test_parser_accepts_bidirectional_surfaces_without_changing_default(
+        self,
+    ) -> None:
         common = ["--role", "target", "--profile", "/tmp/profile"]
         self.assertFalse(_parser().parse_args(common).bidirectional_surfaces)
         self.assertTrue(
-            _parser().parse_args(common + ["--bidirectional-surfaces"]).bidirectional_surfaces
+            _parser()
+            .parse_args(common + ["--bidirectional-surfaces"])
+            .bidirectional_surfaces
         )
 
     def test_main_accepts_task_one_arguments_without_starting_runtime(self) -> None:
@@ -275,9 +286,10 @@ class ExtendedPeerArgumentTests(unittest.TestCase):
                 "--restart-check",
                 "--revoke-self",
             ]
-            with unittest.mock.patch("sys.argv", arguments), unittest.mock.patch(
-                "run_peer_extended.ConnectRuntime"
-            ) as runtime_type:
+            with (
+                unittest.mock.patch("sys.argv", arguments),
+                unittest.mock.patch("run_peer_extended.ConnectRuntime") as runtime_type,
+            ):
                 runtime_type.return_value.start.return_value = SimpleNamespace(
                     state="started"
                 )
@@ -310,7 +322,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
             transport_fingerprint="fingerprint",
         )
 
-    def test_register_harness_surfaces_uses_deterministic_structured_handlers(self) -> None:
+    def test_register_harness_surfaces_uses_deterministic_structured_handlers(
+        self,
+    ) -> None:
         runtime = Mock()
         register_harness_surfaces(runtime)
 
@@ -329,7 +343,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
                 handlers["actions"]["save"](NodeId("other"), {"payload": "ignored"}),
             )
 
-    def test_target_registers_capability_and_approves_pairing_before_start(self) -> None:
+    def test_target_registers_capability_and_approves_pairing_before_start(
+        self,
+    ) -> None:
         runtime = Mock()
         runtime.start.return_value = self._status()
         runtime.identity = self._identity("target")
@@ -349,15 +365,15 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.shutdown.assert_called_once_with()
 
         callback = runtime.config.on_pairing_request
-        request = SimpleNamespace(
-            caller_node_id=NodeId("initiator"), permissions=()
-        )
+        request = SimpleNamespace(caller_node_id=NodeId("initiator"), permissions=())
         self.assertTrue(callback(request))
         runtime.sharing.allow.assert_called_once_with(
             request.caller_node_id, CAPABILITY
         )
 
-    def test_surface_pairing_approves_trust_without_granting_surface_access(self) -> None:
+    def test_surface_pairing_approves_trust_without_granting_surface_access(
+        self,
+    ) -> None:
         runtime = Mock()
         request = SimpleNamespace(
             caller_node_id=SimpleNamespace(value="initiator"), permissions=()
@@ -375,7 +391,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
         self.assertEqual(event.call_args.args[1], "pairing_request")
         self.assertNotIn("caller_node_id", event.call_args.kwargs)
 
-    def test_bidirectional_runtime_installs_pairing_callback_for_both_roles(self) -> None:
+    def test_bidirectional_runtime_installs_pairing_callback_for_both_roles(
+        self,
+    ) -> None:
         for role in ("target", "initiator"):
             args = SimpleNamespace(
                 role=role,
@@ -401,15 +419,16 @@ class ExtendedPeerStageTests(unittest.TestCase):
     def test_wait_for_matching_peer_filters_by_public_stable_id(self) -> None:
         runtime = Mock()
         runtime.peers = (self._candidate("other"), self._candidate("target"))
-        self.assertEqual(
-            wait_for_matching_peer(runtime, "target", 0).stable_id,
-            "target",
-        )
+        matched = wait_for_matching_peer(runtime, "target", 0)
+        assert matched is not None
+        self.assertEqual(matched.stable_id, "target")
 
     def test_connect_bidirectionally_pairs_before_connecting(self) -> None:
         runtime = Mock()
         runtime.pairing.trusted.get.return_value = None
-        runtime.pair_peer.return_value = SimpleNamespace(peer_id=SimpleNamespace(value="peer"))
+        runtime.pair_peer.return_value = SimpleNamespace(
+            peer_id=SimpleNamespace(value="peer")
+        )
         provider = Mock()
         runtime.connect_peer.return_value = provider
 
@@ -434,7 +453,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
             ],
         )
 
-    def test_exercise_remote_surfaces_stages_access_and_records_redacted_results(self) -> None:
+    def test_exercise_remote_surfaces_stages_access_and_records_redacted_results(
+        self,
+    ) -> None:
         runtime = Mock()
         provider = Mock()
         surface_ids = ("desktop", "desktop/settings", "device/status")
@@ -459,9 +480,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
             return {"secret": "must not be logged"}
 
         runtime.grant_surface_access.side_effect = grant
-        runtime.stop_surface_share.side_effect = (
-            lambda _peer, surface_id: granted[surface_id].clear()
-        )
+        runtime.stop_surface_share.side_effect = lambda _peer, surface_id: granted[
+            surface_id
+        ].clear()
         runtime.revoke_surface_access.side_effect = (
             lambda _peer, surface_id, *, access: granted[surface_id].discard(access)
         )
@@ -484,9 +505,14 @@ class ExtendedPeerStageTests(unittest.TestCase):
             records = json.loads(report.read_text(encoding="utf-8"))
             report_text = report.read_text(encoding="utf-8")
 
-        surface_records = [record for record in records if record["event"].startswith("surface_")]
+        surface_records = [
+            record for record in records if record["event"].startswith("surface_")
+        ]
         self.assertEqual(
-            [(record["event"], record["access"], record["outcome"]) for record in surface_records],
+            [
+                (record["event"], record["access"], record["outcome"])
+                for record in surface_records
+            ],
             [
                 (event, access, outcome)
                 for _surface_id in surface_ids
@@ -553,9 +579,8 @@ class ExtendedPeerStageTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / "report.json"
-            with self.assertRaises(ValueError):
-                with redirect_stdout(StringIO()):
-                    exercise_remote_surfaces(runtime, provider, NodeId("peer"), report)
+            with self.assertRaises(ValueError), redirect_stdout(StringIO()):
+                exercise_remote_surfaces(runtime, provider, NodeId("peer"), report)
 
             records = json.loads(report.read_text(encoding="utf-8"))
             report_text = report.read_text(encoding="utf-8")
@@ -663,12 +688,12 @@ class ExtendedPeerStageTests(unittest.TestCase):
 
         self.assertEqual(records[-1]["event"], "error")
         self.assertEqual(records[-1]["error_type"], "AssertionError")
-        self.assertNotIn(
-            "post_revoke_denied", [record["event"] for record in records]
-        )
+        self.assertNotIn("post_revoke_denied", [record["event"] for record in records])
         provider.revoke_self.assert_called_once_with()
 
-    def test_bidirectional_initiator_orders_reverse_pair_and_connect_events(self) -> None:
+    def test_bidirectional_initiator_orders_reverse_pair_and_connect_events(
+        self,
+    ) -> None:
         runtime = Mock()
         runtime.start.return_value = self._status()
         runtime.identity = self._identity("initiator")
@@ -684,9 +709,12 @@ class ExtendedPeerStageTests(unittest.TestCase):
             bidirectional_surfaces=True,
         )
 
-        with unittest.mock.patch("run_peer_extended.write_event") as event, unittest.mock.patch(
-            "run_peer_extended.exercise_remote_surfaces"
-        ) as exercise:
+        with (
+            unittest.mock.patch("run_peer_extended.write_event") as event,
+            unittest.mock.patch(
+                "run_peer_extended.exercise_remote_surfaces"
+            ) as exercise,
+        ):
             self.assertEqual(run_initiator(args, runtime), 0)
 
         names = [call.args[1] for call in event.call_args_list]
@@ -701,7 +729,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
             ready_events=unittest.mock.ANY,
         )
 
-    def test_bidirectional_target_exercises_reverse_provider_after_connect(self) -> None:
+    def test_bidirectional_target_exercises_reverse_provider_after_connect(
+        self,
+    ) -> None:
         runtime = Mock()
         runtime.start.return_value = self._status()
         runtime.identity = self._identity("target")
@@ -717,9 +747,12 @@ class ExtendedPeerStageTests(unittest.TestCase):
             bidirectional_surfaces=True,
         )
 
-        with unittest.mock.patch("run_peer_extended.write_event"), unittest.mock.patch(
-            "run_peer_extended.exercise_remote_surfaces"
-        ) as exercise:
+        with (
+            unittest.mock.patch("run_peer_extended.write_event"),
+            unittest.mock.patch(
+                "run_peer_extended.exercise_remote_surfaces"
+            ) as exercise,
+        ):
             self.assertEqual(run_target(args, runtime), 0)
 
         exercise.assert_called_once_with(
@@ -785,23 +818,39 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.peers = (self._candidate(),)
         runtime.pairing.trusted.get.return_value = None
         runtime.pair_peer.return_value = SimpleNamespace(
-            peer_id=SimpleNamespace(value="target"), permissions=frozenset({"read_state"})
+            peer_id=SimpleNamespace(value="target"),
+            permissions=frozenset({"read_state"}),
         )
         provider = Mock()
         provider.request_shared.return_value = {"ok": True, "state": "ready"}
         runtime.connect_peer.return_value = provider
-        runtime.diagnostics.return_value = {"status": {}, "routes": [], "connections": []}
+        runtime.diagnostics.return_value = {
+            "status": {},
+            "routes": [],
+            "connections": [],
+        }
         args = SimpleNamespace(peer_id="target", wait=0, report=Path("/tmp/report"))
         with unittest.mock.patch("run_peer_extended.write_event") as event:
             self.assertEqual(run_initiator(args, runtime), 0)
         self.assertEqual(
             [call.args[1] for call in event.call_args_list],
-            ["started", "discovered", "paired", "connected", "shared_capability_result", "diagnostics"],
+            [
+                "started",
+                "discovered",
+                "paired",
+                "connected",
+                "shared_capability_result",
+                "diagnostics",
+            ],
         )
-        provider.request_shared.assert_called_once_with(CAPABILITY, {"source": "run_peer_extended.py"})
+        provider.request_shared.assert_called_once_with(
+            CAPABILITY, {"source": "run_peer_extended.py"}
+        )
         runtime.shutdown.assert_called_once_with()
 
-    def test_initiator_reports_type_only_errors_and_stops_after_pair_failure(self) -> None:
+    def test_initiator_reports_type_only_errors_and_stops_after_pair_failure(
+        self,
+    ) -> None:
         runtime = Mock()
         runtime.start.return_value = self._status()
         runtime.identity = self._identity("initiator")
@@ -827,9 +876,10 @@ class ExtendedPeerStageTests(unittest.TestCase):
             wait=0.02,
             rotate_after=0,
         )
-        with unittest.mock.patch("run_peer_extended.time.sleep"), unittest.mock.patch(
-            "run_peer_extended.write_event"
-        ) as event:
+        with (
+            unittest.mock.patch("run_peer_extended.time.sleep"),
+            unittest.mock.patch("run_peer_extended.write_event") as event,
+        ):
             self.assertEqual(run_target(args, runtime), 0)
         self.assertEqual(
             [call.args[1] for call in event.call_args_list],
@@ -946,11 +996,16 @@ class ExtendedPeerStageTests(unittest.TestCase):
             unittest.mock.patch("run_peer_extended.time.sleep"),
         ):
             self.assertEqual(run_initiator(args, runtime), 0)
-        self.assertIn("reconnected_after_rotation", [call.args[1] for call in event.call_args_list])
+        self.assertIn(
+            "reconnected_after_rotation",
+            [call.args[1] for call in event.call_args_list],
+        )
         runtime.reconnect_peer.assert_called_once_with(NodeId("target"))
         self.assertEqual(provider.request_shared.call_count, 3)
 
-    def test_initiator_rotation_timeout_is_typed_error_and_gates_reconnect(self) -> None:
+    def test_initiator_rotation_timeout_is_typed_error_and_gates_reconnect(
+        self,
+    ) -> None:
         runtime = Mock()
         runtime.start.return_value = self._status()
         runtime.identity = self._identity("initiator")
@@ -966,8 +1021,11 @@ class ExtendedPeerStageTests(unittest.TestCase):
             reconnect_after_rotation=True,
             rotation_wait=1,
         )
-        with unittest.mock.patch("run_peer_extended.write_event") as event, unittest.mock.patch(
-            "run_peer_extended.wait_for_peer", side_effect=[runtime.peers[0], None]
+        with (
+            unittest.mock.patch("run_peer_extended.write_event") as event,
+            unittest.mock.patch(
+                "run_peer_extended.wait_for_peer", side_effect=[runtime.peers[0], None]
+            ),
         ):
             self.assertEqual(run_initiator(args, runtime), 1)
         self.assertEqual(event.call_args.args[1], "error")
@@ -994,7 +1052,10 @@ class ExtendedPeerStageTests(unittest.TestCase):
         )
         with unittest.mock.patch("run_peer_extended.write_event") as event:
             self.assertEqual(
-                run_initiator(args, runtime, runtime_factory=Mock(return_value=restarted)), 0
+                run_initiator(
+                    args, runtime, runtime_factory=Mock(return_value=restarted)
+                ),
+                0,
             )
         self.assertIn("restored_trust", [call.args[1] for call in event.call_args_list])
         runtime.shutdown.assert_called_once_with()
@@ -1016,7 +1077,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
             self.assertEqual(run_initiator(args, runtime), 0)
         names = [call.args[1] for call in event.call_args_list]
         self.assertEqual(names[-3:-1], ["self_revoked", "post_revoke_denied"])
-        self.assertEqual(event.call_args_list[-2].kwargs, {"error_type": "PermissionError"})
+        self.assertEqual(
+            event.call_args_list[-2].kwargs, {"error_type": "PermissionError"}
+        )
         provider.revoke_self.assert_called_once_with()
 
     def test_bidirectional_optional_stages_follow_surface_matrix(self) -> None:
@@ -1059,14 +1122,18 @@ class ExtendedPeerStageTests(unittest.TestCase):
             RemoteAuthorizationError("revoked"),
         ]
         reconnected.review_surface.side_effect = RemoteAuthorizationError("denied")
-        reconnected.invoke_surface_action.side_effect = RemoteAuthorizationError("denied")
-        with unittest.mock.patch(
-            "run_peer_extended.exercise_remote_surfaces"
-        ) as exercise, unittest.mock.patch(
-            "run_peer_extended.wait_for_peer", side_effect=[initial, rotated]
-        ) as wait_for_peer, unittest.mock.patch(
-            "run_peer_extended.write_event"
-        ) as event:
+        reconnected.invoke_surface_action.side_effect = RemoteAuthorizationError(
+            "denied"
+        )
+        with (
+            unittest.mock.patch(
+                "run_peer_extended.exercise_remote_surfaces"
+            ) as exercise,
+            unittest.mock.patch(
+                "run_peer_extended.wait_for_peer", side_effect=[initial, rotated]
+            ) as wait_for_peer,
+            unittest.mock.patch("run_peer_extended.write_event") as event,
+        ):
             result = run_initiator(
                 args, runtime, runtime_factory=Mock(return_value=restarted)
             )
@@ -1103,11 +1170,17 @@ class ExtendedPeerStageTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            [call.kwargs.get("access") for call in runtime.grant_surface_access.call_args_list],
+            [
+                call.kwargs.get("access")
+                for call in runtime.grant_surface_access.call_args_list
+            ],
             ["read"],
         )
         self.assertEqual(
-            [call.kwargs.get("access") for call in restarted.grant_surface_access.call_args_list],
+            [
+                call.kwargs.get("access")
+                for call in restarted.grant_surface_access.call_args_list
+            ],
             ["read"],
         )
         runtime.shutdown.assert_called_once_with()
@@ -1129,10 +1202,11 @@ class ExtendedPeerStageTests(unittest.TestCase):
             reconnect_after_rotation=True,
             rotation_wait=1,
         )
-        with unittest.mock.patch(
-            "run_peer_extended.exercise_remote_surfaces"
-        ), unittest.mock.patch(
-            "run_peer_extended.wait_for_peer", side_effect=[candidate, candidate]
+        with (
+            unittest.mock.patch("run_peer_extended.exercise_remote_surfaces"),
+            unittest.mock.patch(
+                "run_peer_extended.wait_for_peer", side_effect=[candidate, candidate]
+            ),
         ):
             self.assertEqual(run_initiator(args, runtime), 1)
         runtime.reconnect_peer.assert_not_called()
@@ -1160,11 +1234,14 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.peers = (self._candidate(),)
         runtime.pairing.trusted.get.return_value = Mock()
         runtime.connect_peer.return_value = Mock()
-        with unittest.mock.patch("run_peer_extended.exercise_remote_surfaces"), unittest.mock.patch(
-            "run_peer_extended.write_event"
-        ) as event:
+        with (
+            unittest.mock.patch("run_peer_extended.exercise_remote_surfaces"),
+            unittest.mock.patch("run_peer_extended.write_event"),
+        ):
             self.assertEqual(
-                run_initiator(args, runtime, runtime_factory=Mock(return_value=restarted)),
+                run_initiator(
+                    args, runtime, runtime_factory=Mock(return_value=restarted)
+                ),
                 0,
             )
         self.assertEqual(provider.read_surface.call_count, 2)
@@ -1184,7 +1261,8 @@ class ExtendedPeerDocumentationTests(unittest.TestCase):
         self.assertIn("structured data, not pixel streaming", readme)
         self.assertIn("pairing alone grants no surface access", readme)
         self.assertLess(
-            readme.rindex("reverse_connected"), readme.rindex("waiting_for_rotated_peer")
+            readme.rindex("reverse_connected"),
+            readme.rindex("waiting_for_rotated_peer"),
         )
         self.assertLess(
             readme.rindex("waiting_for_rotated_peer"),
@@ -1196,11 +1274,14 @@ class ExtendedPeerDocumentationTests(unittest.TestCase):
             _candidate_values(SimpleNamespace(addresses="not-a-sequence")),
             {"address": None, "port": None, "source": "discovery"},
         )
-        self.assertEqual(_diagnostics_values({"routes": "bad", "connections": None}), {
-            "generation": None,
-            "routes_count": None,
-            "connections_count": None,
-        })
+        self.assertEqual(
+            _diagnostics_values({"routes": "bad", "connections": None}),
+            {
+                "generation": None,
+                "routes_count": None,
+                "connections_count": None,
+            },
+        )
 
     def test_diagnostics_values_returns_generation_and_counts_for_dicts(self) -> None:
         self.assertEqual(_diagnostics_values("not-a-dict"), {})

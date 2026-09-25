@@ -1,6 +1,7 @@
 import time
 import unittest
 from threading import Event
+from typing import Any, cast
 
 from expra_connect.server import PeerServer
 from expra_connect.transport import SocketTransport, TransportError
@@ -44,7 +45,9 @@ class TransportTests(unittest.TestCase):
             SocketTransport("127.0.0.1", 1, timeout=0.1).request({})
 
     def test_response_must_be_a_json_object(self) -> None:
-        server = PeerServer("127.0.0.1", 0, lambda _request: ["not", "an object"])
+        server = PeerServer(
+            "127.0.0.1", 0, lambda _request: cast(Any, ["not", "an object"])
+        )
         server.start()
         try:
             host, port = server.address

@@ -373,7 +373,9 @@ class SurfaceRegistryTests(unittest.TestCase):
         registry.grant_peer(peer, "surface", access=SurfaceAccess.ACTION)
 
         self.assertEqual(
-            registry.dispatch(peer, "surface", access=SurfaceAccess.READ, params={"x": 1}),
+            registry.dispatch(
+                peer, "surface", access=SurfaceAccess.READ, params={"x": 1}
+            ),
             ("read", peer, {"x": 1}),
         )
         self.assertEqual(
@@ -425,7 +427,9 @@ class SurfaceRegistryTests(unittest.TestCase):
         current_time[0] = 11.0
         with self.assertRaises(PermissionError):
             registry.dispatch(peer, "surface", access="read")
-        registry.grant_cluster("cluster-grant", "surface", access="read", expires_at=20.0)
+        registry.grant_cluster(
+            "cluster-grant", "surface", access="read", expires_at=20.0
+        )
         self.assertEqual(
             registry.dispatch(
                 peer,

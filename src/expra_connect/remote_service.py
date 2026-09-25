@@ -349,7 +349,7 @@ class RemoteService:
             return result
 
         try:
-            payload = (
+            payload: dict[str, Any] | None = (
                 self._idempotency.run(cache_key, fingerprint, solve)
                 if OPERATION_SAFETY.get(request.op) != "read"
                 else solve()
@@ -702,7 +702,7 @@ class AuthenticatedNodeProvider(
             f"remote:{op}",
             cancelled=cancel_event.is_set if cancel_event is not None else None,
         ):
-            result = super()._request(op, params, cancel_event)
+            result: dict[str, Any] = super()._request(op, params, cancel_event)
         return result
 
     def invalidate(self) -> None:

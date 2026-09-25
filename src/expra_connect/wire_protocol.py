@@ -666,8 +666,8 @@ def verify_response(
         raise RemoteAuthError("response timestamp is outside the freshness window")
     try:
         verified_node_id = NodeId(node_id)
-    except ValueError as error:
-        raise RemoteAuthError("response identity is invalid") from error
+    except ValueError as exc:
+        raise RemoteAuthError("response identity is invalid") from exc
     return RemoteResponse(
         node_id=verified_node_id,
         request_id=request_id,

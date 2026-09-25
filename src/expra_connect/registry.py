@@ -131,6 +131,21 @@ class NodeRegistry:
         self._records[node_id] = updated
         return updated
 
+    def hydrate_trust(self, node_id: NodeId) -> NodeRecord:
+        """Project re-established canonical trust without changing other axes.
+
+        A ``REVOKED`` record is a tombstone for a trust that no longer exists.
+        Once the pairing owner has durably re-established trust for the same
+        node, the projection must clear that tombstone; otherwise the stale
+        revocation would outlive the trust it represented and permanently block
+        reconnection for the process lifetime.
+        """
+
+        current = self._require(node_id)
+        updated = replace(current, trust=TrustState.AUTHORIZED)
+        self._records[node_id] = updated
+        return updated
+
     def _require(self, node_id: NodeId) -> NodeRecord:
         record = self._records.get(node_id)
         if record is None:

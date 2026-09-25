@@ -30,8 +30,7 @@ class CodeSizeTests(unittest.TestCase):
             warnings.warn(
                 f"{len(soft_overages)} of {module_count} "
                 f"modules exceed the 900-line consolidation threshold "
-                f"({measured_lines} source lines total): "
-                + ", ".join(soft_overages),
+                f"({measured_lines} source lines total): " + ", ".join(soft_overages),
                 stacklevel=1,
             )
         self.assertFalse(

@@ -22,7 +22,9 @@ class HumanCliOutputTests(unittest.TestCase):
         )
 
     def test_status_handles_stopped_missing_values(self) -> None:
-        self.assertIn("state=stopped", format_human_output("status", {"state": "stopped"}))
+        self.assertIn(
+            "state=stopped", format_human_output("status", {"state": "stopped"})
+        )
         self.assertIn("listener=not_started", format_human_output("status", {}))
 
     def test_identity_keeps_developer_identifiers(self) -> None:
@@ -83,7 +85,12 @@ class HumanCliOutputTests(unittest.TestCase):
                 "peers": [],
                 "observability": {
                     "metrics": [
-                        {"target": "remote:hello", "count": 3, "successes": 2, "failures": 1}
+                        {
+                            "target": "remote:hello",
+                            "count": 3,
+                            "successes": 2,
+                            "failures": 1,
+                        }
                     ]
                 },
             },

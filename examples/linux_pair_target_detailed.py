@@ -53,9 +53,7 @@ def main() -> int:
         report.write(
             "pairing_request",
             caller_node_id=request.caller_node_id.value,
-            permissions=sorted(
-                permission.value for permission in request.permissions
-            ),
+            permissions=sorted(permission.value for permission in request.permissions),
         )
         runtime.sharing.allow(request.caller_node_id, CAPABILITY)
         return True

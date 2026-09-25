@@ -124,8 +124,9 @@ class ProtocolTests(unittest.TestCase):
                 "permissions": [NodePermission.READ_STATE.value, "future"],
                 "expires_at": 10.0,
             }
-            with self.subTest(operation=operation), self.assertRaises(
-                RemoteProtocolError
+            with (
+                self.subTest(operation=operation),
+                self.assertRaises(RemoteProtocolError),
             ):
                 validate_operation_params(operation, params)
 

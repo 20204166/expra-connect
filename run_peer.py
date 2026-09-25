@@ -155,7 +155,9 @@ def format_terminal_event(sequence: int, event: str, **values: Any) -> str:
             f"timeout={_field(values.get('timeout'))}"
         )
     if event == "reconnected_after_rotation":
-        return f"{prefix} reconnected_after_rotation peer={_short(values.get('peer_id'))}"
+        return (
+            f"{prefix} reconnected_after_rotation peer={_short(values.get('peer_id'))}"
+        )
     return f"{prefix} {event}"
 
 
@@ -175,14 +177,13 @@ def write_event(report_path: Path, event: str, **values: Any) -> None:
                 pass
         history.append(record)
         report_path.write_text(
-            json.dumps(history, indent=2, sort_keys=True, default=json_default)
-            + "\n",
+            json.dumps(history, indent=2, sort_keys=True, default=json_default) + "\n",
             encoding="utf-8",
         )
 
 
 def discovery_event(report_path: Path, kind: str, payload: Any) -> None:
-    if is_dataclass(payload):
+    if is_dataclass(payload) and not isinstance(payload, type):
         payload = asdict(payload)
     write_event(report_path, "discovery_event", kind=kind, payload=payload)
 
@@ -345,7 +346,10 @@ def main() -> int:
                 else None
             )
             while True:
-                if rotation_deadline is not None and time.monotonic() >= rotation_deadline:
+                if (
+                    rotation_deadline is not None
+                    and time.monotonic() >= rotation_deadline
+                ):
                     rotated = runtime.rotate_transport()
                     _reallow_capability_after_rotation(runtime, capability_peers)
                     write_event(
@@ -416,7 +420,9 @@ def main() -> int:
             if candidate is None:
                 raise TimeoutError("rotated peer advertisement was not rediscovered")
             provider = runtime.reconnect_peer(peer_id)
-            write_event(args.report, "reconnected_after_rotation", peer_id=peer_id.value)
+            write_event(
+                args.report, "reconnected_after_rotation", peer_id=peer_id.value
+            )
             result = _retry_shared_capability(
                 lambda: provider.request_shared(
                     CAPABILITY, {"source": "run_peer.py", "after_rotation": True}

@@ -119,16 +119,20 @@ def _human_status(status: dict[str, Any]) -> list[str]:
         f"state={_human_value(status.get('state'))}",
         f"listener={'started' if status.get('listener_started') else 'not_started'}",
         f"discovery={'started' if status.get('discovery_started') else 'not_started'}",
-        f"bound={status.get('bound_host', '-') or '-'}:"
-        f"{status.get('bound_port', '-') or '-'}",
+        (
+            f"bound={status.get('bound_host', '-') or '-'}:"
+            f"{status.get('bound_port', '-') or '-'}"
+        ),
         f"tls_fingerprint={_human_value(status.get('tls_fingerprint'))}",
     ]
 
 
 def _human_peer(peer: dict[str, Any], number: int) -> list[str]:
     lines = [
-        f"peer[{number}] id={_human_value(peer.get('stable_id'))} "
-        f"host={_human_value(peer.get('hostname'))}"
+        (
+            f"peer[{number}] id={_human_value(peer.get('stable_id'))} "
+            f"host={_human_value(peer.get('hostname'))}"
+        )
     ]
     endpoints = peer.get("endpoint_candidates") or []
     for endpoint in endpoints:
@@ -194,7 +198,8 @@ def format_human_output(command: str, value: Any) -> str:
         return "\n".join(
             f"{key}={_human_item(item)}"
             for key, item in value.items()
-            if key not in {"secret", "token", "root_public_key", "transport_proof", "result"}
+            if key
+            not in {"secret", "token", "root_public_key", "transport_proof", "result"}
         )
     return _human_value(value)
 
@@ -244,7 +249,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--profile", type=Path, default=_default_profile())
     parser.add_argument("--no-discovery", action="store_true")
     parser.add_argument("--cluster", action="store_true")
-    parser.add_argument("--human", action="store_true", help="print ordered audit output")
+    parser.add_argument(
+        "--human", action="store_true", help="print ordered audit output"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("status")
     subparsers.add_parser("identity")

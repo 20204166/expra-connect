@@ -15,6 +15,7 @@ from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerpri
 from expra_connect.models import DiscoveredNodeCandidate, NodeCapability, NodePermission
 from expra_connect.observability import ObservabilityWatcher
 from expra_connect.pairing import PeerGrant, TrustedPeer
+from expra_connect.registry import TrustState
 from expra_connect.remote_service import AuthenticatedNodeProvider, PairingTransaction
 from expra_connect.role_engine import ClusterRole as RegistryClusterRole
 from expra_connect.runtime import (
@@ -380,7 +381,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             },
         )()
         with self.assertRaises(ValueError):
-            runtime.join_cluster(Provider(), invite)
+            runtime.join_cluster(Provider(), cast(Any, invite))
         self.assertEqual(
             (cluster.cluster_id, cluster.epoch, cluster.assignments), before
         )
@@ -428,7 +429,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             patch.object(runtime, "_save_persisted_state", return_value=False),
             self.assertRaises(RuntimeError),
         ):
-            runtime.join_cluster(Provider(), invite)
+            runtime.join_cluster(Provider(), cast(Any, invite))
         self.assertEqual(
             (cluster.cluster_id, cluster.epoch, cluster.assignments), before
         )
@@ -830,6 +831,37 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             self.assertIn(peer_id, runtime.pairing.grants)
             runtime.revoke_peer(peer_id)
             self.assertNotIn(peer_id, runtime.pairing.grants)
+            runtime.shutdown()
+
+    def test_inbound_pairing_approval_clears_a_revoked_registry_tombstone(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            runtime.start()
+            peer_id = NodeId("repair-peer")
+            registry = runtime.registry
+            assert registry is not None
+            registry.observe(peer_id, frozenset())
+            registry.revoke(peer_id)
+            revoked = registry.record(peer_id)
+            assert revoked is not None
+            self.assertEqual(revoked.trust, TrustState.REVOKED)
+
+            transaction = runtime.begin_pairing(peer_id)
+            runtime.approve_pairing(
+                transaction.transaction_id, frozenset({"read_state"})
+            )
+
+            restored = registry.record(peer_id)
+            assert restored is not None
+            self.assertEqual(restored.trust, TrustState.AUTHORIZED)
             runtime.shutdown()
 
     def test_pairing_changes_update_live_listener_grants(self) -> None:

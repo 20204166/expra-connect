@@ -2,6 +2,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from typing import NoReturn
 from unittest.mock import patch
 
 from expra_connect.persistence import JsonStateStore, StateDataError, migrate_state
@@ -70,3 +71,27 @@ class PersistenceTests(unittest.TestCase):
             with patch("expra_connect.persistence.os.fsync", side_effect=fsync_once):
                 JsonStateStore(path).save({"version": 1})
             self.assertEqual(JsonStateStore(path).load()["version"], 1)
+
+    def test_failed_descriptor_open_does_not_leak_the_raw_descriptor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            captured: list[int] = []
+
+            def failing_fdopen(
+                file_descriptor: int, *args: object, **kwargs: object
+            ) -> NoReturn:
+                captured.append(file_descriptor)
+                raise OSError("descriptor open failed")
+
+            with (
+                patch(
+                    "expra_connect.persistence.os.fdopen",
+                    side_effect=failing_fdopen,
+                ),
+                self.assertRaises(OSError),
+            ):
+                JsonStateStore(path).save({"version": 1})
+
+            self.assertEqual(len(captured), 1)
+            with self.assertRaises(OSError):
+                os.fstat(captured[0])

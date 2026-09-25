@@ -299,7 +299,11 @@ class ConnectRuntime(
         pairing = self._network_pairing
         if pairing is None:
             raise RuntimeError("runtime must be started before pairing")
-        return pairing.pair(peer_id, permissions=permissions, cancel_event=cancel_event)
+        trusted = pairing.pair(
+            peer_id, permissions=permissions, cancel_event=cancel_event
+        )
+        self._project_registry_trust(peer_id)
+        return trusted
 
     def repair_peer(
         self,
@@ -323,6 +327,14 @@ class ConnectRuntime(
         return pairing.repair(
             peer_id, permissions=permissions, cancel_event=cancel_event
         )
+
+    def _project_registry_trust(self, peer_id: NodeId) -> None:
+        """Clear a stale revocation tombstone once canonical trust is restored."""
+
+        registry = self._registry
+        if registry is None or registry.record(peer_id) is None:
+            return
+        registry.hydrate_trust(peer_id)
 
     def peer_relationship(self, peer_id: NodeId) -> RelationshipState:
         """Return the canonical directional relationship with one peer."""
@@ -348,6 +360,7 @@ class ConnectRuntime(
         if not self._save_persisted_state():
             pairing.grants = previous
             raise PersistenceError("pairing approval was not durably persisted")
+        self._project_registry_trust(grant.caller_id)
         self._refresh_live_grants()
         return grant
 

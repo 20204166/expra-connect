@@ -83,7 +83,7 @@ class SurfaceOperationProtocolTests(unittest.TestCase):
             SURFACE_ACTION,
             {"surface_id": "settings", "action": "save", "params": {}},
         )
-        invalid = (
+        invalid: tuple[tuple[str, dict[str, object]], ...] = (
             (SURFACE_READ, {}),
             (SURFACE_REVIEW, {"surface_id": ""}),
             (SURFACE_ACTION, {"surface_id": "settings"}),
@@ -189,19 +189,19 @@ class SurfaceOperationProtocolTests(unittest.TestCase):
                     {"surface_id": "surface", "params": {"value": value}},
                 )
 
-        value: object = "leaf"
+        nested: object = "leaf"
         for _ in range(MAX_SURFACE_PARAM_DEPTH - 1):
-            value = [value]
+            nested = [nested]
         validate_operation_params(
-            SURFACE_READ, {"surface_id": "surface", "params": {"value": value}}
+            SURFACE_READ, {"surface_id": "surface", "params": {"value": nested}}
         )
-        value = "leaf"
+        nested = "leaf"
         for _ in range(MAX_SURFACE_PARAM_DEPTH):
-            value = [value]
+            nested = [nested]
         with self.assertRaises(RemoteProtocolError):
             validate_operation_params(
                 SURFACE_READ,
-                {"surface_id": "surface", "params": {"value": value}},
+                {"surface_id": "surface", "params": {"value": nested}},
             )
 
     def test_existing_operation_validation_remains_compatible(self) -> None:
