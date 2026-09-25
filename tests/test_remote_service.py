@@ -1219,6 +1219,7 @@ class RemoteServiceTests(unittest.TestCase):
             provider=_Provider(),
             secret=SECRET,
             clock=lambda: now[0],
+            session_clock=lambda: now[0],
             grants={
                 NodeId("caller"): PeerGrant(
                     NodeId("caller"), SECRET, frozenset({NodePermission.READ_STATE})
@@ -1268,6 +1269,7 @@ class RemoteServiceTests(unittest.TestCase):
             provider=_Provider(),
             secret=SECRET,
             clock=lambda: now[0],
+            session_clock=lambda: now[0],
         )
         client = AuthenticatedNodeProvider(
             node_id=NodeId("peer"),
@@ -1280,7 +1282,7 @@ class RemoteServiceTests(unittest.TestCase):
         self.assertIsNotNone(session_id)
         now[0] = 701.0
         with self.assertRaises(RemoteAuthError):
-            service._sessions.assert_current(session_id or "", "memory")
+            service._sessions.assert_current(session_id or "", None)
 
     def test_lost_response_retries_retry_safe_mutation_once(self) -> None:
         calls = 0
@@ -1416,6 +1418,130 @@ class RemoteServiceTests(unittest.TestCase):
         worker.join(1.0)
         self.assertEqual(len(errors), 1)
         self.assertIsInstance(errors[0], RemoteAuthorizationError)
+
+    def test_in_flight_result_rejected_after_connection_resume(self) -> None:
+        started = threading.Event()
+        release = threading.Event()
+
+        class BlockingProvider(_Provider):
+            def component_summary(self, key: str) -> ResourceSummary:
+                started.set()
+                release.wait(1.0)
+                return super().component_summary(key)
+
+        caller = NodeId("caller")
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=BlockingProvider(),
+            secret=SECRET,
+            grants={
+                caller: PeerGrant(
+                    caller, SECRET, frozenset({NodePermission.READ_STATE})
+                )
+            },
+        )
+        first = sign_request(
+            node_id="peer",
+            caller_node_id="caller",
+            op="hello",
+            params={},
+            request_id="resume-first",
+            nonce="resume-first-nonce",
+            timestamp=time.time(),
+            secret=SECRET,
+        )
+        first_response = json.loads(
+            service.handle(json.dumps(first), connection_generation="generation-a")
+        )
+        session_id = first_response["session_id"]
+
+        holder: dict[str, BaseException] = {}
+
+        def invoke() -> None:
+            request = sign_request(
+                node_id="peer",
+                caller_node_id="caller",
+                op="component_summary",
+                params={"key": "cpu"},
+                request_id="resume-in-flight",
+                nonce="resume-in-flight-nonce",
+                timestamp=time.time(),
+                secret=SECRET,
+                session_id=session_id,
+                resume=True,
+            )
+            try:
+                service.handle(
+                    json.dumps(request), connection_generation="generation-a"
+                )
+            except BaseException as error:  # noqa: BLE001 - assertion captures type
+                holder["error"] = error
+
+        worker = threading.Thread(target=invoke)
+        worker.start()
+        self.assertTrue(started.wait(1.0))
+        resume = sign_request(
+            node_id="peer",
+            caller_node_id="caller",
+            op="hello",
+            params={},
+            request_id="resume-second",
+            nonce="resume-second-nonce",
+            timestamp=time.time(),
+            secret=SECRET,
+            session_id=session_id,
+            resume=True,
+        )
+        service.handle(json.dumps(resume), connection_generation="generation-b")
+        release.set()
+        worker.join(1.0)
+
+        self.assertIsInstance(holder.get("error"), RemoteAuthError)
+
+    def test_session_does_not_survive_service_restart(self) -> None:
+        first_service = self._service()
+        client = self._client(first_service)
+        client.hello()
+        session_id = client._session_id
+        self.assertIsNotNone(session_id)
+
+        restarted = self._service()
+        resumed = sign_request(
+            node_id="peer",
+            op="hello",
+            params={},
+            request_id="restart-resume",
+            nonce="restart-resume-nonce",
+            timestamp=time.time(),
+            secret=SECRET,
+            session_id=session_id,
+            resume=True,
+        )
+        with self.assertRaises(RemoteAuthError):
+            restarted.handle(json.dumps(resumed))
+
+    def test_revoked_grant_cannot_reuse_session(self) -> None:
+        caller = NodeId("caller")
+        service = self._service(
+            grants={
+                caller: PeerGrant(
+                    caller, SECRET, frozenset({NodePermission.READ_STATE})
+                )
+            }
+        )
+        client = self._client(service, caller=caller)
+        client.hello()
+        self.assertIsNotNone(client._session_id)
+
+        service.update_grants({})
+
+        with self.assertRaises(RemoteAuthError):
+            client.hello()
 
 
 class ProviderRequestMechanicsTests(unittest.TestCase):

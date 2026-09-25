@@ -18,10 +18,12 @@ from expra_connect.wire_protocol import (
     OP_REQUIRED_CAPABILITY,
     OP_REQUIRED_PERMISSION,
     OPERATION_SAFETY,
+    REMOTE_PROTOCOL_VERSION,
     IdempotencyCache,
     RemoteAuthError,
     RemoteProtocolError,
     ReplayCache,
+    _signature,
     sign_request,
     sign_response,
     validate_operation_params,
@@ -263,6 +265,28 @@ class SurfaceOperationProtocolTests(unittest.TestCase):
                 secret=TEST_SECRET,
                 clock=lambda: TEST_TIMESTAMP,
                 freshness_seconds=60.0,
+            )
+
+    def test_resume_without_session_id_is_rejected(self) -> None:
+        fields = {
+            "v": REMOTE_PROTOCOL_VERSION,
+            "node_id": "peer",
+            "op": "ping",
+            "params": {},
+            "request_id": "resume-request",
+            "nonce": "resume-nonce",
+            "ts": TEST_TIMESTAMP,
+            "resume": True,
+        }
+        envelope = dict(fields)
+        envelope["sig"] = _signature(TEST_SECRET, fields)
+        with self.assertRaises(RemoteAuthError):
+            verify_request(
+                envelope,
+                secret=TEST_SECRET,
+                clock=lambda: TEST_TIMESTAMP,
+                freshness_seconds=60.0,
+                replay_cache=ReplayCache(clock=lambda: TEST_TIMESTAMP),
             )
 
     def test_signed_wire_values_reject_non_finite_json_numbers(self) -> None:

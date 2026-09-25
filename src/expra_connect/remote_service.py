@@ -163,6 +163,7 @@ class RemoteService:
         secret: str,
         app_version: str = "",
         clock: Callable[[], float] = time.time,
+        session_clock: Callable[[], float] = time.monotonic,
         freshness_seconds: float = DEFAULT_FRESHNESS_SECONDS,
         replay_cache: ReplayCache | None = None,
         permissions: frozenset[NodePermission] | None = None,
@@ -255,7 +256,7 @@ class RemoteService:
             idempotency_cache = IdempotencyCache(clock=clock, ttl_seconds=idempotency_ttl_seconds, max_entries=idempotency_max_entries, state_store=idempotency_store)  # fmt: skip
         self._idempotency = idempotency_cache
         self._sessions = LogicalSessionRegistry(
-            clock=clock, ttl_seconds=freshness_seconds * 10
+            clock=session_clock, ttl_seconds=freshness_seconds * 10
         )
         self._grant_version = 0
 

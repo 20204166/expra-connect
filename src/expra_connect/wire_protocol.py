@@ -28,6 +28,7 @@ from .surface_protocol import (
 REMOTE_PROTOCOL_VERSION = "1"
 PAIRING_MODE_TRANSACTIONAL = "transactional"
 MAX_ENVELOPE_BYTES = 8 * 1024 * 1024
+MAX_IDENTIFIER_LENGTH = 128
 DEFAULT_FRESHNESS_SECONDS = 60.0
 DEFAULT_REPLAY_TTL_SECONDS = 300.0
 DEFAULT_REPLAY_MAX_ENTRIES = 4096
@@ -560,8 +561,8 @@ def verify_request(
         raise RemoteAuthError("request nonce is invalid")
     if session_id is not None and not _valid_identifier(session_id):
         raise RemoteAuthError("session_id is invalid")
-    if not isinstance(resume, bool):
-        raise RemoteAuthError("request resume flag is invalid")
+    if not isinstance(resume, bool) or (resume and session_id is None):
+        raise RemoteAuthError("request resume is invalid")
     if connection_generation is not None and not _valid_identifier(
         connection_generation
     ):
@@ -680,11 +681,9 @@ def verify_response(
 
 
 def _valid_identifier(value: str) -> bool:
-    return (
-        isinstance(value, str)
-        and 1 <= len(value) <= 128
-        and all(character.isalnum() or character in "._:-" for character in value)
-    )
+    if not isinstance(value, str) or not 1 <= len(value) <= MAX_IDENTIFIER_LENGTH:
+        return False
+    return all(character.isalnum() or character in "._:-" for character in value)
 
 
 @dataclass(slots=True)
