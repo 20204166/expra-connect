@@ -7,6 +7,7 @@ import time
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
 from expra_connect import __version__
@@ -621,9 +622,13 @@ class TargetPairRequestTests(unittest.TestCase):
             with self.subTest(value=value):
                 assert self.runtime.pairing is not None
                 self.runtime.pairing.grants.clear()
+
+                def callback(_request: PairingRequest, _value: object = value) -> bool:
+                    return cast(bool, _value)
+
                 self.runtime.config = replace(
                     self.runtime.config,
-                    on_pairing_request=lambda _request, _value=value: _value,
+                    on_pairing_request=callback,
                 )
                 response = self.runtime._handle_pairing_request(self._request("pair"))
                 self.assertFalse(response["approved"])

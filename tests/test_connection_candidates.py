@@ -1,7 +1,7 @@
 import unittest
 from dataclasses import replace
 from threading import Thread
-from typing import cast
+from typing import Any, cast
 from unittest.mock import patch
 
 from expra_connect.connection_manager import ConnectionManager
@@ -649,6 +649,6 @@ class ConnectionManagerTests(unittest.TestCase):
                 AuthenticatedNodeProvider, object()
             )
 
-        manager.disconnect = disconnect  # type: ignore[method-assign]
+        cast(Any, manager).disconnect = disconnect
         manager.disconnect_all()
         self.assertEqual(disconnected, [self.peer])

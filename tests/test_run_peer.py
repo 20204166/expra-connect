@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock
 from enum import Enum
+from typing import Any, cast
 from unittest.mock import Mock
 
 import run_peer
@@ -90,7 +91,7 @@ class RunPeerTerminalOutputTests(unittest.TestCase):
         )
 
     def test_enum_values_use_their_stable_value(self) -> None:
-        source = Enum("Source", {"IPV4": "ipv4"}).IPV4
+        source = cast(Any, Enum("Source", {"IPV4": "ipv4"})).IPV4
         self.assertIn(
             "source=ipv4",
             format_terminal_event(

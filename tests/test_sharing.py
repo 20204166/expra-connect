@@ -1,4 +1,5 @@
 import unittest
+from collections.abc import Callable
 from dataclasses import FrozenInstanceError
 from threading import Barrier, Event, Thread
 
@@ -69,14 +70,15 @@ class SharingTests(unittest.TestCase):
         share.allow(peer, "two")
         share.allow(other, "one")
 
-        for operation in (
+        operations: tuple[Callable[[], object], ...] = (
             lambda: share.allow("peer", "one"),  # type: ignore[arg-type]
             lambda: share.revoke("peer", "one"),  # type: ignore[arg-type]
             lambda: share.revoke_peer("peer"),  # type: ignore[arg-type]
             lambda: share.request("peer", "one"),  # type: ignore[arg-type]
-        ):
+        )
+        for operation in operations:
             with self.assertRaises(TypeError):
-                operation()  # type: ignore[call-arg]
+                operation()
 
         share.revoke_peer(peer)
         with self.assertRaises(PermissionError):

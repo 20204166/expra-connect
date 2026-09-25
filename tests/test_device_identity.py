@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import unittest
+from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import patch
 
@@ -484,8 +485,8 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_hardware_iterator_failure_does_not_block_creation(self) -> None:
         class FailingIteratorProvider:
-            def mac_addresses(self):
-                def values():
+            def mac_addresses(self) -> Iterator[str]:
+                def values() -> Iterator[str]:
                     yield "aa:bb:cc:dd:ee:01"
                     raise RuntimeError("hardware iterator failed")
 

@@ -3,7 +3,7 @@ import ssl
 import struct
 import unittest
 from threading import Event
-from typing import Any, cast
+from typing import Any, Literal, cast
 from unittest.mock import Mock, patch
 
 from expra_connect.identity import NodeId
@@ -239,7 +239,7 @@ class RequestLifecycleTests(unittest.TestCase):
         def __enter__(self) -> "RequestLifecycleTests.RawSocket":
             return self
 
-        def __exit__(self, *_args: object) -> bool:
+        def __exit__(self, *_args: object) -> Literal[False]:
             self.close()
             return False
 
@@ -304,7 +304,7 @@ class RequestLifecycleTests(unittest.TestCase):
             raw = self.RawSocket()
             wrapped = self.WrappedSocket()
             if certificate is None:
-                wrapped.getpeercert = lambda *, binary_form: None  # type: ignore[method-assign]
+                cast(Any, wrapped).getpeercert = lambda *, binary_form: None
             with (
                 self.subTest(certificate=certificate),
                 patch(
@@ -364,7 +364,7 @@ class RequestLifecycleTests(unittest.TestCase):
             SocketRemoteTransport("host", 1).request(b"payload")  # type: ignore[arg-type]
 
     def test_socket_closes_after_send_failure_and_invalid_utf8(self) -> None:
-        class FailingSocket(self.RawSocket):
+        class FailingSocket(RequestLifecycleTests.RawSocket):
             def sendall(self, _payload: bytes) -> None:
                 raise OSError("send failed")
 
@@ -379,7 +379,7 @@ class RequestLifecycleTests(unittest.TestCase):
             SocketRemoteTransport("host", 1).request("payload")
         self.assertTrue(send_failure.closed)
 
-        class InvalidResponseSocket(self.RawSocket):
+        class InvalidResponseSocket(RequestLifecycleTests.RawSocket):
             def __init__(self) -> None:
                 super().__init__()
                 self.response = b"\x00\x00\x00\x01\xff"

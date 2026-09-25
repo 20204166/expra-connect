@@ -2,6 +2,7 @@ import math
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 from expra_connect.identity import (
     NodeId,
@@ -178,7 +179,7 @@ class IdentityRotationTests(unittest.TestCase):
             identity = NodeIdentity.create(NodeId("peer-a"))
             manager = TransportGenerationManager(identity, store=JsonStateStore(path))
             current = manager.initialize("one")
-            document = {
+            document: dict[str, Any] = {
                 "version": 2,
                 "current": {
                     "generation": current.generation,

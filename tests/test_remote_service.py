@@ -4,7 +4,7 @@ import time
 import unittest
 from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 from expra_connect.cluster.models import CapabilityGrant
 from expra_connect.identity import NodeId
@@ -406,7 +406,7 @@ class RemoteServiceTests(unittest.TestCase):
             secret=SECRET,
             transport=CountingTransport(),
         )
-        calls_by_operation = (
+        calls_by_operation: tuple[tuple[str, Callable[[Any], object]], ...] = (
             ("read", lambda params: client.read_surface("surface", params=params)),
             (
                 "review",
@@ -427,7 +427,7 @@ class RemoteServiceTests(unittest.TestCase):
                     ),
                     self.assertRaises(RemoteProtocolError),
                 ):
-                    invoke(params)  # type: ignore[arg-type]
+                    invoke(params)
         cyclic: dict[str, object] = {}
         cyclic["self"] = cyclic
         with self.assertRaises(RemoteProtocolError):
@@ -440,15 +440,19 @@ class RemoteServiceTests(unittest.TestCase):
         client = AuthenticatedNodeProvider(
             node_id=NodeId("peer"), secret=SECRET, transport=object()
         )
-        for result in (None, {}, [], False):
-            client._request = lambda _operation, _params, _cancel=None, result=result: {
-                "result": result
-            }  # type: ignore[method-assign]
+        results: tuple[object, ...] = (None, {}, [], False)
+        for result in results:
+            cast(Any, client)._request = (
+                lambda _operation, _params, _cancel=None, result=result: {
+                    "result": result
+                }
+            )
             self.assertIs(client.read_surface("surface"), result)
-        for payload in ({}, None, [], "text"):
-            client._request = (
+        payloads: tuple[object, ...] = ({}, None, [], "text")
+        for payload in payloads:
+            cast(Any, client)._request = (
                 lambda _operation, _params, _cancel=None, payload=payload: payload
-            )  # type: ignore[method-assign]
+            )
             with (
                 self.subTest(payload_type=type(payload).__name__),
                 self.assertRaises(RemoteProtocolError),
@@ -471,7 +475,7 @@ class RemoteServiceTests(unittest.TestCase):
             captured.append((operation, params))
             return {"result": True}
 
-        client._request = request  # type: ignore[method-assign]
+        cast(Any, client)._request = request
         original = {"value": {"nested": True}}
         client.read_surface("surface", params=original)
         client.review_surface("surface", params=None)
@@ -497,13 +501,14 @@ class RemoteServiceTests(unittest.TestCase):
             secret=SECRET,
             transport=CountingTransport(),
         )
-        for operation in (
+        operations: tuple[Callable[[], object], ...] = (
             lambda: client.read_surface("surface", cancel_event=cancelled),
             lambda: client.review_surface("surface", cancel_event=cancelled),
             lambda: client.invoke_surface_action(
                 "surface", "save", cancel_event=cancelled
             ),
-        ):
+        )
+        for operation in operations:
             with self.assertRaises(RemoteExecutionError):
                 operation()
         self.assertEqual(calls, 0)
@@ -845,10 +850,11 @@ class RemoteServiceTests(unittest.TestCase):
             ),
         )
         client = self._surface_client(service, caller)
-        for operation in (
+        operations: tuple[Callable[[], object], ...] = (
             lambda: client.review_surface("settings"),
             lambda: client.invoke_surface_action("settings", "save"),
-        ):
+        )
+        for operation in operations:
             with (
                 self.subTest(operation=operation),
                 self.assertRaises(RemoteExecutionError) as error,

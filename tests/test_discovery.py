@@ -20,9 +20,7 @@ class DiscoveryTests(unittest.TestCase):
 
     def test_candidate_validation_rejects_non_integer_ports(self) -> None:
         with self.assertRaises(ValueError):
-            validate_candidate(
-                DiscoveryCandidate("peer", ("192.168.1.2",), True)  # type: ignore[arg-type]
-            )
+            validate_candidate(DiscoveryCandidate("peer", ("192.168.1.2",), True))
         with self.assertRaises(ValueError):
             validate_candidate(
                 DiscoveryCandidate("peer", ("192.168.1.2",), 1.5)  # type: ignore[arg-type]
