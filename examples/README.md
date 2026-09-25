@@ -36,17 +36,21 @@ python3 -c "import expra_connect; print(expra_connect.__version__)"
 python3 linux_pair_target.py
 ```
 
-Leave the target running. On Windows, refresh and run the current acceptance
-runner:
+Leave the target running. On Windows, download the single-file harness and run
+the initiator (the machine needs Python 3.10+ and the installed
+`expra_connect` wheel, but not the repository or an extra install):
 
 ```powershell
-irm https://raw.githubusercontent.com/20204166/expra-connect/main/run_peer.py -OutFile run_peer.py
-py run_peer.py `
+irm https://raw.githubusercontent.com/20204166/expra-connect/main/dist/peer_harness.pyz -OutFile peer_harness.pyz
+py peer_harness.pyz `
   --role initiator `
   --profile "$env:LOCALAPPDATA\expra-endpoint-2-initiator" `
   --wait 60 `
   --report endpoint-2-windows.json
 ```
+
+From a checkout you can instead run `python -m peer_harness` after
+`pip install -e tools/peer_harness`.
 
 The expected Windows event sequence ends with:
 
@@ -65,7 +69,7 @@ endpoint addresses and test TCP port `27321` from Windows. If pairing works but
 the capability request fails, compare the caller ID in `pairing_request` with
 the capability allowlist decision.
 
-The lower-level `run_peer.py` harness also supports:
+The harness also supports:
 
 ```text
 --advertise-address ADDRESS       restricts mDNS to approved interfaces
@@ -73,20 +77,22 @@ The lower-level `run_peer.py` harness also supports:
 --reconnect-after-rotation        reconnects after a new advertisement
 --existing-peer-id NODE_ID        verifies persisted trust after restart
 --revoke-self                     verifies target-side authorization revocation
+--bidirectional-surfaces          exercises the structured surface matrix
+--restart-check                   restarts and proves persisted trust restore
 ```
 
-## Extended Peer Harness
+## Peer Harness
 
-`run_peer_extended.py` is a host-level acceptance harness for the public
-runtime API. Run it from the checkout with the current installed wheel (or
-with `PYTHONPATH=src` while developing); both nodes must use the same current
-wheel. It does not replace `run_peer.py` and does not perform unsupported
-hardware, scanner, streaming, or cluster operations.
+`tools/peer_harness` is the consolidated host-level acceptance harness for the
+public runtime API. Run it from the checkout with the current installed wheel
+(or with `PYTHONPATH=tools/peer_harness/src` while developing); both nodes must
+use the same current wheel. It does not perform unsupported hardware, scanner,
+streaming, or cluster operations.
 
 Start the target and leave it running:
 
 ```sh
-PYTHONPATH=src .venv/bin/python run_peer_extended.py \
+PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
   --role target \
   --profile /tmp/expra-extended-target \
   --report /tmp/expra-extended-target.json \
@@ -98,7 +104,7 @@ PYTHONPATH=src .venv/bin/python run_peer_extended.py \
 Run the initiator with a separate durable profile:
 
 ```sh
-PYTHONPATH=src .venv/bin/python run_peer_extended.py \
+PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
   --role initiator \
   --profile /tmp/expra-extended-initiator \
   --report /tmp/expra-extended-initiator.json \
@@ -135,7 +141,7 @@ and run both terminals with the same current wheel.
 Terminal 1, target:
 
 ```sh
-PYTHONPATH=src .venv/bin/python run_peer_extended.py \
+PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
   --role target \
   --profile /tmp/expra-bidirectional-target-fresh \
   --report /tmp/expra-bidirectional-target.json \
@@ -148,7 +154,7 @@ PYTHONPATH=src .venv/bin/python run_peer_extended.py \
 Terminal 2, initiator:
 
 ```sh
-PYTHONPATH=src .venv/bin/python run_peer_extended.py \
+PYTHONPATH=tools/peer_harness/src .venv/bin/python -m peer_harness \
   --role initiator \
   --profile /tmp/expra-bidirectional-initiator-fresh \
   --report /tmp/expra-bidirectional-initiator.json \

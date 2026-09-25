@@ -10,32 +10,36 @@ from threading import Event
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from expra_connect import ConnectConfig, NodeId
-from expra_connect.wire_protocol import RemoteAuthorizationError
-from run_peer_extended import (
+from peer_harness.cli import _parser, main
+from peer_harness.events import (
     CAPABILITY,
-    SURFACE_SYNC_CAPABILITY,
+    _next_sequence,
+    format_terminal_event,
+    write_event,
+)
+from peer_harness.flows import (
     _candidate_values,
     _diagnostics_values,
-    _next_sequence,
-    _parser,
-    _retry_surface_success,
     _runtime,
     _surface_success_or_denial,
     _TrackedPairingCallback,
-    approve_surface_pairing,
     cleanup_runtime,
     connect_bidirectionally,
     exercise_remote_surfaces,
-    format_terminal_event,
-    main,
-    record_surface_result,
-    register_harness_surfaces,
     run_initiator,
     run_target,
     wait_for_matching_peer,
-    write_event,
 )
+from peer_harness.surfaces import (
+    SURFACE_SYNC_CAPABILITY,
+    _retry_surface_success,
+    approve_surface_pairing,
+    record_surface_result,
+    register_harness_surfaces,
+)
+
+from expra_connect import ConnectConfig, NodeId
+from expra_connect.wire_protocol import RemoteAuthorizationError
 
 
 class ExtendedPeerEventWriterTests(unittest.TestCase):
@@ -265,7 +269,7 @@ class ExtendedPeerArgumentTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / "report.json"
             arguments = [
-                "run_peer_extended.py",
+                "peer_harness",
                 "--role",
                 "initiator",
                 "--profile",
@@ -288,7 +292,9 @@ class ExtendedPeerArgumentTests(unittest.TestCase):
             ]
             with (
                 unittest.mock.patch("sys.argv", arguments),
-                unittest.mock.patch("run_peer_extended.ConnectRuntime") as runtime_type,
+                unittest.mock.patch(
+                    "peer_harness.flows.ConnectRuntime"
+                ) as runtime_type,
             ):
                 runtime_type.return_value.start.return_value = SimpleNamespace(
                     state="started"
@@ -358,7 +364,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             advertise_address=["192.168.55.107"],
             wait=0,
         )
-        with unittest.mock.patch("run_peer_extended.time.sleep"):
+        with unittest.mock.patch("peer_harness.flows.time.sleep"):
             self.assertEqual(run_target(args, runtime), 0)
         runtime.sharing.register.assert_called_once()
         runtime.start.assert_called_once_with()
@@ -379,7 +385,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             caller_node_id=SimpleNamespace(value="initiator"), permissions=()
         )
 
-        with unittest.mock.patch("run_peer_extended.write_event") as event:
+        with unittest.mock.patch("peer_harness.surfaces.write_event") as event:
             self.assertTrue(
                 approve_surface_pairing(runtime, Path("/tmp/report"), request)
             )
@@ -601,7 +607,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
                 raise RemoteAuthorizationError("remote grant is still propagating")
             return {"ok": True}
 
-        with unittest.mock.patch("run_peer_extended.time.sleep"):
+        with unittest.mock.patch("peer_harness.flows.time.sleep"):
             self.assertEqual(_retry_surface_success(operation), {"ok": True})
         self.assertEqual(attempts, 2)
 
@@ -710,9 +716,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
         )
 
         with (
-            unittest.mock.patch("run_peer_extended.write_event") as event,
+            unittest.mock.patch("peer_harness.flows.write_event") as event,
             unittest.mock.patch(
-                "run_peer_extended.exercise_remote_surfaces"
+                "peer_harness.flows.exercise_remote_surfaces"
             ) as exercise,
         ):
             self.assertEqual(run_initiator(args, runtime), 0)
@@ -748,9 +754,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
         )
 
         with (
-            unittest.mock.patch("run_peer_extended.write_event"),
+            unittest.mock.patch("peer_harness.flows.write_event"),
             unittest.mock.patch(
-                "run_peer_extended.exercise_remote_surfaces"
+                "peer_harness.flows.exercise_remote_surfaces"
             ) as exercise,
         ):
             self.assertEqual(run_target(args, runtime), 0)
@@ -777,7 +783,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             bidirectional_surfaces=True,
         )
 
-        with unittest.mock.patch("run_peer_extended.write_event") as event:
+        with unittest.mock.patch("peer_harness.flows.write_event") as event:
             self.assertEqual(run_initiator(args, runtime), 1)
 
         self.assertEqual(event.call_args.kwargs, {"error_type": "ValueError"})
@@ -830,7 +836,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             "connections": [],
         }
         args = SimpleNamespace(peer_id="target", wait=0, report=Path("/tmp/report"))
-        with unittest.mock.patch("run_peer_extended.write_event") as event:
+        with unittest.mock.patch("peer_harness.flows.write_event") as event:
             self.assertEqual(run_initiator(args, runtime), 0)
         self.assertEqual(
             [call.args[1] for call in event.call_args_list],
@@ -844,7 +850,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             ],
         )
         provider.request_shared.assert_called_once_with(
-            CAPABILITY, {"source": "run_peer_extended.py"}
+            CAPABILITY, {"source": "peer_harness"}
         )
         runtime.shutdown.assert_called_once_with()
 
@@ -858,7 +864,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.pairing.trusted.get.return_value = None
         runtime.pair_peer.side_effect = ValueError("secret-bearing detail")
         args = SimpleNamespace(peer_id="target", wait=0, report=Path("/tmp/report"))
-        with unittest.mock.patch("run_peer_extended.write_event") as event:
+        with unittest.mock.patch("peer_harness.flows.write_event") as event:
             self.assertEqual(run_initiator(args, runtime), 1)
         self.assertEqual(event.call_args.args[1], "error")
         self.assertEqual(event.call_args.kwargs, {"error_type": "ValueError"})
@@ -877,8 +883,8 @@ class ExtendedPeerStageTests(unittest.TestCase):
             rotate_after=0,
         )
         with (
-            unittest.mock.patch("run_peer_extended.time.sleep"),
-            unittest.mock.patch("run_peer_extended.write_event") as event,
+            unittest.mock.patch("peer_harness.flows.time.sleep"),
+            unittest.mock.patch("peer_harness.flows.write_event") as event,
         ):
             self.assertEqual(run_target(args, runtime), 0)
         self.assertEqual(
@@ -911,7 +917,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
 
         runtime.start.side_effect = start
 
-        with unittest.mock.patch("run_peer_extended.time.sleep"):
+        with unittest.mock.patch("peer_harness.flows.time.sleep"):
             self.assertEqual(run_target(args, runtime), 0)
 
         self.assertEqual(runtime.sharing.allow.call_count, 2)
@@ -931,7 +937,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             bidirectional_surfaces=False,
         )
 
-        with unittest.mock.patch("run_peer_extended.time.sleep"):
+        with unittest.mock.patch("peer_harness.flows.time.sleep"):
             self.assertEqual(run_target(args, runtime), 0)
 
         runtime.sharing.allow.assert_not_called()
@@ -959,7 +965,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
             bidirectional_surfaces=False,
         )
 
-        with unittest.mock.patch("run_peer_extended.time.sleep"):
+        with unittest.mock.patch("peer_harness.flows.time.sleep"):
             self.assertEqual(run_target(args, runtime), 0)
 
         runtime.sharing.allow.assert_called_once_with(peer_id, CAPABILITY)
@@ -989,11 +995,11 @@ class ExtendedPeerStageTests(unittest.TestCase):
             rotation_wait=1,
         )
         with (
-            unittest.mock.patch("run_peer_extended.write_event") as event,
+            unittest.mock.patch("peer_harness.flows.write_event") as event,
             unittest.mock.patch(
-                "run_peer_extended.wait_for_peer", side_effect=[initial, rotated]
+                "peer_harness.flows.wait_for_peer", side_effect=[initial, rotated]
             ),
-            unittest.mock.patch("run_peer_extended.time.sleep"),
+            unittest.mock.patch("peer_harness.flows.time.sleep"),
         ):
             self.assertEqual(run_initiator(args, runtime), 0)
         self.assertIn(
@@ -1022,9 +1028,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
             rotation_wait=1,
         )
         with (
-            unittest.mock.patch("run_peer_extended.write_event") as event,
+            unittest.mock.patch("peer_harness.flows.write_event") as event,
             unittest.mock.patch(
-                "run_peer_extended.wait_for_peer", side_effect=[runtime.peers[0], None]
+                "peer_harness.flows.wait_for_peer", side_effect=[runtime.peers[0], None]
             ),
         ):
             self.assertEqual(run_initiator(args, runtime), 1)
@@ -1050,7 +1056,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
         args = SimpleNamespace(
             peer_id="target", wait=0, report=Path("/tmp/report"), restart_check=True
         )
-        with unittest.mock.patch("run_peer_extended.write_event") as event:
+        with unittest.mock.patch("peer_harness.flows.write_event") as event:
             self.assertEqual(
                 run_initiator(
                     args, runtime, runtime_factory=Mock(return_value=restarted)
@@ -1073,7 +1079,7 @@ class ExtendedPeerStageTests(unittest.TestCase):
         args = SimpleNamespace(
             peer_id="target", wait=0, report=Path("/tmp/report"), revoke_self=True
         )
-        with unittest.mock.patch("run_peer_extended.write_event") as event:
+        with unittest.mock.patch("peer_harness.flows.write_event") as event:
             self.assertEqual(run_initiator(args, runtime), 0)
         names = [call.args[1] for call in event.call_args_list]
         self.assertEqual(names[-3:-1], ["self_revoked", "post_revoke_denied"])
@@ -1127,12 +1133,13 @@ class ExtendedPeerStageTests(unittest.TestCase):
         )
         with (
             unittest.mock.patch(
-                "run_peer_extended.exercise_remote_surfaces"
+                "peer_harness.flows.exercise_remote_surfaces"
             ) as exercise,
             unittest.mock.patch(
-                "run_peer_extended.wait_for_peer", side_effect=[initial, rotated]
+                "peer_harness.flows.wait_for_peer", side_effect=[initial, rotated]
             ) as wait_for_peer,
-            unittest.mock.patch("run_peer_extended.write_event") as event,
+            unittest.mock.patch("peer_harness.flows.write_event") as event,
+            unittest.mock.patch("peer_harness.surfaces.write_event", event),
         ):
             result = run_initiator(
                 args, runtime, runtime_factory=Mock(return_value=restarted)
@@ -1203,9 +1210,9 @@ class ExtendedPeerStageTests(unittest.TestCase):
             rotation_wait=1,
         )
         with (
-            unittest.mock.patch("run_peer_extended.exercise_remote_surfaces"),
+            unittest.mock.patch("peer_harness.flows.exercise_remote_surfaces"),
             unittest.mock.patch(
-                "run_peer_extended.wait_for_peer", side_effect=[candidate, candidate]
+                "peer_harness.flows.wait_for_peer", side_effect=[candidate, candidate]
             ),
         ):
             self.assertEqual(run_initiator(args, runtime), 1)
@@ -1235,8 +1242,8 @@ class ExtendedPeerStageTests(unittest.TestCase):
         runtime.pairing.trusted.get.return_value = Mock()
         runtime.connect_peer.return_value = Mock()
         with (
-            unittest.mock.patch("run_peer_extended.exercise_remote_surfaces"),
-            unittest.mock.patch("run_peer_extended.write_event"),
+            unittest.mock.patch("peer_harness.flows.exercise_remote_surfaces"),
+            unittest.mock.patch("peer_harness.flows.write_event"),
         ):
             self.assertEqual(
                 run_initiator(

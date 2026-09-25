@@ -1,30 +1,52 @@
-"""Host-level extended peer acceptance harness."""
+"""Target and initiator peer flows for the development harness."""
 
 from __future__ import annotations
 
-import argparse
-import json
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import FrozenInstanceError
-from enum import Enum
 from pathlib import Path
-from threading import Event, Lock
+from threading import Event
 from typing import Any, cast
 
-from expra_connect import (
-    ConnectConfig,
-    ConnectRuntime,
-    NodeId,
-    __version__,
-)
+from expra_connect import ConnectConfig, ConnectRuntime, NodeId, __version__
 from expra_connect.wire_protocol import RemoteAuthorizationError
 
-CAPABILITY = "test.read_state"
-SURFACE_SYNC_CAPABILITY = "test.surface_sync"
-SURFACE_SYNC_TIMEOUT = 5.0
-_REPORT_LOCK = Lock()
+from .events import CAPABILITY, discovery_event, write_event
+from .surfaces import (
+    SURFACE_SYNC_CAPABILITY,
+    SURFACE_SYNC_TIMEOUT,
+    _retry_surface_success,
+    approve_surface_pairing,
+    record_surface_result,
+    register_harness_surfaces,
+    register_surface_sync,
+)
+
+__all__ = [
+    "CAPABILITY",
+    "SURFACE_SYNC_CAPABILITY",
+    "_TrackedPairingCallback",
+    "_approve_capability_pairing",
+    "_candidate_values",
+    "_diagnostics_values",
+    "_explicit_approval_decision",
+    "_retry_surface_success",
+    "_runtime",
+    "_surface_success_or_denial",
+    "approve_surface_pairing",
+    "cleanup_runtime",
+    "connect_bidirectionally",
+    "exercise_remote_surfaces",
+    "record_surface_result",
+    "register_harness_surfaces",
+    "register_surface_sync",
+    "run_initiator",
+    "run_target",
+    "wait_for_matching_peer",
+    "wait_for_peer",
+]
 
 
 class _TrackedPairingCallback:
@@ -38,244 +60,21 @@ class _TrackedPairingCallback:
         return self._callback(request)
 
 
-_EVENT_FIELDS: dict[str, frozenset[str]] = {
-    "started": frozenset({"role", "version", "state"}),
-    "target_ready": frozenset(),
-    "stopping": frozenset(),
-    "discovery_event": frozenset({"kind", "address", "port", "source"}),
-    "discovered": frozenset({"address", "port", "source"}),
-    "discovery_timeout": frozenset({"peers_count"}),
-    "route_attempt": frozenset(
-        {"phase", "outcome", "address", "port", "source", "duration_ms"}
-    ),
-    "pairing_request": frozenset({"caller_node_id", "permissions"}),
-    "paired": frozenset({"peer_id", "permissions"}),
-    "connected": frozenset({"peer_id", "tls_verified", "generation"}),
-    "shared_capability_result": frozenset({"capability", "outcome"}),
-    "shared_after_rotation": frozenset({"capability", "outcome"}),
-    "error": frozenset({"error_type"}),
-    "post_revoke_denied": frozenset({"error_type"}),
-    "restored_trust": frozenset({"peer_id"}),
-    "self_revoked": frozenset({"peer_id"}),
-    "rotated": frozenset({"generation"}),
-    "waiting_for_rotated_peer": frozenset({"peer_id", "timeout"}),
-    "reconnected_after_rotation": frozenset({"peer_id"}),
-    "diagnostics": frozenset({"generation", "routes_count", "connections_count"}),
-    "surface_request": frozenset({"surface_id", "access", "outcome", "error_type"}),
-    "surface_result": frozenset({"surface_id", "access", "outcome", "error_type"}),
-    "surface_denied": frozenset({"surface_id", "access", "outcome", "error_type"}),
-    "reverse_connected": frozenset({"outcome", "error_type"}),
-    "reverse_paired": frozenset({"outcome", "error_type"}),
-}
-
-
-def json_default(value: Any) -> Any:
-    if isinstance(value, Enum):
-        return value.value
-    return str(value)
-
-
-def _field(value: Any) -> str:
-    if value is None:
-        return "-"
-    if isinstance(value, Enum):
-        return str(value.value)
-    if isinstance(value, bool):
-        return str(value).lower()
-    return str(value)
-
-
 def _status_state(status: Any) -> Any:
     state = getattr(status, "state", None)
     return getattr(state, "value", state)
 
 
-def _safe_values(event: str, values: dict[str, Any]) -> dict[str, Any]:
-    """Keep only fields explicitly approved for this event."""
-    allowed = _EVENT_FIELDS.get(event, frozenset())
-    return {key: values[key] for key in allowed if key in values}
-
-
-def format_terminal_event(sequence: int, event: str, **values: Any) -> str:
-    """Render an allowlisted, non-sensitive human-readable event line."""
-    safe = _safe_values(event, values)
-    prefix = f"[{sequence:02d}]"
-    if event == "started":
-        return (
-            f"{prefix} started role={_field(safe.get('role'))} "
-            f"version={_field(safe.get('version'))} "
-            f"state={_field(safe.get('state'))}"
-        )
-    if event == "discovery_event":
-        return f"{prefix} discovery kind={_field(safe.get('kind'))}"
-    if event == "discovered":
-        return (
-            f"{prefix} discovered address={_field(safe.get('address'))} "
-            f"port={_field(safe.get('port'))} source={_field(safe.get('source'))}"
-        )
-    if event == "discovery_timeout":
-        return f"{prefix} discovery_timeout peers={_field(safe.get('peers_count'))}"
-    if event == "route_attempt":
-        line = (
-            f"{prefix} route phase={_field(safe.get('phase'))} "
-            f"outcome={_field(safe.get('outcome'))} address={_field(safe.get('address'))} "
-            f"port={_field(safe.get('port'))} source={_field(safe.get('source'))}"
-        )
-        return (
-            f"{line} latency_ms={safe['duration_ms']}"
-            if "duration_ms" in safe
-            else line
-        )
-    if event == "error":
-        return f"{prefix} error type={_field(safe.get('error_type'))}"
-    if event == "post_revoke_denied":
-        return f"{prefix} post_revoke_denied type={_field(safe.get('error_type'))}"
-    if event == "target_ready":
-        return f"{prefix} target_ready"
-    if event == "stopping":
-        return f"{prefix} stopping"
-    if event == "diagnostics":
-        return (
-            f"{prefix} diagnostics generation={_field(safe.get('generation'))} "
-            f"routes={_field(safe.get('routes_count'))} "
-            f"connections={_field(safe.get('connections_count'))}"
-        )
-    if event in {"reverse_connected", "reverse_paired"}:
-        line = f"{prefix} {event} outcome={_field(safe.get('outcome'))}"
-        return (
-            f"{line} error_type={_field(safe.get('error_type'))}"
-            if "error_type" in safe
-            else line
-        )
-    if event in {"surface_request", "surface_result", "surface_denied"}:
-        line = (
-            f"{prefix} {event} surface_id={_field(safe.get('surface_id'))} "
-            f"access={_field(safe.get('access'))} "
-            f"outcome={_field(safe.get('outcome'))}"
-        )
-        return (
-            f"{line} error_type={_field(safe.get('error_type'))}"
-            if "error_type" in safe
-            else line
-        )
-    return f"{prefix} {event}"
-
-
-def _next_sequence(history: list[dict[str, Any]]) -> int:
-    sequences: list[int] = [
-        record["sequence"]
-        for record in history
-        if isinstance(record.get("sequence"), int)
-    ]
-    return max(sequences, default=0) + 1
-
-
-def write_event(report: Path, event: str, **values: Any) -> None:
-    """Append one ordered, redacted event to the report and terminal output."""
-    with _REPORT_LOCK:
-        history: list[dict[str, Any]] = []
-        if report.exists():
-            try:
-                existing = json.loads(report.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
-                existing = []
-            if isinstance(existing, list) and all(
-                isinstance(item, dict) for item in existing
-            ):
-                history = existing
-
-        sequence = _next_sequence(history)
-        safe = _safe_values(event, values)
-        record = {"event": event, "sequence": sequence, **safe}
-        history.append(record)
-        report.parent.mkdir(parents=True, exist_ok=True)
-        report.write_text(
-            json.dumps(history, indent=2, sort_keys=True, default=json_default) + "\n",
-            encoding="utf-8",
-        )
-        print(format_terminal_event(sequence, event, **safe), flush=True)
-
-
-def register_harness_surfaces(runtime: ConnectRuntime) -> None:
-    """Register deterministic structured surfaces without exposing payloads."""
-    surfaces = (
-        (
-            "desktop",
-            {"surface_id": "desktop", "state": "ready"},
-            {"surface_id": "desktop", "review": "ready"},
-        ),
-        (
-            "desktop/settings",
-            {"surface_id": "desktop/settings", "theme": "light"},
-            {"surface_id": "desktop/settings", "review": "stable"},
-        ),
-        (
-            "device/status",
-            {"surface_id": "device/status", "status": "online"},
-            {"surface_id": "device/status", "review": "healthy"},
-        ),
-    )
-    for surface_id, read_result, review_result in surfaces:
-
-        def read(
-            _peer_id: Any, _params: dict[str, Any], result: Any = read_result
-        ) -> dict[str, Any]:
-            return dict(result)
-
-        def review(
-            _peer_id: Any, _params: dict[str, Any], result: Any = review_result
-        ) -> dict[str, Any]:
-            return dict(result)
-
-        def save(
-            _peer_id: Any, _params: dict[str, Any], name: str = surface_id
-        ) -> dict[str, Any]:
-            return {"surface_id": name, "saved": True}
-
-        runtime.register_surface(
-            surface_id,
-            read=read,
-            review=review,
-            actions={"save": save},
-        )
-
-
-def record_surface_result(
-    report: Path,
-    surface_id: str,
-    access: str,
-    outcome: str,
-    error_type: str | None = None,
+def _reallow_capability_after_rotation(
+    runtime: ConnectRuntime, peer_ids: set[NodeId]
 ) -> None:
-    """Record surface metadata only; handler results are intentionally omitted."""
-    values: dict[str, Any] = {
-        "surface_id": surface_id,
-        "access": access,
-        "outcome": outcome,
-    }
-    if error_type is not None:
-        values["error_type"] = error_type
-    write_event(report, "surface_result", **values)
+    """Re-apply only the harness's explicit grants after transport restart."""
+    for peer_id in peer_ids:
+        runtime.sharing.allow(peer_id, CAPABILITY)
 
 
-def register_surface_sync(
-    runtime: ConnectRuntime, ready_events: dict[str, Event]
-) -> None:
-    """Register a private harness barrier without granting surface access."""
-
-    def wait_for_surface(_peer_id: Any, params: dict[str, Any]) -> dict[str, bool]:
-        sync_key = params.get("sync_key")
-        event = ready_events.get(sync_key) if isinstance(sync_key, str) else None
-        return {"ready": event.wait(SURFACE_SYNC_TIMEOUT) if event else False}
-
-    runtime.sharing.register(
-        SURFACE_SYNC_CAPABILITY,
-        wait_for_surface,
-    )
-
-
-def _retry_surface_success(operation: Any, timeout: float = 5.0) -> Any:
-    """Allow a target host to publish a matching ephemeral grant."""
+def _retry_shared_capability(operation: Any, timeout: float = 5.0) -> Any:
+    """Wait briefly for a target harness to re-apply its explicit grant."""
     deadline = time.monotonic() + max(timeout, 0.0)
     while True:
         try:
@@ -285,19 +84,6 @@ def _retry_surface_success(operation: Any, timeout: float = 5.0) -> Any:
             if remaining <= 0:
                 raise
             time.sleep(min(0.1, remaining))
-
-
-def approve_surface_pairing(
-    runtime: ConnectRuntime, report: Path, request: Any
-) -> bool:
-    """Approve the trust handshake without implicitly granting surface access."""
-    permissions = sorted(
-        getattr(permission, "value", permission)
-        for permission in getattr(request, "permissions", ())
-    )
-    write_event(report, "pairing_request", permissions=permissions)
-    runtime.sharing.allow(request.caller_node_id, SURFACE_SYNC_CAPABILITY)
-    return True
 
 
 def _approve_capability_pairing(
@@ -319,6 +105,55 @@ def _approve_capability_pairing(
     )
     runtime.sharing.allow(request.caller_node_id, CAPABILITY)
     capability_peers.add(request.caller_node_id)
+    return True
+
+
+def _explicit_approval_decision(
+    runtime: ConnectRuntime,
+    report: Path,
+    request: Any,
+    capability_peers: set[NodeId],
+    *,
+    approval_file: Path,
+    approval_wait: float,
+) -> bool:
+    """Wait for an operator to create the approval file before allowing.
+
+    This is the harness's explicit host-acceptance path: trust is only extended
+    after an out-of-band trigger, and a missing trigger fails closed.
+    """
+    caller = request.caller_node_id
+    permissions = sorted(
+        getattr(permission, "value", permission)
+        for permission in getattr(request, "permissions", ())
+    )
+    write_event(
+        report,
+        "pairing_pending",
+        caller_node_id=getattr(caller, "value", None),
+        permissions=permissions,
+    )
+    deadline = time.monotonic() + max(approval_wait, 0.0)
+    while not approval_file.exists():
+        if time.monotonic() >= deadline:
+            write_event(
+                report,
+                "pairing_denied",
+                caller_node_id=getattr(caller, "value", None),
+            )
+            return False
+        time.sleep(min(0.1, max(0.0, deadline - time.monotonic())))
+    try:
+        approval_file.unlink()
+    except OSError:
+        pass
+    write_event(
+        report,
+        "pairing_approved",
+        caller_node_id=getattr(caller, "value", None),
+    )
+    runtime.sharing.allow(caller, CAPABILITY)
+    capability_peers.add(caller)
     return True
 
 
@@ -347,7 +182,7 @@ def _candidate_values(candidate: Any) -> dict[str, Any]:
     return {
         "address": address,
         "port": port,
-        "source": source,
+        "source": getattr(source, "value", source),
     }
 
 
@@ -364,6 +199,13 @@ def _write_started(
         role=role,
         version=__version__,
         state=getattr(state, "value", state),
+        node_id=identity.node_id.value,
+        discovery_started=getattr(status, "discovery_started", None),
+        discovery_disabled=getattr(status, "discovery_disabled", None),
+        discovery_reason=getattr(status, "discovery_reason", None),
+        bound_host=getattr(status, "bound_host", None),
+        bound_port=getattr(status, "bound_port", None),
+        tls_fingerprint=getattr(status, "tls_fingerprint", None),
     )
 
 
@@ -693,9 +535,10 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
         if bidirectional:
             register_harness_surfaces(runtime)
             register_surface_sync(runtime, surface_ready)
-        cast(Any, runtime.config).on_pairing_request = (
-            approve_surface_pairing if bidirectional else approve_pairing
-        )
+        if not getattr(args, "explicit_approval", False):
+            cast(Any, runtime.config).on_pairing_request = (
+                approve_surface_pairing if bidirectional else approve_pairing
+            )
     except FrozenInstanceError:
         # The real public config is frozen; its callback is installed at build time.
         pass
@@ -765,7 +608,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
             ):
                 rotate_once()
                 rotated = True
-            time.sleep(min(0.1, deadline - time.monotonic()))
+            time.sleep(min(0.1, max(0.0, deadline - time.monotonic())))
         if rotation_deadline is not None and not rotated:
             rotate_once()
         return 0
@@ -878,8 +721,13 @@ def run_initiator(
                 args.report, "diagnostics", **_diagnostics_values(runtime.diagnostics())
             )
             return 0
+        existing_peer_id = getattr(args, "existing_peer_id", None)
+        if existing_peer_id is not None and existing_peer_id != peer_id.value:
+            raise ValueError("discovered peer does not match --existing-peer-id")
         trusted = runtime.pairing.trusted.get(peer_id) if runtime.pairing else None
         if trusted is None:
+            if existing_peer_id is not None:
+                raise PermissionError("existing peer is not present in persisted trust")
             trusted = runtime.pair_peer(peer_id)
             write_event(
                 args.report,
@@ -897,7 +745,7 @@ def run_initiator(
             tls_verified=True,
             generation=getattr(candidate, "transport_generation", None),
         )
-        result = provider.request_shared(CAPABILITY, {"source": "run_peer_extended.py"})
+        result = provider.request_shared(CAPABILITY, {"source": "peer_harness"})
         write_event(
             args.report,
             "shared_capability_result",
@@ -910,10 +758,10 @@ def run_initiator(
             provider = _reconnect_after_rotation(
                 runtime, peer_id, candidate, args.rotation_wait, args.report
             )
-            result = _retry_surface_success(
+            result = _retry_shared_capability(
                 lambda: provider.request_shared(
                     CAPABILITY,
-                    {"source": "run_peer_extended.py", "after_rotation": True},
+                    {"source": "peer_harness", "after_rotation": True},
                 )
             )
             write_event(
@@ -966,6 +814,7 @@ def _runtime(args: Any) -> ConnectRuntime:
     route_started: dict[tuple[str, str, int], float] = {}
     runtime_holder: list[ConnectRuntime] = []
     capability_peers: set[NodeId] = set()
+    explicit_approval = getattr(args, "explicit_approval", False)
 
     def route_attempt(
         phase: str, endpoint: Any, outcome: str, _error: str | None
@@ -996,6 +845,18 @@ def _runtime(args: Any) -> ConnectRuntime:
     def on_pairing_request(request: Any) -> bool:
         if getattr(args, "bidirectional_surfaces", False):
             return approve_surface_pairing(runtime_holder[0], args.report, request)
+        if explicit_approval:
+            approval_file = getattr(args, "approval_file", None)
+            if approval_file is None:
+                approval_file = Path(f"{args.report}.approve")
+            return _explicit_approval_decision(
+                runtime_holder[0],
+                args.report,
+                request,
+                capability_peers,
+                approval_file=approval_file,
+                approval_wait=getattr(args, "approval_wait", 30.0),
+            )
         return approve_pairing(request)
 
     pairing_callback = _TrackedPairingCallback(on_pairing_request, capability_peers)
@@ -1007,6 +868,9 @@ def _runtime(args: Any) -> ConnectRuntime:
                 tuple(args.advertise_address) if args.advertise_address else None
             ),
             on_route_attempt=route_attempt,
+            on_discovery=lambda kind, payload: discovery_event(
+                args.report, kind, payload
+            ),
             on_pairing_request=pairing_callback
             if args.role == "target" or getattr(args, "bidirectional_surfaces", False)
             else None,
@@ -1018,36 +882,3 @@ def _runtime(args: Any) -> ConnectRuntime:
 
 def _runtime_factory(args: Any) -> Any:
     return lambda: _runtime(args)
-
-
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--role", choices=("target", "initiator"), required=True)
-    parser.add_argument("--profile", type=Path, required=True)
-    parser.add_argument(
-        "--report", type=Path, default=Path("peer-extended-report.json")
-    )
-    parser.add_argument("--peer-id")
-    parser.add_argument("--wait", type=float, default=60.0)
-    parser.add_argument("--advertise-address", action="append")
-    parser.add_argument("--bidirectional-surfaces", action="store_true")
-    parser.add_argument("--rotate-after", type=float)
-    parser.add_argument("--reconnect-after-rotation", action="store_true")
-    parser.add_argument("--rotation-wait", type=float, default=15.0)
-    parser.add_argument("--restart-check", action="store_true")
-    parser.add_argument("--revoke-self", action="store_true")
-    return parser
-
-
-def main() -> int:
-    args = _parser().parse_args()
-    runtime = _runtime(args)
-    return (
-        run_target(args, runtime)
-        if args.role == "target"
-        else run_initiator(args, runtime, runtime_factory=_runtime_factory(args))
-    )
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

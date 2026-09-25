@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "expra-connect-peer-harness"
+version = "0.1.0"
+description = "Development peer acceptance harness for Expra Connect"
+requires-python = ">=3.10"
+dependencies = ["expra-connect"]
+
+[project.optional-dependencies]
+dev = ["mypy>=1.10", "pyright>=1.1.350", "ruff>=0.6"]
+
+[project.scripts]
+expra-peer-harness = "peer_harness.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.pyright]
+include = ["src"]
+typeCheckingMode = "standard"
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+
+[[tool.mypy.overrides]]
+module = ["expra_connect", "expra_connect.*"]
+ignore_missing_imports = true

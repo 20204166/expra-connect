@@ -104,10 +104,11 @@ or newer and retry the same command.
 
 ## Two-Node Test Runner
 
-`run_peer.py` is a redacted acceptance harness for one Linux node and one
-Windows node. It records listener, TLS fingerprint, discovery, pairing,
-connection, and shared-capability results in `peer-report.json`. It never writes
-pairing secrets or private keys.
+`tools/peer_harness` is a redacted acceptance harness for one Linux node and one
+Windows node. Run it with `python -m peer_harness --role target|initiator`. It
+records listener, TLS fingerprint, discovery, pairing, connection, and
+shared-capability results in `peer-report.json`. It never writes pairing secrets
+or private keys.
 
 ### Linux Setup
 
@@ -136,11 +137,12 @@ python3 examples/linux_pair_target_detailed.py \
   --report linux-target.json
 ```
 
-Leave it running, then run the current `run_peer.py` initiator on Windows. The
-expected final event is `shared_capability_result`. This test exercises mDNS
-discovery, multi-route pairing fallback, TLS pinning, authenticated connect,
-target-owned capability authorization, and redacted evidence reporting. See
-`examples/README.md` for the complete walkthrough and failure boundaries.
+Leave it running, then run the current `python -m peer_harness` initiator on
+Windows. The expected final event is `shared_capability_result`. This test
+exercises mDNS discovery, multi-route pairing fallback, TLS pinning,
+authenticated connect, target-owned capability authorization, and redacted
+evidence reporting. See `examples/README.md` for the complete walkthrough and
+failure boundaries.
 
 The acceptance runner also records per-route attempts, supports explicit
 advertised-address selection, exercises active transport rotation, verifies
@@ -193,8 +195,8 @@ expra-peer --profile "$env:LOCALAPPDATA\expra-peer" diagnostics
 
 The CLI starts a normal runtime and is suitable for listener and discovery
 smoke tests. It does not automatically approve pairing requests. The complete
-three-endpoint acceptance procedure, including `run_peer.py`, evidence files,
-and Linux-to-Windows commands, is in `docs/TEST_ENDPOINTS.md`.
+three-endpoint acceptance procedure, including `python -m peer_harness`,
+evidence files, and Linux-to-Windows commands, is in `docs/TEST_ENDPOINTS.md`.
 
 This repository is local-only and does not publish to PyPI. The wheel and
 install scripts are the supported application distribution boundary.
