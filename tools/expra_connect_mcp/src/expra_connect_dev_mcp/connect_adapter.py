@@ -29,6 +29,7 @@ _ACTIONS = {
 
 _STATIC_PROBE = r"""
 import json
+import msgpack
 import sys
 from pathlib import Path
 
@@ -58,7 +59,7 @@ if action in module_files:
         add_file(source / name)
     result["status"] = "IMPLEMENTED" if all(item["exists"] for item in result["files"]) else "PARTIAL"
 else:
-    names = {"identity.json", "device_identity.json", "transport.json", "trust.json", "pairing.json", "cluster.json"}
+    names = {"identity.json", "identity.msgpack", "device_identity.json", "device_identity.msgpack", "transport.json", "trust.json", "pairing.json", "cluster.json"}
     documents = []
     for directory, dirs, files in __import__("os").walk(root, followlinks=False):
         dirs[:] = [item for item in dirs if item not in skip]
@@ -66,6 +67,35 @@ else:
             if name in names or name.startswith("transport-"):
                 documents.append(Path(directory) / name)
     for path in sorted(documents):
+        if path.suffix == ".msgpack":
+            try:
+                payload = path.read_bytes()
+                if len(payload) > 1048576:
+                    raise ValueError("state_size_limit")
+                value = msgpack.unpackb(
+                    payload,
+                    raw=False,
+                    strict_map_key=True,
+                    max_str_len=1048576,
+                    max_bin_len=1048576,
+                    max_array_len=100000,
+                    max_map_len=100000,
+                    max_ext_len=0,
+                )
+            except Exception as error:
+                result["state_files"].append({"path": str(path.relative_to(root)), "malformed": type(error).__name__})
+                continue
+            if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
+                result["state_files"].append({"path": str(path.relative_to(root)), "malformed": "root_not_string_keyed_map"})
+                continue
+            item = {"path": str(path.relative_to(root)), "format": "messagepack", "keys": sorted(value)}
+            if isinstance(value.get("node_id"), str):
+                item["node_id"] = value["node_id"]
+            secret_fields = sorted(field for field in ("secret", "root_private_key", "private_key", "token", "fencing_token") if field in value)
+            if secret_fields:
+                item["secret_fields_present"] = secret_fields
+            result["state_files"].append(item)
+            continue
         try:
             value = json.loads(path.read_text(encoding="utf-8"))
         except Exception as error:

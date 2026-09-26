@@ -23,9 +23,24 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 )
 
 from .identity import NodeId, NodeIdentity, _decode_root_private_key
-from .persistence import StateDataError, _atomic_write
+from .observability import ObservabilityWatcher, observation_scope
+from .persistence import MessagePackStateStore, StateDataError, _atomic_write
 
 DEVICE_IDENTITY_SCHEMA_VERSION = 1
+DEVICE_IDENTITY_PROFILE_SCHEMA_VERSION = 2
+DEVICE_IDENTITY_SECRET_SCHEMA_VERSION = 1
+_DEVICE_IDENTITY_JSON_FIELDS = frozenset(
+    {
+        "schema_version",
+        "node_id",
+        "public_key",
+        "private_key",
+        "fingerprint",
+        "created_at",
+        "hardware_hint_digest",
+        "hardware_hint_sources",
+    }
+)
 _FINGERPRINT_PREFIX = "ed25519:"
 _HARDWARE_HINT_DOMAIN = b"expra-connect/device-hardware-hint/v1\0"
 _MAC_PATTERN = re.compile(r"^[0-9a-f]{12}$")
@@ -139,6 +154,9 @@ class DeviceIdentity:
     hardware_hint_changed: bool = field(default=False, repr=False, compare=False)
     hardware_hint_status: str = field(default="not_recorded", repr=False, compare=False)
     _private_key_bytes: bytes = field(repr=False, compare=False, default=b"")
+    _extensions: tuple[tuple[str, object], ...] = field(
+        default=(), repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
         if not isinstance(self.node_id, NodeId):
@@ -172,6 +190,14 @@ class DeviceIdentity:
         )
         if derived_public != self.public_key:
             raise ValueError("device identity key pair does not match")
+        if not isinstance(self._extensions, tuple) or any(
+            not isinstance(item, tuple)
+            or len(item) != 2
+            or not isinstance(item[0], str)
+            or item[0] in _DEVICE_IDENTITY_JSON_FIELDS
+            for item in self._extensions
+        ):
+            raise ValueError("device identity extensions are invalid")
 
     @classmethod
     def create(
@@ -242,6 +268,7 @@ class DeviceIdentity:
             hardware_hint_changed=changed,
             hardware_hint_status=hint_status,
             _private_key_bytes=private_key_bytes,
+            _extensions=existing._extensions if existing is not None else (),
         )
 
     @classmethod
@@ -251,13 +278,110 @@ class DeviceIdentity:
         expected_node_id: NodeId | None = None,
         *,
         hardware_provider: DeviceHardwareProvider | None = None,
+        observer: ObservabilityWatcher | None = None,
     ) -> DeviceIdentity:
         try:
             value = path.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
+        try:
+            document = json.loads(value)
+        except (TypeError, ValueError) as error:
+            raise DeviceIdentityError("device identity is malformed") from error
+        if not isinstance(document, dict):
+            raise DeviceIdentityError("device identity is malformed")
+        profile_version = document.get("schema_version")
+        if (
+            not isinstance(profile_version, bool)
+            and profile_version == DEVICE_IDENTITY_PROFILE_SCHEMA_VERSION
+        ):
+            return cls._from_profile(
+                path,
+                document,
+                expected_node_id,
+                hardware_provider=hardware_provider,
+            )
+        identity = cls.from_json(
+            value, expected_node_id, hardware_provider=hardware_provider
+        )
+        with observation_scope(observer, "profile:device_identity_migration"):
+            identity.save(path)
+        return identity
+
+    @classmethod
+    def _from_profile(
+        cls,
+        path: Path,
+        metadata: dict[str, object],
+        expected_node_id: NodeId | None,
+        *,
+        hardware_provider: DeviceHardwareProvider | None,
+    ) -> DeviceIdentity:
+        raw_node_id = metadata.get("node_id")
+        raw_public_key = metadata.get("public_key")
+        fingerprint = metadata.get("fingerprint")
+        created_at = metadata.get("created_at")
+        if (
+            not isinstance(raw_node_id, str)
+            or not isinstance(raw_public_key, str)
+            or not isinstance(fingerprint, str)
+            or not isinstance(created_at, (int, float))
+            or isinstance(created_at, bool)
+        ):
+            raise DeviceIdentityError("device identity metadata is malformed")
+        try:
+            node_id = NodeId(raw_node_id)
+        except ValueError as error:
+            raise DeviceIdentityError("device identity NodeId is invalid") from error
+        if expected_node_id is not None and node_id != expected_node_id:
+            raise DeviceIdentityError(
+                "device identity NodeId does not match local NodeId"
+            )
+        secret_path = path.with_suffix(".msgpack")
+        if not secret_path.exists():
+            raise DeviceIdentityError("device identity private key is missing")
+        try:
+            public_key = _decode_bytes(raw_public_key)
+            secret_bundle = MessagePackStateStore(secret_path).load()
+            private_key = secret_bundle.get("private_key")
+            if (
+                set(secret_bundle)
+                != {"schema_version", "node_id", "fingerprint", "private_key"}
+                or isinstance(secret_bundle.get("schema_version"), bool)
+                or secret_bundle.get("schema_version")
+                != DEVICE_IDENTITY_SECRET_SCHEMA_VERSION
+                or secret_bundle.get("node_id") != node_id.value
+                or secret_bundle.get("fingerprint") != fingerprint
+                or not isinstance(private_key, bytes)
+                or len(private_key) != 32
+            ):
+                raise ValueError("device identity secret bundle is malformed")
+            derived_public = (
+                Ed25519PrivateKey.from_private_bytes(private_key)
+                .public_key()
+                .public_bytes(
+                    serialization.Encoding.Raw, serialization.PublicFormat.Raw
+                )
+            )
+            if (
+                derived_public != public_key
+                or fingerprint != fingerprint_for_public_key(public_key)
+            ):
+                raise ValueError(
+                    "device identity secret bundle does not match metadata"
+                )
+        except (StateDataError, TypeError, ValueError) as error:
+            raise DeviceIdentityError(
+                "device identity private key bundle is invalid"
+            ) from error
+
+        legacy_document: dict[str, object] = {
+            key: value for key, value in metadata.items() if key != "schema_version"
+        }
+        legacy_document["schema_version"] = DEVICE_IDENTITY_SCHEMA_VERSION
+        legacy_document["private_key"] = _encode_bytes(private_key)
         return cls.from_json(
-            value,
+            json.dumps(legacy_document),
             expected_node_id,
             hardware_provider=hardware_provider,
         )
@@ -270,6 +394,7 @@ class DeviceIdentity:
         *,
         hardware_provider: DeviceHardwareProvider | None = None,
     ) -> DeviceIdentity:
+        """Read a legacy full-JSON record; profile loading handles split records."""
         try:
             document = json.loads(value)
             if not isinstance(document, dict):
@@ -297,24 +422,58 @@ class DeviceIdentity:
             hardware_hint_changed=changed,
             hardware_hint_status=hint_status,
             _private_key_bytes=identity._private_key_bytes,
+            _extensions=identity._extensions,
         )
 
     def to_json(self) -> str:
-        document: dict[str, object] = {
-            "schema_version": self.schema_version,
-            "node_id": self.node_id.value,
-            "public_key": _encode_bytes(self.public_key),
-            "private_key": _encode_bytes(self._private_key_bytes),
-            "fingerprint": self.fingerprint,
-            "created_at": self.created_at,
-        }
+        """Serialize the legacy full-JSON shape for compatibility and migration."""
+        document: dict[str, object] = dict(self._extensions)
+        document.update(
+            {
+                "schema_version": self.schema_version,
+                "node_id": self.node_id.value,
+                "public_key": _encode_bytes(self.public_key),
+                "private_key": _encode_bytes(self._private_key_bytes),
+                "fingerprint": self.fingerprint,
+                "created_at": self.created_at,
+            }
+        )
         if self.hardware_hint is not None:
             document["hardware_hint_digest"] = self.hardware_hint.digest
             document["hardware_hint_sources"] = list(self.hardware_hint.sources_present)
         return json.dumps(document, sort_keys=True, separators=(",", ":"))
 
     def save(self, path: Path) -> None:
-        _atomic_write(path, lambda file: file.write(self.to_json()))
+        secret_bundle = {
+            "schema_version": DEVICE_IDENTITY_SECRET_SCHEMA_VERSION,
+            "node_id": self.node_id.value,
+            "fingerprint": self.fingerprint,
+            "private_key": self._private_key_bytes,
+        }
+        MessagePackStateStore(path.with_suffix(".msgpack")).save(secret_bundle)
+        metadata: dict[str, object] = {
+            key: value
+            for key, value in self._extensions
+            if key not in _DEVICE_IDENTITY_JSON_FIELDS
+        }
+        metadata.update(
+            {
+                "schema_version": DEVICE_IDENTITY_PROFILE_SCHEMA_VERSION,
+                "node_id": self.node_id.value,
+                "public_key": _encode_bytes(self.public_key),
+                "fingerprint": self.fingerprint,
+                "created_at": self.created_at,
+            }
+        )
+        if self.hardware_hint is not None:
+            metadata["hardware_hint_digest"] = self.hardware_hint.digest
+            metadata["hardware_hint_sources"] = list(self.hardware_hint.sources_present)
+        _atomic_write(
+            path,
+            lambda file: json.dump(
+                metadata, file, sort_keys=True, separators=(",", ":")
+            ),
+        )
 
     def public_view(self) -> DeviceIdentityView:
         return DeviceIdentityView(
@@ -374,6 +533,12 @@ class DeviceIdentity:
                 created_at=float(created_at),
                 hardware_hint=hardware_hint,
                 _private_key_bytes=private_key,
+                _extensions=tuple(
+                    (name, item)
+                    for name, item in document.items()
+                    if isinstance(name, str)
+                    and name not in _DEVICE_IDENTITY_JSON_FIELDS
+                ),
             )
         except (KeyError, TypeError, ValueError, OverflowError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
@@ -467,19 +632,24 @@ def load_device_identity(
     profile: Path,
     node_identity: NodeIdentity,
     provider: DeviceHardwareProvider | None = None,
+    observer: ObservabilityWatcher | None = None,
 ) -> DeviceIdentity:
     """Load or migrate the profile-owned representation of the network root."""
 
     path = profile / "device_identity.json"
     if path.exists():
         existing = DeviceIdentity.load(
-            path, node_identity.node_id, hardware_provider=provider
+            path,
+            node_identity.node_id,
+            hardware_provider=provider,
+            observer=observer,
         )
         identity = DeviceIdentity.from_node_identity(
             node_identity, existing, hardware_provider=provider
         )
         if identity.public_key != existing.public_key:
-            identity.save(path)
+            with observation_scope(observer, "profile:device_identity_migration"):
+                identity.save(path)
         return identity
     identity = DeviceIdentity.from_node_identity(
         node_identity, hardware_provider=provider
@@ -509,14 +679,6 @@ class DeviceIdentityRuntimeMixin:
     @property
     def device_identity(self) -> DeviceIdentityView | None:
         return self._device_identity.public_view() if self._device_identity else None
-
-    def _load_device_identity(
-        self,
-        profile: Path,
-        node_identity: NodeIdentity,
-        provider: DeviceHardwareProvider | None,
-    ) -> None:
-        self._device_identity = load_device_identity(profile, node_identity, provider)
 
     def _device_identity_diagnostics(self) -> dict[str, object] | None:
         if self._device_identity is None:

@@ -7,7 +7,12 @@ name = "expra-connect"
 dynamic = ["version"]
 description = "Headless identity, discovery, pairing, transport, sharing, and cluster primitives"
 requires-python = ">=3.10"
-dependencies = ["cryptography>=41", "typing-extensions>=4.6", "zeroconf>=0.132"]
+dependencies = [
+    "cryptography>=41",
+    "msgpack>=1.0",
+    "typing-extensions>=4.6",
+    "zeroconf>=0.132",
+]
 
 [project.optional-dependencies]
 dev = ["mypy>=1.10", "pyright>=1.1.350", "ruff>=0.6"]

@@ -61,6 +61,98 @@ class _RecordingDiscoveryBackend:
 
 
 class RuntimeConfigurationTests(unittest.TestCase):
+    def test_profile_rejects_second_runtime_until_first_releases_ownership(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            first = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=profile,
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            second = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=profile,
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            first_status = first.start()
+            self.assertEqual(first_status.state, RuntimeState.STARTED)
+            assert first.identity is not None
+            persisted_before = (profile / "identity.json").read_bytes()
+            self.assertEqual(
+                (profile / ".expra-connect.lock").stat().st_mode & 0o777, 0o600
+            )
+
+            second_status = second.start()
+
+            self.assertEqual(second_status.state, RuntimeState.PERSISTENCE_FAILED)
+            self.assertIsNone(second.identity)
+            self.assertEqual((profile / "identity.json").read_bytes(), persisted_before)
+            first.shutdown()
+
+            restarted_status = second.start()
+
+            self.assertEqual(restarted_status.state, RuntimeState.STARTED)
+            assert second.identity is not None
+            self.assertEqual(second.identity.node_id, first.identity.node_id)
+            second.shutdown()
+
+    def test_failed_start_releases_profile_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            (profile / "identity.json").write_text("not json", encoding="utf-8")
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=profile,
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+
+            self.assertEqual(runtime.start().state, RuntimeState.PERSISTENCE_FAILED)
+            NodeIdentity.create(NodeId("repaired-profile")).save(
+                profile / "identity.json"
+            )
+
+            self.assertEqual(runtime.start().state, RuntimeState.STARTED)
+            runtime.shutdown()
+
+    def test_unexpected_start_exception_releases_profile_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            first = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=profile,
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            second = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=profile,
+                    discovery_enabled=False,
+                    preferred_port=0,
+                )
+            )
+            try:
+                with (
+                    patch.object(
+                        first, "_start_components", side_effect=RuntimeError("boom")
+                    ),
+                    self.assertRaisesRegex(RuntimeError, "boom"),
+                ):
+                    first.start()
+
+                self.assertEqual(second.start().state, RuntimeState.STARTED)
+            finally:
+                first.shutdown()
+                second.shutdown()
+
     def test_construction_has_no_network_effects_and_uses_mature_defaults(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             config = ConnectConfig(profile_dir=Path(directory))

@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import hmac
-import json
 import logging
 import platform
 import socket
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from types import TracebackType
@@ -42,7 +41,7 @@ from .models import (
     NodeCapability,
     NodePermission,
 )
-from .observability import ObservabilityWatcher
+from .observability import ObservabilityWatcher, observation_scope
 from .pairing import (
     PairingManager,
     PeerGrant,
@@ -53,6 +52,7 @@ from .pairing import (
 from .pairing_flow import NetworkPairing
 from .pairing_target import handle_pairing_request
 from .persistence import JsonStateStore, StateDataError, migrate_state
+from .profile_state import ProfileLock, load_profile_identity
 from .registry import NodeRegistry, TrustState
 from .remote_models import NodeStatus
 from .remote_role_operations import RuntimeClusterOperations
@@ -192,6 +192,7 @@ class ConnectRuntime(
         self._network_pairing: NetworkPairing | None = None
         self._persistence_ready = False
         self._pending_permissions: dict[str, frozenset[str]] = {}
+        self._profile_lock: ProfileLock | None = None
         self._lifecycle_lock = threading.RLock()
         self._pairing_transition_lock = threading.Lock()
         self._generation = 0
@@ -405,6 +406,10 @@ class ConnectRuntime(
         generation = self._generation
         self._status = RuntimeStatus(RuntimeState.STARTING)
         try:
+            profile_lock = ProfileLock(self.config.profile_dir)
+            with observation_scope(self._observer, "profile:lock_acquire"):
+                profile_lock.acquire()
+            self._profile_lock = profile_lock
             self._load_identity()
             self._load_persisted_state()
             return self._start_components(generation)
@@ -413,11 +418,29 @@ class ConnectRuntime(
                 RuntimeState.PERSISTENCE_FAILED, reason=str(error)
             )
             self._clear_components()
+            self._release_profile_lock()
             return self._status
+        except BaseException:
+            self._status = RuntimeStatus(RuntimeState.STOPPED)
+            try:
+                self._clear_components()
+            finally:
+                self._release_profile_lock()
+            raise
 
     def shutdown(self) -> None:
         with self._lifecycle_lock:
-            self._shutdown_locked()
+            try:
+                self._shutdown_locked()
+            finally:
+                self._release_profile_lock()
+
+    def _release_profile_lock(self) -> None:
+        profile_lock = self._profile_lock
+        self._profile_lock = None
+        if profile_lock is not None:
+            with observation_scope(self._observer, "profile:lock_release"):
+                profile_lock.release()
 
     def _shutdown_locked(self) -> None:
         self._generation += 1
@@ -453,29 +476,11 @@ class ConnectRuntime(
         self.shutdown()
 
     def _load_identity(self) -> None:
-        profile = self.config.profile_dir
-        path = profile / "identity.json"
-        if path.exists():
-            document = JsonStateStore(path, kind="identity").load()
-            self._identity = NodeIdentity.from_json(json.dumps(document))
-            if (
-                document.get("schema_version") != 2
-                or "root_private_key" not in document
-            ):
-                self._identity.save(path)
-        else:
-            self._identity = NodeIdentity.create()
-            self._identity.save(path)
-        assert self._identity is not None
-        device_path = profile / "device_identity.json"
-        if self._identity.device_identity_expected and not device_path.exists():
-            raise StateDataError("expected device identity is missing")
-        self._load_device_identity(
-            profile, self._identity, self.config.device_hardware_provider
+        self._identity, self._device_identity = load_profile_identity(
+            self.config.profile_dir,
+            self.config.device_hardware_provider,
+            self._observer,
         )
-        if not self._identity.device_identity_expected:
-            self._identity = replace(self._identity, device_identity_expected=True)
-            self._identity.save(path)
 
     def _load_persisted_state(self) -> None:
         if self._identity is None:

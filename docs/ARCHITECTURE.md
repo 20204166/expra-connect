@@ -19,8 +19,8 @@ topology state, not a transport state.
 | Responsibility | Canonical owner | Runtime role |
 | --- | --- | --- |
 | Stable logical identifier | `identity.py` | `NodeId` is public and non-secret |
-| Canonical device cryptographic root | `device_identity.py` | Creates or migrates `device_identity.json` from the active root |
-| Network compatibility identity | `identity.py` | Retains `NodeId`, HMAC secret, and compatibility root APIs |
+| Canonical device cryptographic root | `device_identity.py` | Bridges metadata in `device_identity.json` to private material in `device_identity.msgpack` |
+| Network compatibility identity | `identity.py` | Bridges metadata in `identity.json` to HMAC/root private material in `identity.msgpack` |
 | TLS generation lifecycle | `identity.py`, `tls_material.py` | Manages generation continuity without changing `NodeId` |
 | Candidate discovery and expiry | `discovery_full.py` | Serializes backend lifecycle, normalizes per-service observations, and forwards events |
 | Pairing, grants, trust, and revocation | `pairing.py` | Persists transitions and refreshes the listener ACL |
@@ -34,6 +34,10 @@ topology state, not a transport state.
 
 `runtime.py` is intentionally a composition root and lifecycle facade. It does
 not implement a second discovery, transport, pairing, or capability system.
+`profile_state.py` owns exclusive runtime use of a profile and the paired
+NodeIdentity/DeviceIdentity load-or-create lifecycle. A nonblocking OS lock is
+held until runtime shutdown; a second process using the same profile fails
+closed without creating a replacement identity.
 `CapabilityShare` is generic target-owned sharing: registration is host-local,
 grants are explicit per-peer process state, and Pair authorization remains the
 outer prerequisite for every authenticated request. Pair revocation and runtime
@@ -55,19 +59,28 @@ generation acceptance remain owned by their higher-level modules.
 
 `NodeId` is the stable logical identifier and is not a credential.
 `DeviceIdentity` is the canonical local meaning of the durable Ed25519 device
-root, persisted in `device_identity.json`; its private key is never exposed and
-its fingerprint is derived from the raw public key as `ed25519:<sha256>`.
-`NodeIdentity` remains the compatibility/protocol identity for the HMAC secret,
-persisted `NodeId`, and existing `root_public_key` and
-`sign_transport_proof(...)` callers. Those compatibility APIs use the same
-persisted root; they do not define a second device key. Transport generation
-lifecycle remains owned by `TransportGenerationManager`.
+root, represented by public metadata in `device_identity.json` and private key
+material in `device_identity.msgpack`; its fingerprint is derived from the raw
+public key as `ed25519:<sha256>`. `NodeIdentity` remains the
+compatibility/protocol identity for the HMAC secret, persisted `NodeId`, and
+existing `root_public_key` and `sign_transport_proof(...)` callers. Its
+non-secret metadata is in `identity.json`, while the HMAC secret and root private
+key are in `identity.msgpack`. Those compatibility APIs use the same persisted
+root; they do not define a second device key. Transport generation lifecycle
+remains owned by `TransportGenerationManager`.
 
 Existing device files are migrated to the authoritative root without rewriting
 trust, transport, or cluster state. A successfully adopted profile records
 `device_identity_expected` in `identity.json`; later loss of
-`device_identity.json` fails closed instead of generating another root. A legacy
-profile without that marker may migrate once.
+either device identity file fails closed instead of generating another root. A
+legacy profile without that marker may migrate once. JSON-to-MessagePack
+migration writes the private bundle before atomically replacing legacy JSON with
+metadata-only JSON; if interrupted before replacement, the old JSON identity
+remains readable to the new release for retry.
+
+The split profile schema is an intentional version boundary. Older JSON-only
+releases cannot read migrated profiles and must not be used to downgrade those
+profiles; the migration retains no secret-bearing JSON compatibility mirror.
 
 `NodeIdentity` retains the existing HMAC-compatible secret and transport root
 behavior unchanged. TLS

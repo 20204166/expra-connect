@@ -7,6 +7,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import patch
 
+import msgpack
+
 from expra_connect.device_identity import (
     DeviceHardwareHint,
     DeviceIdentity,
@@ -55,6 +57,128 @@ class DeviceIdentityTests(unittest.TestCase):
             self.assertEqual(second.public_key, first.public_key)
             self.assertEqual(second.fingerprint, first.fingerprint)
 
+    def test_device_profile_splits_public_metadata_from_messagepack_private_key(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "device_identity.json"
+            identity = DeviceIdentity.create(NodeId("split-device-node"))
+
+            identity.save(path)
+
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(metadata.get("schema_version"), 2)
+            self.assertNotIn("private_key", metadata)
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(path.with_suffix(".msgpack").stat().st_mode & 0o777, 0o600)
+            secrets = msgpack.unpackb(
+                path.with_suffix(".msgpack").read_bytes(), raw=False
+            )
+            self.assertEqual(secrets["node_id"], identity.node_id.value)
+            self.assertEqual(secrets["private_key"], identity._private_key_bytes)
+            restored = DeviceIdentity.load(path, identity.node_id)
+            self.assertEqual(restored.public_key, identity.public_key)
+            self.assertEqual(restored.fingerprint, identity.fingerprint)
+
+    def test_split_device_metadata_tampering_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "device_identity.json"
+            identity = DeviceIdentity.create(NodeId("split-device-tamper"))
+            identity.save(path)
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata["fingerprint"] = "ed25519:" + "0" * 64
+            path.write_text(json.dumps(metadata), encoding="utf-8")
+
+            with self.assertRaises(DeviceIdentityError):
+                DeviceIdentity.load(path, identity.node_id)
+
+    def test_split_device_private_key_bundle_tampering_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "device_identity.json"
+            identity = DeviceIdentity.create(NodeId("split-device-key-tamper"))
+            other = DeviceIdentity.create(identity.node_id)
+            identity.save(path)
+            secret_path = path.with_suffix(".msgpack")
+            secrets = msgpack.unpackb(secret_path.read_bytes(), raw=False)
+            secrets["private_key"] = other._private_key_bytes
+            packed = msgpack.packb(secrets, use_bin_type=True)
+            assert isinstance(packed, bytes)
+            secret_path.write_bytes(packed)
+
+            with self.assertRaises(DeviceIdentityError):
+                DeviceIdentity.load(path, identity.node_id)
+
+    def test_split_device_metadata_with_invalid_node_id_fails_as_state_error(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "device_identity.json"
+            DeviceIdentity.create(NodeId("valid-device-node")).save(path)
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata["node_id"] = "local"
+            path.write_text(json.dumps(metadata), encoding="utf-8")
+
+            with self.assertRaises(DeviceIdentityError):
+                DeviceIdentity.load(path)
+
+    def test_legacy_device_json_migrates_to_split_profile_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "device_identity.json"
+            identity = DeviceIdentity.create(NodeId("legacy-device-node"))
+            path.write_text(identity.to_json(), encoding="utf-8")
+
+            restored = DeviceIdentity.load(path, identity.node_id)
+
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(metadata.get("schema_version"), 2)
+            self.assertNotIn("private_key", metadata)
+            secrets = msgpack.unpackb(
+                path.with_suffix(".msgpack").read_bytes(), raw=False
+            )
+            self.assertEqual(secrets["private_key"], identity._private_key_bytes)
+            self.assertEqual(restored.public_key, identity.public_key)
+
+    def test_failed_legacy_device_split_keeps_legacy_json_readable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "device_identity.json"
+            identity = DeviceIdentity.create(NodeId("device-migration-commit"))
+            legacy_document = identity.to_json()
+            path.write_text(legacy_document, encoding="utf-8")
+
+            with (
+                patch(
+                    "expra_connect.device_identity._atomic_write", side_effect=OSError
+                ),
+                self.assertRaises(OSError),
+            ):
+                DeviceIdentity.load(path, identity.node_id)
+
+            self.assertEqual(path.read_text(encoding="utf-8"), legacy_document)
+            self.assertTrue(path.with_suffix(".msgpack").exists())
+            self.assertEqual(
+                DeviceIdentity.from_json(legacy_document).public_key,
+                identity.public_key,
+            )
+
+    def test_split_device_metadata_with_missing_private_key_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "device_identity.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "node_id": "split-device-node",
+                        "public_key": base64.b64encode(b"k" * 32).decode("ascii"),
+                        "fingerprint": "ed25519:" + "a" * 64,
+                        "created_at": 1.0,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(DeviceIdentityError, "private key is missing"):
+                DeviceIdentity.load(path, NodeId("split-device-node"))
+
     def test_device_identity_binds_to_existing_node_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "device_identity.json"
@@ -63,13 +187,35 @@ class DeviceIdentityTests(unittest.TestCase):
             with self.assertRaises(DeviceIdentityError):
                 DeviceIdentity.load(path, NodeId("peer-b"))
 
+    def test_legacy_device_json_decoder_rejects_split_profile_metadata(self) -> None:
+        with self.assertRaisesRegex(
+            DeviceIdentityError, "unsupported device identity schema"
+        ):
+            DeviceIdentity.from_json(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "node_id": "split-device-node",
+                        "public_key": base64.b64encode(b"k" * 32).decode("ascii"),
+                        "fingerprint": "ed25519:" + "a" * 64,
+                        "created_at": 1.0,
+                    }
+                )
+            )
+
     def test_legacy_profile_creates_device_identity_without_changing_node_id(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("legacy-node"))
-            node_identity.save(profile / "identity.json")
+            (profile / "identity.json").write_text(
+                node_identity.to_json(), encoding="utf-8"
+            )
+            legacy_device = DeviceIdentity.from_node_identity(node_identity)
+            (profile / "device_identity.json").write_text(
+                legacy_device.to_json(), encoding="utf-8"
+            )
             runtime = ConnectRuntime(ConnectConfig(profile_dir=profile))
 
             runtime._load_identity()
@@ -98,6 +244,16 @@ class DeviceIdentityTests(unittest.TestCase):
                 (profile / "identity.json").read_text(encoding="utf-8")
             )
             self.assertTrue(identity_document["device_identity_expected"])
+            self.assertNotIn("secret", identity_document)
+            self.assertNotIn("root_private_key", identity_document)
+            self.assertNotIn(
+                "private_key",
+                json.loads(
+                    (profile / "device_identity.json").read_text(encoding="utf-8")
+                ),
+            )
+            self.assertTrue((profile / "identity.msgpack").is_file())
+            self.assertTrue((profile / "device_identity.msgpack").is_file())
 
     def test_migrated_profile_missing_device_identity_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -111,6 +267,35 @@ class DeviceIdentityTests(unittest.TestCase):
 
             self.assertEqual(status.state.value, "persistence_failed")
             self.assertFalse((profile / "device_identity.json").exists())
+
+    def test_existing_device_state_without_network_identity_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            DeviceIdentity.create(NodeId("orphan-device-state")).save(
+                profile / "device_identity.json"
+            )
+
+            status = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
+
+            self.assertEqual(status.state.value, "persistence_failed")
+            self.assertFalse((profile / "identity.json").exists())
+            self.assertFalse((profile / "identity.msgpack").exists())
+
+    def test_missing_split_device_key_bundle_fails_closed_without_recreation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            node_identity = NodeIdentity.create(NodeId("missing-device-bundle"))
+            node_identity.save(profile / "identity.json")
+            ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
+            device_path = profile / "device_identity.json"
+            device_path.with_suffix(".msgpack").unlink()
+
+            status = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
+
+            self.assertEqual(status.state.value, "persistence_failed")
+            self.assertFalse(device_path.with_suffix(".msgpack").exists())
 
     def test_legacy_identity_document_without_root_is_adopted_once(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -165,6 +350,29 @@ class DeviceIdentityTests(unittest.TestCase):
                 ]
             )
 
+    def test_marker_migration_preserves_unknown_identity_extensions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            identity = NodeIdentity.create(NodeId("future-extension-node"))
+            document = json.loads(identity.to_json())
+            document["future_extension"] = {"owner": "newer-runtime", "epoch": 3}
+            (profile / "identity.json").write_text(
+                json.dumps(document), encoding="utf-8"
+            )
+            DeviceIdentity.from_node_identity(identity).save(
+                profile / "device_identity.json"
+            )
+
+            ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
+
+            migrated = json.loads(
+                (profile / "identity.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                migrated.get("future_extension"),
+                {"owner": "newer-runtime", "epoch": 3},
+            )
+
     def test_node_identity_compatibility_apis_use_the_unified_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
@@ -213,6 +421,28 @@ class DeviceIdentityTests(unittest.TestCase):
             self.assertEqual(migrated.created_at, original_created_at)
             self.assertEqual(migrated.hardware_hint, original_hint)
             self.assertNotEqual(migrated.fingerprint, unrelated.fingerprint)
+
+    def test_device_root_migration_preserves_unknown_document_extensions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            node_identity = NodeIdentity.create(NodeId("extension-migration-node"))
+            node_identity.save(profile / "identity.json")
+            unrelated = DeviceIdentity.create(node_identity.node_id)
+            document = json.loads(unrelated.to_json())
+            document["future_extension"] = {"issuer": "newer-runtime", "epoch": 4}
+            (profile / "device_identity.json").write_text(
+                json.dumps(document), encoding="utf-8"
+            )
+
+            ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
+
+            migrated = json.loads(
+                (profile / "device_identity.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                migrated.get("future_extension"),
+                {"issuer": "newer-runtime", "epoch": 4},
+            )
 
     def test_migration_preserves_root_proofs_and_node_identity_public_key(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

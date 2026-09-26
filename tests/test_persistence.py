@@ -5,11 +5,36 @@ from pathlib import Path
 from typing import NoReturn
 from unittest.mock import patch
 
-from expra_connect.persistence import JsonStateStore, StateDataError, migrate_state
+from expra_connect.persistence import (
+    JsonStateStore,
+    MessagePackStateStore,
+    StateDataError,
+    migrate_state,
+)
 from expra_connect.runtime_persistence import peer_grant_from_json
 
 
 class PersistenceTests(unittest.TestCase):
+    def test_messagepack_state_rejects_malformed_and_oversized_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "identity.msgpack"
+            store = MessagePackStateStore(path)
+
+            path.write_bytes(b"\xc1")
+            with self.assertRaises(StateDataError):
+                store.load()
+
+            path.write_bytes(b"x" * (store.MAX_BYTES + 1))
+            with self.assertRaisesRegex(StateDataError, "size limit"):
+                store.load()
+
+    def test_messagepack_state_rejects_non_string_root_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = MessagePackStateStore(Path(directory) / "identity.msgpack")
+
+            with self.assertRaises(StateDataError):
+                store.save({1: "invalid"})  # type: ignore[dict-item]
+
     def test_persisted_secret_must_decode_to_256_bits(self) -> None:
         with self.assertRaises(ValueError):
             peer_grant_from_json(

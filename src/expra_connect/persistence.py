@@ -8,7 +8,9 @@ import tempfile
 from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, TextIO, cast
+from typing import Any, BinaryIO, TextIO, cast
+
+import msgpack
 
 
 class StateDataError(ValueError):
@@ -27,11 +29,48 @@ def _atomic_write(
 ) -> None:
     """Write a private document through a flushed, replace-on-success file."""
 
+    _atomic_write_stream(
+        path,
+        cast(Callable[[Any], object], writer),
+        binary=False,
+        mode=mode,
+        sync_directory=sync_directory,
+    )
+
+
+def _atomic_write_bytes(
+    path: Path,
+    payload: bytes,
+    *,
+    mode: int = 0o600,
+    sync_directory: bool = True,
+) -> None:
+    """Write private binary state through the atomic replacement boundary."""
+    _atomic_write_stream(
+        path,
+        lambda file: file.write(payload),
+        binary=True,
+        mode=mode,
+        sync_directory=sync_directory,
+    )
+
+
+def _atomic_write_stream(
+    path: Path,
+    writer: Callable[[Any], object],
+    *,
+    binary: bool,
+    mode: int,
+    sync_directory: bool,
+) -> None:
+
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     try:
         try:
-            file = os.fdopen(fd, "w", encoding="utf-8")
+            file: TextIO | BinaryIO = (
+                os.fdopen(fd, "wb") if binary else os.fdopen(fd, "w", encoding="utf-8")
+            )
         except OSError:
             os.close(fd)
             raise
@@ -145,3 +184,55 @@ class JsonStateStore:
 
         value = self.load()
         return migrate_state(kind, value)
+
+
+class MessagePackStateStore:
+    """Atomically persist one bounded, string-keyed MessagePack map."""
+
+    MAX_BYTES = 1024 * 1024
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def save(self, value: dict[str, Any]) -> None:
+        if not isinstance(value, dict) or not all(
+            isinstance(key, str) for key in value
+        ):
+            raise StateDataError("MessagePack state must be a string-keyed map")
+        try:
+            payload = msgpack.packb(value, use_bin_type=True)
+        except (TypeError, ValueError) as error:
+            raise StateDataError("state cannot be encoded as MessagePack") from error
+        if not isinstance(payload, bytes):
+            raise StateDataError("MessagePack encoder returned invalid data")
+        if len(payload) > self.MAX_BYTES:
+            raise StateDataError("MessagePack state exceeds size limit")
+        _atomic_write_bytes(self.path, payload)
+
+    def load(self) -> dict[str, Any]:
+        try:
+            payload = self.path.read_bytes()
+        except OSError as error:
+            raise StateDataError(
+                "persisted MessagePack state cannot be read"
+            ) from error
+        if len(payload) > self.MAX_BYTES:
+            raise StateDataError("MessagePack state exceeds size limit")
+        try:
+            value = msgpack.unpackb(
+                payload,
+                raw=False,
+                strict_map_key=True,
+                max_str_len=self.MAX_BYTES,
+                max_bin_len=self.MAX_BYTES,
+                max_array_len=100_000,
+                max_map_len=100_000,
+                max_ext_len=0,
+            )
+        except (ValueError, TypeError, msgpack.UnpackException) as error:
+            raise StateDataError("persisted MessagePack state is malformed") from error
+        if not isinstance(value, dict) or not all(
+            isinstance(key, str) for key in value
+        ):
+            raise StateDataError("MessagePack state root must be a string-keyed map")
+        return cast(dict[str, Any], value)

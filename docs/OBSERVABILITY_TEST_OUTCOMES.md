@@ -48,15 +48,20 @@ instrumented.
 - Outgoing connection route attempts through `ConnectionManager`.
 - Runtime diagnostics through `ConnectRuntime.diagnostics()`.
 - Direct watcher operations, bounded samples, outcomes, event counters, reset, and concurrency behavior through `tests/test_observability.py`.
+- Profile lock acquisition/release, profile identity load/create, legacy identity
+  migration, and device identity migration through stable operation targets.
+  Targets omit profile paths, NodeIds, and key material; regression coverage is
+  in `tests/test_profile_observability.py`.
 
 ## Areas Needing Work
 
 | Area | Current state | Suggested next measurement |
 | --- | --- | --- |
-| Runtime lifecycle | Start and shutdown produce no metrics. | Add `runtime:start`, `runtime:shutdown`, and listener/discovery failure outcomes. |
+| Runtime lifecycle | Profile lock acquisition/release is measured; overall start/shutdown and listener/discovery outcomes are not. | Add lifecycle outcome metrics without duplicating profile-lock durations. |
 | Discovery | Discovery events are not recorded by the shared watcher. | Record discovery start, candidate accepted/rejected, stale candidate, and stop outcomes. |
 | Pairing | Pairing and elevation flows are not individually observed. | Record request, approval/rejection, timeout, cancellation, and persistence failure. |
-| Persistence | State load/save and migration are not measured. | Record operation duration and failure outcome without recording state contents. |
+| Profile identity persistence | Load/create and legacy split-format migrations are measured; profile lock contention is counted as failure. | Preserve these stable targets; add no path or identity labels. |
+| Other persistence | Trust, transport, idempotency, and cluster load/save are not measured. | Record operation duration and failure outcome without recording state contents. |
 | Registry and sharing | Registry transitions and capability-share calls are not measured. | Record promote/revoke/share decisions using stable operation names only. |
 | Local cluster operations | Local role, failover, and membership transitions are not measured. | Add metrics at role/failover boundaries, preserving fencing-token secrecy. |
 | Diagnostics consumption | Metrics are exposed in the runtime diagnostics dictionary, but no exporter or retention policy exists. | Define the host-facing export and sampling/reset lifecycle. |

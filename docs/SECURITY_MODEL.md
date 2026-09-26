@@ -66,18 +66,36 @@ never persisted and never survive a service restart.
 
 ## Device Identity Foundation
 
-Phase 1 creates `device_identity.json` on first startup from the active
-`NodeIdentity` root, including the existing `NodeId`, raw Ed25519 key material
-in canonical base64, a public-key fingerprint, creation time, and an optional
-digest of local hardware hints. If a profile contains an unrelated device root,
-the file is atomically migrated to the existing network root while its creation
-time and hardware metadata are retained. Successful adoption records
-`device_identity_expected` in `identity.json`. If that marker is present and
-the device file is missing, startup fails closed. Raw MAC addresses, machine
-identifiers, and the hardware digest are local-only and are not transmitted or
-used for authentication. Hardware changes never regenerate the cryptographic
-identity. Existing Pair, trust, transport, and cluster state is not migrated or
-rewritten.
+The profile stores identity metadata in `identity.json` and the pairing secret
+and root private key in the adjacent `identity.msgpack`. Device identity metadata
+is in `device_identity.json`; its private key is in `device_identity.msgpack`.
+All four files are profile data outside the installed Python package. They are
+written atomically with owner-only permissions. MessagePack is a binary encoding,
+not encryption; the sensitive bundles remain plaintext for processes running as
+the profile owner. Current schemas are identity metadata v3 / secrets v1 and
+device metadata v2 / private-key bundle v1.
+Unrecognized extension fields are preserved in the JSON metadata document and
+therefore must be non-secret; any future secret field must be explicitly added
+to the MessagePack bundle schema and removed from JSON metadata.
+
+On first startup, `device_identity.json` is created from the active
+`NodeIdentity` root, including the existing `NodeId`, public-key fingerprint,
+creation time, and an optional digest of local hardware hints. If a profile
+contains an unrelated device root, the private key bundle is migrated to the
+existing network root while its creation time and hardware metadata are
+retained. Successful adoption records `device_identity_expected` in
+`identity.json`. If that marker is present and either device identity file is
+missing, startup fails closed. Raw MAC addresses, machine identifiers, and the
+hardware digest are local-only and are not transmitted or used for
+authentication. Hardware changes never regenerate the cryptographic identity.
+Existing Pair, trust, transport, and cluster state is not migrated or rewritten.
+
+Legacy full-JSON identity records are accepted and migrated to metadata JSON plus
+MessagePack secret bundles. The split format uses new schema versions; older
+JSON-only releases do not support profiles after migration and must fail closed
+rather than regenerate a different identity. Stop older runtimes before the
+first migration; the profile lock coordinates releases that implement the lock,
+but cannot fence an already-running older binary.
 
 Malformed or mismatched device identity state fails closed. A missing file is
 created from the already-loaded `NodeIdentity` only when the profile has no
