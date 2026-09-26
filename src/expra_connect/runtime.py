@@ -195,8 +195,8 @@ class ConnectRuntime(
         self._profile_lock: ProfileLock | None = None
         self._lifecycle_lock = threading.RLock()
         self._pairing_transition_lock = threading.Lock()
-        self._generation = 0
-        self._status = RuntimeStatus(RuntimeState.STOPPED)
+        self._inbound_pairing_lock = threading.Lock()
+        self._generation, self._status = 0, RuntimeStatus(RuntimeState.STOPPED)
 
     @property
     def status(self) -> RuntimeStatus:

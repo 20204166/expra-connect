@@ -16,6 +16,19 @@ from .wire_protocol import PairingRequest
 
 
 def handle_pairing_request(runtime: Any, request: PairingRequest) -> dict[str, Any]:
+    """Serialize inbound approval and pending-transaction publication."""
+    pairing_lock = runtime._inbound_pairing_lock
+    if not pairing_lock.acquire(blocking=False):
+        return {"approved": False, "outcome": "already_pending"}
+    try:
+        return _handle_pairing_request_locked(runtime, request)
+    finally:
+        pairing_lock.release()
+
+
+def _handle_pairing_request_locked(
+    runtime: Any, request: PairingRequest
+) -> dict[str, Any]:
     pairing = runtime._require_pairing()
     caller = request.caller_node_id
     if caller == runtime.identity.node_id:

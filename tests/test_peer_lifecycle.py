@@ -699,6 +699,69 @@ class TargetPairRequestTests(unittest.TestCase):
         self.assertEqual(len(self.runtime.pairing.pending), 1)
         self.assertEqual(len(self.runtime._pending_permissions), 1)
 
+    def test_inbound_pairing_serializes_callback_and_pending_commit(self) -> None:
+        assert self.runtime.pairing is not None
+        self.runtime.pairing.grants.clear()
+        first_callback_entered = threading.Event()
+        release_first_callback = threading.Event()
+        second_callback_entered = threading.Event()
+        second_request_started = threading.Event()
+        callback_lock = threading.Lock()
+        callback_count = 0
+
+        def approve(_request: PairingRequest) -> bool:
+            nonlocal callback_count
+            with callback_lock:
+                callback_count += 1
+                callback_number = callback_count
+            if callback_number == 1:
+                first_callback_entered.set()
+                if not release_first_callback.wait(2.0):
+                    return False
+            else:
+                second_callback_entered.set()
+            return True
+
+        self.runtime.config = replace(self.runtime.config, on_pairing_request=approve)
+        responses = []
+        errors = []
+
+        def handle(secret: str) -> None:
+            try:
+                responses.append(
+                    self.runtime._handle_pairing_request(
+                        self._request("pair", secret=secret)
+                    )
+                )
+            except BaseException as error:  # noqa: BLE001 - captured for assertion
+                errors.append(error)
+
+        def handle_second() -> None:
+            second_request_started.set()
+            handle("c" * 64)
+
+        first = threading.Thread(target=handle, args=("b" * 64,))
+        second = threading.Thread(target=handle_second)
+        first.start()
+        self.assertTrue(first_callback_entered.wait(1.0))
+        second.start()
+        try:
+            self.assertTrue(second_request_started.wait(1.0))
+            self.assertFalse(second_callback_entered.wait(0.1))
+        finally:
+            release_first_callback.set()
+            first.join(2.0)
+            second.join(2.0)
+
+        self.assertFalse(first.is_alive())
+        self.assertFalse(second.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(callback_count, 1)
+        self.assertEqual(sum(1 for response in responses if response["approved"]), 1)
+        assert self.runtime.pairing is not None
+        self.assertEqual(len(self.runtime.pairing.pending), 1)
+        self.assertEqual(len(self.runtime._pending_permissions), 1)
+
 
 class TransportRotationTests(unittest.TestCase):
     def test_rotation_never_requires_pair_or_repair(self) -> None:
