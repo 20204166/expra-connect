@@ -73,6 +73,20 @@ def _reallow_capability_after_rotation(
         runtime.sharing.allow(peer_id, CAPABILITY)
 
 
+def _allow_harness_capability(
+    runtime: ConnectRuntime, report: Path, peer_id: NodeId, reason: str
+) -> None:
+    """Grant and record only the harness-owned test capability."""
+    runtime.sharing.allow(peer_id, CAPABILITY)
+    write_event(
+        report,
+        "capability_granted",
+        capability=CAPABILITY,
+        peer_id=peer_id.value,
+        reason=reason,
+    )
+
+
 def _retry_shared_capability(operation: Any, timeout: float = 5.0) -> Any:
     """Wait briefly for a target harness to re-apply its explicit grant."""
     deadline = time.monotonic() + max(timeout, 0.0)
@@ -103,7 +117,7 @@ def _approve_capability_pairing(
         caller_node_id=getattr(getattr(request, "caller_node_id", None), "value", None),
         permissions=permissions,
     )
-    runtime.sharing.allow(request.caller_node_id, CAPABILITY)
+    _allow_harness_capability(runtime, report, request.caller_node_id, "pairing")
     capability_peers.add(request.caller_node_id)
     return True
 
@@ -152,7 +166,7 @@ def _explicit_approval_decision(
         "pairing_approved",
         caller_node_id=getattr(caller, "value", None),
     )
-    runtime.sharing.allow(caller, CAPABILITY)
+    _allow_harness_capability(runtime, report, caller, "pairing")
     capability_peers.add(caller)
     return True
 
@@ -511,7 +525,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
 
     def reallow_capability_after_rotation() -> None:
         for peer_id in capability_peers:
-            runtime.sharing.allow(peer_id, CAPABILITY)
+            _allow_harness_capability(runtime, args.report, peer_id, "rotation_restore")
 
     surface_ready = {
         surface_id: Event()
@@ -531,6 +545,7 @@ def run_target(args: Any, runtime: ConnectRuntime) -> int:
             "params": params,
         },
     )
+    write_event(args.report, "capability_registered", capability=CAPABILITY)
     try:
         if bidirectional:
             register_harness_surfaces(runtime)
@@ -745,7 +760,16 @@ def run_initiator(
             tls_verified=True,
             generation=getattr(candidate, "transport_generation", None),
         )
-        result = provider.request_shared(CAPABILITY, {"source": "peer_harness"})
+        try:
+            result = provider.request_shared(CAPABILITY, {"source": "peer_harness"})
+        except RemoteAuthorizationError as error:
+            write_event(
+                args.report,
+                "capability_request_denied",
+                capability=CAPABILITY,
+                error_type=type(error).__name__,
+            )
+            raise
         write_event(
             args.report,
             "shared_capability_result",

@@ -144,6 +144,10 @@ authenticated connect, target-owned capability authorization, and redacted
 evidence reporting. See `examples/README.md` for the complete walkthrough and
 failure boundaries.
 
+For the full two-host runbook—including intentional target approval, both
+platform orientations, rotation/reconnect, trust restore, revocation, and
+bidirectional surfaces—see [`docs/PEER_HARNESS_ACCEPTANCE.md`](docs/PEER_HARNESS_ACCEPTANCE.md).
+
 The acceptance runner also records per-route attempts, supports explicit
 advertised-address selection, exercises active transport rotation, verifies
 persisted trust after restart, and verifies target-side self-revocation.

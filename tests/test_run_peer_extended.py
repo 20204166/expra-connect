@@ -18,6 +18,7 @@ from peer_harness.events import (
     write_event,
 )
 from peer_harness.flows import (
+    _approve_capability_pairing,
     _candidate_values,
     _diagnostics_values,
     _runtime,
@@ -889,39 +890,146 @@ class ExtendedPeerStageTests(unittest.TestCase):
             self.assertEqual(run_target(args, runtime), 0)
         self.assertEqual(
             [call.args[1] for call in event.call_args_list],
-            ["started", "target_ready", "rotated"],
+            ["capability_registered", "started", "target_ready", "rotated"],
         )
         self.assertEqual(event.call_args_list[-1].kwargs, {"generation": 2})
         runtime.rotate_transport.assert_called_once_with()
         runtime.shutdown.assert_called_once_with()
 
     def test_target_explicitly_reallows_capability_after_rotation(self) -> None:
-        runtime = Mock()
-        runtime.identity = self._identity("target")
-        peer_id = NodeId("initiator")
-        runtime.pairing.grants = {peer_id: object()}
-        runtime.transport_generations.current_generation = 2
-        args = SimpleNamespace(
-            role="target",
-            report=Path("/tmp/target-report.json"),
-            wait=0.02,
-            rotate_after=0,
-            bidirectional_surfaces=False,
-        )
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Mock()
+            runtime.identity = self._identity("target")
+            peer_id = NodeId("initiator")
+            runtime.pairing.grants = {peer_id: object()}
+            runtime.transport_generations.current_generation = 2
+            report = Path(directory) / "target-report.json"
+            args = SimpleNamespace(
+                role="target",
+                report=report,
+                wait=0.02,
+                rotate_after=0,
+                bidirectional_surfaces=False,
+            )
 
-        def start() -> object:
-            callback = runtime.config.on_pairing_request
-            assert callable(callback)
-            callback(SimpleNamespace(caller_node_id=peer_id, permissions=()))
-            return self._status()
+            def start() -> object:
+                callback = runtime.config.on_pairing_request
+                assert callable(callback)
+                callback(SimpleNamespace(caller_node_id=peer_id, permissions=()))
+                return self._status()
 
-        runtime.start.side_effect = start
+            runtime.start.side_effect = start
 
-        with unittest.mock.patch("peer_harness.flows.time.sleep"):
+            with unittest.mock.patch("peer_harness.flows.time.sleep"):
+                self.assertEqual(run_target(args, runtime), 0)
+
+            self.assertEqual(runtime.sharing.allow.call_count, 2)
+            runtime.sharing.allow.assert_called_with(peer_id, CAPABILITY)
+            records = json.loads(report.read_text(encoding="utf-8"))
+            grant_reasons = [
+                record["reason"]
+                for record in records
+                if record["event"] == "capability_granted"
+            ]
+            self.assertEqual(grant_reasons, ["pairing", "rotation_restore"])
+
+    def test_target_reports_registered_capability(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "target-report.json"
+            runtime = Mock()
+            runtime.start.return_value = self._status()
+            runtime.identity = self._identity("target")
+            args = SimpleNamespace(
+                role="target",
+                report=report,
+                wait=0.0,
+                bidirectional_surfaces=False,
+            )
+
             self.assertEqual(run_target(args, runtime), 0)
 
-        self.assertEqual(runtime.sharing.allow.call_count, 2)
-        runtime.sharing.allow.assert_called_with(peer_id, CAPABILITY)
+            records = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(
+                [record["event"] for record in records],
+                ["capability_registered", "started", "target_ready"],
+            )
+            self.assertEqual(
+                records[0],
+                {
+                    "event": "capability_registered",
+                    "sequence": 1,
+                    "capability": CAPABILITY,
+                },
+            )
+
+    def test_approved_pairing_reports_caller_capability_grant(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "target-report.json"
+            runtime = Mock()
+            peers: set[NodeId] = set()
+            caller = NodeId("initiator")
+            request = SimpleNamespace(
+                caller_node_id=caller,
+                permissions=(SimpleNamespace(value="read_state"),),
+            )
+
+            self.assertTrue(
+                _approve_capability_pairing(runtime, report, request, peers)
+            )
+
+            runtime.sharing.allow.assert_called_once_with(caller, CAPABILITY)
+            self.assertIn(caller, peers)
+            records = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(
+                [record["event"] for record in records],
+                ["pairing_request", "capability_granted"],
+            )
+            self.assertEqual(records[-1]["capability"], CAPABILITY)
+            self.assertEqual(records[-1]["peer_id"], caller.value)
+            self.assertEqual(records[-1]["reason"], "pairing")
+
+    def test_initiator_reports_capability_denial_without_remote_detail(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "initiator-report.json"
+            runtime = Mock()
+            runtime.start.return_value = self._status()
+            runtime.identity = self._identity("initiator")
+            candidate = self._candidate()
+            runtime.peers = (candidate,)
+            runtime.pairing.trusted.get.return_value = Mock()
+            provider = Mock()
+            provider.request_shared.side_effect = RemoteAuthorizationError(
+                "private remote detail"
+            )
+            runtime.connect_peer.return_value = provider
+            args = SimpleNamespace(
+                peer_id="target",
+                wait=0,
+                report=report,
+                bidirectional_surfaces=False,
+                existing_peer_id=None,
+                reconnect_after_rotation=False,
+                revoke_self=False,
+                restart_check=False,
+            )
+
+            with redirect_stdout(StringIO()):
+                self.assertEqual(run_initiator(args, runtime), 1)
+
+            serialized = report.read_text(encoding="utf-8")
+            records = json.loads(serialized)
+            self.assertIn(
+                "capability_request_denied",
+                [record["event"] for record in records],
+            )
+            denial = next(
+                record
+                for record in records
+                if record["event"] == "capability_request_denied"
+            )
+            self.assertEqual(denial["capability"], CAPABILITY)
+            self.assertEqual(denial["error_type"], "RemoteAuthorizationError")
+            self.assertNotIn("private remote detail", serialized)
 
     def test_target_does_not_restore_capability_from_pair_grant_alone(self) -> None:
         runtime = Mock()

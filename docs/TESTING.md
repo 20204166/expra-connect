@@ -31,3 +31,7 @@ surface, not the source of truth. `workspace_doctor` reports
 
 These are deterministic loopback tests. They do not replace a physical
 two-machine Linux/Windows acceptance run.
+
+For intentional Linux/Windows target and initiator commands, full one-way
+pairing/share lifecycle coverage, reverse roles, and bidirectional surfaces, use
+[`PEER_HARNESS_ACCEPTANCE.md`](PEER_HARNESS_ACCEPTANCE.md).

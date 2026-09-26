@@ -144,6 +144,41 @@ class RunPeerTerminalOutputTests(unittest.TestCase):
         )
         self.assertNotIn("secret-id", line)
 
+    def test_capability_evidence_is_specific_and_redacted(self) -> None:
+        self.assertEqual(
+            format_terminal_event(
+                10,
+                "capability_registered",
+                capability="test.read_state",
+            ),
+            "[10] capability_registered capability=test.read_state",
+        )
+        self.assertEqual(
+            format_terminal_event(
+                11,
+                "capability_granted",
+                capability="test.read_state",
+                peer_id="1234567890abcdef",
+                reason="pairing",
+                secret="must-not-print",
+            ),
+            "[11] capability_granted capability=test.read_state "
+            "peer=12345678... reason=pairing",
+        )
+        denied = format_terminal_event(
+            12,
+            "capability_request_denied",
+            capability="test.read_state",
+            error_type="RemoteAuthorizationError",
+            detail="private remote detail",
+        )
+        self.assertEqual(
+            denied,
+            "[12] capability_request_denied capability=test.read_state "
+            "error_type=RemoteAuthorizationError",
+        )
+        self.assertNotIn("private remote detail", denied)
+
     def test_error_and_timeout_events_are_summarized(self) -> None:
         self.assertEqual(
             format_terminal_event(

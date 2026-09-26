@@ -101,8 +101,15 @@ class ExplicitApprovalTests(unittest.TestCase):
             records = json.loads(report.read_text(encoding="utf-8"))
             self.assertEqual(
                 [record["event"] for record in records],
-                ["pairing_pending", "pairing_approved"],
+                [
+                    "pairing_pending",
+                    "pairing_approved",
+                    "capability_granted",
+                ],
             )
+            self.assertEqual(records[-1]["capability"], CAPABILITY)
+            self.assertEqual(records[-1]["peer_id"], "initiator")
+            self.assertEqual(records[-1]["reason"], "pairing")
 
 
 if __name__ == "__main__":

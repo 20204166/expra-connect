@@ -69,6 +69,14 @@ endpoint addresses and test TCP port `27321` from Windows. If pairing works but
 the capability request fails, compare the caller ID in `pairing_request` with
 the capability allowlist decision.
 
+Pairing with `read_state` does not itself allow `test.read_state`. A target run
+through `peer_harness target` registers the test capability and explicitly
+allows it for each approved caller. Its report records `capability_registered`
+and `capability_granted`; the initiator records `capability_request_denied` if
+the remote request is denied. Compare both reports to tell whether the target
+registered and granted the test capability. These events are evidence only and
+do not add or restore authorization.
+
 The harness also supports:
 
 ```text

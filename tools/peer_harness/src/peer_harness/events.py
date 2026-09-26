@@ -44,6 +44,9 @@ _EVENT_FIELDS: dict[str, frozenset[str]] = {
     "connected": frozenset({"peer_id", "tls_verified", "generation"}),
     "shared_capability_result": frozenset({"capability", "outcome"}),
     "shared_after_rotation": frozenset({"capability", "outcome"}),
+    "capability_registered": frozenset({"capability"}),
+    "capability_granted": frozenset({"capability", "peer_id", "reason"}),
+    "capability_request_denied": frozenset({"capability", "error_type"}),
     "error": frozenset({"error_type"}),
     "post_revoke_denied": frozenset({"error_type"}),
     "restored_trust": frozenset({"peer_id"}),
@@ -172,6 +175,24 @@ def format_terminal_event(sequence: int, event: str, **values: Any) -> str:
             )
         capability = _field(safe.get("capability", CAPABILITY))
         return f"{prefix} shared capability={capability} outcome={outcome}"
+    if event == "capability_registered":
+        return (
+            f"{prefix} capability_registered "
+            f"capability={_field(safe.get('capability'))}"
+        )
+    if event == "capability_granted":
+        return (
+            f"{prefix} capability_granted "
+            f"capability={_field(safe.get('capability'))} "
+            f"peer={_short(safe.get('peer_id'))} "
+            f"reason={_field(safe.get('reason'))}"
+        )
+    if event == "capability_request_denied":
+        return (
+            f"{prefix} capability_request_denied "
+            f"capability={_field(safe.get('capability'))} "
+            f"error_type={_field(safe.get('error_type'))}"
+        )
     if event == "error":
         return f"{prefix} error type={_field(safe.get('error_type'))}"
     if event == "post_revoke_denied":
