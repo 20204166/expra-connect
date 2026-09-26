@@ -1818,6 +1818,56 @@ class ProviderRequestMechanicsTests(unittest.TestCase):
         self.assertEqual(second["session_id"], "session-1")
         self.assertIs(second["resume"], True)
 
+    def test_late_older_response_cannot_replace_newer_session_id(self) -> None:
+        first_started = threading.Event()
+        release_first = threading.Event()
+        request_lock = threading.Lock()
+        request_count = 0
+
+        class ReorderedTransport:
+            def request(_self, envelope_text: str, _cancel: Any = None) -> str:
+                nonlocal request_count
+                envelope = json.loads(envelope_text)
+                with request_lock:
+                    request_count += 1
+                    request_number = request_count
+                if request_number == 1:
+                    first_started.set()
+                    if not release_first.wait(5.0):
+                        raise TimeoutError("test did not release the first response")
+                    session_id = "session-older"
+                else:
+                    session_id = "session-newer"
+                return ProviderRequestMechanicsTests._respond(
+                    envelope["request_id"],
+                    payload={"node_id": "peer"},
+                    session_id=session_id,
+                )
+
+        client = self._client(ReorderedTransport())
+        errors: list[Exception] = []
+
+        def request() -> None:
+            try:
+                client._request("hello", {})
+            except Exception as error:  # noqa: BLE001 - report worker failures.
+                errors.append(error)
+
+        older = threading.Thread(target=request)
+        newer = threading.Thread(target=request)
+        older.start()
+        self.assertTrue(first_started.wait(1.0))
+        newer.start()
+        newer.join(5.0)
+        self.assertFalse(newer.is_alive())
+        self.assertEqual(client._session_id, "session-newer")
+
+        release_first.set()
+        older.join(5.0)
+        self.assertFalse(older.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(client._session_id, "session-newer")
+
     def test_unsafe_operation_is_not_retried_but_safe_operation_is(self) -> None:
         unsafe_transport = self._CountingTransport()
         unsafe_client = self._client(unsafe_transport)

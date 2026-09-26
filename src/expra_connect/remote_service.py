@@ -681,14 +681,13 @@ class AuthenticatedNodeProvider(
         caller_node_id: NodeId | None = None,
         observer: ObservabilityWatcher | None = None,
     ) -> None:
-        self._node_id = node_id
-        self._caller_node_id = caller_node_id
-        self._secret = secret
-        self._transport = transport
-        self._clock = clock
+        self._node_id, self._caller_node_id = node_id, caller_node_id
+        self._secret, self._transport, self._clock = secret, transport, clock
         self._freshness_seconds = freshness_seconds
-        self._observer = observer
-        self._invalidated = False
+        self._observer, self._invalidated = observer, False
+        self._session_lock = threading.Lock()
+        self._session_request_sequence = 0
+        self._session_response_sequence = 0
         self._session_id: str | None = None
 
     def _request(

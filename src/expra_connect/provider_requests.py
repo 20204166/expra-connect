@@ -27,6 +27,9 @@ class ProviderRequestMixin:
     _transport: Any
     _clock: Any
     _freshness_seconds: float
+    _session_lock: Any
+    _session_request_sequence: int
+    _session_response_sequence: int
     _session_id: str | None
 
     def _check_cancel(self, cancel_event: Any | None) -> None:
@@ -42,6 +45,10 @@ class ProviderRequestMixin:
         if self._invalidated:
             raise RemoteAuthError("remote provider has been revoked")
         self._check_cancel(cancel_event)
+        with self._session_lock:
+            self._session_request_sequence += 1
+            request_sequence = self._session_request_sequence
+            session_id = self._session_id
         request_id = secrets.token_hex(16)
         envelope = sign_request(
             node_id=self._node_id.value,
@@ -54,8 +61,8 @@ class ProviderRequestMixin:
             caller_node_id=(
                 self._caller_node_id.value if self._caller_node_id is not None else None
             ),
-            session_id=self._session_id,
-            resume=self._session_id is not None,
+            session_id=session_id,
+            resume=session_id is not None,
         )
         attempts = 2 if OPERATION_SAFETY.get(op) != "unsafe" else 1
         response_text = request_with_retry(
@@ -78,8 +85,11 @@ class ProviderRequestMixin:
             raise RemoteAuthError("response came from the wrong node")
         if response.request_id != request_id:
             raise RemoteAuthError("response request id does not match")
-        if response.session_id is not None:
-            self._session_id = response.session_id
+        with self._session_lock:
+            if request_sequence >= self._session_response_sequence:
+                self._session_response_sequence = request_sequence
+                if response.session_id is not None:
+                    self._session_id = response.session_id
         if response.status == "error":
             if response.error == "permission_denied":
                 raise RemoteAuthorizationError("caller lacks permission")
