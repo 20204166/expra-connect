@@ -3,19 +3,30 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
+from . import analyzer
 from .flows import _runtime, _runtime_factory, run_initiator, run_target
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="peer_harness",
-        description="Run an Expra Connect peer as a target or initiator.",
+        description="Run an Expra Connect peer as a target, initiator, or analyzer.",
     )
-    parser.add_argument("role_pos", nargs="?", choices=("target", "initiator"))
-    parser.add_argument("--role", dest="role_option", choices=("target", "initiator"))
-    parser.add_argument("--profile", type=Path, required=True)
+    parser.add_argument(
+        "role_pos", nargs="?", choices=("target", "initiator", "analyze")
+    )
+    parser.add_argument(
+        "--role", dest="role_option", choices=("target", "initiator", "analyze")
+    )
+    parser.add_argument(
+        "inputs",
+        nargs="*",
+        help="analyze-only: JSON report files and/or directories",
+    )
+    parser.add_argument("--profile", type=Path)
     parser.add_argument("--report", type=Path, default=Path("peer-report.json"))
     parser.add_argument("--peer-id", help="expected target node ID")
     parser.add_argument(
@@ -67,7 +78,31 @@ def _parser() -> argparse.ArgumentParser:
         default=30.0,
         help="seconds to wait for the approval sentinel before denying",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="analyze-only: emit machine-readable JSON",
+    )
+    parser.add_argument(
+        "--full-identifiers",
+        action="store_true",
+        help="analyze-only: show full public IDs instead of shortened forms",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="analyze-only: exit 2 if warning/error findings are present",
+    )
     return parser
+
+
+def _run_analyze(args: argparse.Namespace) -> int:
+    try:
+        report = analyzer.analyze(args.inputs, full_ids=args.full_identifiers)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return analyzer.render(report, as_json=args.json, strict=args.strict)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -77,7 +112,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("positional role and --role must match")
     args.role = args.role_option or args.role_pos
     if args.role is None:
-        parser.error("a role is required: use target or initiator")
+        parser.error("a role is required: use target, initiator, or analyze")
+    if args.role == "analyze":
+        return _run_analyze(args)
+    if args.profile is None:
+        parser.error("--profile is required for target and initiator roles")
     runtime = _runtime(args)
     if args.role == "target":
         return run_target(args, runtime)

@@ -154,17 +154,27 @@ is a failed share stage; compare it with the target's registration/grant events.
 
 ## 3. Analyze Both Reports
 
-The current analyzer accepts multiple JSON files. Run it on both host reports
-after copying them to one analysis machine:
+The harness analyzer accepts multiple JSON files and correlates the target and
+initiator roles in either order. Run it after copying both host reports to one
+analysis machine:
+
+```sh
+python3 -m peer_harness analyze \
+  win-target-report.json linux-initiator-report.json
+```
+
+The standalone wrapper remains available as well:
 
 ```sh
 python3 expra_connect_log_analyzer.py \
   win-target-report.json linux-initiator-report.json
 ```
 
-For machine-readable output, add `--json`. The analyzer currently summarizes
-each report and overall counts; it does not yet establish cross-role candidate
-or peer correlation.
+For machine-readable output, add `--json`; `--strict` exits `2` when any
+warning or error finding is present. The analyzer emits a `ROLE CORRELATION`
+section that verifies the initiator's paired/connected peer is a reported
+target node and that the target's pairing/grant caller is a reported initiator
+node; an unmatched identity is reported as a warning.
 
 ## 4. Reverse the Roles
 

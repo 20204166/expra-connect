@@ -65,6 +65,24 @@ python -m peer_harness initiator \
 Add `--bidirectional-surfaces` to exercise the surface authorization matrix on
 both roles.
 
+## Analyze reports
+
+The harness includes a deterministic, redacted log analyzer that correlates
+target and initiator reports in either order. Point it at one or more report
+files (or a directory of reports):
+
+```sh
+python -m peer_harness analyze /tmp/expra-target.json /tmp/expra-initiator.json
+python -m peer_harness analyze ./reports --json
+```
+
+`--json` emits machine-readable output, `--full-identifiers` shows full public
+IDs, and `--strict` exits `2` when any warning or error finding is present. The
+cross-role correlation checks that an initiator's paired/connected peer is a
+reported target node and that a target's pairing/grant caller is a reported
+initiator node, reporting unmatched identities as warnings. The standalone
+`expra_connect_log_analyzer.py` remains a thin wrapper over this module.
+
 ## Flags
 
 | Flag | Role | Purpose |
