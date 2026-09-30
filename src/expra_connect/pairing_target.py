@@ -33,7 +33,7 @@ def _handle_pairing_request_locked(
     caller = request.caller_node_id
     if caller == runtime.identity.node_id:
         return {"approved": False, "outcome": "denied"}
-    existing_grant = pairing.grants.get(caller)
+    existing_grant = pairing.get_grant(caller)
     if existing_grant is not None:
         if not grant_root_continuous(
             existing_grant,

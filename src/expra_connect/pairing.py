@@ -265,6 +265,11 @@ class PairingManager:
         peer_id: NodeId,
         grant: PeerGrant,
         *,
+        peer_identity_fingerprint: str | None = None,
+        peer_transport_fingerprint: str | None = None,
+        peer_root_public_key: str | None = None,
+        peer_transport_generation: int | None = None,
+        peer_transport_proof: str | None = None,
         now: float | None = None,
     ) -> TrustedPeer:
         transaction = self._active(transaction_id, now=now)
@@ -282,11 +287,11 @@ class PairingManager:
             peer_id,
             transaction.secret,
             grant.permissions,
-            grant.identity_fingerprint,
-            grant.transport_fingerprint,
-            grant.root_public_key,
-            grant.transport_generation,
-            grant.transport_proof,
+            peer_identity_fingerprint,
+            peer_transport_fingerprint,
+            peer_root_public_key,
+            peer_transport_generation,
+            peer_transport_proof,
         )
         self.trusted[peer_id] = trusted
         self._auth_broken.pop(peer_id, None)
@@ -471,6 +476,29 @@ class PairingManager:
     def has_relationship(self, peer_id: NodeId) -> bool:
         """Compatibility alias for the canonical relationship query."""
         return self.has_valid_relationship(peer_id)
+
+    def get_trusted(self, peer_id: NodeId) -> TrustedPeer | None:
+        return self.trusted.get(peer_id)
+
+    def get_grant(self, peer_id: NodeId) -> PeerGrant | None:
+        return self.grants.get(peer_id)
+
+    def restore_trusted(
+        self,
+        peer_id: NodeId,
+        trusted: TrustedPeer | None,
+        *,
+        auth_broken: bool = False,
+    ) -> None:
+        """Restore prior outbound-trust state after a failed operation."""
+        if trusted is None:
+            self.revoke_trusted(peer_id)
+        else:
+            self.trusted[peer_id] = trusted
+            if auth_broken:
+                self._auth_broken[peer_id] = True
+            else:
+                self._auth_broken.pop(peer_id, None)
 
     def can_call(self, peer_id: NodeId, permission: str) -> bool:
         peer = self.trusted.get(peer_id)

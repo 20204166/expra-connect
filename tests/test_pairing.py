@@ -360,3 +360,59 @@ class PairingTransactionBindingTests(unittest.TestCase):
             manager.confirm(transaction.transaction_id, now=105.0)
 
         self.assertNotIn(peer, manager.trusted)
+
+    def test_accept_grant_stores_peer_fingerprints_not_grant_fingerprints(
+        self,
+    ) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        transaction = manager.begin(
+            peer,
+            "s" * 64,
+            identity_fingerprint="local-identity",
+            transport_fingerprint="local-transport",
+            root_public_key="local-root",
+            transport_generation=1,
+            transport_proof="local-proof",
+        )
+        grant = PeerGrant(
+            caller_id=NodeId("peer-a"),
+            secret="s" * 64,
+            permissions=frozenset({"ping"}),
+            identity_fingerprint="local-identity",
+            transport_fingerprint="local-transport",
+            root_public_key="local-root",
+            transport_generation=1,
+            transport_proof="local-proof",
+        )
+        trusted = manager.accept_grant(
+            transaction.transaction_id,
+            peer,
+            grant,
+            peer_identity_fingerprint="peer-identity",
+            peer_transport_fingerprint="peer-transport",
+            peer_root_public_key="peer-root",
+            peer_transport_generation=2,
+            peer_transport_proof="peer-proof",
+        )
+        self.assertEqual(trusted.identity_fingerprint, "peer-identity")
+        self.assertEqual(trusted.transport_fingerprint, "peer-transport")
+        self.assertEqual(trusted.root_public_key, "peer-root")
+        self.assertEqual(trusted.transport_generation, 2)
+        self.assertEqual(trusted.transport_proof, "peer-proof")
+        self.assertIs(manager.get_trusted(peer), trusted)
+        self.assertIsNone(manager.get_grant(NodeId("unknown")))
+
+    def test_restore_trusted_restores_prior_state_and_auth_broken_flag(
+        self,
+    ) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer = NodeId("peer-b")
+        original = manager.confirm(self._approved(manager, peer))
+        manager.mark_auth_failure(peer)
+        manager.restore_trusted(peer, original, auth_broken=True)
+        self.assertIs(manager.get_trusted(peer), original)
+        self.assertTrue(manager.is_auth_broken(peer))
+        manager.restore_trusted(peer, None)
+        self.assertIsNone(manager.get_trusted(peer))
+        self.assertFalse(manager.is_auth_broken(peer))

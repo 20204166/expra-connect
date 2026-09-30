@@ -27,7 +27,8 @@ from .pairing import (
     RepairRequired,
     TrustedPeer,
 )
-from .remote_service import AuthenticatedNodeProvider, PairingTransaction
+from .pairing_models import PairingTransaction
+from .remote_service import AuthenticatedNodeProvider
 from .socket_transport import TLSRemoteTransport
 from .wire_protocol import RemoteTransportError
 
@@ -113,7 +114,7 @@ class NetworkPairing:
             raise ValueError("peer advertisement has no transport fingerprint")
         if not permissions <= {permission.value for permission in READ_PERMISSIONS}:
             raise ValueError("pairing permissions must be read-only")
-        previous = self._pairing.trusted.get(peer_id)
+        previous = self._pairing.get_trusted(peer_id)
         previous_broken = self._pairing.is_auth_broken(peer_id)
         state = self._classify_candidate(peer_id, candidate)
         if intent == "pair":
@@ -257,7 +258,7 @@ class NetworkPairing:
             expires_at=response["expires_at"],
             transport=transport,
         )
-        self._pairing.accept_grant(
+        trusted = self._pairing.accept_grant(
             pending.transaction_id,
             peer_id,
             PeerGrant(
@@ -273,18 +274,12 @@ class NetworkPairing:
                     self._transport_generation, self._transport_fingerprint
                 ),
             ),
+            peer_identity_fingerprint=candidate.identity_fingerprint,
+            peer_transport_fingerprint=candidate.transport_fingerprint,
+            peer_root_public_key=candidate.root_public_key,
+            peer_transport_generation=candidate.transport_generation,
+            peer_transport_proof=candidate.transport_proof,
         )
-        trusted = TrustedPeer(
-            peer_id,
-            pending.secret,
-            accepted_permissions,
-            candidate.identity_fingerprint,
-            candidate.transport_fingerprint,
-            candidate.root_public_key,
-            candidate.transport_generation,
-            candidate.transport_proof,
-        )
-        self._pairing.trusted[peer_id] = trusted
         if cancel_event is not None and cancel_event.is_set():
             self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
             AuthenticatedNodeProvider.abort_pairing(transaction)
@@ -342,14 +337,7 @@ class NetworkPairing:
         transaction_id: str,
     ) -> None:
         self._pairing.abort(transaction_id)
-        if previous is None:
-            self._pairing.revoke_trusted(peer_id)
-        else:
-            self._pairing.trusted[peer_id] = previous
-            if previous_broken:
-                self._pairing.mark_auth_failure(peer_id)
-            else:
-                self._pairing.mark_auth_ok(peer_id)
+        self._pairing.restore_trusted(peer_id, previous, auth_broken=previous_broken)
         self._persist()
 
     def _abort(self, transaction_id: str) -> None:
