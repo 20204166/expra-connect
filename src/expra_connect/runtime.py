@@ -356,10 +356,10 @@ class ConnectRuntime(
         if not permissions <= allowed:
             raise ValueError("pairing approval permissions must be read-only")
         pairing = self._require_pairing()
-        previous = dict(pairing.grants)
+        snap = pairing.snapshot()
         grant = pairing.approve(transaction_id, permissions)
         if not self._save_persisted_state():
-            pairing.grants = previous
+            pairing.restore_snapshot(snap)
             raise PersistenceError("pairing approval was not durably persisted")
         self._project_registry_trust(grant.caller_id)
         self._refresh_live_grants()
@@ -367,16 +367,12 @@ class ConnectRuntime(
 
     def revoke_peer(self, peer_id: NodeId, *, _refresh: bool = True) -> None:
         pairing = self._require_pairing()
-        previous_trusted = dict(pairing.trusted)
-        previous_grants = dict(pairing.grants)
-        previous_pending = dict(pairing.pending)
+        snap = pairing.snapshot()
         pairing.revoke(peer_id)
         self._surface_registry.revoke_source(peer_id)
         self._sharing.revoke_peer(peer_id)
         if not self._save_persisted_state():
-            pairing.trusted = previous_trusted
-            pairing.grants = previous_grants
-            pairing.pending = previous_pending
+            pairing.restore_snapshot(snap)
             raise PersistenceError("peer revocation was not durably persisted")
         if self._registry is not None and self._registry.record(peer_id) is not None:
             self._registry.revoke(peer_id)
@@ -745,7 +741,7 @@ class ConnectRuntime(
             peer_id = NodeId(candidate.stable_id)
         except ValueError:
             return False
-        peer = self._pairing.trusted.get(peer_id) or self._pairing.grants.get(peer_id)
+        peer = self._pairing.get_trusted(peer_id) or self._pairing.get_grant(peer_id)
         if peer is None:
             return True
         if (
@@ -791,8 +787,7 @@ class ConnectRuntime(
             return self._save_persisted_state()
         if request.operation != "pair_confirm":
             return False
-        previous_grants = dict(pairing.grants)
-        previous_pending = dict(pairing.pending)
+        snap = pairing.snapshot()
         try:
             self.approve_pairing(request.transaction_id, expected_permissions)
         except (PersistenceError, ValueError):
@@ -801,8 +796,7 @@ class ConnectRuntime(
         self._pending_permissions.pop(request.transaction_id, None)
         if self._save_persisted_state():
             return True
-        pairing.grants = previous_grants
-        pairing.pending = previous_pending
+        pairing.restore_snapshot(snap)
         self._pending_permissions[request.transaction_id] = expected_permissions
         self._save_persisted_state()
         return False
@@ -810,7 +804,7 @@ class ConnectRuntime(
     def _handle_elevation_request(self, request: CapabilityElevationRequest) -> bool:
         callback = self.config.on_elevation_request
         pairing = self._require_pairing()
-        grant = pairing.grants.get(request.caller_node_id)
+        grant = pairing.get_grant(request.caller_node_id)
         if (
             callback is None
             or grant is None

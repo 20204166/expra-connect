@@ -139,6 +139,14 @@ class PeerGrant:
     transport_proof: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class PairingManagerSnapshot:
+    trusted: dict[NodeId, TrustedPeer]
+    grants: dict[NodeId, PeerGrant]
+    pending: dict[str, PendingPairing]
+    auth_broken: dict[NodeId, bool]
+
+
 class PairingManager:
     def __init__(
         self,
@@ -499,6 +507,22 @@ class PairingManager:
                 self._auth_broken[peer_id] = True
             else:
                 self._auth_broken.pop(peer_id, None)
+
+    def snapshot(self) -> PairingManagerSnapshot:
+        """Capture a shallow copy of all four mutable state dicts."""
+        return PairingManagerSnapshot(
+            dict(self.trusted),
+            dict(self.grants),
+            dict(self.pending),
+            dict(self._auth_broken),
+        )
+
+    def restore_snapshot(self, snap: PairingManagerSnapshot) -> None:
+        """Replace all four state dicts with those from a prior snapshot."""
+        self.trusted = snap.trusted
+        self.grants = snap.grants
+        self.pending = snap.pending
+        self._auth_broken = snap.auth_broken
 
     def can_call(self, peer_id: NodeId, permission: str) -> bool:
         peer = self.trusted.get(peer_id)

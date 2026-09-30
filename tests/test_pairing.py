@@ -4,6 +4,7 @@ from expra_connect.identity import NodeId, NodeIdentity
 from expra_connect.pairing import (
     PairingBusy,
     PairingManager,
+    PairingManagerSnapshot,
     PeerGrant,
     RelationshipState,
     TrustedPeer,
@@ -416,3 +417,29 @@ class PairingTransactionBindingTests(unittest.TestCase):
         manager.restore_trusted(peer, None)
         self.assertIsNone(manager.get_trusted(peer))
         self.assertFalse(manager.is_auth_broken(peer))
+
+    def test_snapshot_captures_and_restores_auth_broken_alongside_other_state(
+        self,
+    ) -> None:
+        manager = PairingManager(NodeId("peer-a"))
+        peer_b = NodeId("peer-b")
+        peer_c = NodeId("peer-c")
+        manager.confirm(self._approved(manager, peer_b))
+        manager.mark_auth_failure(peer_b)
+        pending = manager.begin(peer_c, "p" * 64, direction="outbound")
+
+        snap = manager.snapshot()
+        self.assertIsInstance(snap, PairingManagerSnapshot)
+
+        # mutate: revoke + abort
+        manager.revoke(peer_b)
+        manager.abort(pending.transaction_id)
+        self.assertIsNone(manager.get_trusted(peer_b))
+        self.assertFalse(manager.is_auth_broken(peer_b))
+        self.assertNotIn(pending.transaction_id, manager.pending)
+
+        # restore must bring back trusted AND auth_broken
+        manager.restore_snapshot(snap)
+        self.assertIsNotNone(manager.get_trusted(peer_b))
+        self.assertTrue(manager.is_auth_broken(peer_b))
+        self.assertIn(pending.transaction_id, manager.pending)

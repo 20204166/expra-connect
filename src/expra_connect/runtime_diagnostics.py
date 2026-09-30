@@ -16,8 +16,8 @@ def build_peer_diagnostics(runtime: Any, peer_id: NodeId) -> dict[str, Any]:
     """Build deterministic, secret-free directional pairing evidence."""
 
     pairing = runtime._require_pairing()
-    trusted = pairing.trusted.get(peer_id)
-    grant = pairing.grants.get(peer_id)
+    trusted = pairing.get_trusted(peer_id)
+    grant = pairing.get_grant(peer_id)
     pending = pairing.find_pending_for(peer_id)
     candidate = runtime._peers.get(peer_id.value)
     identity: dict[str, Any] | None = None

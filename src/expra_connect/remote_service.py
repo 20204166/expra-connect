@@ -265,9 +265,11 @@ class RemoteService:
         if not isinstance(secret, str) or len(secret) != 64:
             raise ValueError("peer credentials must be 256-bit hex text")
         try:
-            bytes.fromhex(secret)
+            decoded = bytes.fromhex(secret)
         except ValueError as error:
             raise ValueError("peer credentials must be hexadecimal") from error
+        if len(decoded) != 32:  # bytes.fromhex accepts whitespace
+            raise ValueError("peer credentials must be 256-bit hex text")
 
     def handle(
         self, envelope_text: str, *, connection_generation: str | None = None

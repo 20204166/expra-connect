@@ -1889,3 +1889,19 @@ class ProviderRequestMechanicsTests(unittest.TestCase):
         with self.assertRaises(RemoteExecutionError):
             client.hello(cancelled)
         self.assertEqual(transport.requests, [])
+
+
+class SecretValidationTests(unittest.TestCase):
+    def test_valid_64_hex_char_secret_is_accepted(self) -> None:
+        RemoteService._validate_secret("ab" * 32)
+
+    def test_secret_with_embedded_whitespace_is_rejected_even_if_64_chars_long(
+        self,
+    ) -> None:
+        # bytes.fromhex ignores ASCII whitespace; without a decoded-length check
+        # a 62-hex-char + 2-space string passes len()==64 but is only 31 bytes.
+        padded = "ab" * 31 + "  "
+        self.assertEqual(len(padded), 64)
+        self.assertEqual(len(bytes.fromhex(padded)), 31)
+        with self.assertRaises(ValueError):
+            RemoteService._validate_secret(padded)
