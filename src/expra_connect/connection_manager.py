@@ -91,7 +91,7 @@ class ConnectionManager:
             existing = self._providers.get(peer_id)
             if existing is not None:
                 return existing
-            trusted = self._pairing.trusted.get(peer_id)
+            trusted = self._pairing.get_trusted(peer_id)
             candidate = self._candidates.get(peer_id.value)
             if trusted is None or candidate is None or not candidate.compatible:
                 raise PermissionError("peer must be discovered and trusted first")

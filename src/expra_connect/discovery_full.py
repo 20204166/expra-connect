@@ -32,7 +32,7 @@ from dataclasses import dataclass, replace
 from threading import RLock
 from typing import Any, Protocol, cast
 
-from .discovery_backend import _service_address_texts
+from .discovery_backend import _attr, _service_address_texts
 from .models import DiscoveredNodeCandidate
 
 LOGGER = logging.getLogger(__name__)
@@ -645,14 +645,6 @@ def _service_addresses(configured: tuple[str, ...] | None) -> list[bytes]:
         except (ValueError, OSError, TypeError):
             LOGGER.warning("Ignoring invalid configured discovery address %r", raw)
     return addresses
-
-
-def _attr(info: Any, name: str) -> Any:
-    if info is None:
-        return None
-    if isinstance(info, dict):
-        return info.get(name)
-    return getattr(info, name, None)
 
 
 def _property_map(info: Any) -> dict[str, str]:
