@@ -1,0 +1,1 @@
+PEER_SECRET = "a" * 64

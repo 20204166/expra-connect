@@ -17,8 +17,7 @@ from expra_connect.remote_service import (
 from expra_connect.runtime import ConnectConfig, ConnectRuntime
 from expra_connect.surfaces import SurfaceAccess, SurfaceHandlerError
 from expra_connect.wire_protocol import PeerGrant
-
-SECRET = "a" * 64
+from tests.support import PEER_SECRET as SECRET
 
 
 class SurfaceIntegrationTests(unittest.TestCase):

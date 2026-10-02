@@ -57,6 +57,12 @@ class ProtocolTests(unittest.TestCase):
                 max_bytes=MAX_FRAME,
             )
 
+    def test_public_frame_helpers_reject_boolean_size_limits_before_io(self) -> None:
+        with self.assertRaises(TypeError):
+            encode_frame(None, b"x", max_bytes=True)
+        with self.assertRaises(TypeError):
+            decode_frame(None, max_bytes=True)
+
     def test_signed_request_verifies_once_and_replay_is_rejected(self) -> None:
         envelope = sign_request(
             node_id="peer-a",

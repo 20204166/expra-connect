@@ -60,6 +60,27 @@ class _RecordingDiscoveryBackend:
         pass
 
 
+def _peer_candidate(second: ConnectRuntime) -> DiscoveredNodeCandidate:
+    assert second.identity is not None
+    assert second.status.bound_port is not None
+    assert second.status.tls_fingerprint is not None
+    return DiscoveredNodeCandidate(
+        stable_id=second.identity.node_id.value,
+        hostname="127.0.0.1",
+        addresses=("127.0.0.1",),
+        port=second.status.bound_port,
+        service_name="_expra-peer._tcp.local.",
+        app_version=__version__,
+        protocol_version="1",
+        platform="linux",
+        connectable=True,
+        compatible=True,
+        last_seen=time.time(),
+        identity_fingerprint=node_identity_fingerprint(second.identity.node_id),
+        transport_fingerprint=second.status.tls_fingerprint,
+    )
+
+
 class RuntimeConfigurationTests(unittest.TestCase):
     def test_profile_rejects_second_runtime_until_first_releases_ownership(
         self,
@@ -166,16 +187,17 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertEqual(config.app_version, __version__)
 
     def test_explicit_advertised_addresses_are_normalized(self) -> None:
-        config = ConnectConfig(
-            profile_dir=Path("/tmp/expra-connect-test"),
-            advertised_addresses=("192.168.1.20", "10.0.0.20"),
-        )
-        self.assertEqual(config.advertised_addresses, ("192.168.1.20", "10.0.0.20"))
+        with tempfile.TemporaryDirectory() as directory:
+            config = ConnectConfig(
+                profile_dir=Path(directory),
+                advertised_addresses=("192.168.1.20", "10.0.0.20"),
+            )
+            self.assertEqual(config.advertised_addresses, ("192.168.1.20", "10.0.0.20"))
 
     def test_empty_advertised_address_policy_is_rejected(self) -> None:
-        with self.assertRaises(ValueError):
+        with tempfile.TemporaryDirectory() as directory, self.assertRaises(ValueError):
             ConnectConfig(
-                profile_dir=Path("/tmp/expra-connect-test"),
+                profile_dir=Path(directory),
                 advertised_addresses=(),
             )
 
@@ -198,48 +220,46 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertIn("observability", runtime.diagnostics())
 
     def test_runtime_surface_registration_grant_revoke_and_stop(self) -> None:
-        runtime = ConnectRuntime(
-            ConnectConfig(profile_dir=Path("/tmp/expra-connect-test"))
-        )
-        peer_id = NodeId("surface-peer")
-        runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
-        runtime.grant_surface_access(
-            peer_id, "dashboard/main", access=SurfaceAccess.READ
-        )
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(ConnectConfig(profile_dir=Path(directory)))
+            peer_id = NodeId("surface-peer")
+            runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
+            runtime.grant_surface_access(
+                peer_id, "dashboard/main", access=SurfaceAccess.READ
+            )
 
-        self.assertEqual(
-            runtime._surface_registry.dispatch(
-                peer_id, "dashboard/main", access=SurfaceAccess.READ
-            ),
-            "ok",
-        )
-        runtime.revoke_surface_access(peer_id, "dashboard/main")
-        with self.assertRaises(PermissionError):
-            runtime._surface_registry.dispatch(
-                peer_id, "dashboard/main", access=SurfaceAccess.READ
+            self.assertEqual(
+                runtime._surface_registry.dispatch(
+                    peer_id, "dashboard/main", access=SurfaceAccess.READ
+                ),
+                "ok",
             )
-        runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
-        runtime.stop_surface_share(peer_id, "dashboard/main")
-        with self.assertRaises(PermissionError):
-            runtime._surface_registry.dispatch(
-                peer_id, "dashboard/main", access=SurfaceAccess.READ
-            )
+            runtime.revoke_surface_access(peer_id, "dashboard/main")
+            with self.assertRaises(PermissionError):
+                runtime._surface_registry.dispatch(
+                    peer_id, "dashboard/main", access=SurfaceAccess.READ
+                )
+            runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
+            runtime.stop_surface_share(peer_id, "dashboard/main")
+            with self.assertRaises(PermissionError):
+                runtime._surface_registry.dispatch(
+                    peer_id, "dashboard/main", access=SurfaceAccess.READ
+                )
 
     def test_shutdown_clears_surface_grants_but_keeps_definitions(self) -> None:
-        runtime = ConnectRuntime(
-            ConnectConfig(profile_dir=Path("/tmp/expra-connect-test"))
-        )
-        peer_id = NodeId("surface-peer")
-        runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
-        runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(ConnectConfig(profile_dir=Path(directory)))
+            peer_id = NodeId("surface-peer")
+            runtime.register_surface("dashboard/main", read=lambda _peer, _params: "ok")
+            runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
 
-        runtime.shutdown()
+            runtime.shutdown()
 
-        with self.assertRaises(PermissionError):
-            runtime._surface_registry.dispatch(
-                peer_id, "dashboard/main", access=SurfaceAccess.READ
-            )
-        runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
+            with self.assertRaises(PermissionError):
+                runtime._surface_registry.dispatch(
+                    peer_id, "dashboard/main", access=SurfaceAccess.READ
+                )
+            runtime.grant_surface_access(peer_id, "dashboard/main", access="read")
 
     def test_self_revocation_invalidates_direct_and_cluster_surface_access(
         self,
@@ -269,9 +289,7 @@ class RuntimeConfigurationTests(unittest.TestCase):
 class RuntimeClusterOperationTests(unittest.TestCase):
     def _runtime_with_cluster(self) -> ConnectRuntime:
         runtime = ConnectRuntime(
-            ConnectConfig(
-                profile_dir=Path("/tmp/expra-connect-test"), cluster_enabled=True
-            )
+            ConnectConfig(profile_dir=Path(tempfile.mkdtemp()), cluster_enabled=True)
         )
         runtime._cluster = Cluster(NodeId("coord"), clock=lambda: 100.0)
         runtime._persistence_ready = True
@@ -1101,23 +1119,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             second.start()
             assert first.identity is not None
             assert second.identity is not None
-            assert second.status.bound_port is not None
-            assert second.status.tls_fingerprint is not None
-            first._peers[second.identity.node_id.value] = DiscoveredNodeCandidate(
-                stable_id=second.identity.node_id.value,
-                hostname="127.0.0.1",
-                addresses=("127.0.0.1",),
-                port=second.status.bound_port,
-                service_name="_expra-peer._tcp.local.",
-                app_version=__version__,
-                protocol_version="1",
-                platform="linux",
-                connectable=True,
-                compatible=True,
-                last_seen=time.time(),
-                identity_fingerprint=node_identity_fingerprint(second.identity.node_id),
-                transport_fingerprint=second.status.tls_fingerprint,
-            )
+            first._peers[second.identity.node_id.value] = _peer_candidate(second)
 
             trusted = first.pair_peer(second.identity.node_id)
             provider = first.connect_peer(second.identity.node_id)
@@ -1160,23 +1162,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             second.start()
             assert first.identity is not None
             assert second.identity is not None
-            assert second.status.bound_port is not None
-            assert second.status.tls_fingerprint is not None
-            first._peers[second.identity.node_id.value] = DiscoveredNodeCandidate(
-                stable_id=second.identity.node_id.value,
-                hostname="127.0.0.1",
-                addresses=("127.0.0.1",),
-                port=second.status.bound_port,
-                service_name="_expra-peer._tcp.local.",
-                app_version=__version__,
-                protocol_version="1",
-                platform="linux",
-                connectable=True,
-                compatible=True,
-                last_seen=time.time(),
-                identity_fingerprint=node_identity_fingerprint(second.identity.node_id),
-                transport_fingerprint=second.status.tls_fingerprint,
-            )
+            first._peers[second.identity.node_id.value] = _peer_candidate(second)
 
             assert first._network_pairing is not None
             with (
@@ -1214,23 +1200,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             second.start()
             assert first.identity is not None
             assert second.identity is not None
-            assert second.status.bound_port is not None
-            assert second.status.tls_fingerprint is not None
-            first._peers[second.identity.node_id.value] = DiscoveredNodeCandidate(
-                stable_id=second.identity.node_id.value,
-                hostname="127.0.0.1",
-                addresses=("127.0.0.1",),
-                port=second.status.bound_port,
-                service_name="_expra-peer._tcp.local.",
-                app_version=__version__,
-                protocol_version="1",
-                platform="linux",
-                connectable=True,
-                compatible=True,
-                last_seen=time.time(),
-                identity_fingerprint=node_identity_fingerprint(second.identity.node_id),
-                transport_fingerprint=second.status.tls_fingerprint,
-            )
+            first._peers[second.identity.node_id.value] = _peer_candidate(second)
             cancel_event = threading.Event()
             cancel_event.set()
 

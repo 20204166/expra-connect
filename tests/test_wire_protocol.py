@@ -30,8 +30,8 @@ from expra_connect.wire_protocol import (
     verify_request,
     verify_response,
 )
+from tests.support import PEER_SECRET as TEST_SECRET
 
-TEST_SECRET = "a" * 64
 TEST_TIMESTAMP = 10.0
 
 

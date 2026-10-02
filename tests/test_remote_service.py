@@ -38,8 +38,7 @@ from expra_connect.wire_protocol import (
     sign_request,
     sign_response,
 )
-
-SECRET = "a" * 64
+from tests.support import PEER_SECRET as SECRET
 
 
 class _Provider:
