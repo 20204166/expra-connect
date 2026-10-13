@@ -10,6 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "cryptography>=41",
     "msgpack>=1.0",
+    "pyyaml>=6.0",
     "typing-extensions>=4.6",
     "zeroconf>=0.132",
 ]

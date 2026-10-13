@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import msgpack
+import yaml
 
 from expra_connect.device_identity import (
     DeviceHardwareHint,
@@ -47,7 +48,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_restart_loads_exactly_the_same_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             first = DeviceIdentity.create(NodeId("peer-a"))
             first.save(path)
 
@@ -61,12 +62,12 @@ class DeviceIdentityTests(unittest.TestCase):
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             identity = DeviceIdentity.create(NodeId("split-device-node"))
 
             identity.save(path)
 
-            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata = yaml.safe_load(path.read_text(encoding="utf-8"))
             self.assertEqual(metadata.get("schema_version"), 2)
             self.assertNotIn("private_key", metadata)
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
@@ -82,19 +83,19 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_split_device_metadata_tampering_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             identity = DeviceIdentity.create(NodeId("split-device-tamper"))
             identity.save(path)
-            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata = yaml.safe_load(path.read_text(encoding="utf-8"))
             metadata["fingerprint"] = "ed25519:" + "0" * 64
-            path.write_text(json.dumps(metadata), encoding="utf-8")
+            path.write_text(yaml.safe_dump(metadata), encoding="utf-8")
 
             with self.assertRaises(DeviceIdentityError):
                 DeviceIdentity.load(path, identity.node_id)
 
     def test_split_device_private_key_bundle_tampering_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             identity = DeviceIdentity.create(NodeId("split-device-key-tamper"))
             other = DeviceIdentity.create(identity.node_id)
             identity.save(path)
@@ -112,24 +113,24 @@ class DeviceIdentityTests(unittest.TestCase):
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             DeviceIdentity.create(NodeId("valid-device-node")).save(path)
-            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata = yaml.safe_load(path.read_text(encoding="utf-8"))
             metadata["node_id"] = "local"
-            path.write_text(json.dumps(metadata), encoding="utf-8")
+            path.write_text(yaml.safe_dump(metadata), encoding="utf-8")
 
             with self.assertRaises(DeviceIdentityError):
                 DeviceIdentity.load(path)
 
     def test_legacy_device_json_migrates_to_split_profile_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             identity = DeviceIdentity.create(NodeId("legacy-device-node"))
             path.write_text(identity.to_json(), encoding="utf-8")
 
             restored = DeviceIdentity.load(path, identity.node_id)
 
-            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata = yaml.safe_load(path.read_text(encoding="utf-8"))
             self.assertEqual(metadata.get("schema_version"), 2)
             self.assertNotIn("private_key", metadata)
             secrets = msgpack.unpackb(
@@ -162,9 +163,9 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_split_device_metadata_with_missing_private_key_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             path.write_text(
-                json.dumps(
+                yaml.safe_dump(
                     {
                         "schema_version": 2,
                         "node_id": "split-device-node",
@@ -181,7 +182,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_device_identity_binds_to_existing_node_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             DeviceIdentity.create(NodeId("peer-a")).save(path)
 
             with self.assertRaises(DeviceIdentityError):
@@ -223,15 +224,20 @@ class DeviceIdentityTests(unittest.TestCase):
             self.assertIsNotNone(runtime.identity)
             assert runtime.identity is not None
             self.assertEqual(runtime.identity.node_id, NodeId("legacy-node"))
+            self.assertTrue((profile / "device_identity.yaml").exists())
             self.assertTrue((profile / "device_identity.json").exists())
+            migrated_legacy = json.loads(
+                (profile / "device_identity.json").read_text(encoding="utf-8")
+            )
+            self.assertNotIn("private_key", migrated_legacy)
             self.assertEqual(
                 DeviceIdentity.load(
-                    profile / "device_identity.json", NodeId("legacy-node")
+                    profile / "device_identity.yaml", NodeId("legacy-node")
                 ).node_id,
                 NodeId("legacy-node"),
             )
             device_identity = DeviceIdentity.load(
-                profile / "device_identity.json", NodeId("legacy-node")
+                profile / "device_identity.yaml", NodeId("legacy-node")
             )
             self.assertEqual(
                 device_identity.public_key, _root_public_bytes(node_identity)
@@ -240,16 +246,16 @@ class DeviceIdentityTests(unittest.TestCase):
                 device_identity._private_key_bytes,
                 base64.b64decode(node_identity.root_private_key, validate=True),
             )
-            identity_document = json.loads(
-                (profile / "identity.json").read_text(encoding="utf-8")
+            identity_document = yaml.safe_load(
+                (profile / "identity.yaml").read_text(encoding="utf-8")
             )
             self.assertTrue(identity_document["device_identity_expected"])
             self.assertNotIn("secret", identity_document)
             self.assertNotIn("root_private_key", identity_document)
             self.assertNotIn(
                 "private_key",
-                json.loads(
-                    (profile / "device_identity.json").read_text(encoding="utf-8")
+                yaml.safe_load(
+                    (profile / "device_identity.yaml").read_text(encoding="utf-8")
                 ),
             )
             self.assertTrue((profile / "identity.msgpack").is_file())
@@ -258,27 +264,27 @@ class DeviceIdentityTests(unittest.TestCase):
     def test_migrated_profile_missing_device_identity_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
-            NodeIdentity.create(NodeId("modern-node")).save(profile / "identity.json")
+            NodeIdentity.create(NodeId("modern-node")).save(profile / "identity.yaml")
             first = ConnectRuntime(ConnectConfig(profile_dir=profile))
             first._load_identity()
-            (profile / "device_identity.json").unlink()
+            (profile / "device_identity.yaml").unlink()
 
             status = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
 
             self.assertEqual(status.state.value, "persistence_failed")
-            self.assertFalse((profile / "device_identity.json").exists())
+            self.assertFalse((profile / "device_identity.yaml").exists())
 
     def test_existing_device_state_without_network_identity_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             DeviceIdentity.create(NodeId("orphan-device-state")).save(
-                profile / "device_identity.json"
+                profile / "device_identity.yaml"
             )
 
             status = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
 
             self.assertEqual(status.state.value, "persistence_failed")
-            self.assertFalse((profile / "identity.json").exists())
+            self.assertFalse((profile / "identity.yaml").exists())
             self.assertFalse((profile / "identity.msgpack").exists())
 
     def test_missing_split_device_key_bundle_fails_closed_without_recreation(
@@ -287,9 +293,9 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("missing-device-bundle"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
-            device_path = profile / "device_identity.json"
+            device_path = profile / "device_identity.yaml"
             device_path.with_suffix(".msgpack").unlink()
 
             status = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
@@ -310,7 +316,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
             assert runtime.identity is not None
             device = DeviceIdentity.load(
-                profile / "device_identity.json", runtime.identity.node_id
+                profile / "device_identity.yaml", runtime.identity.node_id
             )
             self.assertEqual(device.public_key, _root_public_bytes(runtime.identity))
             self.assertTrue(runtime.identity.device_identity_expected)
@@ -321,8 +327,8 @@ class DeviceIdentityTests(unittest.TestCase):
             identity = NodeIdentity.create(NodeId("corrupt-marker"))
             document = json.loads(identity.to_json())
             document["device_identity_expected"] = "yes"
-            (profile / "identity.json").write_text(
-                json.dumps(document), encoding="utf-8"
+            (profile / "identity.yaml").write_text(
+                yaml.safe_dump(document), encoding="utf-8"
             )
 
             status = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
@@ -335,17 +341,17 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("old-profile"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             device_identity = DeviceIdentity.from_node_identity(node_identity)
-            device_identity.save(profile / "device_identity.json")
+            device_identity.save(profile / "device_identity.yaml")
             root_private_key = node_identity.root_private_key
 
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
 
-            restored = NodeIdentity.load(profile / "identity.json")
+            restored = NodeIdentity.load(profile / "identity.yaml")
             self.assertEqual(restored.root_private_key, root_private_key)
             self.assertTrue(
-                json.loads((profile / "identity.json").read_text(encoding="utf-8"))[
+                yaml.safe_load((profile / "identity.yaml").read_text(encoding="utf-8"))[
                     "device_identity_expected"
                 ]
             )
@@ -365,8 +371,8 @@ class DeviceIdentityTests(unittest.TestCase):
 
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
 
-            migrated = json.loads(
-                (profile / "identity.json").read_text(encoding="utf-8")
+            migrated = yaml.safe_load(
+                (profile / "identity.yaml").read_text(encoding="utf-8")
             )
             self.assertEqual(
                 migrated.get("future_extension"),
@@ -377,7 +383,7 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("compatibility-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             runtime = ConnectRuntime(ConnectConfig(profile_dir=profile))
             runtime._load_identity()
             assert runtime.identity is not None
@@ -401,9 +407,9 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("current-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             unrelated = DeviceIdentity.create(node_identity.node_id)
-            unrelated.save(profile / "device_identity.json")
+            unrelated.save(profile / "device_identity.yaml")
             original_created_at = unrelated.created_at
             original_hint = unrelated.hardware_hint
 
@@ -411,7 +417,7 @@ class DeviceIdentityTests(unittest.TestCase):
             runtime._load_identity()
 
             migrated = DeviceIdentity.load(
-                profile / "device_identity.json", node_identity.node_id
+                profile / "device_identity.yaml", node_identity.node_id
             )
             self.assertEqual(migrated.public_key, _root_public_bytes(node_identity))
             self.assertEqual(
@@ -426,7 +432,7 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("extension-migration-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             unrelated = DeviceIdentity.create(node_identity.node_id)
             document = json.loads(unrelated.to_json())
             document["future_extension"] = {"issuer": "newer-runtime", "epoch": 4}
@@ -436,8 +442,8 @@ class DeviceIdentityTests(unittest.TestCase):
 
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
 
-            migrated = json.loads(
-                (profile / "device_identity.json").read_text(encoding="utf-8")
+            migrated = yaml.safe_load(
+                (profile / "device_identity.yaml").read_text(encoding="utf-8")
             )
             self.assertEqual(
                 migrated.get("future_extension"),
@@ -448,16 +454,16 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("proof-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             DeviceIdentity.create(node_identity.node_id).save(
-                profile / "device_identity.json"
+                profile / "device_identity.yaml"
             )
             root_public_key = node_identity.root_public_key
             proof = node_identity.sign_transport_proof(3, "transport-fingerprint")
 
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
 
-            restored = NodeIdentity.load(profile / "identity.json")
+            restored = NodeIdentity.load(profile / "identity.yaml")
             self.assertEqual(restored.root_public_key, root_public_key)
             self.assertTrue(
                 restored.verify_transport_proof(3, "transport-fingerprint", proof)
@@ -467,9 +473,9 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("state-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             DeviceIdentity.create(node_identity.node_id).save(
-                profile / "device_identity.json"
+                profile / "device_identity.yaml"
             )
             originals = {
                 name: '{"schema_version": 1, "preserved": true}'
@@ -487,28 +493,28 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("unified-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             unified = DeviceIdentity.from_node_identity(node_identity)
-            unified.save(profile / "device_identity.json")
-            original = (profile / "device_identity.json").read_bytes()
+            unified.save(profile / "device_identity.yaml")
+            original = (profile / "device_identity.yaml").read_bytes()
 
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
 
-            self.assertEqual((profile / "device_identity.json").read_bytes(), original)
+            self.assertEqual((profile / "device_identity.yaml").read_bytes(), original)
 
     def test_restart_loads_the_same_unified_root_and_node_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("restart-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
             first = DeviceIdentity.load(
-                profile / "device_identity.json", node_identity.node_id
+                profile / "device_identity.yaml", node_identity.node_id
             )
 
             ConnectRuntime(ConnectConfig(profile_dir=profile))._load_identity()
             second = DeviceIdentity.load(
-                profile / "device_identity.json", node_identity.node_id
+                profile / "device_identity.yaml", node_identity.node_id
             )
 
             self.assertEqual(second.node_id, node_identity.node_id)
@@ -519,17 +525,19 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("node-a"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             DeviceIdentity.create(NodeId("node-b")).save(
-                profile / "device_identity.json"
+                profile / "device_identity.yaml"
             )
             mismatch = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
             self.assertEqual(mismatch.state.value, "persistence_failed")
 
-            document = json.loads(node_identity.to_json())
-            document["root_private_key"] = "corrupt"
-            (profile / "identity.json").write_text(
-                json.dumps(document), encoding="utf-8"
+            meta = yaml.safe_load(
+                (profile / "identity.yaml").read_text(encoding="utf-8")
+            )
+            meta["secret_fingerprint"] = "0" * 64
+            (profile / "identity.yaml").write_text(
+                yaml.safe_dump(meta), encoding="utf-8"
             )
             corrupt_root = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
             self.assertEqual(corrupt_root.state.value, "persistence_failed")
@@ -538,27 +546,27 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("corrupt-device"))
-            node_identity.save(profile / "identity.json")
-            path = profile / "device_identity.json"
-            path.write_text("not json", encoding="utf-8")
+            node_identity.save(profile / "identity.yaml")
+            path = profile / "device_identity.yaml"
+            path.write_text("not yaml", encoding="utf-8")
 
             status = ConnectRuntime(ConnectConfig(profile_dir=profile)).start()
 
             self.assertEqual(status.state.value, "persistence_failed")
-            self.assertEqual(path.read_text(encoding="utf-8"), "not json")
+            self.assertEqual(path.read_text(encoding="utf-8"), "not yaml")
 
     def test_hardware_hint_changes_do_not_change_migrated_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("hardware-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             existing = DeviceIdentity.create(
                 node_identity.node_id,
                 hardware_provider=_HardwareProvider(
                     ("aa:bb:cc:dd:ee:01",), "machine-a"
                 ),
             )
-            existing.save(profile / "device_identity.json")
+            existing.save(profile / "device_identity.yaml")
 
             first = ConnectRuntime(
                 ConnectConfig(
@@ -569,7 +577,7 @@ class DeviceIdentityTests(unittest.TestCase):
                 )
             )
             first._load_identity()
-            migrated = DeviceIdentity.load(path=profile / "device_identity.json")
+            migrated = DeviceIdentity.load(path=profile / "device_identity.yaml")
 
             self.assertEqual(migrated.public_key, _root_public_bytes(node_identity))
             self.assertTrue(migrated.hardware_hint_changed)
@@ -584,7 +592,7 @@ class DeviceIdentityTests(unittest.TestCase):
                 raise OSError("hardware unavailable")
 
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             first = DeviceIdentity.create(
                 NodeId("hardware-unavailable"),
                 hardware_provider=_HardwareProvider(
@@ -607,9 +615,9 @@ class DeviceIdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             node_identity = NodeIdentity.create(NodeId("diagnostic-node"))
-            node_identity.save(profile / "identity.json")
+            node_identity.save(profile / "identity.yaml")
             DeviceIdentity.create(node_identity.node_id).save(
-                profile / "device_identity.json"
+                profile / "device_identity.yaml"
             )
 
             runtime = ConnectRuntime(ConnectConfig(profile_dir=profile))
@@ -622,7 +630,7 @@ class DeviceIdentityTests(unittest.TestCase):
     def test_existing_trust_cluster_and_transport_files_are_untouched(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
-            NodeIdentity.create(NodeId("legacy-node")).save(profile / "identity.json")
+            NodeIdentity.create(NodeId("legacy-node")).save(profile / "identity.yaml")
             originals = {
                 name: '{"schema_version": 1, "preserved": true}'
                 for name in ("trust.json", "cluster.json", "transport.json")
@@ -650,7 +658,7 @@ class DeviceIdentityTests(unittest.TestCase):
             "ascii"
         )
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             path.write_text(json.dumps(document), encoding="utf-8")
             with self.assertRaises(DeviceIdentityError):
                 DeviceIdentity.load(path, NodeId("peer-a"))
@@ -660,7 +668,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_malformed_and_unsupported_schema_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             path.write_text("not json", encoding="utf-8")
             with self.assertRaises(DeviceIdentityError):
                 DeviceIdentity.load(path, NodeId("peer-a"))
@@ -670,7 +678,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_missing_private_key_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             document = json.loads(DeviceIdentity.create(NodeId("peer-a")).to_json())
             del document["private_key"]
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -680,7 +688,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_nonfinite_creation_time_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             document = json.loads(DeviceIdentity.create(NodeId("peer-a")).to_json())
             document["created_at"] = float("nan")
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -690,7 +698,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_hardware_hint_with_digest_but_no_sources_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             document = json.loads(DeviceIdentity.create(NodeId("peer-a")).to_json())
             document["hardware_hint_digest"] = "a" * 64
             document["hardware_hint_sources"] = []
@@ -741,9 +749,9 @@ class DeviceIdentityTests(unittest.TestCase):
     def test_runtime_reports_existing_node_id_mismatch_without_starting(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
-            NodeIdentity.create(NodeId("node-a")).save(profile / "identity.json")
+            NodeIdentity.create(NodeId("node-a")).save(profile / "identity.yaml")
             DeviceIdentity.create(NodeId("node-b")).save(
-                profile / "device_identity.json"
+                profile / "device_identity.yaml"
             )
 
             runtime = ConnectRuntime(
@@ -762,7 +770,7 @@ class DeviceIdentityTests(unittest.TestCase):
     def test_existing_node_id_is_preserved_when_device_identity_is_added(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
-            NodeIdentity.create(NodeId("original-node")).save(profile / "identity.json")
+            NodeIdentity.create(NodeId("original-node")).save(profile / "identity.yaml")
             runtime = ConnectRuntime(ConnectConfig(profile_dir=profile))
 
             runtime._load_identity()
@@ -775,16 +783,16 @@ class DeviceIdentityTests(unittest.TestCase):
     def test_node_id_change_after_device_creation_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
-            NodeIdentity.create(NodeId("original-node")).save(profile / "identity.json")
+            NodeIdentity.create(NodeId("original-node")).save(profile / "identity.yaml")
             runtime = ConnectRuntime(ConnectConfig(profile_dir=profile))
             runtime._load_identity()
 
-            identity_document = json.loads(
-                (profile / "identity.json").read_text(encoding="utf-8")
+            identity_document = yaml.safe_load(
+                (profile / "identity.yaml").read_text(encoding="utf-8")
             )
             identity_document["node_id"] = "changed-node"
-            (profile / "identity.json").write_text(
-                json.dumps(identity_document), encoding="utf-8"
+            (profile / "identity.yaml").write_text(
+                yaml.safe_dump(identity_document), encoding="utf-8"
             )
             restarted = ConnectRuntime(ConnectConfig(profile_dir=profile))
 
@@ -795,7 +803,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_hardware_hint_changes_do_not_rotate_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             first = DeviceIdentity.create(
                 NodeId("peer-a"),
                 hardware_provider=_HardwareProvider(
@@ -871,7 +879,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_raw_hardware_values_are_not_persisted(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             DeviceIdentity.create(
                 NodeId("peer-a"),
                 hardware_provider=_HardwareProvider(
@@ -916,7 +924,7 @@ class DeviceIdentityTests(unittest.TestCase):
         if os.name == "nt":
             self.skipTest("POSIX permission bits are not authoritative on Windows")
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             DeviceIdentity.create(NodeId("peer-a")).save(path)
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
@@ -933,7 +941,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def test_persistence_failure_does_not_leave_identity_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             with (
                 patch(
                     "expra_connect.device_identity._atomic_write",
@@ -946,7 +954,7 @@ class DeviceIdentityTests(unittest.TestCase):
 
     def _assert_invalid_document(self, **updates: str) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "device_identity.json"
+            path = Path(directory) / "device_identity.yaml"
             document = json.loads(DeviceIdentity.create(NodeId("peer-a")).to_json())
             document.update(updates)
             path.write_text(json.dumps(document), encoding="utf-8")

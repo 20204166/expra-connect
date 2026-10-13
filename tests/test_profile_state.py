@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import tempfile
@@ -5,6 +6,9 @@ import time
 import unittest
 from pathlib import Path
 
+import yaml
+
+from expra_connect.identity import NodeIdentity
 from expra_connect.profile_state import ProfileInUseError, ProfileLock
 
 
@@ -50,6 +54,55 @@ lock.release()
                 if process.poll() is None:
                     process.terminate()
                     process.wait(timeout=5)
+
+
+class ProfileIdentityYamlMigrationTests(unittest.TestCase):
+    def test_load_profile_identity_creates_yaml_not_json(self) -> None:
+        from expra_connect.profile_state import load_profile_identity
+
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            load_profile_identity(profile)
+            self.assertTrue(
+                (profile / "identity.yaml").exists(),
+                "identity.yaml not created",
+            )
+            self.assertFalse(
+                (profile / "identity.json").exists(),
+                "identity.json created when yaml expected",
+            )
+
+    def test_load_profile_identity_auto_migrates_json_to_yaml(self) -> None:
+        from expra_connect.profile_state import load_profile_identity
+
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            identity = NodeIdentity.create()
+            legacy = profile / "identity.json"
+            identity.save(legacy)
+            load_profile_identity(profile)
+            self.assertTrue(
+                (profile / "identity.yaml").exists(),
+                "identity.yaml not created after migration",
+            )
+            self.assertTrue(legacy.exists(), "legacy JSON was deleted")
+            migrated_legacy = json.loads(legacy.read_text(encoding="utf-8"))
+            self.assertNotIn("secret", migrated_legacy)
+            self.assertNotIn("root_private_key", migrated_legacy)
+
+    def test_identity_yaml_content_is_valid_yaml_with_no_secrets(self) -> None:
+        from expra_connect.profile_state import load_profile_identity
+
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory)
+            identity, _ = load_profile_identity(profile)
+            content = (profile / "identity.yaml").read_text(encoding="utf-8")
+            doc = yaml.safe_load(content)
+            self.assertIsInstance(doc, dict)
+            self.assertEqual(doc.get("schema_version"), 3)
+            self.assertNotIn("secret", doc)
+            self.assertNotIn("root_private_key", doc)
+            self.assertEqual(doc.get("node_id"), identity.node_id.value)
 
 
 if __name__ == "__main__":

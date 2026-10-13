@@ -1,4 +1,4 @@
-"""Small atomic JSON persistence boundary for package-owned state."""
+"""Small atomic JSON/YAML persistence boundary for package-owned state."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, BinaryIO, TextIO, cast
 
 import msgpack
+import yaml
 
 
 class StateDataError(ValueError):
@@ -36,6 +37,30 @@ def _atomic_write(
         mode=mode,
         sync_directory=sync_directory,
     )
+
+
+def _save_text_document(
+    path: Path,
+    value: dict[str, Any],
+    *,
+    atomic_write: Callable[..., None] = _atomic_write,
+    sync_directory: bool = True,
+) -> None:
+    """Write YAML documents, retaining JSON encoding for legacy ``.json`` paths."""
+    if path.suffix == ".json":
+        atomic_write(
+            path,
+            lambda file: json.dump(value, file, sort_keys=True),
+            sync_directory=sync_directory,
+        )
+    else:
+        atomic_write(
+            path,
+            lambda file: yaml.safe_dump(
+                value, file, sort_keys=True, allow_unicode=True
+            ),
+            sync_directory=sync_directory,
+        )
 
 
 def _atomic_write_bytes(
@@ -184,6 +209,55 @@ class JsonStateStore:
 
         value = self.load()
         return migrate_state(kind, value)
+
+
+class YamlStateStore:
+    def __init__(self, path: Path, *, kind: str | None = None) -> None:
+        self.path = path
+        self.kind = kind
+
+    def exists(self) -> bool:
+        """Return whether YAML state or its legacy JSON source is present."""
+        return self.path.exists() or self.path.with_suffix(".json").exists()
+
+    def save(self, value: dict[str, Any]) -> None:
+        _save_text_document(self.path, value)
+
+    def load(self) -> dict[str, Any]:
+        self._auto_migrate()
+        try:
+            text = self.path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as error:
+            raise StateDataError("persisted state cannot be decoded") from error
+        try:
+            value = yaml.safe_load(text)
+        except yaml.YAMLError as error:
+            raise StateDataError("persisted state cannot be decoded") from error
+        if not isinstance(value, dict):
+            raise StateDataError("state root must be an object")
+        document = cast(dict[str, Any], value)
+        return migrate_state(self.kind, document) if self.kind else document
+
+    def load_migrated(self, kind: str) -> dict[str, Any]:
+        value = self.load()
+        return migrate_state(kind, value)
+
+    def _auto_migrate(self) -> None:
+        if self.path.exists():
+            return
+        json_path = self.path.with_suffix(".json")
+        if not json_path.exists():
+            return
+        try:
+            raw: Any = json.loads(json_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise StateDataError("persisted state cannot be decoded") from error
+        if not isinstance(raw, dict):
+            raise StateDataError("state root must be an object")
+        _atomic_write(
+            self.path,
+            lambda file: yaml.safe_dump(raw, file, sort_keys=True, allow_unicode=True),
+        )
 
 
 class MessagePackStateStore:

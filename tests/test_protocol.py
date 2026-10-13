@@ -6,7 +6,7 @@ from pathlib import Path
 
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
-from expra_connect.persistence import JsonStateStore
+from expra_connect.persistence import YamlStateStore
 from expra_connect.protocol import (
     MAX_FRAME,
     RemoteAuthError,
@@ -228,7 +228,7 @@ class ProtocolTests(unittest.TestCase):
 
     def test_completed_idempotency_result_survives_cache_restart(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            store = JsonStateStore(Path(directory) / "idempotency.json")
+            store = YamlStateStore(Path(directory) / "idempotency.yaml")
             first = IdempotencyCache(state_store=store)
             self.assertEqual(
                 first.run(("peer", "request"), "fingerprint", lambda: {"ok": True}),

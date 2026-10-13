@@ -9,6 +9,7 @@ from expra_connect.persistence import (
     JsonStateStore,
     MessagePackStateStore,
     StateDataError,
+    YamlStateStore,
     migrate_state,
 )
 from expra_connect.runtime_persistence import peer_grant_from_json
@@ -103,7 +104,7 @@ class PersistenceTests(unittest.TestCase):
             captured: list[int] = []
 
             def failing_fdopen(
-                file_descriptor: int, *args: object, **kwargs: object
+                file_descriptor: int, *_args: object, **_kwargs: object
             ) -> NoReturn:
                 captured.append(file_descriptor)
                 raise OSError("descriptor open failed")
@@ -120,3 +121,106 @@ class PersistenceTests(unittest.TestCase):
             self.assertEqual(len(captured), 1)
             with self.assertRaises(OSError):
                 os.fstat(captured[0])
+
+
+class YamlStateStoreTests(unittest.TestCase):
+    def test_exists_includes_legacy_json_source(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.yaml"
+            store = YamlStateStore(path)
+            self.assertFalse(store.exists())
+            path.with_suffix(".json").write_text("{}", encoding="utf-8")
+            self.assertTrue(store.exists())
+
+    def test_round_trip_preserves_content_and_uses_private_file_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.yaml"
+            store = YamlStateStore(path)
+            store.save({"version": 1, "items": ["peer-a", "peer-b"], "count": 2})
+            loaded = store.load()
+            self.assertEqual(loaded["items"], ["peer-a", "peer-b"])
+            self.assertEqual(loaded["count"], 2)
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
+    def test_auto_migrate_reads_json_writes_yaml_and_preserves_json(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            json_path = Path(directory) / "state.json"
+            yaml_path = Path(directory) / "state.yaml"
+            json_path.write_text('{"version": 1, "peer": "abc"}', encoding="utf-8")
+            store = YamlStateStore(yaml_path)
+            result = store.load()
+            self.assertEqual(result["peer"], "abc")
+            self.assertTrue(yaml_path.exists(), "yaml not created after migration")
+            self.assertTrue(json_path.exists(), "legacy JSON was deleted")
+
+    def test_auto_migrate_prefers_yaml_when_both_files_present(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            json_path = Path(directory) / "state.json"
+            yaml_path = Path(directory) / "state.yaml"
+            json_path.write_text('{"version": 1, "source": "json"}', encoding="utf-8")
+            yaml_path.write_text("version: 1\nsource: yaml\n", encoding="utf-8")
+            result = YamlStateStore(yaml_path).load()
+            self.assertEqual(result["source"], "yaml")
+            self.assertTrue(
+                json_path.exists(), "json removed when yaml already present"
+            )
+
+    def test_auto_migrate_neither_file_present_raises_state_data_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            yaml_path = Path(directory) / "state.yaml"
+            with self.assertRaises(StateDataError):
+                YamlStateStore(yaml_path).load()
+
+    def test_malformed_yaml_raises_state_data_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.yaml"
+            path.write_text("key: [unclosed\n", encoding="utf-8")
+            with self.assertRaises(StateDataError):
+                YamlStateStore(path).load()
+
+    def test_empty_file_raises_state_data_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.yaml"
+            path.write_text("", encoding="utf-8")
+            with self.assertRaises(StateDataError):
+                YamlStateStore(path).load()
+
+    def test_non_dict_root_raises_state_data_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.yaml"
+            path.write_text("- item1\n- item2\n", encoding="utf-8")
+            with self.assertRaises(StateDataError):
+                YamlStateStore(path).load()
+
+    def test_null_root_raises_state_data_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.yaml"
+            path.write_text("null\n", encoding="utf-8")
+            with self.assertRaises(StateDataError):
+                YamlStateStore(path).load()
+
+    def test_corrupt_json_source_during_migration_raises_and_leaves_json_intact(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            json_path = Path(directory) / "state.json"
+            yaml_path = Path(directory) / "state.yaml"
+            json_path.write_text("not valid json {{{", encoding="utf-8")
+            with self.assertRaises(StateDataError):
+                YamlStateStore(yaml_path).load()
+            self.assertTrue(json_path.exists(), "json removed despite failed migration")
+            self.assertFalse(
+                yaml_path.exists(), "yaml created despite failed migration"
+            )
+
+    def test_string_values_survive_round_trip_without_boolean_coercion(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.yaml"
+            store = YamlStateStore(path)
+            data = {"flag": "true", "other": "false", "yes_key": "yes", "no_key": "no"}
+            store.save(data)
+            loaded = store.load()
+            for key, value in data.items():
+                with self.subTest(key=key):
+                    self.assertIsInstance(loaded[key], str)
+                    self.assertEqual(loaded[key], value)

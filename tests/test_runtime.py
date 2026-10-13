@@ -104,7 +104,7 @@ class RuntimeConfigurationTests(unittest.TestCase):
             first_status = first.start()
             self.assertEqual(first_status.state, RuntimeState.STARTED)
             assert first.identity is not None
-            persisted_before = (profile / "identity.json").read_bytes()
+            persisted_before = (profile / "identity.yaml").read_bytes()
             self.assertEqual(
                 (profile / ".expra-connect.lock").stat().st_mode & 0o777, 0o600
             )
@@ -113,7 +113,7 @@ class RuntimeConfigurationTests(unittest.TestCase):
 
             self.assertEqual(second_status.state, RuntimeState.PERSISTENCE_FAILED)
             self.assertIsNone(second.identity)
-            self.assertEqual((profile / "identity.json").read_bytes(), persisted_before)
+            self.assertEqual((profile / "identity.yaml").read_bytes(), persisted_before)
             first.shutdown()
 
             restarted_status = second.start()
@@ -126,7 +126,7 @@ class RuntimeConfigurationTests(unittest.TestCase):
     def test_failed_start_releases_profile_ownership(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
-            (profile / "identity.json").write_text("not json", encoding="utf-8")
+            (profile / "identity.yaml").write_text("not yaml", encoding="utf-8")
             runtime = ConnectRuntime(
                 ConnectConfig(
                     profile_dir=profile,
@@ -137,7 +137,7 @@ class RuntimeConfigurationTests(unittest.TestCase):
 
             self.assertEqual(runtime.start().state, RuntimeState.PERSISTENCE_FAILED)
             NodeIdentity.create(NodeId("repaired-profile")).save(
-                profile / "identity.json"
+                profile / "identity.yaml"
             )
 
             self.assertEqual(runtime.start().state, RuntimeState.STARTED)
@@ -183,7 +183,7 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertEqual(config.bind_host, "0.0.0.0")
             self.assertEqual(config.preferred_port, 27321)
             self.assertFalse(runtime.started)
-            self.assertFalse((Path(directory) / "identity.json").exists())
+            self.assertFalse((Path(directory) / "identity.yaml").exists())
             self.assertEqual(config.app_version, __version__)
 
     def test_explicit_advertised_addresses_are_normalized(self) -> None:
@@ -569,7 +569,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             self.assertFalse(status.discovery_started)
             self.assertTrue(status.discovery_disabled)
             self.assertGreater(status.bound_port or 0, 0)
-            self.assertTrue((Path(directory) / "identity.json").exists())
+            self.assertTrue((Path(directory) / "identity.yaml").exists())
             self.assertEqual(status.tls_fingerprint and len(status.tls_fingerprint), 79)
             registry = runtime.registry
             identity = runtime.identity
@@ -1260,7 +1260,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
             original = json.dumps({"grants": {"unexpected": "shape"}})
-            (profile / "trust.json").write_text(original, encoding="utf-8")
+            (profile / "trust.yaml").write_text(original, encoding="utf-8")
             runtime = ConnectRuntime(
                 ConnectConfig(
                     profile_dir=profile,
@@ -1273,14 +1273,14 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             runtime.shutdown()
 
             self.assertEqual(status.state.value, "persistence_failed")
-            self.assertEqual((profile / "trust.json").read_text(), original)
+            self.assertEqual((profile / "trust.yaml").read_text(), original)
 
     def test_invalid_persisted_permission_is_not_rewritten_after_start_failure(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
-            NodeIdentity.create().save(profile / "identity.json")
+            NodeIdentity.create().save(profile / "identity.yaml")
             original = json.dumps(
                 {
                     "grants": [
@@ -1292,7 +1292,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
                     ]
                 }
             )
-            (profile / "trust.json").write_text(original, encoding="utf-8")
+            (profile / "trust.yaml").write_text(original, encoding="utf-8")
             runtime = ConnectRuntime(
                 ConnectConfig(
                     profile_dir=profile,
@@ -1305,7 +1305,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             runtime.shutdown()
 
             self.assertEqual(status.state.value, "persistence_failed")
-            self.assertEqual((profile / "trust.json").read_text(), original)
+            self.assertEqual((profile / "trust.yaml").read_text(), original)
 
     def test_invalid_approval_does_not_mutate_pairing_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1345,7 +1345,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
 
             with (
                 patch(
-                    "expra_connect.runtime.JsonStateStore.save",
+                    "expra_connect.runtime.YamlStateStore.save",
                     side_effect=OSError("disk full"),
                 ),
                 self.assertRaises(RuntimeError),

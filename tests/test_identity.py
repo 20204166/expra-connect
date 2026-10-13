@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import msgpack
+import yaml
 
 from expra_connect.identity import NodeId, NodeIdentity
 
@@ -75,7 +76,7 @@ class IdentityTests(unittest.TestCase):
 
     def test_identity_round_trips_atomically(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "identity.json"
+            path = Path(directory) / "identity.yaml"
             identity = NodeIdentity.create(NodeId("peer-a"))
             identity.save(path)
             restored = NodeIdentity.load(path)
@@ -83,16 +84,16 @@ class IdentityTests(unittest.TestCase):
             self.assertEqual(restored.secret, identity.secret)
             self.assertEqual(restored.root_public_key, identity.root_public_key)
 
-    def test_profile_identity_splits_metadata_json_from_messagepack_secrets(
+    def test_profile_identity_splits_metadata_yaml_from_messagepack_secrets(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "identity.json"
+            path = Path(directory) / "identity.yaml"
             identity = NodeIdentity.create(NodeId("split-profile-node"))
 
             identity.save(path)
 
-            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata = yaml.safe_load(path.read_text(encoding="utf-8"))
             self.assertEqual(metadata.get("schema_version"), 3)
             self.assertEqual(metadata.get("node_id"), identity.node_id.value)
             self.assertNotIn("secret", metadata)
@@ -119,7 +120,7 @@ class IdentityTests(unittest.TestCase):
 
             restored = NodeIdentity.load(path)
 
-            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata = yaml.safe_load(path.read_text(encoding="utf-8"))
             self.assertEqual(metadata.get("schema_version"), 3)
             self.assertNotIn("secret", metadata)
             self.assertNotIn("root_private_key", metadata)
@@ -132,32 +133,32 @@ class IdentityTests(unittest.TestCase):
 
     def test_split_identity_with_missing_secret_bundle_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "identity.json"
+            path = Path(directory) / "identity.yaml"
             metadata = {
                 "schema_version": 3,
                 "node_id": "split-node",
                 "root_public_key": "public-key",
                 "secret_fingerprint": "a" * 64,
             }
-            path.write_text(json.dumps(metadata), encoding="utf-8")
+            path.write_text(yaml.safe_dump(metadata), encoding="utf-8")
 
             with self.assertRaisesRegex(ValueError, "identity secrets are missing"):
                 NodeIdentity.load(path)
 
     def test_split_identity_metadata_tampering_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "identity.json"
+            path = Path(directory) / "identity.yaml"
             NodeIdentity.create(NodeId("split-tamper-node")).save(path)
-            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata = yaml.safe_load(path.read_text(encoding="utf-8"))
             metadata["secret_fingerprint"] = "0" * 64
-            path.write_text(json.dumps(metadata), encoding="utf-8")
+            path.write_text(yaml.safe_dump(metadata), encoding="utf-8")
 
             with self.assertRaisesRegex(ValueError, "does not match"):
                 NodeIdentity.load(path)
 
     def test_split_identity_secret_bundle_tampering_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "identity.json"
+            path = Path(directory) / "identity.yaml"
             identity = NodeIdentity.create(NodeId("split-bundle-tamper"))
             identity.save(path)
             secret_path = path.with_suffix(".msgpack")

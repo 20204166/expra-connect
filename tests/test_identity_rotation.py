@@ -11,7 +11,7 @@ from expra_connect.identity import (
     TransportGenerationManager,
     TransportStateError,
 )
-from expra_connect.persistence import JsonStateStore, StateDataError
+from expra_connect.persistence import JsonStateStore, StateDataError, YamlStateStore
 
 
 class IdentityRotationTests(unittest.TestCase):
@@ -109,9 +109,9 @@ class IdentityRotationTests(unittest.TestCase):
 
     def test_persisted_generation_relationships_must_be_consistent(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "transport.json"
+            path = Path(directory) / "transport.yaml"
             identity = NodeIdentity.create(NodeId("peer-a"))
-            manager = TransportGenerationManager(identity, store=JsonStateStore(path))
+            manager = TransportGenerationManager(identity, store=YamlStateStore(path))
             current = manager.initialize("one")
             document = {
                 "version": 2,
@@ -130,31 +130,46 @@ class IdentityRotationTests(unittest.TestCase):
                 ],
                 "next": None,
             }
-            JsonStateStore(path).save(document)
+            YamlStateStore(path).save(document)
             with self.assertRaises(StateDataError):
-                TransportGenerationManager(identity, store=JsonStateStore(path))
+                TransportGenerationManager(identity, store=YamlStateStore(path))
 
     def test_restart_restores_generations_and_corruption_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             identity = NodeIdentity.create(NodeId("peer-a"))
-            path = Path(directory) / "transport.json"
-            manager = TransportGenerationManager(identity, store=JsonStateStore(path))
+            path = Path(directory) / "transport.yaml"
+            manager = TransportGenerationManager(identity, store=YamlStateStore(path))
             manager.initialize("one")
             prepared = manager.prepare("two")
-            restored = TransportGenerationManager(identity, store=JsonStateStore(path))
+            restored = TransportGenerationManager(identity, store=YamlStateStore(path))
             self.assertEqual(restored.next, prepared)
             path.write_text("[]", encoding="utf-8")
             with self.assertRaises(StateDataError):
-                TransportGenerationManager(identity, store=JsonStateStore(path))
+                TransportGenerationManager(identity, store=YamlStateStore(path))
 
     def test_old_transport_state_migrates_to_generation_one(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "transport.json"
-            JsonStateStore(path).save({"version": 1, "fingerprint": "legacy"})
+            path = Path(directory) / "transport.yaml"
+            YamlStateStore(path).save({"version": 1, "fingerprint": "legacy"})
             manager = TransportGenerationManager(
-                NodeIdentity.create(NodeId("peer-a")), store=JsonStateStore(path)
+                NodeIdentity.create(NodeId("peer-a")), store=YamlStateStore(path)
             )
             self.assertEqual(manager.current.fingerprint, "legacy")
+
+    def test_legacy_json_transport_state_is_loaded_and_copied_to_yaml(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            json_path = Path(directory) / "transport.json"
+            yaml_path = Path(directory) / "transport.yaml"
+            JsonStateStore(json_path).save({"version": 1, "fingerprint": "legacy-json"})
+
+            manager = TransportGenerationManager(
+                NodeIdentity.create(NodeId("peer-a")),
+                store=YamlStateStore(yaml_path),
+            )
+
+            self.assertEqual(manager.current.fingerprint, "legacy-json")
+            self.assertTrue(yaml_path.exists())
+            self.assertTrue(json_path.exists())
 
     def test_invalid_transport_proof_returns_false(self) -> None:
         identity = NodeIdentity.create(NodeId("peer-a"))
@@ -175,9 +190,9 @@ class IdentityRotationTests(unittest.TestCase):
 
     def test_persisted_nonfinite_or_boolean_expiry_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "transport.json"
+            path = Path(directory) / "transport.yaml"
             identity = NodeIdentity.create(NodeId("peer-a"))
-            manager = TransportGenerationManager(identity, store=JsonStateStore(path))
+            manager = TransportGenerationManager(identity, store=YamlStateStore(path))
             current = manager.initialize("one")
             document: dict[str, Any] = {
                 "version": 2,
@@ -198,6 +213,6 @@ class IdentityRotationTests(unittest.TestCase):
             }
             for expiry in (True, math.nan, 10**1000):
                 document["accepted"][0]["expires_at"] = expiry
-                JsonStateStore(path).save(document)
+                YamlStateStore(path).save(document)
                 with self.assertRaises(StateDataError):
-                    TransportGenerationManager(identity, store=JsonStateStore(path))
+                    TransportGenerationManager(identity, store=YamlStateStore(path))

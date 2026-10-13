@@ -51,7 +51,7 @@ from .pairing import (
 )
 from .pairing_flow import NetworkPairing
 from .pairing_target import handle_pairing_request
-from .persistence import JsonStateStore, StateDataError, migrate_state
+from .persistence import StateDataError, YamlStateStore, migrate_state
 from .profile_state import ProfileLock, load_profile_identity
 from .registry import NodeRegistry, TrustState
 from .remote_models import NodeStatus
@@ -487,9 +487,9 @@ class ConnectRuntime(
             self._identity.node_id, cluster_enabled=self.config.cluster_enabled
         )
         if self.config.cluster_enabled:
-            cluster_store = ClusterStore(self.config.profile_dir / "cluster.json")
+            cluster_store = ClusterStore(self.config.profile_dir / "cluster.yaml")
             self._cluster_store = cluster_store
-            if cluster_store.path.exists():
+            if cluster_store.exists():
                 persisted = cluster_store.load()
                 if persisted.local_node_id != self._identity.node_id.value:
                     raise ValueError("persisted cluster belongs to another local node")
@@ -520,8 +520,8 @@ class ConnectRuntime(
                 ),
                 persist=self._persist_failover_state,
             )
-        state = JsonStateStore(self.config.profile_dir / "trust.json", kind="trust")
-        if state.path.exists():
+        state = YamlStateStore(self.config.profile_dir / "trust.yaml", kind="trust")
+        if state.exists():
             document = state.load()
             for raw in document.get("grants", []):
                 grant = peer_grant_from_json(raw)
@@ -546,7 +546,7 @@ class ConnectRuntime(
         )
         self._transport_generations = TransportGenerationManager(
             self._identity,
-            store=JsonStateStore(self.config.profile_dir / "transport.json"),
+            store=YamlStateStore(self.config.profile_dir / "transport.yaml"),
         )
         self._persistence_ready = True
 
@@ -558,7 +558,7 @@ class ConnectRuntime(
             self._transport_generations
             or TransportGenerationManager(
                 self._identity,
-                store=JsonStateStore(profile / "transport.json"),
+                store=YamlStateStore(profile / "transport.yaml"),
             )
         )
         if self._transport_generations.current_generation is None:
@@ -601,8 +601,8 @@ class ConnectRuntime(
             transport_proof=self._transport_generations.current.proof,
             capability_share=self._sharing,
             surface_registry=self._surface_registry,
-            idempotency_store=JsonStateStore(
-                self.config.profile_dir / "idempotency.json"
+            idempotency_store=YamlStateStore(
+                self.config.profile_dir / "idempotency.yaml"
             ),
             cluster_id=self._cluster.cluster_id if self._cluster is not None else None,
             coordinator_epoch=(self._cluster.epoch.epoch if self._cluster else None),
@@ -896,7 +896,7 @@ class ConnectRuntime(
             return False
         saved = True
         try:
-            JsonStateStore(self.config.profile_dir / "trust.json").save(
+            YamlStateStore(self.config.profile_dir / "trust.yaml").save(
                 migrate_state(
                     "trust",
                     {
@@ -927,7 +927,7 @@ class ConnectRuntime(
         if self._cluster is not None:
             try:
                 store = self._cluster_store or ClusterStore(
-                    self.config.profile_dir / "cluster.json"
+                    self.config.profile_dir / "cluster.yaml"
                 )
                 store.save(
                     ClusterState(

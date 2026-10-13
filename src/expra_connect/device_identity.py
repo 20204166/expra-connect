@@ -15,6 +15,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Protocol
 
+import yaml
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -24,7 +25,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 
 from .identity import NodeId, NodeIdentity, _decode_root_private_key
 from .observability import ObservabilityWatcher, observation_scope
-from .persistence import MessagePackStateStore, StateDataError, _atomic_write
+from .persistence import (
+    MessagePackStateStore,
+    StateDataError,
+    _atomic_write,
+    _save_text_document,
+)
 
 DEVICE_IDENTITY_SCHEMA_VERSION = 1
 DEVICE_IDENTITY_PROFILE_SCHEMA_VERSION = 2
@@ -285,8 +291,8 @@ class DeviceIdentity:
         except (OSError, UnicodeError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
         try:
-            document = json.loads(value)
-        except (TypeError, ValueError) as error:
+            document = yaml.safe_load(value)
+        except (TypeError, ValueError, yaml.YAMLError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
         if not isinstance(document, dict):
             raise DeviceIdentityError("device identity is malformed")
@@ -468,12 +474,7 @@ class DeviceIdentity:
         if self.hardware_hint is not None:
             metadata["hardware_hint_digest"] = self.hardware_hint.digest
             metadata["hardware_hint_sources"] = list(self.hardware_hint.sources_present)
-        _atomic_write(
-            path,
-            lambda file: json.dump(
-                metadata, file, sort_keys=True, separators=(",", ":")
-            ),
-        )
+        _save_text_document(path, metadata, atomic_write=_atomic_write)
 
     def public_view(self) -> DeviceIdentityView:
         return DeviceIdentityView(
@@ -636,10 +637,26 @@ def load_device_identity(
 ) -> DeviceIdentity:
     """Load or migrate the profile-owned representation of the network root."""
 
-    path = profile / "device_identity.json"
-    if path.exists():
+    yaml_path = profile / "device_identity.yaml"
+    json_path = profile / "device_identity.json"
+
+    if not yaml_path.exists() and json_path.exists():
         existing = DeviceIdentity.load(
-            path,
+            json_path,
+            node_identity.node_id,
+            hardware_provider=provider,
+            observer=observer,
+        )
+        identity = DeviceIdentity.from_node_identity(
+            node_identity, existing, hardware_provider=provider
+        )
+        with observation_scope(observer, "profile:device_identity_format_migration"):
+            identity.save(yaml_path)
+        return identity
+
+    if yaml_path.exists():
+        existing = DeviceIdentity.load(
+            yaml_path,
             node_identity.node_id,
             hardware_provider=provider,
             observer=observer,
@@ -649,12 +666,13 @@ def load_device_identity(
         )
         if identity.public_key != existing.public_key:
             with observation_scope(observer, "profile:device_identity_migration"):
-                identity.save(path)
+                identity.save(yaml_path)
         return identity
+
     identity = DeviceIdentity.from_node_identity(
         node_identity, hardware_provider=provider
     )
-    identity.save(path)
+    identity.save(yaml_path)
     return identity
 
 

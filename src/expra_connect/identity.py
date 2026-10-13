@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
 
+import yaml
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -21,10 +22,11 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 
 from .observability import ObservabilityWatcher, observation_scope
 from .persistence import (
-    JsonStateStore,
     MessagePackStateStore,
     StateDataError,
+    YamlStateStore,
     _atomic_write,
+    _save_text_document,
 )
 
 _IDENTITY_PROFILE_SCHEMA_VERSION = 3
@@ -207,10 +209,8 @@ class NodeIdentity:
             self._secret_document()
         )
         metadata = self._profile_metadata()
-        _atomic_write(
-            path,
-            lambda file: json.dump(metadata, file, sort_keys=True),
-            sync_directory=False,
+        _save_text_document(
+            path, metadata, atomic_write=_atomic_write, sync_directory=False
         )
 
     @classmethod
@@ -220,10 +220,13 @@ class NodeIdentity:
         *,
         observer: ObservabilityWatcher | None = None,
     ) -> NodeIdentity:
-        value = path.read_text(encoding="utf-8")
         try:
-            document = json.loads(value)
-        except (TypeError, ValueError) as error:
+            value = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as error:
+            raise ValueError("identity document is malformed") from error
+        try:
+            document = yaml.safe_load(value)
+        except (TypeError, ValueError, yaml.YAMLError) as error:
             raise ValueError("identity document is malformed") from error
         if not isinstance(document, dict):
             raise ValueError(  # noqa: TRY004 - persisted-state failures stay ValueError.
@@ -404,7 +407,7 @@ class TransportGenerationManager:
         self,
         identity: NodeIdentity,
         *,
-        store: JsonStateStore | None = None,
+        store: YamlStateStore | None = None,
         persist: Callable[[dict[str, object]], bool | None] | None = None,
         clock: Callable[[], float] = time.time,
         grace_seconds: float = 300.0,
@@ -417,7 +420,7 @@ class TransportGenerationManager:
         self._current: TransportGeneration | None = None
         self._accepted: dict[int, tuple[TransportGeneration, float | None]] = {}
         self._next: TransportGeneration | None = None
-        if store is not None and store.path.exists():
+        if store is not None and store.exists():
             self._load(store.load())
 
     @property

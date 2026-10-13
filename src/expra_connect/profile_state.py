@@ -82,14 +82,16 @@ def load_profile_identity(
     """Load/migrate the profile identity pair or create it only for empty state."""
     with observation_scope(observer, "profile:identity_load"):
         identity = _load_or_create_node_identity(profile, observer)
-        device_path = profile / "device_identity.json"
-        if identity.device_identity_expected and not device_path.exists():
+        if identity.device_identity_expected and not (
+            (profile / "device_identity.yaml").exists()
+            or (profile / "device_identity.json").exists()
+        ):
             raise StateDataError("expected device identity is missing")
         device_identity = load_device_identity(profile, identity, provider, observer)
         if not identity.device_identity_expected:
             identity = replace(identity, device_identity_expected=True)
             with observation_scope(observer, "profile:identity_marker_adoption"):
-                identity.save(profile / "identity.json")
+                identity.save(profile / "identity.yaml")
         return identity, device_identity
 
 
@@ -97,24 +99,39 @@ def _load_or_create_node_identity(
     profile: Path, observer: ObservabilityWatcher | None
 ) -> NodeIdentity:
     """Create a NodeIdentity only if the profile has no dependent state."""
-    identity_path = profile / "identity.json"
-    if identity_path.exists():
-        return NodeIdentity.load(identity_path, observer=observer)
+    yaml_path = profile / "identity.yaml"
+    json_path = profile / "identity.json"
+
+    if yaml_path.exists():
+        return NodeIdentity.load(yaml_path, observer=observer)
+
+    if json_path.exists():
+        identity = NodeIdentity.load(json_path, observer=observer)
+        with observation_scope(observer, "profile:identity_format_migration"):
+            identity.save(yaml_path)
+        return identity
+
     if (profile / "identity.msgpack").exists():
         raise StateDataError("identity metadata is missing")
 
     dependent_names = {
+        "device_identity.yaml",
         "device_identity.json",
         "device_identity.msgpack",
+        "trust.yaml",
         "trust.json",
+        "transport.yaml",
         "transport.json",
+        "cluster.yaml",
         "cluster.json",
+        "idempotency.yaml",
         "idempotency.json",
         "peer-tls.crt",
         "peer-tls.key",
     }
     if profile.exists() and (
         any((profile / name).exists() for name in dependent_names)
+        or next(profile.glob("transport-*.yaml"), None) is not None
         or next(profile.glob("transport-*.json"), None) is not None
         or next(profile.glob("peer-tls-*.crt"), None) is not None
         or next(profile.glob("peer-tls-*.key"), None) is not None
@@ -123,5 +140,5 @@ def _load_or_create_node_identity(
 
     identity = NodeIdentity.create()
     with observation_scope(observer, "profile:identity_create"):
-        identity.save(identity_path)
+        identity.save(yaml_path)
     return identity

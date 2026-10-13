@@ -14,7 +14,7 @@ def peer_grant_to_json(grant: PeerGrant) -> dict[str, Any]:
     return {
         "caller_id": grant.caller_id.value,
         "secret": grant.secret,
-        "permissions": sorted(grant.permissions),
+        "permissions": sorted(str(p) for p in grant.permissions),
         "identity_fingerprint": grant.identity_fingerprint,
         "transport_fingerprint": grant.transport_fingerprint,
         "root_public_key": grant.root_public_key,
@@ -44,7 +44,7 @@ def trusted_peer_to_json(peer: TrustedPeer) -> dict[str, Any]:
     return {
         "peer_id": peer.peer_id.value,
         "secret": peer.secret,
-        "permissions": sorted(peer.permissions),
+        "permissions": sorted(str(p) for p in peer.permissions),
         "identity_fingerprint": peer.identity_fingerprint,
         "transport_fingerprint": peer.transport_fingerprint,
         "root_public_key": peer.root_public_key,
@@ -85,7 +85,7 @@ def pending_pairing_to_json(
         "transport_proof": pending.transport_proof,
         "direction": pending.direction,
         "intent": pending.intent,
-        "permissions": sorted(permissions),
+        "permissions": sorted(str(p) for p in permissions),
     }
 
 
