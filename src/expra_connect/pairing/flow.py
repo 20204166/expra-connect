@@ -187,7 +187,9 @@ class NetworkPairing:
         transport: Any | None = None
         response: bool | dict[str, Any] | None = None
         last_endpoint: EndpointCandidate | None = None
-        for endpoint in sorted(candidate.endpoint_candidates, key=endpoint_rank):
+        for endpoint in sorted(
+            candidate.pairing_endpoint_candidates, key=endpoint_rank
+        ):
             last_endpoint = endpoint
             self._report_route_attempt("pairing", endpoint, "started", None)
             try:

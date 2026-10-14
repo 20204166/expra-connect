@@ -1,7 +1,5 @@
 import unittest
-from types import SimpleNamespace
 
-from expra_connect.discovery.backend import ZeroconfBackend
 from expra_connect.discovery.candidates import (
     DiscoveryCandidate,
     DiscoveryRegistry,
@@ -128,20 +126,3 @@ class DiscoveryTests(unittest.TestCase):
         self.assertIsNone(normalize_port(float("nan")))
         self.assertIsNone(normalize_port(float("inf")))
         self.assertIsNone(normalize_port(float("-inf")))
-
-    def test_zeroconf_backend_decodes_packed_addresses(self) -> None:
-        events: list[tuple[str, dict[str, object]]] = []
-        backend = ZeroconfBackend(
-            "_expra-peer._tcp.local.",
-            lambda event, payload: events.append((event, payload)),
-        )
-        info = SimpleNamespace(addresses=[b"\xc0\xa8\x01\x02"], port=27321)
-
-        backend._emit(
-            SimpleNamespace(get_service_info=lambda *_args: info),
-            "type",
-            "peer",
-            "add",
-        )
-
-        self.assertEqual(events[0][1]["addresses"], ("192.168.1.2",))

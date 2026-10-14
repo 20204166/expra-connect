@@ -2,6 +2,7 @@ import socket
 import time
 import unittest
 from typing import Any, cast
+from unittest.mock import patch
 
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
@@ -10,6 +11,7 @@ from expra_connect.remote.provider import AuthenticatedNodeProvider
 from expra_connect.remote.wire_protocol import MAX_ENVELOPE_BYTES
 from expra_connect.transport.server import (
     PEER_SERVICE_DEFAULT_PORT,
+    PairingSocketServer,
     RemoteSocketServer,
     _elevation_response,
     _pair_request_response,
@@ -23,6 +25,88 @@ class _Service:
 
 
 class ServerTests(unittest.TestCase):
+    def test_service_and_pairing_admission_pools_are_independent(self) -> None:
+        service = RemoteSocketServer(
+            _Service(), host="127.0.0.1", port=0, max_active_handlers=1
+        )
+        pairing = PairingSocketServer(
+            host="127.0.0.1",
+            port=0,
+            max_active_handlers=1,
+            pairing_handler=lambda _request: True,
+        )
+        service.start()
+        pairing.start()
+        held: socket.socket | None = None
+        try:
+            assert service.bound_port is not None
+            assert pairing.bound_port is not None
+            held = socket.create_connection(("127.0.0.1", pairing.bound_port))
+            held.sendall(b"\x00")
+            with socket.create_connection(("127.0.0.1", service.bound_port)) as peer:
+                peer.settimeout(1.0)
+                payload = b'{"op":"hello"}'
+                peer.sendall(len(payload).to_bytes(4, "big") + payload)
+                self.assertEqual(
+                    _recv_frame(
+                        peer,
+                        max_bytes=MAX_ENVELOPE_BYTES,
+                        closed_message="connection closed",
+                    ),
+                    payload,
+                )
+            held.close()
+            held = socket.create_connection(("127.0.0.1", service.bound_port))
+            held.sendall(b"\x00")
+            with socket.create_connection(("127.0.0.1", pairing.bound_port)) as peer:
+                peer.settimeout(1.0)
+                payload = (
+                    b'{"op":"pair_request","pairing_mode":"transactional",'
+                    b'"caller_node_id":"caller","identity_fingerprint":"id",'
+                    b'"transport_fingerprint":"tls","secret":"'
+                    + b"a" * 64
+                    + b'","permissions":["read_state"]}'
+                )
+                peer.sendall(len(payload).to_bytes(4, "big") + payload)
+                self.assertIn(
+                    b'"approved": true',
+                    _recv_frame(
+                        peer,
+                        max_bytes=MAX_ENVELOPE_BYTES,
+                        closed_message="connection closed",
+                    ),
+                )
+        finally:
+            if held is not None:
+                held.close()
+            pairing.stop()
+            service.stop()
+
+    def test_pairing_listener_does_not_dispatch_service_operations(self) -> None:
+        pairing_calls: list[Any] = []
+
+        def record_pairing(request: Any) -> bool:
+            pairing_calls.append(request)
+            return True
+
+        server = PairingSocketServer(
+            host="127.0.0.1",
+            port=0,
+            pairing_handler=record_pairing,
+        )
+        server.start()
+        try:
+            with socket.create_connection(
+                ("127.0.0.1", server.bound_port or 0)
+            ) as peer:
+                peer.settimeout(1.0)
+                payload = b'{"op":"hello"}'
+                peer.sendall(len(payload).to_bytes(4, "big") + payload)
+                self.assertEqual(peer.recv(1), b"")
+            self.assertEqual(pairing_calls, [])
+        finally:
+            server.stop()
+
     def test_admission_semaphore_is_retained_for_listener_lifecycle(self) -> None:
         server = RemoteSocketServer(_Service(), max_active_handlers=2)
         server.start()
@@ -163,6 +247,21 @@ class ServerTests(unittest.TestCase):
         finally:
             server.stop()
             server.stop()
+
+    def test_thread_start_failure_closes_bound_socket_and_resets_state(self) -> None:
+        server = RemoteSocketServer(_Service(), host="127.0.0.1", port=0)
+        with (
+            patch(
+                "expra_connect.transport.server.threading.Thread.start",
+                side_effect=RuntimeError("thread start failed"),
+            ),
+            self.assertRaisesRegex(RuntimeError, "thread start failed"),
+        ):
+            server.start()
+
+        self.assertIsNone(server.bound_port)
+        if server._server is not None:
+            server._server.server_close()
 
     def test_busy_preferred_port_falls_back(self) -> None:
         with socket.socket() as blocker:

@@ -72,8 +72,8 @@ class PeerServer:
         self._server.server_close()
 
 
-class RemoteSocketServer:
-    """Bounded framed listener that delegates authenticated work to a service."""
+class _RemoteSocketListener:
+    """Shared bounded framed TCP/TLS listener lifecycle and dispatcher."""
 
     def __init__(
         self,
@@ -89,6 +89,7 @@ class RemoteSocketServer:
         pair_confirm_handler: Callable[[PairingControlRequest], bool] | None = None,
         pair_abort_handler: Callable[[PairingControlRequest], bool] | None = None,
         elevation_handler: Callable[[CapabilityElevationRequest], bool] | None = None,
+        allow_pairing: bool = True,
     ) -> None:
         if max_active_handlers < 1:
             raise ValueError("max_active_handlers must be positive")
@@ -103,6 +104,7 @@ class RemoteSocketServer:
         self._pair_confirm_handler = pair_confirm_handler
         self._pair_abort_handler = pair_abort_handler
         self._elevation_handler = elevation_handler
+        self._allow_pairing = allow_pairing
         self._server: Any = None
         self._thread: threading.Thread | None = None
         self._admission: threading.BoundedSemaphore | None = None
@@ -127,6 +129,7 @@ class RemoteSocketServer:
         pair_confirm_handler = self._pair_confirm_handler
         pair_abort_handler = self._pair_abort_handler
         elevation_handler = self._elevation_handler
+        allow_pairing = self._allow_pairing
         admission = threading.BoundedSemaphore(self._max_active_handlers)
         self._admission = admission
 
@@ -146,19 +149,27 @@ class RemoteSocketServer:
                     )
                     text = body.decode("utf-8")
                     raw = json.loads(text)
-                    if isinstance(raw, dict) and raw.get("op") == "pair_request":
-                        response = _pair_request_response(raw, pairing_handler)
-                    elif isinstance(raw, dict) and raw.get("op") in {
+                    operation = raw.get("op") if isinstance(raw, dict) else None
+                    pairing_operation = operation in {
+                        "pair_request",
                         "pair_confirm",
                         "pair_abort",
-                    }:
+                        "elevation_request",
+                    }
+                    if pairing_operation and not allow_pairing:
+                        raise RemoteProtocolError(
+                            "pairing operation is not served on this listener"
+                        )
+                    if operation == "pair_request":
+                        response = _pair_request_response(raw, pairing_handler)
+                    elif operation in {"pair_confirm", "pair_abort"}:
                         handler = (
                             pair_confirm_handler
-                            if raw["op"] == "pair_confirm"
+                            if operation == "pair_confirm"
                             else pair_abort_handler
                         )
                         response = _pair_control_response(raw, handler)
-                    elif isinstance(raw, dict) and raw.get("op") == "elevation_request":
+                    elif operation == "elevation_request":
                         response = _elevation_response(raw, elevation_handler)
                     else:
                         generation = secrets.token_hex(16)
@@ -222,8 +233,16 @@ class RemoteSocketServer:
         server.daemon_threads = True
         server.block_on_close = False
         self._server = server
-        self._thread = threading.Thread(target=server.serve_forever, daemon=True)
-        self._thread.start()
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        self._thread = thread
+        try:
+            thread.start()
+        except BaseException:
+            self._server = None
+            self._thread = None
+            self._admission = None
+            server.server_close()
+            raise
 
     def stop(self) -> None:
         server = self._server
@@ -253,6 +272,59 @@ class RemoteSocketServer:
             coordinator_epoch=coordinator_epoch,
             fencing_token=fencing_token,
         )
+
+
+class RemoteSocketServer(_RemoteSocketListener):
+    """Public compatibility adapter for authenticated service and pairing."""
+
+
+class _PairingOnlyService:
+    def handle(self, _payload: str) -> str:
+        raise RemoteProtocolError("operation is not served by pairing listener")
+
+
+class PairingSocketServer:
+    """Pairing-only adapter over the shared listener implementation."""
+
+    def __init__(
+        self,
+        *,
+        host: str = "127.0.0.1",
+        port: int = 0,
+        timeout: float = 10.0,
+        max_active_handlers: int = DEFAULT_MAX_ACTIVE_HANDLERS,
+        ssl_context: ssl.SSLContext | None = None,
+        pairing_handler: Callable[[PairingRequest], Any] | None = None,
+        pair_confirm_handler: Callable[[PairingControlRequest], bool] | None = None,
+        pair_abort_handler: Callable[[PairingControlRequest], bool] | None = None,
+        elevation_handler: Callable[[CapabilityElevationRequest], bool] | None = None,
+    ) -> None:
+        self._server = _RemoteSocketListener(
+            _PairingOnlyService(),
+            host=host,
+            port=port,
+            timeout=timeout,
+            max_active_handlers=max_active_handlers,
+            ssl_context=ssl_context,
+            pairing_handler=pairing_handler,
+            pair_confirm_handler=pair_confirm_handler,
+            pair_abort_handler=pair_abort_handler,
+            elevation_handler=elevation_handler,
+        )
+
+    @property
+    def bound_port(self) -> int | None:
+        return self._server.bound_port
+
+    @property
+    def _admission(self) -> threading.BoundedSemaphore | None:
+        return self._server._admission
+
+    def start(self) -> None:
+        self._server.start()
+
+    def stop(self) -> None:
+        self._server.stop()
 
 
 def _pair_request_response(

@@ -90,6 +90,7 @@ class DiscoveryAdvertisement:
     transport_generation: int | None = None
     transport_proof: str | None = None
     advertised_addresses: tuple[str, ...] | None = None
+    pairing_port: int | None = None
 
 
 class DiscoveryBackend(Protocol):
@@ -135,6 +136,12 @@ def _advertisement_txt_properties(
 
     if advertisement.transport_generation is not None:
         properties["transport_generation"] = str(advertisement.transport_generation)
+    if (
+        isinstance(advertisement.pairing_port, int)
+        and not isinstance(advertisement.pairing_port, bool)
+        and 1 <= advertisement.pairing_port <= 65535
+    ):
+        properties["pairing_port"] = str(advertisement.pairing_port)
 
     return properties
 
@@ -157,6 +164,7 @@ class ZeroconfDiscoveryBackend:
         self._zeroconf: Any = None
         self._service_info: Any = None
         self._browser: Any = None
+        self._generation: object | None = None
 
     @property
     def available(self) -> bool:
@@ -165,6 +173,8 @@ class ZeroconfDiscoveryBackend:
     def start(self, advertisement: DiscoveryAdvertisement) -> None:
         if _zeroconf_module is None:
             raise RuntimeError("python-zeroconf is not installed")
+        generation = object()
+        self._generation = generation
         zeroconf_kwargs: dict[str, Any] = {}
         ip_version = getattr(_zeroconf_module, "IPVersion", None)
         all_versions = getattr(ip_version, "All", None)
@@ -172,7 +182,7 @@ class ZeroconfDiscoveryBackend:
         if all_versions is not None:
             zeroconf_kwargs["ip_version"] = all_versions
         try:
-            self._start_with_zeroconf(advertisement, zeroconf_kwargs)
+            self._start_with_zeroconf(advertisement, zeroconf_kwargs, generation)
         except OSError:
             if all_versions is None or v4_only is None:
                 raise
@@ -181,10 +191,17 @@ class ZeroconfDiscoveryBackend:
                 exc_info=True,
             )
             self.stop()
-            self._start_with_zeroconf(advertisement, {"ip_version": v4_only})
+            generation = object()
+            self._generation = generation
+            self._start_with_zeroconf(
+                advertisement, {"ip_version": v4_only}, generation
+            )
 
     def _start_with_zeroconf(
-        self, advertisement: DiscoveryAdvertisement, zeroconf_kwargs: dict[str, Any]
+        self,
+        advertisement: DiscoveryAdvertisement,
+        zeroconf_kwargs: dict[str, Any],
+        generation: object,
     ) -> None:
         if _zeroconf_module is None:
             raise RuntimeError("python-zeroconf is not installed")
@@ -207,7 +224,9 @@ class ZeroconfDiscoveryBackend:
             **service_kwargs,
         )
         zc.register_service(service_info)
-        listener = _ZeroconfListener(self._listener)
+        listener = _ZeroconfListener(
+            self._listener, lambda: self._generation is generation
+        )
         browser = _zeroconf_module.ServiceBrowser(
             zc, self._service_type, cast(Any, listener)
         )
@@ -215,6 +234,7 @@ class ZeroconfDiscoveryBackend:
         self._browser = browser
 
     def stop(self) -> None:
+        self._generation = None
         browser = self._browser
         if browser is not None:
             try:
@@ -232,21 +252,30 @@ class ZeroconfDiscoveryBackend:
 
 
 class _ZeroconfListener:
-    def __init__(self, listener: Callable[[EventKind, str, Any], None]) -> None:
+    def __init__(
+        self,
+        listener: Callable[[EventKind, str, Any], None],
+        is_current: Callable[[], bool],
+    ) -> None:
         self._listener = listener
+        self._is_current = is_current
 
     def add_service(self, zc: Any, type_: str, name: str) -> None:
-        info = zc.get_service_info(type_, name)
-        if info is not None:
-            self._listener("add", name, info)
+        self._emit_service("add", zc, type_, name)
 
     def update_service(self, zc: Any, type_: str, name: str) -> None:
+        self._emit_service("update", zc, type_, name)
+
+    def _emit_service(self, event: EventKind, zc: Any, type_: str, name: str) -> None:
+        if not self._is_current():
+            return
         info = zc.get_service_info(type_, name)
-        if info is not None:
-            self._listener("update", name, info)
+        if info is not None and self._is_current():
+            self._listener(event, name, info)
 
     def remove_service(self, _zc: Any, _type_: str, name: str) -> None:
-        self._listener("remove", name, None)
+        if self._is_current():
+            self._listener("remove", name, None)
 
 
 @dataclass
@@ -560,6 +589,16 @@ class NetworkDiscovery:
         )
         transport_proof = properties.get("transport_proof") or None
         connectable = properties.get("connectable", "false").casefold() == "true"
+        raw_pairing_port = properties.get("pairing_port")
+        pairing_port = None
+        if (
+            raw_pairing_port is not None
+            and raw_pairing_port.isascii()
+            and raw_pairing_port.isdecimal()
+        ):
+            parsed_pairing_port = int(raw_pairing_port)
+            if 1 <= parsed_pairing_port <= 65535:
+                pairing_port = parsed_pairing_port
 
         port: int | None = None
         raw_port = _attr(info, "port")
@@ -590,6 +629,7 @@ class NetworkDiscovery:
             root_public_key=root_public_key,
             transport_generation=transport_generation,
             transport_proof=transport_proof,
+            pairing_port=pairing_port,
         )
 
 

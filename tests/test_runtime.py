@@ -1,5 +1,7 @@
 import hashlib
+import inspect
 import json
+import socket
 import tempfile
 import threading
 import time
@@ -65,6 +67,7 @@ class _RecordingDiscoveryBackend:
 def _peer_candidate(second: ConnectRuntime) -> DiscoveredNodeCandidate:
     assert second.identity is not None
     assert second.status.bound_port is not None
+    assert second.status.pairing_bound_port is not None
     assert second.status.tls_fingerprint is not None
     return DiscoveredNodeCandidate(
         stable_id=second.identity.node_id.value,
@@ -80,10 +83,118 @@ def _peer_candidate(second: ConnectRuntime) -> DiscoveredNodeCandidate:
         last_seen=time.time(),
         identity_fingerprint=node_identity_fingerprint(second.identity.node_id),
         transport_fingerprint=second.status.tls_fingerprint,
+        pairing_port=second.status.pairing_bound_port,
     )
 
 
 class RuntimeConfigurationTests(unittest.TestCase):
+    def test_runtime_owns_and_advertises_a_distinct_pairing_listener(self) -> None:
+        self.assertIn("pairing_port", inspect.signature(ConnectConfig).parameters)
+        with tempfile.TemporaryDirectory() as directory:
+            backend: _RecordingDiscoveryBackend | None = None
+
+            def make_backend(listener: object) -> _RecordingDiscoveryBackend:
+                nonlocal backend
+                backend = _RecordingDiscoveryBackend(listener)
+                return backend
+
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    discovery_backend_factory=make_backend,
+                    preferred_port=0,
+                    pairing_port=0,
+                )
+            )
+            try:
+                status = runtime.start()
+                self.assertEqual(status.state, RuntimeState.STARTED)
+                pairing_port = getattr(status, "pairing_bound_port", None)
+                self.assertIsNotNone(pairing_port)
+                self.assertNotEqual(status.bound_port, pairing_port)
+                assert backend is not None
+                advertisement = backend.advertisement
+                self.assertIsNotNone(advertisement)
+                self.assertEqual(
+                    getattr(advertisement, "pairing_port", None), pairing_port
+                )
+                assert status.bound_port is not None
+                assert pairing_port is not None
+                with socket.create_connection(("127.0.0.1", status.bound_port)) as peer:
+                    peer.settimeout(1.0)
+                    payload = b'{"op":"pair_request"}'
+                    peer.sendall(len(payload).to_bytes(4, "big") + payload)
+                    with self.assertRaises(
+                        (ConnectionResetError, TimeoutError, OSError)
+                    ):
+                        peer.recv(1)
+                with socket.create_connection(("127.0.0.1", pairing_port)) as peer:
+                    peer.settimeout(1.0)
+                    payload = b'{"op":"hello"}'
+                    peer.sendall(len(payload).to_bytes(4, "big") + payload)
+                    with self.assertRaises(
+                        (ConnectionResetError, TimeoutError, OSError)
+                    ):
+                        peer.recv(1)
+            finally:
+                runtime.shutdown()
+
+    def test_pairing_listener_bind_failure_rolls_back_service_listener(self) -> None:
+        self.assertIn("pairing_port", inspect.signature(ConnectConfig).parameters)
+        with tempfile.TemporaryDirectory() as directory, socket.socket() as blocker:
+            blocker.bind(("127.0.0.1", 0))
+            pairing_port = blocker.getsockname()[1]
+            with socket.socket() as probe:
+                probe.bind(("127.0.0.1", 0))
+                service_port = probe.getsockname()[1]
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    bind_host="127.0.0.1",
+                    preferred_port=service_port,
+                    pairing_port=pairing_port,
+                    discovery_enabled=False,
+                )
+            )
+            try:
+                status = runtime.start()
+                self.assertEqual(status.state, RuntimeState.LISTENER_UNAVAILABLE)
+                self.assertIsNone(runtime._server)
+                self.assertIsNone(getattr(runtime, "_pairing_server", None))
+                with socket.socket() as probe:
+                    probe.bind(("127.0.0.1", service_port))
+            finally:
+                runtime.shutdown()
+
+    def test_pairing_stop_failure_does_not_strand_service_listener(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = ConnectRuntime(
+                ConnectConfig(
+                    profile_dir=Path(directory),
+                    bind_host="127.0.0.1",
+                    preferred_port=0,
+                    pairing_port=0,
+                    discovery_enabled=False,
+                )
+            )
+            status = runtime.start()
+            service_port = status.bound_port
+            pairing_server = runtime._pairing_server
+            assert service_port is not None
+            assert pairing_server is not None
+            try:
+                with patch.object(
+                    pairing_server, "stop", side_effect=RuntimeError("stop failed")
+                ):
+                    runtime._clear_components()
+                self.assertIsNone(runtime._server)
+                self.assertIsNone(runtime._pairing_server)
+                with socket.socket() as probe:
+                    probe.bind(("127.0.0.1", service_port))
+            finally:
+                pairing_server.stop()
+                runtime.shutdown()
+
     def test_profile_rejects_second_runtime_until_first_releases_ownership(
         self,
     ) -> None:
@@ -187,6 +298,34 @@ class RuntimeConfigurationTests(unittest.TestCase):
             self.assertFalse(runtime.started)
             self.assertFalse((Path(directory) / "identity.yaml").exists())
             self.assertEqual(config.app_version, __version__)
+
+    def test_config_port_ranges_are_validated(self) -> None:
+        invalid_ports = (
+            ("preferred_port", -1),
+            ("preferred_port", 65536),
+            ("pairing_port", -1),
+            ("pairing_port", 65536),
+            ("pairing_port", True),
+            ("pairing_port", 1.5),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            for field, value in invalid_ports:
+                with (
+                    self.subTest(field=field, value=value),
+                    self.assertRaisesRegex(
+                        ValueError, f"{field} must be between 0 and 65535"
+                    ),
+                ):
+                    if field == "preferred_port":
+                        ConnectConfig(
+                            profile_dir=Path(directory),
+                            preferred_port=cast(Any, value),
+                        )
+                    else:
+                        ConnectConfig(
+                            profile_dir=Path(directory),
+                            pairing_port=cast(Any, value),
+                        )
 
     def test_explicit_advertised_addresses_are_normalized(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1062,10 +1201,11 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             assert first.identity is not None
             assert second.identity is not None
             assert second_status.bound_port is not None
+            assert second_status.pairing_bound_port is not None
             assert second_status.tls_fingerprint is not None
             transport = TLSRemoteTransport(
                 "127.0.0.1",
-                second_status.bound_port,
+                second_status.pairing_bound_port,
                 expected_fingerprint=second_status.tls_fingerprint,
             )
             secret = "c" * 64
@@ -1090,11 +1230,16 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             )
 
             self.assertTrue(AuthenticatedNodeProvider.confirm_pairing(transaction))
+            service_transport = TLSRemoteTransport(
+                "127.0.0.1",
+                second_status.bound_port,
+                expected_fingerprint=second_status.tls_fingerprint,
+            )
             provider = AuthenticatedNodeProvider(
                 node_id=second.identity.node_id,
                 caller_node_id=first.identity.node_id,
                 secret=secret,
-                transport=transport,
+                transport=service_transport,
             )
             self.assertEqual(provider.hello()["node_id"], second.identity.node_id.value)
             first.shutdown()

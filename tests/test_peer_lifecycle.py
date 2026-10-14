@@ -38,12 +38,14 @@ def _candidate(target: ConnectRuntime) -> DiscoveredNodeCandidate:
     assert identity is not None
     assert generations is not None
     assert status.bound_port is not None
+    assert status.pairing_bound_port is not None
     assert status.tls_fingerprint is not None
     return DiscoveredNodeCandidate(
         stable_id=identity.node_id.value,
         hostname="127.0.0.1",
         addresses=("127.0.0.1",),
         port=status.bound_port,
+        pairing_port=status.pairing_bound_port,
         service_name="_expra-peer._tcp.local.",
         app_version=__version__,
         protocol_version="1",

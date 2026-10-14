@@ -1,138 +1,15 @@
-"""Optional Zeroconf adapter; discovery remains usable without Avahi.
-
-This module is the small OS/network boundary between python-zeroconf and the
-discovery layer above it. It owns exactly: starting Zeroconf, listening for
-add/update/remove, resolving ``ServiceInfo``, decoding raw addresses into text,
-and cleanly releasing Zeroconf resources. It never owns candidate maps, peer
-TTL, identity deduplication, self filtering, trust, route ranking, reconnect,
-or discovery lifecycle generations -- those stay with ``NetworkDiscovery`` and
-the runtime.
-"""
+"""Shared decoding helpers for python-zeroconf service records."""
 
 from __future__ import annotations
 
 import logging
 import socket
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import Any, cast
 
 LOGGER = logging.getLogger(__name__)
 
-_zeroconf_module: Any
-try:
-    import zeroconf as _zeroconf_module  # pyright: ignore[reportMissingImports]
-except ImportError:
-    _zeroconf_module = None
-
 _PARSED_ADDRESS_METHODS = ("parsed_scoped_addresses", "parsed_addresses")
-
-
-class ZeroconfBackend:
-    """Browse-only python-zeroconf adapter.
-
-    ``start`` is transactional and idempotent; ``stop`` is idempotent and
-    best-effort. Each ``start`` binds its listener to a fresh generation token
-    so a delayed callback from a previous generation cannot become a current
-    observation, without building a second lifecycle framework above the
-    adapter.
-    """
-
-    def __init__(
-        self, service_type: str, on_event: Callable[[str, dict[str, Any]], None]
-    ) -> None:
-        self.service_type = service_type
-        self._on_event = on_event
-        self._zeroconf: Any = None
-        self._browser: Any = None
-        self._token: object | None = None
-
-    def start(self) -> None:
-        if self._token is not None:
-            return
-        if _zeroconf_module is None:
-            raise RuntimeError("zeroconf discovery is unavailable")
-
-        token = object()
-        self._token = token
-        backend = self
-
-        class Listener:
-            def add_service(self, zc: Any, service_type: str, name: str) -> None:
-                if backend._token is token:
-                    backend._emit(zc, service_type, name, "add")
-
-            def update_service(self, zc: Any, service_type: str, name: str) -> None:
-                if backend._token is token:
-                    backend._emit(zc, service_type, name, "update")
-
-            def remove_service(self, _zc: Any, _service_type: str, name: str) -> None:
-                if backend._token is token and isinstance(name, str):
-                    backend._emit_remove(name)
-
-        zeroconf: Any = None
-        try:
-            zeroconf = _zeroconf_module.Zeroconf()
-            browser = _zeroconf_module.ServiceBrowser(
-                zeroconf, self.service_type, cast(Any, Listener())
-            )
-        except Exception:
-            self._token = None
-            self._zeroconf = None
-            self._browser = None
-            if zeroconf is not None:
-                try:
-                    zeroconf.close()
-                except Exception:
-                    LOGGER.debug(
-                        "Failed to close zeroconf after a failed start", exc_info=True
-                    )
-            raise
-        self._zeroconf = zeroconf
-        self._browser = browser
-
-    def _emit(self, zc: Any, service_type: str, name: str, event: str) -> None:
-        try:
-            info = zc.get_service_info(service_type, name)
-        except Exception:
-            LOGGER.debug("Failed to resolve zeroconf service %r", name, exc_info=True)
-            return
-        if info is None:
-            return
-        self._deliver(
-            event,
-            {
-                "name": name,
-                "addresses": tuple(_service_address_texts(info)),
-                "port": _attr(info, "port"),
-            },
-        )
-
-    def _emit_remove(self, name: str) -> None:
-        self._deliver("remove", {"name": name})
-
-    def _deliver(self, event: str, payload: dict[str, Any]) -> None:
-        try:
-            self._on_event(event, payload)
-        except Exception:
-            LOGGER.debug(
-                "Zeroconf discovery callback failed for %r", event, exc_info=True
-            )
-
-    def stop(self) -> None:
-        self._token = None
-        browser, zeroconf = self._browser, self._zeroconf
-        self._browser = None
-        self._zeroconf = None
-        if browser is not None:
-            try:
-                browser.cancel()
-            except Exception:
-                LOGGER.debug("Failed to cancel zeroconf browser", exc_info=True)
-        if zeroconf is not None:
-            try:
-                zeroconf.close()
-            except Exception:
-                LOGGER.debug("Failed to close zeroconf", exc_info=True)
 
 
 def _address_text(address: Any) -> str | None:

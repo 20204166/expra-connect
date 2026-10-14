@@ -4,19 +4,12 @@ from __future__ import annotations
 
 import hmac
 import logging
-import platform
-import socket
 import threading
-from collections.abc import Callable
-from dataclasses import dataclass
-from enum import Enum
-from pathlib import Path
 from types import TracebackType
 from typing import Any
 
 from typing_extensions import Self
 
-from .._version import __version__
 from ..cluster import (
     Cluster,
     ClusterState,
@@ -29,9 +22,7 @@ from ..connections.manager import ConnectionManager
 from ..discovery.models import DiscoveredNodeCandidate
 from ..discovery.network import (
     REAP_TICK_SECONDS,
-    SERVICE_TYPE,
     DiscoveryAdvertisement,
-    DiscoveryBackend,
     NetworkDiscovery,
 )
 from ..identity import (
@@ -39,7 +30,6 @@ from ..identity import (
     NodeIdentity,
     node_identity_fingerprint,
 )
-from ..identity.device_hardware import DeviceHardwareProvider
 from ..identity.device_identity import DeviceIdentityRuntimeMixin
 from ..identity.profile_state import ProfileLock, load_profile_identity
 from ..identity.transport_generation import (
@@ -47,7 +37,6 @@ from ..identity.transport_generation import (
     TransportStateError,
 )
 from ..models import (
-    READ_CAPABILITIES,
     READ_PERMISSIONS,
     NodeCapability,
     NodePermission,
@@ -78,12 +67,18 @@ from ..remote.wire_protocol import (
 )
 from ..sharing.capabilities import CapabilityShare
 from ..surfaces.registry import SurfaceRegistry, SurfaceRuntimeMixin
-from ..transport.server import PEER_SERVICE_DEFAULT_PORT, RemoteSocketServer
+from ..transport.server import (
+    PairingSocketServer,
+    RemoteSocketServer,
+)
 from ..transport.tls_material import (
     ensure_tls_material,
     ensure_tls_material_generation,
     server_context,
 )
+from .config import ConnectConfig as ConnectConfig  # noqa: PLC0414
+from .config import RuntimeState as RuntimeState  # noqa: PLC0414
+from .config import RuntimeStatus as RuntimeStatus  # noqa: PLC0414
 from .diagnostics import build_diagnostics, build_peer_diagnostics
 from .persistence import (
     peer_grant_from_json,
@@ -97,78 +92,17 @@ from .persistence import (
 LOGGER = logging.getLogger(__name__)
 
 
+def _stop_component(component: Any, name: str) -> None:
+    if component is None:
+        return
+    try:
+        component.stop()
+    except Exception:
+        LOGGER.debug("%s shutdown failed", name, exc_info=True)
+
+
 class PersistenceError(RuntimeError):
     """Raised when a trust transition cannot be durably committed."""
-
-
-class RuntimeState(str, Enum):
-    STOPPED = "stopped"
-    STARTING = "starting"
-    STARTED = "started"
-    PERSISTENCE_FAILED = "persistence_failed"
-    LISTENER_UNAVAILABLE = "listener_unavailable"
-
-
-@dataclass(frozen=True, slots=True)
-class RuntimeStatus:
-    state: RuntimeState
-    listener_started: bool = False
-    discovery_started: bool = False
-    discovery_disabled: bool = False
-    discovery_reason: str | None = None
-    bound_host: str | None = None
-    bound_port: int | None = None
-    preferred_port_honored: bool | None = None
-    tls_fingerprint: str | None = None
-    reason: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class ConnectConfig:
-    profile_dir: Path
-    app_id: str = "expra-connect"
-    display_name: str = "Expra Connect Peer"
-    app_version: str = __version__
-    bind_host: str = "0.0.0.0"
-    preferred_port: int = PEER_SERVICE_DEFAULT_PORT
-    discovery_enabled: bool = True
-    service_type: str = SERVICE_TYPE
-    hostname: str = ""
-    platform_name: str = ""
-    advertised_addresses: tuple[str, ...] | None = None
-    cluster_enabled: bool = False
-    capabilities: frozenset[NodeCapability] = READ_CAPABILITIES
-    provider: Any = None
-    on_discovery: Callable[[str, Any], None] | None = None
-    on_pairing_request: Callable[[PairingRequest], bool] | None = None
-    on_elevation_request: Callable[[CapabilityElevationRequest], bool] | None = None
-    on_route_attempt: Callable[[str, Any, str, str | None], None] | None = None
-    discovery_backend_factory: (
-        Callable[[Callable[[str, str, Any], None]], DiscoveryBackend] | None
-    ) = None
-    device_hardware_provider: DeviceHardwareProvider | None = None
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "profile_dir", Path(self.profile_dir).expanduser())
-        if not self.app_id.strip():
-            raise ValueError("app_id must not be empty")
-        if not self.service_type.endswith("."):
-            raise ValueError("service_type must be a fully qualified service type")
-        if not 0 <= self.preferred_port <= 65535:
-            raise ValueError("preferred_port must be between 0 and 65535")
-        if self.advertised_addresses is not None and (
-            not self.advertised_addresses
-            or not all(address.strip() for address in self.advertised_addresses)
-        ):
-            raise ValueError("advertised_addresses must contain non-empty values")
-
-    @property
-    def resolved_hostname(self) -> str:
-        return self.hostname or socket.gethostname()
-
-    @property
-    def resolved_platform(self) -> str:
-        return self.platform_name or platform.system().lower()
 
 
 class ConnectRuntime(
@@ -191,6 +125,7 @@ class ConnectRuntime(
         self._sharing = CapabilityShare()
         self._surface_registry = SurfaceRegistry()
         self._server: RemoteSocketServer | None = None
+        self._pairing_server: PairingSocketServer | None = None
         self._service: RemoteService | None = None
         self._discovery: NetworkDiscovery | None = None
         self._expiry_stop: threading.Event | None = None
@@ -456,16 +391,20 @@ class ConnectRuntime(
         self._sharing.clear_grants()
         self._stop_expiry_worker()
         discovery, server = self._discovery, self._server
+        pairing_server = self._pairing_server
         self._discovery = None
         self._server = None
+        self._pairing_server = None
         self._service = None
         self._connection_manager = None
         self._network_pairing = None
         self._peers.clear()
-        if discovery is not None:
-            discovery.stop()
-        if server is not None:
-            server.stop()
+        for component, name in (
+            (discovery, "discovery"),
+            (pairing_server, "pairing listener"),
+            (server, "service listener"),
+        ):
+            _stop_component(component, name)
         self._status = RuntimeStatus(RuntimeState.STOPPED)
 
     def __enter__(self) -> Self:
@@ -630,6 +569,12 @@ class ConnectRuntime(
             host=self.config.bind_host,
             preferred_port=self.config.preferred_port,
             ssl_context=server_context(material),
+            allow_pairing=False,
+        )
+        pairing_server = PairingSocketServer(
+            host=self.config.bind_host,
+            port=self.config.pairing_port,
+            ssl_context=server_context(material),
             pairing_handler=self._handle_pairing_request,
             pair_confirm_handler=self._handle_pairing_control,
             pair_abort_handler=self._handle_pairing_control,
@@ -637,13 +582,21 @@ class ConnectRuntime(
         )
         try:
             server.start()
-        except OSError as error:
+            pairing_server.start()
+        except BaseException as error:
+            try:
+                pairing_server.stop()
+            finally:
+                server.stop()
             self._clear_components()
-            self._status = RuntimeStatus(
-                RuntimeState.LISTENER_UNAVAILABLE, reason=str(error)
-            )
-            return self._status
+            if isinstance(error, OSError):
+                self._status = RuntimeStatus(
+                    RuntimeState.LISTENER_UNAVAILABLE, reason=str(error)
+                )
+                return self._status
+            raise
         self._server = server
+        self._pairing_server = pairing_server
         self._service = service
         self._network_pairing = NetworkPairing(
             identity=self._identity,
@@ -657,6 +610,7 @@ class ConnectRuntime(
             on_route_attempt=self.config.on_route_attempt,
         )
         bound_port = server.bound_port
+        pairing_bound_port = pairing_server.bound_port
         advertisement = DiscoveryAdvertisement(
             stable_id=self._identity.node_id.value,
             display_name=self.config.display_name,
@@ -665,6 +619,7 @@ class ConnectRuntime(
             platform=self.config.resolved_platform,
             connectable=bound_port is not None,
             port=bound_port,
+            pairing_port=pairing_bound_port,
             identity_fingerprint=node_identity_fingerprint(self._identity.node_id),
             transport_fingerprint=material.fingerprint,
             root_public_key=self._identity.root_public_key,
@@ -673,7 +628,9 @@ class ConnectRuntime(
             advertised_addresses=self.config.advertised_addresses,
         )
         if not self.config.discovery_enabled:
-            return self._started_status(server, material.fingerprint, False, True, None)
+            return self._started_status(
+                server, pairing_server, material.fingerprint, False, True, None
+            )
         try:
             discovery = NetworkDiscovery(
                 self._identity.node_id,
@@ -687,6 +644,7 @@ class ConnectRuntime(
         except Exception as error:  # noqa: BLE001 - discovery is optional.
             return self._started_status(
                 server,
+                pairing_server,
                 material.fingerprint,
                 False,
                 False,
@@ -695,15 +653,23 @@ class ConnectRuntime(
         if discovery.start():
             self._discovery = discovery
             self._start_expiry_worker(generation, discovery)
-            return self._started_status(server, material.fingerprint, True, False, None)
+            return self._started_status(
+                server, pairing_server, material.fingerprint, True, False, None
+            )
         self._discovery = discovery
         return self._started_status(
-            server, material.fingerprint, False, False, discovery.unavailable_reason
+            server,
+            pairing_server,
+            material.fingerprint,
+            False,
+            False,
+            discovery.unavailable_reason,
         )
 
     def _started_status(
         self,
         server: RemoteSocketServer,
+        pairing_server: PairingSocketServer,
         fingerprint: str,
         discovery_started: bool,
         discovery_disabled: bool,
@@ -717,6 +683,7 @@ class ConnectRuntime(
             discovery_reason=discovery_reason,
             bound_host=self.config.bind_host,
             bound_port=server.bound_port,
+            pairing_bound_port=pairing_server.bound_port,
             preferred_port_honored=server.preferred_port_honored,
             tls_fingerprint=fingerprint,
         )
@@ -890,15 +857,23 @@ class ConnectRuntime(
         self._sharing.clear_grants()
         if self._connection_manager is not None:
             self._connection_manager.disconnect_all()
-        if self._discovery is not None:
-            self._discovery.stop()
-        if self._server is not None:
-            self._server.stop()
+        discovery, pairing_server, server = (
+            self._discovery,
+            self._pairing_server,
+            self._server,
+        )
         self._discovery = None
         self._server = None
+        self._pairing_server = None
         self._service = None
         self._connection_manager = None
         self._network_pairing = None
+        for component, name in (
+            (discovery, "discovery"),
+            (pairing_server, "pairing listener"),
+            (server, "service listener"),
+        ):
+            _stop_component(component, name)
 
     def _save_persisted_state(self) -> bool:
         if self._pairing is None or not self._persistence_ready:

@@ -33,6 +33,7 @@ class NetworkPairingTests(unittest.TestCase):
             last_seen=1.0,
             transport_fingerprint="peer-tls",
             endpoint_candidates=endpoints,
+            pairing_port=27322,
         )
         pairing = PairingManager(identity.node_id)
         network_pairing = NetworkPairing(
@@ -47,10 +48,12 @@ class NetworkPairingTests(unittest.TestCase):
             ),
         )
         attempts: list[str] = []
+        ports: list[int] = []
         route_events: list[tuple[str, str, str]] = []
 
         def build_transport(address: str, _port: int, **_: object) -> object:
             attempts.append(address)
+            ports.append(_port)
             if address == "192.168.1.20":
                 raise TimeoutError("route timed out")
             return object()
@@ -85,6 +88,7 @@ class NetworkPairingTests(unittest.TestCase):
             network_pairing.pair(peer_id, permissions=frozenset({"read_state"}))
 
         self.assertEqual(attempts, ["192.168.1.20", "10.0.0.20"])
+        self.assertEqual(ports, [27322, 27322])
         self.assertEqual(
             route_events,
             [

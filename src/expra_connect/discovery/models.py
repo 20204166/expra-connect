@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 
 
@@ -60,6 +60,7 @@ class DiscoveredNodeCandidate:
     root_public_key: str | None = None
     transport_generation: int | None = None
     transport_proof: str | None = None
+    pairing_port: int | None = None
 
     def __post_init__(self) -> None:
         if self.endpoint_candidates or self.port is None:
@@ -69,6 +70,16 @@ class DiscoveredNodeCandidate:
             for address in self.addresses
         )
         object.__setattr__(self, "endpoint_candidates", endpoints)
+
+    @property
+    def pairing_endpoint_candidates(self) -> tuple[EndpointCandidate, ...]:
+        """Return pairing routes, falling back to legacy service endpoints."""
+        port = self.pairing_port or self.port
+        if port is None:
+            return ()
+        return tuple(
+            replace(endpoint, port=port) for endpoint in self.endpoint_candidates
+        )
 
 
 def endpoint_source(address: str) -> EndpointSource:

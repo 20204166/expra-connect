@@ -1,3 +1,4 @@
+import inspect
 import unittest
 from collections import UserDict
 from collections.abc import Callable, MutableMapping
@@ -13,6 +14,7 @@ from expra_connect.discovery.network import (
     SERVICE_TYPE,
     DiscoveryAdvertisement,
     NetworkDiscovery,
+    ZeroconfDiscoveryBackend,
     _advertisement_txt_properties,
     _service_addresses,
     _service_instance_id,
@@ -102,6 +104,155 @@ def _make_discovery(
 
 
 class FullDiscoveryTests(unittest.TestCase):
+    def test_pairing_port_is_optional_and_validated_from_txt(self) -> None:
+        discovery, _backend = _make_discovery()
+        info = _Info("remote")
+        info.properties[b"pairing_port"] = b"27322"
+
+        candidate = discovery._normalize(f"remote.{SERVICE_TYPE}", info)
+
+        self.assertIsNotNone(candidate)
+        assert candidate is not None
+        self.assertEqual(candidate.port, 27321)
+        self.assertEqual(getattr(candidate, "pairing_port", None), 27322)
+
+        for raw in (b"0", b"65536", b"not-a-port"):
+            info.properties[b"pairing_port"] = raw
+            candidate = discovery._normalize(f"remote.{SERVICE_TYPE}", info)
+            self.assertIsNotNone(candidate)
+            assert candidate is not None
+            self.assertIsNone(getattr(candidate, "pairing_port", None))
+
+    def test_pairing_port_is_encoded_as_optional_txt_property(self) -> None:
+        self.assertIn(
+            "pairing_port", inspect.signature(DiscoveryAdvertisement).parameters
+        )
+        advertisement = DiscoveryAdvertisement(
+            stable_id="local",
+            display_name="Local",
+            hostname="localhost",
+            app_version="1",
+            pairing_port=27322,
+        )
+        self.assertEqual(
+            _advertisement_txt_properties(advertisement)["pairing_port"], "27322"
+        )
+
+    def _make_production_zeroconf_backend(
+        self, *, synchronous_browser_callback: bool = False
+    ) -> tuple[ZeroconfDiscoveryBackend, list[Any], list[Any], list[tuple[Any, ...]]]:
+        zeroconf_instances: list[Any] = []
+        browsers: list[Any] = []
+        events: list[tuple[Any, ...]] = []
+
+        class FakeZeroconf:
+            def __init__(self, **_kwargs: Any) -> None:
+                self.info = _Info("remote")
+                self.closed = False
+                zeroconf_instances.append(self)
+
+            def register_service(self, _service_info: Any) -> None:
+                pass
+
+            def get_service_info(self, _service_type: str, _name: str) -> Any:
+                return self.info
+
+            def close(self) -> None:
+                self.closed = True
+
+        class FakeServiceInfo:
+            def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+                pass
+
+        class FakeBrowser:
+            def __init__(self, zc: Any, _service_type: str, listener: Any) -> None:
+                self.listener = listener
+                self.cancelled = False
+                browsers.append(self)
+                if synchronous_browser_callback:
+                    listener.add_service(zc, SERVICE_TYPE, "early")
+
+            def cancel(self) -> None:
+                self.cancelled = True
+
+        fake_module = SimpleNamespace(
+            Zeroconf=FakeZeroconf,
+            ServiceInfo=FakeServiceInfo,
+            ServiceBrowser=FakeBrowser,
+        )
+        patcher = patch("expra_connect.discovery.network._zeroconf_module", fake_module)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        backend = ZeroconfDiscoveryBackend(lambda *event: events.append(event))
+        return backend, zeroconf_instances, browsers, events
+
+    def test_production_backend_rejects_old_listener_after_restart(self) -> None:
+        backend, zcs, browsers, events = self._make_production_zeroconf_backend()
+        advertisement = DiscoveryAdvertisement(
+            stable_id="local",
+            display_name="Local",
+            hostname="localhost",
+            app_version="1",
+        )
+
+        backend.start(advertisement)
+        old_listener = browsers[0].listener
+        old_zc = zcs[0]
+        backend.stop()
+        backend.start(advertisement)
+
+        old_listener.add_service(old_zc, SERVICE_TYPE, "stale")
+        old_listener.remove_service(old_zc, SERVICE_TYPE, "stale")
+        self.assertEqual(events, [])
+
+        new_listener = browsers[1].listener
+        new_listener.add_service(zcs[1], SERVICE_TYPE, "current")
+        new_listener.update_service(zcs[1], SERVICE_TYPE, "current")
+        self.assertEqual(
+            events,
+            [
+                ("add", "current", zcs[1].info),
+                ("update", "current", zcs[1].info),
+            ],
+        )
+
+    def test_production_backend_ignores_callback_after_stop(self) -> None:
+        backend, zcs, browsers, events = self._make_production_zeroconf_backend()
+        backend.start(
+            DiscoveryAdvertisement(
+                stable_id="local",
+                display_name="Local",
+                hostname="localhost",
+                app_version="1",
+            )
+        )
+        listener = browsers[0].listener
+        backend.stop()
+        self.assertTrue(browsers[0].cancelled)
+        self.assertTrue(zcs[0].closed)
+
+        listener.add_service(zcs[0], SERVICE_TYPE, "late")
+        listener.remove_service(zcs[0], SERVICE_TYPE, "late")
+
+        self.assertEqual(events, [])
+
+    def test_production_backend_delivers_synchronous_browser_callback(self) -> None:
+        backend, _zcs, _browsers, events = self._make_production_zeroconf_backend(
+            synchronous_browser_callback=True
+        )
+
+        backend.start(
+            DiscoveryAdvertisement(
+                stable_id="local",
+                display_name="Local",
+                hostname="localhost",
+                app_version="1",
+            )
+        )
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0][:2], ("add", "early"))
+
     def test_advertisement_properties_preserve_false_and_zero_values(self) -> None:
         properties = _advertisement_txt_properties(
             DiscoveryAdvertisement(
