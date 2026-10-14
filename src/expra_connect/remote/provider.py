@@ -8,12 +8,13 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from .identity import NodeId
-from .models import NodePermission, ProcessActionKind
-from .observability import ObservabilityWatcher, observation_scope
-from .pairing.models import PairingTransaction
-from .provider_requests import ProviderRequestMixin
-from .remote_models import (
+from ..identity import NodeId
+from ..models import NodePermission, ProcessActionKind
+from ..observability import ObservabilityWatcher, observation_scope
+from ..pairing.models import PairingTransaction
+from ..surfaces.provider import SurfaceProviderMixin
+from ..transport.socket_transport import _invoke_with_optional_cancel
+from .models import (
     ClusterDataError,
     NodeSnapshot,
     ProcessActionResult,
@@ -27,9 +28,8 @@ from .remote_models import (
     process_candidate_from_dict,
     resource_summary_from_dict,
 )
-from .remote_role_operations import RemoteRoleOperations
-from .socket_transport import _invoke_with_optional_cancel
-from .surfaces.provider import SurfaceProviderMixin
+from .requests import ProviderRequestMixin
+from .role_operations import RemoteRoleOperations
 from .wire_protocol import (
     DEFAULT_FRESHNESS_SECONDS,
     PAIRING_MODE_TRANSACTIONAL,

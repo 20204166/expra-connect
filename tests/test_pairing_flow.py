@@ -1,12 +1,12 @@
 import unittest
 from unittest.mock import patch
 
-from expra_connect.identity import NodeId, NodeIdentity
-from expra_connect.models import (
+from expra_connect.discovery.models import (
     DiscoveredNodeCandidate,
     EndpointCandidate,
     EndpointSource,
 )
+from expra_connect.identity import NodeId, NodeIdentity
 from expra_connect.pairing.flow import NetworkPairing
 from expra_connect.pairing.manager import PairingManager
 

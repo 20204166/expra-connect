@@ -69,7 +69,7 @@ def _connection_samples(
 
 def _retry_evidence() -> dict[str, Any]:
     from expra_connect import RetryState
-    from expra_connect.connection_state import PeerFailure
+    from expra_connect.connections.state import PeerFailure
 
     retry = RetryState()
     attempts: list[int] = []
@@ -87,7 +87,7 @@ def _retry_evidence() -> dict[str, Any]:
         "authentication_disables_retry": (
             not retry.automatic_retry and retry.next_attempt_at is None
         ),
-        "cadence_source": "expra_connect.connection_state.RetryState",
+        "cadence_source": "expra_connect.connections.state.RetryState",
     }
 
 

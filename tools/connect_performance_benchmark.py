@@ -34,8 +34,8 @@ from typing import Any
 # ---------------------------------------------------------------------------
 from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerprint
 from expra_connect.persistence import MessagePackStateStore, YamlStateStore
-from expra_connect.session import LogicalSessionRegistry
-from expra_connect.wire_protocol import (
+from expra_connect.remote.session import LogicalSessionRegistry
+from expra_connect.remote.wire_protocol import (
     RemoteRequest,
     ReplayCache,
     sign_request,

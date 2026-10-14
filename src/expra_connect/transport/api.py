@@ -6,8 +6,8 @@ import json
 from threading import Event
 from typing import Any, cast
 
+from ..remote.wire_protocol import RemoteProtocolError, RemoteTransportError
 from .socket_transport import SocketRemoteTransport
-from .wire_protocol import RemoteProtocolError, RemoteTransportError
 
 TransportError = RemoteTransportError
 

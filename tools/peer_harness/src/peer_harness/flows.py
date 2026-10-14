@@ -11,7 +11,7 @@ from threading import Event
 from typing import Any, cast
 
 from expra_connect import ConnectConfig, ConnectRuntime, NodeId, __version__
-from expra_connect.wire_protocol import RemoteAuthorizationError
+from expra_connect.remote.wire_protocol import RemoteAuthorizationError
 
 from .events import CAPABILITY, discovery_event, write_event
 from .surfaces import (

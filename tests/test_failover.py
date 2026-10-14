@@ -1,13 +1,13 @@
 import unittest
 
-from expra_connect.failover import FailoverCoordinator
-from expra_connect.identity import NodeId
-from expra_connect.role_engine import (
+from expra_connect.cluster import (
     ClusterRole,
     CoordinatorEpoch,
     RoleAssignment,
     RoleState,
 )
+from expra_connect.cluster.failover import FailoverCoordinator
+from expra_connect.identity import NodeId
 
 
 class FailoverTests(unittest.TestCase):

@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from expra_connect.connection_state import (
+from expra_connect.connections.state import (
     ConnectionState,
     ConnectionStatus,
     PeerFailure,

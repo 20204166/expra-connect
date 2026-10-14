@@ -19,15 +19,15 @@ from collections.abc import Callable
 from contextlib import suppress
 from typing import Any
 
-from .models import TrustedNodeRecord
-from .tls_material import certificate_fingerprint
-from .wire_protocol import (
+from ..remote.wire_protocol import (
     MAX_ENVELOPE_BYTES,
     RemoteAuthError,
     RemoteExecutionError,
     RemoteProtocolError,
     RemoteTransportError,
 )
+from .models import TrustedNodeRecord
+from .tls_material import certificate_fingerprint
 
 __all__ = [
     "MemoryRemoteTransport",

@@ -17,8 +17,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
-from .observability import ObservabilityWatcher, observation_scope
-from .persistence import (
+from ..observability import ObservabilityWatcher, observation_scope
+from ..persistence import (
     MessagePackStateStore,
     StateDataError,
     _atomic_write,

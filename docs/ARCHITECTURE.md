@@ -18,26 +18,46 @@ topology state, not a transport state.
 
 | Responsibility | Canonical owner | Runtime role |
 | --- | --- | --- |
-| Stable logical identifier | `identity.py` | `NodeId` is public and non-secret |
-| Canonical device cryptographic root | `device_identity.py` | Bridges metadata in `device_identity.yaml` to private material in `device_identity.msgpack` |
-| Best-effort hardware anomaly evidence | `device_hardware.py` | Normalizes local identifiers and persists only a domain-separated digest and source presence |
-| Network compatibility identity | `identity.py` | Bridges metadata in `identity.yaml` to HMAC/root private material in `identity.msgpack` |
-| TLS generation lifecycle | `transport_generation.py`, `identity.py`, `tls_material.py` | Manages generation continuity without changing `NodeId`; identity owns proof signing and verification |
-| Candidate discovery and expiry | `discovery/` | `candidates.py` owns validation/ranking/TTL, `network.py` owns lifecycle, and `backend.py` adapts Zeroconf |
+| Stable logical identifier | `identity/` | `identity/__init__.py` owns `NodeId` and proof mechanisms; `NodeId` is public and non-secret |
+| Canonical device cryptographic root | `identity/device_identity.py` | Bridges metadata in `device_identity.yaml` to private material in `device_identity.msgpack` |
+| Best-effort hardware anomaly evidence | `identity/device_hardware.py` | Normalizes local identifiers and persists only a domain-separated digest and source presence |
+| Network compatibility identity | `identity/` | Bridges metadata in `identity.yaml` to HMAC/root private material in `identity.msgpack` |
+| TLS generation lifecycle | `identity/transport_generation.py`, `transport/tls_material.py` | Manages generation continuity without changing `NodeId`; identity owns proof signing and verification |
+| Candidate discovery and expiry | `discovery/` | `models.py` owns candidate/endpoint values; `candidates.py` owns ranking/TTL, `network.py` owns lifecycle, and `backend.py` adapts Zeroconf |
 | Pairing, grants, trust, and revocation | `pairing/` | `manager.py` owns directional trust; `flow.py` and `target.py` own outbound and inbound pairing flows |
-| TLS/HMAC request security | `tls_material.py`, `wire_protocol.py`, `remote_service.py` | Composes the authenticated server boundary |
-| Authenticated remote client operations | `remote_provider.py`, `provider_requests.py` | Exposes client operations while reusing shared request, surface, role, and transport mechanisms |
-| One-endpoint socket exchange | `socket_transport.py` | Connects, pins TLS before sending, frames one request/response, and closes the socket |
-| Outgoing connection state and providers | `connection_manager.py`, `connection_state.py` | Connects only discovered trusted peers |
-| Logical sessions and request safety | `session.py`, `provider_requests.py`, `wire_protocol.py` | Authenticates resume, fences old sockets, and bounds idempotent results |
-| Target-owned capability policy | `sharing.py` | Keeps explicit, ephemeral per-peer read-only grants and injects the allowlist into `RemoteService` |
-| Optional cluster membership, roles, invites, leases, and fencing | `cluster/` | Enabled only by `ConnectConfig.cluster_enabled`; deliberate flat modules remain public API surfaces |
+| TLS/HMAC request security | `transport/tls_material.py`, `remote/wire_protocol.py`, `remote/service.py` | Composes the authenticated server boundary |
+| Authenticated remote client operations | `remote/provider.py`, `remote/requests.py` | Exposes client operations while reusing shared request, surface, role, and transport mechanisms |
+| One-endpoint socket exchange | `transport/socket_transport.py` | Connects, pins TLS before sending, frames one request/response, and closes the socket |
+| Outgoing connection state and providers | `connections/` | `manager.py` connects discovered trusted peers; `state.py` owns connection/retry state |
+| Node trust/membership/connection projection | `nodes/registry.py` | Projects axes without becoming pairing or cluster authority |
+| Logical sessions and request safety | `remote/session.py`, `remote/requests.py`, `remote/wire_protocol.py` | Authenticates resume, fences old sockets, and bounds idempotent results |
+| Target-owned capability policy | `sharing/capabilities.py` | Keeps explicit, ephemeral per-peer read-only grants and injects the allowlist into `RemoteService` |
+| Optional cluster membership, roles, invites, leases, and fencing | `cluster/` | Enabled only by `ConnectConfig.cluster_enabled`; focused modules remain colocated under the cluster owner |
 | Structured application surfaces | `surfaces/` | `registry.py` owns registration/grants/dispatch, `protocol.py` validates operation contracts, and `provider.py` adapts RPC |
 | Host UI/event-loop delivery | Host application | Queues callbacks onto its own UI/runtime thread |
 
-`runtime.py` is intentionally a composition root and lifecycle facade. It does
+## Production Package Layout
+
+```text
+expra_connect/
+  __init__.py, _version.py, cli.py
+  models.py, observability.py, persistence.py
+  cluster/       discovery/       identity/       pairing/
+  connections/   nodes/           remote/         runtime/
+  sharing/       surfaces/        transport/
+```
+
+The root contains only the public facade, executable entry point, version
+metadata, and cross-feature contracts/mechanisms. Feature-owned implementation
+is grouped under the package named for its responsibility. `nodes/registry.py`
+projects trust, membership, and connection axes but does not replace the
+pairing or cluster authorities. Generic capability sharing (`sharing/`) and
+structured surfaces (`surfaces/`) remain separate authorization domains.
+
+`runtime/core.py` is intentionally a composition root and lifecycle owner; the
+`runtime` package facade exports its supported runtime API. It does
 not implement a second discovery, transport, pairing, or capability system.
-`profile_state.py` owns exclusive runtime use of a profile and the paired
+`identity/profile_state.py` owns exclusive runtime use of a profile and the paired
 NodeIdentity/DeviceIdentity load-or-create lifecycle. A nonblocking OS lock is
 held until runtime shutdown; a second process using the same profile fails
 closed without creating a replacement identity.

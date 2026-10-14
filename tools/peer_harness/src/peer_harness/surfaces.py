@@ -8,7 +8,7 @@ from threading import Event
 from typing import Any
 
 from expra_connect import ConnectRuntime
-from expra_connect.wire_protocol import RemoteAuthorizationError
+from expra_connect.remote.wire_protocol import RemoteAuthorizationError
 
 from .events import write_event
 

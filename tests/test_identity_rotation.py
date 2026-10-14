@@ -8,12 +8,12 @@ from expra_connect.identity import (
     NodeId,
     NodeIdentity,
 )
-from expra_connect.persistence import JsonStateStore, StateDataError, YamlStateStore
-from expra_connect.transport_generation import (
+from expra_connect.identity.transport_generation import (
     RotationConflict,
     TransportGenerationManager,
     TransportStateError,
 )
+from expra_connect.persistence import JsonStateStore, StateDataError, YamlStateStore
 
 
 class IdentityRotationTests(unittest.TestCase):

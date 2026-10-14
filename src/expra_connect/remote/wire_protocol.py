@@ -10,15 +10,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from .identity import NodeId
-from .models import (
+from ..identity import NodeId
+from ..models import (
     READ_PERMISSIONS,
     NodeCapability,
     NodePermission,
     ProcessActionKind,
 )
-from .sharing import _is_valid_capability_id
-from .surfaces.protocol import (
+from ..sharing.capabilities import _is_valid_capability_id
+from ..surfaces.protocol import (
     SURFACE_OPERATION_SAFETY,
     SURFACE_OPERATIONS,
     SURFACE_REQUIRED_CAPABILITY,

@@ -14,6 +14,9 @@ from typing import Protocol
 _HARDWARE_HINT_DOMAIN = b"expra-connect/device-hardware-hint/v1\0"
 
 _MAC_PATTERN = re.compile(r"^[0-9a-f]{12}$")
+_DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+_HARDWARE_SOURCE_PATTERN = re.compile(r"^[a-z0-9-]+$")
+_MAC_SEPARATOR_TRANSLATION = str.maketrans("", "", "-: .")
 
 
 class DeviceHardwareProvider(Protocol):
@@ -79,58 +82,71 @@ class DeviceHardwareHint:
     sources_present: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.digest, str) or not re.fullmatch(
-            r"[0-9a-f]{64}", self.digest
+        if not isinstance(self.digest, str) or not _DIGEST_PATTERN.fullmatch(
+            self.digest
         ):
             raise ValueError("hardware hint digest is invalid")
-        if not isinstance(self.sources_present, tuple) or not all(
-            isinstance(source, str) for source in self.sources_present
-        ):
-            raise ValueError("hardware hint sources are invalid")
-        if tuple(sorted(set(self.sources_present))) != self.sources_present:
-            raise ValueError("hardware hint sources are invalid")
-        if any(
-            not source or not re.fullmatch(r"[a-z0-9-]+", source)
-            for source in self.sources_present
-        ):
+
+        sources = self.sources_present
+        valid_sources = (
+            isinstance(sources, tuple)
+            and all(
+                isinstance(source, str)
+                and _HARDWARE_SOURCE_PATTERN.fullmatch(source) is not None
+                for source in sources
+            )
+            and tuple(sorted(set(sources))) == sources
+        )
+        if not valid_sources:
             raise ValueError("hardware hint sources are invalid")
 
 
 def normalize_mac_addresses(values: Iterable[str]) -> tuple[str, ...]:
+    """Return sorted, unique, usable MAC addresses in canonical hex form."""
     normalized: set[str] = set()
+
     for value in values:
         if not isinstance(value, str):
             continue
-        compact = re.sub(r"[-: .]", "", value.strip().lower())
+
+        compact = value.strip().lower().translate(_MAC_SEPARATOR_TRANSLATION)
         if not _MAC_PATTERN.fullmatch(compact):
             continue
+
         first_octet = int(compact[:2], 16)
-        if first_octet & 1 or compact == "0" * 12:
+        if compact == "0" * 12 or first_octet & 1:
             continue
+
         normalized.add(compact)
+
     return tuple(sorted(normalized))
 
 
 def collect_hardware_hint(
     provider: DeviceHardwareProvider | None = None,
 ) -> DeviceHardwareHint | None:
-    source = provider or _SystemHardwareProvider()
+    """Collect available hardware evidence into a stable, non-sensitive digest."""
+    source = provider if provider is not None else _SystemHardwareProvider()
+
     macs = normalize_mac_addresses(_safe_macs(source))
     machine_id = _safe_machine_id(source)
-    values: list[str] = []
-    sources: list[str] = []
+
+    evidence: list[tuple[str, str]] = []
+
     if macs:
-        values.append("macs:" + ",".join(macs))
-        sources.append("mac")
+        evidence.append(("mac", "macs:" + ",".join(macs)))
+
     if machine_id:
-        values.append("machine-id:" + machine_id)
-        sources.append("machine-id")
-    if not values:
+        evidence.append(("machine-id", "machine-id:" + machine_id))
+
+    if not evidence:
         return None
-    digest = sha256(
-        _HARDWARE_HINT_DOMAIN + "\0".join(values).encode("utf-8")
-    ).hexdigest()
-    return DeviceHardwareHint(digest, tuple(sources))
+
+    payload = "\0".join(value for _, value in evidence).encode("utf-8")
+    digest = sha256(_HARDWARE_HINT_DOMAIN + payload).hexdigest()
+    sources_present = tuple(source_name for source_name, _ in evidence)
+
+    return DeviceHardwareHint(digest, sources_present)
 
 
 def _safe_macs(provider: DeviceHardwareProvider) -> Iterable[str]:

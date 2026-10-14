@@ -2,9 +2,9 @@
 
 from typing import Any
 
+from ..remote.wire_protocol import *
+from ..remote.wire_protocol import MAX_ENVELOPE_BYTES
 from .socket_transport import _recv_frame, _send_frame
-from .wire_protocol import *
-from .wire_protocol import MAX_ENVELOPE_BYTES
 
 MAX_FRAME = MAX_ENVELOPE_BYTES
 

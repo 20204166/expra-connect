@@ -3,7 +3,7 @@
 from typing import Any
 
 from ..cluster.models import CapabilityGrant
-from ..wire_protocol import (
+from ..remote.wire_protocol import (
     RemoteAuthorizationError,
     RemoteProtocolError,
     RemoteRequest,

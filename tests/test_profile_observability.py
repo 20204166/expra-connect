@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from expra_connect.device_identity import DeviceIdentity
 from expra_connect.identity import NodeId, NodeIdentity
+from expra_connect.identity.device_identity import DeviceIdentity
 from expra_connect.observability import ObservabilityWatcher
 from expra_connect.runtime import ConnectConfig, ConnectRuntime, RuntimeState
 

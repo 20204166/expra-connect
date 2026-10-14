@@ -10,29 +10,30 @@ from unittest.mock import patch
 
 from expra_connect import __version__
 from expra_connect.cluster import Cluster, ClusterRole
+from expra_connect.cluster import ClusterRole as RegistryClusterRole
+from expra_connect.discovery.models import DiscoveredNodeCandidate
 from expra_connect.discovery.network import DiscoveryAdvertisement
 from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerprint
-from expra_connect.models import DiscoveredNodeCandidate, NodeCapability, NodePermission
+from expra_connect.models import NodeCapability, NodePermission
+from expra_connect.nodes.registry import TrustState
 from expra_connect.observability import ObservabilityWatcher
 from expra_connect.pairing.manager import PeerGrant, TrustedPeer
 from expra_connect.pairing.models import PairingTransaction
-from expra_connect.registry import TrustState
-from expra_connect.remote_provider import AuthenticatedNodeProvider
-from expra_connect.role_engine import ClusterRole as RegistryClusterRole
+from expra_connect.remote.provider import AuthenticatedNodeProvider
+from expra_connect.remote.wire_protocol import (
+    CapabilityElevationRequest,
+    PairingControlRequest,
+    PairingRequest,
+    RemoteRequest,
+)
 from expra_connect.runtime import (
     ConnectConfig,
     ConnectRuntime,
     RuntimeState,
     RuntimeStatus,
 )
-from expra_connect.socket_transport import TLSRemoteTransport
 from expra_connect.surfaces.registry import SurfaceAccess
-from expra_connect.wire_protocol import (
-    CapabilityElevationRequest,
-    PairingControlRequest,
-    PairingRequest,
-    RemoteRequest,
-)
+from expra_connect.transport.socket_transport import TLSRemoteTransport
 
 
 class _UnavailableDiscoveryBackend:
@@ -706,7 +707,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
                 ConnectConfig(profile_dir=Path(directory), preferred_port=0)
             )
             with patch(
-                "expra_connect.runtime.NodeIdentity.save",
+                "expra_connect.runtime.core.NodeIdentity.save",
                 side_effect=OSError("profile is read-only"),
             ):
                 status = runtime.start()
@@ -729,7 +730,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             runtime.sharing.allow(peer_id, "test.read_state")
 
             with patch(
-                "expra_connect.runtime.RemoteSocketServer.start",
+                "expra_connect.runtime.core.RemoteSocketServer.start",
                 side_effect=OSError("listener unavailable"),
             ):
                 status = runtime.start()
@@ -1346,7 +1347,7 @@ class RuntimeClusterOperationTests(unittest.TestCase):
 
             with (
                 patch(
-                    "expra_connect.runtime.YamlStateStore.save",
+                    "expra_connect.runtime.core.YamlStateStore.save",
                     side_effect=OSError("disk full"),
                 ),
                 self.assertRaises(RuntimeError),

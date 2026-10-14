@@ -8,7 +8,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
-from ..models import EndpointCandidate, EndpointSource
+from .models import EndpointCandidate, EndpointSource
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,22 +57,33 @@ def validate_candidate(
         raise ValueError("invalid discovery endpoint")
 
 
+_PREFERRED_IPV4_NETWORKS: tuple[ipaddress.IPv4Network, ...] = (
+    ipaddress.IPv4Network("192.168.0.0/16"),
+    ipaddress.IPv4Network("172.16.0.0/12"),
+    ipaddress.IPv4Network("10.0.0.0/8"),
+    ipaddress.IPv4Network("100.64.0.0/10"),
+)
+
+_FALLBACK_ADDRESS_RANK = len(_PREFERRED_IPV4_NETWORKS)
+_INVALID_ADDRESS_RANK = _FALLBACK_ADDRESS_RANK + 1
+
+
 def _address_rank(address: str) -> int:
+    """Rank addresses by preferred local-network reachability."""
     try:
         parsed = ipaddress.ip_address(address)
     except ValueError:
-        return 5
+        return _INVALID_ADDRESS_RANK
+
     if parsed.is_loopback:
-        return 4
-    if parsed.version == 4 and parsed in ipaddress.ip_network("192.168.0.0/16"):
-        return 0
-    if parsed.version == 4 and parsed in ipaddress.ip_network("172.16.0.0/12"):
-        return 1
-    if parsed.version == 4 and parsed in ipaddress.ip_network("10.0.0.0/8"):
-        return 2
-    if parsed.version == 4 and parsed in ipaddress.ip_network("100.64.0.0/10"):
-        return 3
-    return 4
+        return _FALLBACK_ADDRESS_RANK
+
+    if isinstance(parsed, ipaddress.IPv4Address):
+        for rank, network in enumerate(_PREFERRED_IPV4_NETWORKS):
+            if parsed in network:
+                return rank
+
+    return _FALLBACK_ADDRESS_RANK
 
 
 def preferred_address(addresses: tuple[str, ...]) -> str:

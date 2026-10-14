@@ -7,8 +7,8 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from .identity import NodeId, NodeIdentity, verify_transport_proof
-from .persistence import StateDataError, YamlStateStore
+from ..persistence import StateDataError, YamlStateStore
+from . import NodeId, NodeIdentity, verify_transport_proof
 
 
 class RotationConflict(ValueError):

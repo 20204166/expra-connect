@@ -10,6 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
+from typing import TypeGuard
 
 import yaml
 from cryptography.exceptions import InvalidSignature
@@ -19,6 +20,14 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
+from ..observability import ObservabilityWatcher, observation_scope
+from ..persistence import (
+    MessagePackStateStore,
+    StateDataError,
+    _atomic_write,
+    _save_text_document,
+)
+from . import NodeId, NodeIdentity, _decode_root_private_key
 from .device_hardware import (
     DeviceHardwareHint as _DeviceHardwareHint,
 )
@@ -27,14 +36,6 @@ from .device_hardware import (
 )
 from .device_hardware import (
     collect_hardware_hint as _collect_hardware_hint,
-)
-from .identity import NodeId, NodeIdentity, _decode_root_private_key
-from .observability import ObservabilityWatcher, observation_scope
-from .persistence import (
-    MessagePackStateStore,
-    StateDataError,
-    _atomic_write,
-    _save_text_document,
 )
 
 DEVICE_IDENTITY_SCHEMA_VERSION = 1
@@ -53,6 +54,41 @@ _DEVICE_IDENTITY_JSON_FIELDS = frozenset(
     }
 )
 _FINGERPRINT_PREFIX = "ed25519:"
+_RAW_ED25519_KEY_SIZE = 32
+
+
+def _is_raw_ed25519_key(value: object) -> TypeGuard[bytes]:
+    return isinstance(value, bytes) and len(value) == _RAW_ED25519_KEY_SIZE
+
+
+def _is_valid_created_at(value: object) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
+        and value > 0
+    )
+
+
+def _is_valid_identity_extensions(value: object) -> bool:
+    return isinstance(value, tuple) and all(
+        isinstance(item, tuple)
+        and len(item) == 2
+        and isinstance(item[0], str)
+        and item[0] not in _DEVICE_IDENTITY_JSON_FIELDS
+        for item in value
+    )
+
+
+def _public_key_from_private_bytes(private_key: bytes) -> bytes:
+    return (
+        Ed25519PrivateKey.from_private_bytes(private_key)
+        .public_key()
+        .public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        )
+    )
 
 
 class DeviceIdentityError(StateDataError):
@@ -89,43 +125,29 @@ class DeviceIdentity:
 
     def __post_init__(self) -> None:
         if not isinstance(self.node_id, NodeId):
-            raise ValueError(  # noqa: TRY004 - preserve malformed-state contract.
+            raise ValueError(  # noqa: TRY004 - retain malformed-document error contract.
                 "device identity node id is invalid"
             )
+
         if self.schema_version != DEVICE_IDENTITY_SCHEMA_VERSION:
             raise ValueError("unsupported device identity schema")
-        if not isinstance(self.public_key, bytes) or len(self.public_key) != 32:
+
+        if not _is_raw_ed25519_key(self.public_key):
             raise ValueError("device identity public key is invalid")
-        if (
-            not isinstance(self._private_key_bytes, bytes)
-            or len(self._private_key_bytes) != 32
-        ):
+
+        if not _is_raw_ed25519_key(self._private_key_bytes):
             raise ValueError("device identity private key is invalid")
-        if not isinstance(self.created_at, (int, float)) or isinstance(
-            self.created_at, bool
-        ):
-            raise ValueError(  # noqa: TRY004 - preserve malformed-state contract.
-                "device identity creation time is invalid"
-            )
-        if not math.isfinite(float(self.created_at)) or self.created_at <= 0:
+
+        if not _is_valid_created_at(self.created_at):
             raise ValueError("device identity creation time is invalid")
+
         if self.fingerprint != fingerprint_for_public_key(self.public_key):
             raise ValueError("device identity fingerprint is invalid")
-        derived = Ed25519PrivateKey.from_private_bytes(
-            self._private_key_bytes
-        ).public_key()
-        derived_public = derived.public_bytes(
-            serialization.Encoding.Raw, serialization.PublicFormat.Raw
-        )
-        if derived_public != self.public_key:
+
+        if _public_key_from_private_bytes(self._private_key_bytes) != self.public_key:
             raise ValueError("device identity key pair does not match")
-        if not isinstance(self._extensions, tuple) or any(
-            not isinstance(item, tuple)
-            or len(item) != 2
-            or not isinstance(item[0], str)
-            or item[0] in _DEVICE_IDENTITY_JSON_FIELDS
-            for item in self._extensions
-        ):
+
+        if not _is_valid_identity_extensions(self._extensions):
             raise ValueError("device identity extensions are invalid")
 
     @classmethod
@@ -143,7 +165,8 @@ class DeviceIdentity:
             serialization.NoEncryption(),
         )
         public = private.public_key().public_bytes(
-            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
         )
         return cls(
             node_id=node_id,
@@ -169,6 +192,7 @@ class DeviceIdentity:
             raise DeviceIdentityError(
                 "device identity NodeId does not match local NodeId"
             )
+
         try:
             private_key = _decode_root_private_key(node_identity.root_private_key)
             private_key_bytes = private_key.private_bytes(
@@ -180,12 +204,15 @@ class DeviceIdentity:
             raise DeviceIdentityError(
                 "active node identity root is malformed"
             ) from error
+
         public_key = private_key.public_key().public_bytes(
-            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
         )
         current_hint = _collect_hardware_hint(hardware_provider)
         stored_hint = existing.hardware_hint if existing is not None else None
         changed, hint_status = _hardware_hint_state(stored_hint, current_hint)
+
         return cls(
             node_id=node_identity.node_id,
             public_key=public_key,
@@ -213,12 +240,15 @@ class DeviceIdentity:
             value = path.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
+
         try:
             document = yaml.safe_load(value)
         except (TypeError, ValueError, yaml.YAMLError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
+
         if not isinstance(document, dict):
             raise DeviceIdentityError("device identity is malformed")
+
         profile_version = document.get("schema_version")
         if (
             not isinstance(profile_version, bool)
@@ -230,8 +260,11 @@ class DeviceIdentity:
                 expected_node_id,
                 hardware_provider=hardware_provider,
             )
+
         identity = cls.from_json(
-            value, expected_node_id, hardware_provider=hardware_provider
+            value,
+            expected_node_id,
+            hardware_provider=hardware_provider,
         )
         with observation_scope(observer, "profile:device_identity_migration"):
             identity.save(path)
@@ -250,6 +283,7 @@ class DeviceIdentity:
         raw_public_key = metadata.get("public_key")
         fingerprint = metadata.get("fingerprint")
         created_at = metadata.get("created_at")
+
         if (
             not isinstance(raw_node_id, str)
             or not isinstance(raw_public_key, str)
@@ -258,21 +292,26 @@ class DeviceIdentity:
             or isinstance(created_at, bool)
         ):
             raise DeviceIdentityError("device identity metadata is malformed")
+
         try:
             node_id = NodeId(raw_node_id)
         except ValueError as error:
             raise DeviceIdentityError("device identity NodeId is invalid") from error
+
         if expected_node_id is not None and node_id != expected_node_id:
             raise DeviceIdentityError(
                 "device identity NodeId does not match local NodeId"
             )
+
         secret_path = path.with_suffix(".msgpack")
         if not secret_path.exists():
             raise DeviceIdentityError("device identity private key is missing")
+
         try:
             public_key = _decode_bytes(raw_public_key)
             secret_bundle = MessagePackStateStore(secret_path).load()
             private_key = secret_bundle.get("private_key")
+
             if (
                 set(secret_bundle)
                 != {"schema_version", "node_id", "fingerprint", "private_key"}
@@ -281,17 +320,12 @@ class DeviceIdentity:
                 != DEVICE_IDENTITY_SECRET_SCHEMA_VERSION
                 or secret_bundle.get("node_id") != node_id.value
                 or secret_bundle.get("fingerprint") != fingerprint
-                or not isinstance(private_key, bytes)
-                or len(private_key) != 32
+                or not _is_raw_ed25519_key(private_key)
             ):
                 raise ValueError("device identity secret bundle is malformed")
-            derived_public = (
-                Ed25519PrivateKey.from_private_bytes(private_key)
-                .public_key()
-                .public_bytes(
-                    serialization.Encoding.Raw, serialization.PublicFormat.Raw
-                )
-            )
+
+            derived_public = _public_key_from_private_bytes(private_key)
+
             if (
                 derived_public != public_key
                 or fingerprint != fingerprint_for_public_key(public_key)
@@ -299,6 +333,7 @@ class DeviceIdentity:
                 raise ValueError(
                     "device identity secret bundle does not match metadata"
                 )
+
         except (StateDataError, TypeError, ValueError) as error:
             raise DeviceIdentityError(
                 "device identity private key bundle is invalid"
@@ -309,6 +344,7 @@ class DeviceIdentity:
         }
         legacy_document["schema_version"] = DEVICE_IDENTITY_SCHEMA_VERSION
         legacy_document["private_key"] = _encode_bytes(private_key)
+
         return cls.from_json(
             json.dumps(legacy_document),
             expected_node_id,
@@ -324,6 +360,7 @@ class DeviceIdentity:
         hardware_provider: _DeviceHardwareProvider | None = None,
     ) -> DeviceIdentity:
         """Read a legacy full-JSON record; profile loading handles split records."""
+
         try:
             document = json.loads(value)
             if not isinstance(document, dict):
@@ -333,14 +370,18 @@ class DeviceIdentity:
             raise
         except (TypeError, ValueError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
+
         if expected_node_id is not None and identity.node_id != expected_node_id:
             raise DeviceIdentityError(
                 "device identity NodeId does not match local NodeId"
             )
+
         current_hint = _collect_hardware_hint(hardware_provider)
         changed, hint_status = _hardware_hint_state(
-            identity.hardware_hint, current_hint
+            identity.hardware_hint,
+            current_hint,
         )
+
         return DeviceIdentity(
             node_id=identity.node_id,
             public_key=identity.public_key,
@@ -356,6 +397,7 @@ class DeviceIdentity:
 
     def to_json(self) -> str:
         """Serialize the legacy full-JSON shape for compatibility and migration."""
+
         document: dict[str, object] = dict(self._extensions)
         document.update(
             {
@@ -367,9 +409,11 @@ class DeviceIdentity:
                 "created_at": self.created_at,
             }
         )
+
         if self.hardware_hint is not None:
             document["hardware_hint_digest"] = self.hardware_hint.digest
             document["hardware_hint_sources"] = list(self.hardware_hint.sources_present)
+
         return json.dumps(document, sort_keys=True, separators=(",", ":"))
 
     def save(self, path: Path) -> None:
@@ -380,6 +424,7 @@ class DeviceIdentity:
             "private_key": self._private_key_bytes,
         }
         MessagePackStateStore(path.with_suffix(".msgpack")).save(secret_bundle)
+
         metadata: dict[str, object] = {
             key: value
             for key, value in self._extensions
@@ -394,9 +439,11 @@ class DeviceIdentity:
                 "created_at": self.created_at,
             }
         )
+
         if self.hardware_hint is not None:
             metadata["hardware_hint_digest"] = self.hardware_hint.digest
             metadata["hardware_hint_sources"] = list(self.hardware_hint.sources_present)
+
         _save_text_document(path, metadata, atomic_write=_atomic_write)
 
     def public_view(self) -> DeviceIdentityView:
@@ -413,19 +460,27 @@ class DeviceIdentity:
 
     def verify(self, data: bytes, signature: bytes) -> bool:
         try:
-            Ed25519PublicKey.from_public_bytes(self.public_key).verify(signature, data)
+            Ed25519PublicKey.from_public_bytes(self.public_key).verify(
+                signature,
+                data,
+            )
         except (InvalidSignature, TypeError, ValueError):
             return False
         return True
 
     @classmethod
-    def _from_document(cls, document: dict[object, object]) -> DeviceIdentity:
+    def _from_document(
+        cls,
+        document: dict[object, object],
+    ) -> DeviceIdentity:
         if document.get("schema_version") != DEVICE_IDENTITY_SCHEMA_VERSION:
             raise DeviceIdentityError("unsupported device identity schema")
+
         try:
             raw_node_id = document["node_id"]
             if not isinstance(raw_node_id, str):
                 raise ValueError  # noqa: TRY004 - normalize malformed persisted state.
+
             node_id = NodeId(raw_node_id)
             public_key = _decode_bytes(document["public_key"])
             private_key = _decode_bytes(document["private_key"])
@@ -433,23 +488,31 @@ class DeviceIdentity:
             created_at = document["created_at"]
             digest = document.get("hardware_hint_digest")
             sources = document.get("hardware_hint_sources", [])
+
             if not isinstance(fingerprint, str) or not isinstance(
-                created_at, (int, float)
+                created_at,
+                (int, float),
             ):
                 raise ValueError  # noqa: TRY004 - normalize malformed persisted state.
+
             if isinstance(created_at, bool):
                 raise ValueError  # noqa: TRY004 - normalize malformed persisted state.
+
             if not isinstance(sources, list) or not all(
                 isinstance(item, str) for item in sources
             ):
                 raise ValueError
+
             if digest is not None and not isinstance(digest, str):
                 raise ValueError
+
             if digest is not None and not sources:
                 raise ValueError
+
             hardware_hint = (
                 None if digest is None else _DeviceHardwareHint(digest, tuple(sources))
             )
+
             return cls(
                 node_id=node_id,
                 public_key=public_key,
@@ -464,12 +527,13 @@ class DeviceIdentity:
                     and name not in _DEVICE_IDENTITY_JSON_FIELDS
                 ),
             )
+
         except (KeyError, TypeError, ValueError, OverflowError) as error:
             raise DeviceIdentityError("device identity is malformed") from error
 
 
 def fingerprint_for_public_key(public_key: bytes) -> str:
-    if not isinstance(public_key, bytes) or len(public_key) != 32:
+    if not _is_raw_ed25519_key(public_key):
         raise ValueError("device identity public key is invalid")
     return _FINGERPRINT_PREFIX + sha256(public_key).hexdigest()
 
@@ -494,9 +558,11 @@ def _encode_bytes(value: bytes) -> str:
 def _decode_bytes(value: object) -> bytes:
     if not isinstance(value, str):
         raise ValueError  # noqa: TRY004 - normalize malformed persisted state.
+
     decoded = base64.b64decode(value, validate=True)
-    if len(decoded) != 32:
+    if len(decoded) != _RAW_ED25519_KEY_SIZE:
         raise ValueError
+
     return decoded
 
 
@@ -519,9 +585,14 @@ def load_device_identity(
             observer=observer,
         )
         identity = DeviceIdentity.from_node_identity(
-            node_identity, existing, hardware_provider=provider
+            node_identity,
+            existing,
+            hardware_provider=provider,
         )
-        with observation_scope(observer, "profile:device_identity_format_migration"):
+        with observation_scope(
+            observer,
+            "profile:device_identity_format_migration",
+        ):
             identity.save(yaml_path)
         return identity
 
@@ -533,21 +604,29 @@ def load_device_identity(
             observer=observer,
         )
         identity = DeviceIdentity.from_node_identity(
-            node_identity, existing, hardware_provider=provider
+            node_identity,
+            existing,
+            hardware_provider=provider,
         )
         if identity.public_key != existing.public_key:
-            with observation_scope(observer, "profile:device_identity_migration"):
+            with observation_scope(
+                observer,
+                "profile:device_identity_migration",
+            ):
                 identity.save(yaml_path)
         return identity
 
     identity = DeviceIdentity.from_node_identity(
-        node_identity, hardware_provider=provider
+        node_identity,
+        hardware_provider=provider,
     )
     identity.save(yaml_path)
     return identity
 
 
-def device_identity_diagnostics(identity: DeviceIdentity) -> dict[str, object]:
+def device_identity_diagnostics(
+    identity: DeviceIdentity,
+) -> dict[str, object]:
     """Return only operational device identity fields."""
 
     view = identity.public_view()

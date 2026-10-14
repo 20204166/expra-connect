@@ -12,7 +12,7 @@ from expra_connect.persistence import (
     YamlStateStore,
     migrate_state,
 )
-from expra_connect.runtime_persistence import peer_grant_from_json
+from expra_connect.runtime.persistence import peer_grant_from_json
 
 
 class PersistenceTests(unittest.TestCase):

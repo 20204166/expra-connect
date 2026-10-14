@@ -2,7 +2,7 @@
 
 from typing import Any, cast
 
-from .remote_models import ProcessActionResult
+from .models import ProcessActionResult
 
 
 class RemoteProcessActionBackend:

@@ -13,17 +13,28 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from .cluster.roles import RoleAuthorizationError
-from .identity import NodeId, node_identity_fingerprint
-from .models import (
+from ..cluster.roles import RoleAuthorizationError
+from ..identity import NodeId, node_identity_fingerprint
+from ..models import (
     READ_CAPABILITIES,
     NodeCapability,
     NodePermission,
     ProcessActionKind,
 )
-from .observability import ObservabilityWatcher, observation_scope
-from .process_backend import RemoteProcessActionBackend
-from .remote_models import (
+from ..observability import ObservabilityWatcher, observation_scope
+from ..surfaces.protocol import SURFACE_ACCESS_BY_OPERATION, SURFACE_OPERATIONS
+from ..surfaces.provider import dispatch_surface_request
+from ..transport.server import (
+    PEER_SERVICE_DEFAULT_PORT,
+    RemoteSocketServer,
+)
+from ..transport.socket_transport import (
+    MemoryRemoteTransport,
+    SocketRemoteTransport,
+    TLSRemoteTransport,
+    build_trusted_transport,
+)
+from .models import (
     NodeSnapshot,
     NodeStatus,
     ProcessActionResult,
@@ -35,19 +46,8 @@ from .remote_models import (
     process_candidate_to_dict,
     resource_summary_to_dict,
 )
-from .server import (
-    PEER_SERVICE_DEFAULT_PORT,
-    RemoteSocketServer,
-)
+from .process_backend import RemoteProcessActionBackend
 from .session import LogicalSessionRegistry
-from .socket_transport import (
-    MemoryRemoteTransport,
-    SocketRemoteTransport,
-    TLSRemoteTransport,
-    build_trusted_transport,
-)
-from .surfaces.protocol import SURFACE_ACCESS_BY_OPERATION, SURFACE_OPERATIONS
-from .surfaces.provider import dispatch_surface_request
 from .wire_protocol import (
     DEFAULT_FRESHNESS_SECONDS,
     DEFAULT_IDEMPOTENCY_MAX_ENTRIES,

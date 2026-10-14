@@ -8,7 +8,7 @@ from peer_harness import flows
 from peer_harness.events import format_terminal_event
 
 from expra_connect import NodeId
-from expra_connect.wire_protocol import RemoteAuthorizationError
+from expra_connect.remote.wire_protocol import RemoteAuthorizationError
 
 
 class RunPeerTerminalOutputTests(unittest.TestCase):

@@ -3,9 +3,9 @@ import unittest
 from threading import Event
 from typing import Any, cast
 
-from expra_connect.server import PeerServer
+from expra_connect.remote.wire_protocol import RemoteExecutionError, RemoteProtocolError
 from expra_connect.transport import SocketTransport, TransportError
-from expra_connect.wire_protocol import RemoteExecutionError, RemoteProtocolError
+from expra_connect.transport.server import PeerServer
 
 
 class TransportTests(unittest.TestCase):

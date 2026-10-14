@@ -15,13 +15,13 @@ from typing import Any
 from ._version import __version__
 from .identity import NodeId, node_identity_fingerprint
 from .models import READ_CAPABILITIES
-from .remote_models import NodeStatus
-from .remote_provider import AuthenticatedNodeProvider
-from .remote_service import RemoteService
+from .remote.models import NodeStatus
+from .remote.provider import AuthenticatedNodeProvider
+from .remote.service import RemoteService
 from .runtime import ConnectConfig, ConnectRuntime
-from .server import RemoteSocketServer
-from .sharing import CapabilityShare
-from .socket_transport import SocketRemoteTransport
+from .sharing.capabilities import CapabilityShare
+from .transport.server import RemoteSocketServer
+from .transport.socket_transport import SocketRemoteTransport
 
 
 def _default_profile() -> Path:

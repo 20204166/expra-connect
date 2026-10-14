@@ -7,8 +7,14 @@ from typing import Any, Literal, cast
 from unittest.mock import Mock, patch
 
 from expra_connect.identity import NodeId
-from expra_connect.models import TrustedNodeRecord
-from expra_connect.socket_transport import (
+from expra_connect.remote.wire_protocol import (
+    RemoteAuthError,
+    RemoteExecutionError,
+    RemoteProtocolError,
+    RemoteTransportError,
+)
+from expra_connect.transport.models import TrustedNodeRecord
+from expra_connect.transport.socket_transport import (
     MemoryRemoteTransport,
     SocketRemoteTransport,
     _invoke_with_optional_cancel,
@@ -17,12 +23,6 @@ from expra_connect.socket_transport import (
     _send_frame,
     build_trusted_transport,
     request_with_retry,
-)
-from expra_connect.wire_protocol import (
-    RemoteAuthError,
-    RemoteExecutionError,
-    RemoteProtocolError,
-    RemoteTransportError,
 )
 
 
@@ -85,7 +85,7 @@ class SocketTransportConfigurationTests(unittest.TestCase):
 
     def test_tls_transport_requires_a_nonempty_pin(self) -> None:
         with self.assertRaises((TypeError, ValueError)):
-            from expra_connect.socket_transport import TLSRemoteTransport
+            from expra_connect.transport.socket_transport import TLSRemoteTransport
 
             TLSRemoteTransport("host", 1, expected_fingerprint="")
 
@@ -282,11 +282,11 @@ class RequestLifecycleTests(unittest.TestCase):
 
         with (
             patch(
-                "expra_connect.socket_transport.time.monotonic",
+                "expra_connect.transport.socket_transport.time.monotonic",
                 side_effect=[10.0, 12.0],
             ),
             patch(
-                "expra_connect.socket_transport.socket_module.create_connection",
+                "expra_connect.transport.socket_transport.socket_module.create_connection",
                 side_effect=fail_connect,
             ),
             self.assertRaises(RemoteTransportError),
@@ -308,12 +308,12 @@ class RequestLifecycleTests(unittest.TestCase):
             with (
                 self.subTest(certificate=certificate),
                 patch(
-                    "expra_connect.socket_transport.socket_module.create_connection",
+                    "expra_connect.transport.socket_transport.socket_module.create_connection",
                     return_value=raw,
                 ),
                 patch.object(context, "wrap_socket", return_value=wrapped),
                 patch(
-                    "expra_connect.socket_transport.certificate_fingerprint",
+                    "expra_connect.transport.socket_transport.certificate_fingerprint",
                     return_value="different",
                 ),
                 self.assertRaises(RemoteAuthError),
@@ -330,7 +330,7 @@ class RequestLifecycleTests(unittest.TestCase):
         raw = self.RawSocket()
         with (
             patch(
-                "expra_connect.socket_transport.socket_module.create_connection",
+                "expra_connect.transport.socket_transport.socket_module.create_connection",
                 return_value=raw,
             ),
             patch.object(
@@ -351,7 +351,7 @@ class RequestLifecycleTests(unittest.TestCase):
             with (
                 self.subTest(cancel=cancel),
                 patch(
-                    "expra_connect.socket_transport.socket_module.create_connection",
+                    "expra_connect.transport.socket_transport.socket_module.create_connection",
                     side_effect=TimeoutError("platform text"),
                 ),
             ):
@@ -371,7 +371,7 @@ class RequestLifecycleTests(unittest.TestCase):
         send_failure = FailingSocket()
         with (
             patch(
-                "expra_connect.socket_transport.socket_module.create_connection",
+                "expra_connect.transport.socket_transport.socket_module.create_connection",
                 return_value=send_failure,
             ),
             self.assertRaises(RemoteTransportError),
@@ -394,7 +394,7 @@ class RequestLifecycleTests(unittest.TestCase):
         invalid_response = InvalidResponseSocket()
         with (
             patch(
-                "expra_connect.socket_transport.socket_module.create_connection",
+                "expra_connect.transport.socket_transport.socket_module.create_connection",
                 return_value=invalid_response,
             ),
             self.assertRaises(RemoteProtocolError),

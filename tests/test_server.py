@@ -6,15 +6,15 @@ from typing import Any, cast
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
 from expra_connect.pairing.models import PairingTransaction
-from expra_connect.remote_provider import AuthenticatedNodeProvider
-from expra_connect.server import (
+from expra_connect.remote.provider import AuthenticatedNodeProvider
+from expra_connect.remote.wire_protocol import MAX_ENVELOPE_BYTES
+from expra_connect.transport.server import (
     PEER_SERVICE_DEFAULT_PORT,
     RemoteSocketServer,
     _elevation_response,
     _pair_request_response,
 )
-from expra_connect.socket_transport import SocketRemoteTransport, _recv_frame
-from expra_connect.wire_protocol import MAX_ENVELOPE_BYTES
+from expra_connect.transport.socket_transport import SocketRemoteTransport, _recv_frame
 
 
 class _Service:

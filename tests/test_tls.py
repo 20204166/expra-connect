@@ -3,15 +3,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from expra_connect.server import RemoteSocketServer
-from expra_connect.socket_transport import TLSRemoteTransport
-from expra_connect.tls import (
+from expra_connect.remote.wire_protocol import RemoteAuthError
+from expra_connect.transport.server import RemoteSocketServer
+from expra_connect.transport.socket_transport import TLSRemoteTransport
+from expra_connect.transport.tls import (
     certificate_fingerprint,
     ensure_tls_material,
     server_context,
 )
-from expra_connect.tls_material import ensure_tls_material_generation
-from expra_connect.wire_protocol import RemoteAuthError
+from expra_connect.transport.tls_material import ensure_tls_material_generation
 
 
 class TLSMaterialTests(unittest.TestCase):

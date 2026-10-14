@@ -6,13 +6,13 @@ from collections.abc import Callable
 from typing import Any
 
 from expra_connect.identity import NodeId
-from expra_connect.session import (
+from expra_connect.remote.session import (
     DEFAULT_MAX_GENERATIONS_PER_SESSION,
     DEFAULT_MAX_SESSIONS,
     DEFAULT_SESSION_TTL_SECONDS,
     LogicalSessionRegistry,
 )
-from expra_connect.wire_protocol import RemoteAuthError, RemoteRequest
+from expra_connect.remote.wire_protocol import RemoteAuthError, RemoteRequest
 
 
 def _request(

@@ -16,73 +16,82 @@ from typing import Any
 
 from typing_extensions import Self
 
-from ._version import __version__
-from .cluster import Cluster, ClusterState, ClusterStore, FailoverCoordinator, RoleState
-from .connection_manager import ConnectionManager
-from .device_hardware import DeviceHardwareProvider
-from .device_identity import DeviceIdentityRuntimeMixin
-from .discovery.network import (
+from .._version import __version__
+from ..cluster import (
+    Cluster,
+    ClusterState,
+    ClusterStore,
+    FailoverCoordinator,
+    RoleState,
+)
+from ..cluster import ClusterRole as RegistryClusterRole
+from ..connections.manager import ConnectionManager
+from ..discovery.models import DiscoveredNodeCandidate
+from ..discovery.network import (
     REAP_TICK_SECONDS,
     SERVICE_TYPE,
     DiscoveryAdvertisement,
     DiscoveryBackend,
     NetworkDiscovery,
 )
-from .identity import (
+from ..identity import (
     NodeId,
     NodeIdentity,
     node_identity_fingerprint,
 )
-from .models import (
+from ..identity.device_hardware import DeviceHardwareProvider
+from ..identity.device_identity import DeviceIdentityRuntimeMixin
+from ..identity.profile_state import ProfileLock, load_profile_identity
+from ..identity.transport_generation import (
+    TransportGenerationManager,
+    TransportStateError,
+)
+from ..models import (
     READ_CAPABILITIES,
     READ_PERMISSIONS,
-    DiscoveredNodeCandidate,
     NodeCapability,
     NodePermission,
 )
-from .observability import ObservabilityWatcher, observation_scope
-from .pairing.flow import NetworkPairing
-from .pairing.manager import (
+from ..nodes.registry import NodeRegistry, TrustState
+from ..observability import ObservabilityWatcher, observation_scope
+from ..pairing.flow import NetworkPairing
+from ..pairing.manager import (
     PairingManager,
     PeerGrant,
     PendingPairing,
     RelationshipState,
     TrustedPeer,
 )
-from .pairing.target import handle_pairing_request
-from .persistence import StateDataError, YamlStateStore, migrate_state
-from .profile_state import ProfileLock, load_profile_identity
-from .registry import NodeRegistry, TrustState
-from .remote_models import NodeStatus
-from .remote_role_operations import RuntimeClusterOperations
-from .remote_service import RemoteService
-from .role_engine import ClusterRole as RegistryClusterRole
-from .runtime_diagnostics import build_diagnostics, build_peer_diagnostics
-from .runtime_persistence import (
+from ..pairing.target import handle_pairing_request
+from ..persistence import StateDataError, YamlStateStore, migrate_state
+from ..remote.models import NodeStatus
+from ..remote.role_operations import RuntimeClusterOperations
+from ..remote.service import RemoteService
+from ..remote.wire_protocol import (
+    CapabilityElevationRequest,
+    PairingControlRequest,
+    PairingRequest,
+    RemoteRequest,
+)
+from ..remote.wire_protocol import (
+    PeerGrant as WirePeerGrant,
+)
+from ..sharing.capabilities import CapabilityShare
+from ..surfaces.registry import SurfaceRegistry, SurfaceRuntimeMixin
+from ..transport.server import PEER_SERVICE_DEFAULT_PORT, RemoteSocketServer
+from ..transport.tls_material import (
+    ensure_tls_material,
+    ensure_tls_material_generation,
+    server_context,
+)
+from .diagnostics import build_diagnostics, build_peer_diagnostics
+from .persistence import (
     peer_grant_from_json,
     peer_grant_to_json,
     pending_pairing_from_json,
     pending_pairing_to_json,
     trusted_peer_from_json,
     trusted_peer_to_json,
-)
-from .server import PEER_SERVICE_DEFAULT_PORT, RemoteSocketServer
-from .sharing import CapabilityShare
-from .surfaces.registry import SurfaceRegistry, SurfaceRuntimeMixin
-from .tls_material import (
-    ensure_tls_material,
-    ensure_tls_material_generation,
-    server_context,
-)
-from .transport_generation import TransportGenerationManager, TransportStateError
-from .wire_protocol import (
-    CapabilityElevationRequest,
-    PairingControlRequest,
-    PairingRequest,
-    RemoteRequest,
-)
-from .wire_protocol import (
-    PeerGrant as WirePeerGrant,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -833,7 +842,7 @@ class ConnectRuntime(
         return True
 
     def _handle_role_request(self, request: RemoteRequest) -> dict[str, Any]:
-        from .remote_role_operations import dispatch_role_request
+        from ..remote.role_operations import dispatch_role_request
 
         return dispatch_role_request(self, request)
 

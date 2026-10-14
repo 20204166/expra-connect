@@ -32,8 +32,8 @@ from dataclasses import dataclass, replace
 from threading import RLock
 from typing import Any, Protocol, cast
 
-from ..models import DiscoveredNodeCandidate
 from .backend import _attr, _service_address_texts
+from .models import DiscoveredNodeCandidate
 
 LOGGER = logging.getLogger(__name__)
 
@@ -110,6 +110,35 @@ class DiscoveryBackend(Protocol):
     def stop(self) -> None: ...
 
 
+def _advertisement_txt_properties(
+    advertisement: DiscoveryAdvertisement,
+) -> dict[str, str]:
+    """Encode a discovery advertisement as Zeroconf TXT properties."""
+    properties = {
+        "id": advertisement.stable_id,
+        "name": advertisement.display_name,
+        "app_version": advertisement.app_version,
+        "protocol_version": advertisement.protocol_version,
+        "connectable": "true" if advertisement.connectable else "false",
+    }
+
+    optional_properties = (
+        ("platform", advertisement.platform),
+        ("fingerprint", advertisement.identity_fingerprint),
+        ("tls_fingerprint", advertisement.transport_fingerprint),
+        ("root_public_key", advertisement.root_public_key),
+        ("transport_proof", advertisement.transport_proof),
+    )
+    for key, value in optional_properties:
+        if value:
+            properties[key] = value
+
+    if advertisement.transport_generation is not None:
+        properties["transport_generation"] = str(advertisement.transport_generation)
+
+    return properties
+
+
 class ZeroconfDiscoveryBackend:
     """python-zeroconf implementation of the discovery backend.
 
@@ -161,25 +190,8 @@ class ZeroconfDiscoveryBackend:
             raise RuntimeError("python-zeroconf is not installed")
         zc = _zeroconf_module.Zeroconf(**zeroconf_kwargs)
         self._zeroconf = zc
-        properties = {
-            "id": advertisement.stable_id,
-            "name": advertisement.display_name,
-            "app_version": advertisement.app_version,
-            "protocol_version": advertisement.protocol_version,
-        }
-        if advertisement.platform:
-            properties["platform"] = advertisement.platform
-        if advertisement.identity_fingerprint:
-            properties["fingerprint"] = advertisement.identity_fingerprint
-        if advertisement.transport_fingerprint:
-            properties["tls_fingerprint"] = advertisement.transport_fingerprint
-        if advertisement.root_public_key:
-            properties["root_public_key"] = advertisement.root_public_key
-        if advertisement.transport_generation is not None:
-            properties["transport_generation"] = str(advertisement.transport_generation)
-        if advertisement.transport_proof:
-            properties["transport_proof"] = advertisement.transport_proof
-        properties["connectable"] = "true" if advertisement.connectable else "false"
+
+        properties = _advertisement_txt_properties(advertisement)
         port = advertisement.port or 0
         service_kwargs: dict[str, Any] = {
             "port": port,

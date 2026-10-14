@@ -10,16 +10,16 @@ from unittest.mock import patch
 import msgpack
 import yaml
 
-from expra_connect.device_hardware import (
+from expra_connect.identity import NodeId, NodeIdentity
+from expra_connect.identity.device_hardware import (
     DeviceHardwareHint,
     normalize_mac_addresses,
 )
-from expra_connect.device_identity import (
+from expra_connect.identity.device_identity import (
     DeviceIdentity,
     DeviceIdentityError,
     DeviceIdentityView,
 )
-from expra_connect.identity import NodeId, NodeIdentity
 from expra_connect.runtime import ConnectConfig, ConnectRuntime
 
 
@@ -156,7 +156,8 @@ class DeviceIdentityTests(unittest.TestCase):
 
             with (
                 patch(
-                    "expra_connect.device_identity._atomic_write", side_effect=OSError
+                    "expra_connect.identity.device_identity._atomic_write",
+                    side_effect=OSError,
                 ),
                 self.assertRaises(OSError),
             ):
@@ -952,7 +953,7 @@ class DeviceIdentityTests(unittest.TestCase):
             path = Path(directory) / "device_identity.yaml"
             with (
                 patch(
-                    "expra_connect.device_identity._atomic_write",
+                    "expra_connect.identity.device_identity._atomic_write",
                     side_effect=OSError("disk full"),
                 ),
                 self.assertRaises(OSError),

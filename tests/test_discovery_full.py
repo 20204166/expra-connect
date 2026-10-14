@@ -13,6 +13,7 @@ from expra_connect.discovery.network import (
     SERVICE_TYPE,
     DiscoveryAdvertisement,
     NetworkDiscovery,
+    _advertisement_txt_properties,
     _service_addresses,
     _service_instance_id,
 )
@@ -101,6 +102,31 @@ def _make_discovery(
 
 
 class FullDiscoveryTests(unittest.TestCase):
+    def test_advertisement_properties_preserve_false_and_zero_values(self) -> None:
+        properties = _advertisement_txt_properties(
+            DiscoveryAdvertisement(
+                stable_id="local",
+                display_name="Local",
+                hostname="localhost",
+                app_version="1",
+                connectable=False,
+                platform="",
+                identity_fingerprint="",
+                transport_fingerprint=None,
+                root_public_key="root-key",
+                transport_generation=0,
+                transport_proof="proof",
+            )
+        )
+
+        self.assertEqual(properties["connectable"], "false")
+        self.assertEqual(properties["transport_generation"], "0")
+        self.assertEqual(properties["root_public_key"], "root-key")
+        self.assertEqual(properties["transport_proof"], "proof")
+        self.assertNotIn("platform", properties)
+        self.assertNotIn("fingerprint", properties)
+        self.assertNotIn("tls_fingerprint", properties)
+
     def test_rotated_transport_gets_a_new_service_instance_name(self) -> None:
         base = DiscoveryAdvertisement(
             stable_id="peer-a",

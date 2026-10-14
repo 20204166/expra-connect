@@ -7,9 +7,9 @@ from dataclasses import asdict
 from hashlib import sha256
 from typing import Any
 
-from .connection_manager import ConnectionManager
-from .identity import NodeId, node_identity_fingerprint
-from .pairing.manager import PairingManager, TrustedPeer
+from ..connections.manager import ConnectionManager
+from ..identity import NodeId, node_identity_fingerprint
+from ..pairing.manager import PairingManager, TrustedPeer
 
 
 def build_peer_diagnostics(runtime: Any, peer_id: NodeId) -> dict[str, Any]:

@@ -40,7 +40,7 @@ from peer_harness.surfaces import (
 )
 
 from expra_connect import ConnectConfig, NodeId
-from expra_connect.wire_protocol import RemoteAuthorizationError
+from expra_connect.remote.wire_protocol import RemoteAuthorizationError
 
 
 class ExtendedPeerEventWriterTests(unittest.TestCase):

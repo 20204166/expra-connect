@@ -8,8 +8,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, cast
 
-from .identity import NodeId
-from .models import NodeCapability, ProcessActionKind
+from ..identity import NodeId
+from ..models import NodeCapability, ProcessActionKind
 
 
 class ClusterDataError(ValueError):

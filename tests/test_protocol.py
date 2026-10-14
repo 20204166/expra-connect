@@ -7,17 +7,7 @@ from pathlib import Path
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
 from expra_connect.persistence import YamlStateStore
-from expra_connect.protocol import (
-    MAX_FRAME,
-    RemoteAuthError,
-    RemoteTransportError,
-    ReplayCache,
-    decode_frame,
-    encode_frame,
-    sign_request,
-    verify_request,
-)
-from expra_connect.wire_protocol import (
+from expra_connect.remote.wire_protocol import (
     OPERATION_SAFETY,
     IdempotencyCache,
     IdempotencyCollisionError,
@@ -28,6 +18,16 @@ from expra_connect.wire_protocol import (
     sign_response,
     validate_operation_params,
     verify_response,
+)
+from expra_connect.transport.protocol import (
+    MAX_FRAME,
+    RemoteAuthError,
+    RemoteTransportError,
+    ReplayCache,
+    decode_frame,
+    encode_frame,
+    sign_request,
+    verify_request,
 )
 
 

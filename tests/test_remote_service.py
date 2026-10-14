@@ -11,13 +11,13 @@ from expra_connect.cluster.models import CapabilityGrant
 from expra_connect.identity import NodeId
 from expra_connect.models import READ_CAPABILITIES, NodeCapability, NodePermission
 from expra_connect.observability import ObservabilityWatcher
-from expra_connect.remote_models import (
+from expra_connect.remote.models import (
     DashboardSnapshot,
     NodeStatus,
     ResourceSummary,
 )
-from expra_connect.remote_provider import AuthenticatedNodeProvider
-from expra_connect.remote_service import (
+from expra_connect.remote.provider import AuthenticatedNodeProvider
+from expra_connect.remote.service import (
     MemoryRemoteTransport,
     RemoteAuthError,
     RemoteAuthorizationError,
@@ -25,12 +25,7 @@ from expra_connect.remote_service import (
     RemoteService,
     RemoteUnavailableError,
 )
-from expra_connect.server import RemoteSocketServer
-from expra_connect.sharing import CapabilityShare
-from expra_connect.socket_transport import RemoteTransportError, SocketRemoteTransport
-from expra_connect.surfaces.provider import dispatch_surface_request
-from expra_connect.surfaces.registry import SurfaceHandlerError, SurfaceRegistry
-from expra_connect.wire_protocol import (
+from expra_connect.remote.wire_protocol import (
     IdempotencyCache,
     IdempotencyCollisionError,
     PeerGrant,
@@ -38,6 +33,14 @@ from expra_connect.wire_protocol import (
     RemoteRequest,
     sign_request,
     sign_response,
+)
+from expra_connect.sharing.capabilities import CapabilityShare
+from expra_connect.surfaces.provider import dispatch_surface_request
+from expra_connect.surfaces.registry import SurfaceHandlerError, SurfaceRegistry
+from expra_connect.transport.server import RemoteSocketServer
+from expra_connect.transport.socket_transport import (
+    RemoteTransportError,
+    SocketRemoteTransport,
 )
 from tests.support import PEER_SECRET as SECRET
 
@@ -1726,7 +1729,7 @@ class RemoteServiceTests(unittest.TestCase):
         response: list[str] = []
         errors: list[Exception] = []
 
-        from expra_connect import remote_service as remote_service_module
+        import expra_connect.remote.service as remote_service_module
 
         verify_request = remote_service_module.verify_request
 

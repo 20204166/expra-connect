@@ -5,10 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from enum import Enum
 
-from .connection_state import ConnectionState
-from .identity import NodeId
-from .models import NodeCapability
-from .role_engine import ClusterRole
+from ..cluster import ClusterRole
+from ..connections.state import ConnectionState
+from ..identity import NodeId
+from ..models import NodeCapability
 
 
 class TrustState(str, Enum):

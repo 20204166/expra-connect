@@ -2,19 +2,7 @@ import math
 import unittest
 
 from expra_connect.models import NodeCapability, NodePermission
-from expra_connect.surfaces.protocol import (
-    MAX_SURFACE_ID_LENGTH,
-    MAX_SURFACE_PARAM_DEPTH,
-    SURFACE_ACCESS_BY_OPERATION,
-    SURFACE_ACTION,
-    SURFACE_OPERATION_SAFETY,
-    SURFACE_OPERATIONS,
-    SURFACE_READ,
-    SURFACE_REQUIRED_CAPABILITY,
-    SURFACE_REVIEW,
-    validate_surface_operation_params,
-)
-from expra_connect.wire_protocol import (
+from expra_connect.remote.wire_protocol import (
     OP_REQUIRED_CAPABILITY,
     OP_REQUIRED_PERMISSION,
     OPERATION_SAFETY,
@@ -29,6 +17,18 @@ from expra_connect.wire_protocol import (
     validate_operation_params,
     verify_request,
     verify_response,
+)
+from expra_connect.surfaces.protocol import (
+    MAX_SURFACE_ID_LENGTH,
+    MAX_SURFACE_PARAM_DEPTH,
+    SURFACE_ACCESS_BY_OPERATION,
+    SURFACE_ACTION,
+    SURFACE_OPERATION_SAFETY,
+    SURFACE_OPERATIONS,
+    SURFACE_READ,
+    SURFACE_REQUIRED_CAPABILITY,
+    SURFACE_REVIEW,
+    validate_surface_operation_params,
 )
 from tests.support import PEER_SECRET as TEST_SECRET
 

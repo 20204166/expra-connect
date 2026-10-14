@@ -12,11 +12,9 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
-from .identity import NodeId
-from .models import NodePermission
-from .protocol import MAX_FRAME, decode_frame, encode_frame
-from .socket_transport import _recv_frame, _send_frame
-from .wire_protocol import (
+from ..identity import NodeId
+from ..models import NodePermission
+from ..remote.wire_protocol import (
     DEFAULT_MAX_ACTIVE_HANDLERS,
     MAX_ENVELOPE_BYTES,
     PAIRING_MODE_TRANSACTIONAL,
@@ -26,6 +24,8 @@ from .wire_protocol import (
     RemoteProtocolError,
     validate_pairing_control_request,
 )
+from .protocol import MAX_FRAME, decode_frame, encode_frame
+from .socket_transport import _recv_frame, _send_frame
 
 LOGGER = logging.getLogger(__name__)
 PEER_SERVICE_DEFAULT_PORT = 27321

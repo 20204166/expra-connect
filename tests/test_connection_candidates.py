@@ -4,24 +4,24 @@ from threading import Thread
 from typing import Any, cast
 from unittest.mock import patch
 
-from expra_connect.connection_manager import ConnectionManager
-from expra_connect.connection_state import ConnectionStatus
+from expra_connect.connections.manager import ConnectionManager
+from expra_connect.connections.state import ConnectionStatus
 from expra_connect.discovery.candidates import (
     DiscoveryCandidate,
     DiscoveryRegistry,
     preferred_endpoint,
 )
-from expra_connect.identity import NodeId, NodeIdentity
-from expra_connect.models import (
+from expra_connect.discovery.models import (
     DiscoveredNodeCandidate,
     EndpointCandidate,
     EndpointSource,
 )
+from expra_connect.identity import NodeId, NodeIdentity
+from expra_connect.nodes.registry import NodeRegistry
 from expra_connect.observability import ObservabilityWatcher
 from expra_connect.pairing.manager import PairingManager, TrustedPeer
-from expra_connect.registry import NodeRegistry
-from expra_connect.remote_provider import AuthenticatedNodeProvider
-from expra_connect.wire_protocol import (
+from expra_connect.remote.provider import AuthenticatedNodeProvider
+from expra_connect.remote.wire_protocol import (
     RemoteAuthError,
     RemoteProtocolError,
     RemoteTransportError,
@@ -123,7 +123,7 @@ class ConnectionManagerTests(unittest.TestCase):
 
         with (
             patch(
-                "expra_connect.connection_manager.TLSRemoteTransport",
+                "expra_connect.connections.manager.TLSRemoteTransport",
                 return_value=object(),
             ),
             patch.object(
@@ -166,7 +166,7 @@ class ConnectionManagerTests(unittest.TestCase):
             observer=observer,
         )
         with patch(
-            "expra_connect.connection_manager.TLSRemoteTransport",
+            "expra_connect.connections.manager.TLSRemoteTransport",
             side_effect=lambda host, port, **_: type("T", (), {"address": host})(),
         ):
             manager.connect(self.peer)
@@ -207,7 +207,7 @@ class ConnectionManagerTests(unittest.TestCase):
             provider_factory=lambda **_: Provider(),
         )
         with (
-            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            patch("expra_connect.connections.manager.TLSRemoteTransport"),
             self.assertRaises(RemoteAuthError),
         ):
             manager.connect(self.peer)
@@ -287,7 +287,7 @@ class ConnectionManagerTests(unittest.TestCase):
             candidates=self.candidates,
             provider_factory=lambda **_: Provider(),
         )
-        with patch("expra_connect.connection_manager.TLSRemoteTransport"):
+        with patch("expra_connect.connections.manager.TLSRemoteTransport"):
             first = manager.connect(self.peer)
             second = manager.connect(self.peer)
         self.assertIs(first, second)
@@ -312,7 +312,7 @@ class ConnectionManagerTests(unittest.TestCase):
             candidates=self.candidates,
             provider_factory=build_provider,
         )
-        with patch("expra_connect.connection_manager.TLSRemoteTransport"):
+        with patch("expra_connect.connections.manager.TLSRemoteTransport"):
             first = manager.connect(self.peer)
             second = manager.reconnect(self.peer)
         self.assertIsNot(first, second)
@@ -339,7 +339,7 @@ class ConnectionManagerTests(unittest.TestCase):
             provider_factory=build_provider,
         )
         results: list[object] = []
-        with patch("expra_connect.connection_manager.TLSRemoteTransport"):
+        with patch("expra_connect.connections.manager.TLSRemoteTransport"):
             threads = [
                 Thread(target=lambda: results.append(manager.connect(self.peer)))
                 for _ in range(4)
@@ -360,7 +360,7 @@ class ConnectionManagerTests(unittest.TestCase):
         )
         with (
             patch(
-                "expra_connect.connection_manager.TLSRemoteTransport",
+                "expra_connect.connections.manager.TLSRemoteTransport",
                 side_effect=RemoteTransportError("route failed"),
             ),
             self.assertRaises(RemoteTransportError),
@@ -398,7 +398,7 @@ class ConnectionManagerTests(unittest.TestCase):
             return type("T", (), {"address": host})()
 
         with patch(
-            "expra_connect.connection_manager.TLSRemoteTransport",
+            "expra_connect.connections.manager.TLSRemoteTransport",
             side_effect=build_transport,
         ):
             manager.connect(self.peer)
@@ -418,7 +418,7 @@ class ConnectionManagerTests(unittest.TestCase):
             provider_factory=lambda **_: Provider(),
         )
         with (
-            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            patch("expra_connect.connections.manager.TLSRemoteTransport"),
             self.assertRaises(RemoteProtocolError),
         ):
             manager.connect(self.peer)
@@ -447,7 +447,7 @@ class ConnectionManagerTests(unittest.TestCase):
             ),
         )
         with (
-            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            patch("expra_connect.connections.manager.TLSRemoteTransport"),
             self.assertRaises(RemoteProtocolError),
         ):
             manager.connect(self.peer)
@@ -483,7 +483,7 @@ class ConnectionManagerTests(unittest.TestCase):
             persist=lambda: False,
         )
         with (
-            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            patch("expra_connect.connections.manager.TLSRemoteTransport"),
             self.assertRaises(RemoteAuthError),
         ):
             manager.connect(self.peer)
@@ -505,7 +505,7 @@ class ConnectionManagerTests(unittest.TestCase):
             persist=lambda: False,
         )
         with (
-            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            patch("expra_connect.connections.manager.TLSRemoteTransport"),
             self.assertRaises(RemoteAuthError),
         ):
             manager.connect(self.peer)
@@ -525,7 +525,7 @@ class ConnectionManagerTests(unittest.TestCase):
             persist=lambda: False,
         )
         with (
-            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            patch("expra_connect.connections.manager.TLSRemoteTransport"),
             self.assertRaises(RemoteAuthError),
         ):
             manager.connect(self.peer)
@@ -546,7 +546,7 @@ class ConnectionManagerTests(unittest.TestCase):
             ),
         )
         with (
-            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            patch("expra_connect.connections.manager.TLSRemoteTransport"),
             self.assertRaises(RemoteAuthError),
         ):
             manager.connect(self.peer)
@@ -568,7 +568,7 @@ class ConnectionManagerTests(unittest.TestCase):
             persist=persist,
         )
         with (
-            patch("expra_connect.connection_manager.TLSRemoteTransport"),
+            patch("expra_connect.connections.manager.TLSRemoteTransport"),
             self.assertRaises(RemoteAuthError),
         ):
             manager.connect(self.peer)
@@ -604,7 +604,7 @@ class ConnectionManagerTests(unittest.TestCase):
             observer=FailingObserver(),  # type: ignore[arg-type]
         )
         with patch(
-            "expra_connect.connection_manager.TLSRemoteTransport",
+            "expra_connect.connections.manager.TLSRemoteTransport",
             side_effect=lambda host, _port, **_: type("T", (), {"address": host})(),
         ):
             manager.connect(self.peer)
@@ -628,7 +628,7 @@ class ConnectionManagerTests(unittest.TestCase):
             provider_factory=lambda **_: Provider(),
             observer=FailingObserver(),  # type: ignore[arg-type]
         )
-        with patch("expra_connect.connection_manager.TLSRemoteTransport"):
+        with patch("expra_connect.connections.manager.TLSRemoteTransport"):
             manager.connect(self.peer)
 
         self.assertEqual(manager.providers, (self.peer,))

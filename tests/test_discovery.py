@@ -37,6 +37,21 @@ class DiscoveryTests(unittest.TestCase):
     def test_172_31_is_private_and_malformed_routes_do_not_crash(self) -> None:
         self.assertEqual(preferred_address(("bad", "172.31.1.2")), "172.31.1.2")
 
+    def test_preferred_network_boundaries_keep_the_documented_order(self) -> None:
+        routes = (
+            "100.127.255.255",
+            "10.255.255.255",
+            "172.31.255.255",
+            "192.168.255.255",
+        )
+
+        self.assertEqual(preferred_address(routes), "192.168.255.255")
+        self.assertEqual(preferred_address(("100.128.0.0", "100.64.0.0")), "100.64.0.0")
+        self.assertEqual(preferred_address(("172.32.0.0", "172.16.0.0")), "172.16.0.0")
+
+    def test_valid_fallback_route_ranks_ahead_of_malformed_text(self) -> None:
+        self.assertEqual(preferred_address(("bad", "203.0.113.1")), "203.0.113.1")
+
     def test_ipv6_only_route_is_preserved(self) -> None:
         self.assertEqual(preferred_address(("2001:db8::1",)), "2001:db8::1")
 

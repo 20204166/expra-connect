@@ -1,9 +1,6 @@
 import unittest
 
-from expra_connect.cluster.state import role_state_to_dict as encode_role_state
-from expra_connect.identity import NodeId
-from expra_connect.models import NodePermission
-from expra_connect.role_engine import (
+from expra_connect.cluster import (
     ClusterRole,
     CoordinatorEpoch,
     FencingError,
@@ -16,6 +13,9 @@ from expra_connect.role_engine import (
     role_state_from_dict,
     role_state_to_dict,
 )
+from expra_connect.cluster.state import role_state_to_dict as encode_role_state
+from expra_connect.identity import NodeId
+from expra_connect.models import NodePermission
 
 
 class RoleEngineTests(unittest.TestCase):

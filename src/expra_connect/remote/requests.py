@@ -6,7 +6,7 @@ import json
 import secrets
 from typing import Any
 
-from .socket_transport import _check_cancelled, request_with_retry
+from ..transport.socket_transport import _check_cancelled, request_with_retry
 from .wire_protocol import (
     OPERATION_SAFETY,
     RemoteAuthError,

@@ -1,28 +1,36 @@
 """Headless peer connection primitives."""
 
 from ._version import __version__
-from .cluster import Cluster, ClusterRole
-from .connection_state import ConnectionState, RetryState
-from .device_hardware import DeviceHardwareHint, DeviceHardwareProvider
-from .device_identity import (
-    DeviceIdentity,
-    DeviceIdentityError,
-    DeviceIdentityView,
+from .cluster import Cluster, ClusterRole, FailoverCoordinator, RoleState
+from .connections.state import ConnectionState, RetryState
+from .discovery.models import (
+    DiscoveredNodeCandidate,
+    EndpointCandidate,
+    EndpointSource,
 )
 from .discovery.network import NetworkDiscovery
-from .failover import FailoverCoordinator
 from .identity import (
     NodeId,
     NodeIdentity,
     verify_transport_proof,
 )
+from .identity.device_hardware import DeviceHardwareHint, DeviceHardwareProvider
+from .identity.device_identity import (
+    DeviceIdentity,
+    DeviceIdentityError,
+    DeviceIdentityView,
+)
+from .identity.transport_generation import (
+    RotationConflict,
+    TransportGeneration,
+    TransportGenerationManager,
+    TransportStateError,
+)
 from .models import (
-    DiscoveredNodeCandidate,
-    EndpointCandidate,
-    EndpointSource,
     NodeCapability,
     NodePermission,
 )
+from .nodes.registry import NodeRegistry
 from .pairing.manager import (
     IdentityConflict,
     PairingBusy,
@@ -36,19 +44,11 @@ from .pairing.manager import (
     TrustedPeer,
 )
 from .persistence import JsonStateStore
-from .registry import NodeRegistry
-from .remote_provider import AuthenticatedNodeProvider
-from .remote_service import RemoteService
-from .role_engine import RoleState
+from .remote.provider import AuthenticatedNodeProvider
+from .remote.service import RemoteService
 from .runtime import ConnectConfig, ConnectRuntime, RuntimeState, RuntimeStatus
-from .server import RemoteSocketServer
-from .sharing import CapabilityShare
-from .transport_generation import (
-    RotationConflict,
-    TransportGeneration,
-    TransportGenerationManager,
-    TransportStateError,
-)
+from .sharing.capabilities import CapabilityShare
+from .transport.server import RemoteSocketServer
 
 __all__ = [
     "AuthenticatedNodeProvider",

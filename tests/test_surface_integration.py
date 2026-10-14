@@ -6,17 +6,17 @@ from pathlib import Path
 from expra_connect.cluster.models import CapabilityGrant
 from expra_connect.identity import NodeId
 from expra_connect.models import READ_CAPABILITIES, NodePermission
-from expra_connect.remote_models import NodeStatus
-from expra_connect.remote_provider import AuthenticatedNodeProvider
-from expra_connect.remote_service import (
+from expra_connect.remote.models import NodeStatus
+from expra_connect.remote.provider import AuthenticatedNodeProvider
+from expra_connect.remote.service import (
     MemoryRemoteTransport,
     RemoteAuthorizationError,
     RemoteExecutionError,
     RemoteService,
 )
+from expra_connect.remote.wire_protocol import PeerGrant
 from expra_connect.runtime import ConnectConfig, ConnectRuntime
 from expra_connect.surfaces.registry import SurfaceAccess, SurfaceHandlerError
-from expra_connect.wire_protocol import PeerGrant
 from tests.support import PEER_SECRET as SECRET
 
 

@@ -5,9 +5,9 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from .identity import NodeId
-from .models import NodePermission
-from .pairing.manager import PeerGrant, PendingPairing, TrustedPeer
+from ..identity import NodeId
+from ..models import NodePermission
+from ..pairing.manager import PeerGrant, PendingPairing, TrustedPeer
 
 
 def peer_grant_to_json(grant: PeerGrant) -> dict[str, Any]:

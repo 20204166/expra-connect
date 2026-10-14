@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..wire_protocol import PairingRequest
+from ..remote.wire_protocol import PairingRequest
 from .manager import PairingBusy, PendingPairing, grant_root_continuous
 
 

@@ -9,7 +9,7 @@ from pathlib import Path
 import yaml
 
 from expra_connect.identity import NodeIdentity
-from expra_connect.profile_state import ProfileInUseError, ProfileLock
+from expra_connect.identity.profile_state import ProfileInUseError, ProfileLock
 
 
 class ProfileLockTests(unittest.TestCase):
@@ -22,7 +22,7 @@ class ProfileLockTests(unittest.TestCase):
 import sys
 import time
 from pathlib import Path
-from expra_connect.profile_state import ProfileLock
+from expra_connect.identity.profile_state import ProfileLock
 profile = Path(sys.argv[1])
 lock = ProfileLock(profile)
 lock.acquire()
@@ -58,7 +58,7 @@ lock.release()
 
 class ProfileIdentityYamlMigrationTests(unittest.TestCase):
     def test_load_profile_identity_creates_yaml_not_json(self) -> None:
-        from expra_connect.profile_state import load_profile_identity
+        from expra_connect.identity.profile_state import load_profile_identity
 
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
@@ -73,7 +73,7 @@ class ProfileIdentityYamlMigrationTests(unittest.TestCase):
             )
 
     def test_load_profile_identity_auto_migrates_json_to_yaml(self) -> None:
-        from expra_connect.profile_state import load_profile_identity
+        from expra_connect.identity.profile_state import load_profile_identity
 
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)
@@ -91,7 +91,7 @@ class ProfileIdentityYamlMigrationTests(unittest.TestCase):
             self.assertNotIn("root_private_key", migrated_legacy)
 
     def test_identity_yaml_content_is_valid_yaml_with_no_secrets(self) -> None:
-        from expra_connect.profile_state import load_profile_identity
+        from expra_connect.identity.profile_state import load_profile_identity
 
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import threading
 from collections.abc import Callable
 
-from .identity import NodeId
+from ..identity import NodeId
 
 MAX_CAPABILITY_ID_LENGTH = 128
 CapabilityHandler = Callable[[NodeId, dict[str, object]], object]
