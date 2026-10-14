@@ -32,8 +32,8 @@ from dataclasses import dataclass, replace
 from threading import RLock
 from typing import Any, Protocol, cast
 
-from .discovery_backend import _attr, _service_address_texts
-from .models import DiscoveredNodeCandidate
+from ..models import DiscoveredNodeCandidate
+from .backend import _attr, _service_address_texts
 
 LOGGER = logging.getLogger(__name__)
 

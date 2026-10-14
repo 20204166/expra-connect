@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .pairing import PairingBusy, PendingPairing, grant_root_continuous
-from .wire_protocol import PairingRequest
+from ..wire_protocol import PairingRequest
+from .manager import PairingBusy, PendingPairing, grant_root_continuous
 
 
 def handle_pairing_request(runtime: Any, request: PairingRequest) -> dict[str, Any]:

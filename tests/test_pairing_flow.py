@@ -7,8 +7,8 @@ from expra_connect.models import (
     EndpointCandidate,
     EndpointSource,
 )
-from expra_connect.pairing import PairingManager
-from expra_connect.pairing_flow import NetworkPairing
+from expra_connect.pairing.flow import NetworkPairing
+from expra_connect.pairing.manager import PairingManager
 
 
 class NetworkPairingTests(unittest.TestCase):
@@ -70,15 +70,15 @@ class NetworkPairingTests(unittest.TestCase):
 
         with (
             patch(
-                "expra_connect.pairing_flow.TLSRemoteTransport",
+                "expra_connect.pairing.flow.TLSRemoteTransport",
                 side_effect=build_transport,
             ),
             patch(
-                "expra_connect.pairing_flow.AuthenticatedNodeProvider.request_pairing",
+                "expra_connect.pairing.flow.AuthenticatedNodeProvider.request_pairing",
                 return_value=response,
             ),
             patch(
-                "expra_connect.pairing_flow.AuthenticatedNodeProvider.confirm_pairing",
+                "expra_connect.pairing.flow.AuthenticatedNodeProvider.confirm_pairing",
                 return_value=True,
             ),
         ):

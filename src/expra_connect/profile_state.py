@@ -7,11 +7,8 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 
-from .device_identity import (
-    DeviceHardwareProvider,
-    DeviceIdentity,
-    load_device_identity,
-)
+from .device_hardware import DeviceHardwareProvider
+from .device_identity import DeviceIdentity, load_device_identity
 from .identity import NodeIdentity
 from .observability import ObservabilityWatcher, observation_scope
 from .persistence import StateDataError

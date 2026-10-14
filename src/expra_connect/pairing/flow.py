@@ -8,15 +8,18 @@ import threading
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from .discovery import endpoint_rank
-from .identity import NodeId, NodeIdentity, node_identity_fingerprint
-from .models import (
+from ..discovery.candidates import endpoint_rank
+from ..identity import NodeId, NodeIdentity, node_identity_fingerprint
+from ..models import (
     READ_PERMISSIONS,
     DiscoveredNodeCandidate,
     EndpointCandidate,
     NodePermission,
 )
-from .pairing import (
+from ..remote_provider import AuthenticatedNodeProvider
+from ..socket_transport import TLSRemoteTransport
+from ..wire_protocol import RemoteTransportError
+from .manager import (
     IdentityConflict,
     PairingBusy,
     PairingConflict,
@@ -27,10 +30,7 @@ from .pairing import (
     RepairRequired,
     TrustedPeer,
 )
-from .pairing_models import PairingTransaction
-from .remote_service import AuthenticatedNodeProvider
-from .socket_transport import TLSRemoteTransport
-from .wire_protocol import RemoteTransportError
+from .models import PairingTransaction
 
 LOGGER = logging.getLogger(__name__)
 

@@ -5,15 +5,11 @@ from __future__ import annotations
 import base64
 import json
 import math
-import re
-import sys
 import time
-import uuid
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
-from typing import Protocol
 
 import yaml
 from cryptography.exceptions import InvalidSignature
@@ -23,6 +19,15 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
+from .device_hardware import (
+    DeviceHardwareHint as _DeviceHardwareHint,
+)
+from .device_hardware import (
+    DeviceHardwareProvider as _DeviceHardwareProvider,
+)
+from .device_hardware import (
+    collect_hardware_hint as _collect_hardware_hint,
+)
 from .identity import NodeId, NodeIdentity, _decode_root_private_key
 from .observability import ObservabilityWatcher, observation_scope
 from .persistence import (
@@ -48,92 +53,10 @@ _DEVICE_IDENTITY_JSON_FIELDS = frozenset(
     }
 )
 _FINGERPRINT_PREFIX = "ed25519:"
-_HARDWARE_HINT_DOMAIN = b"expra-connect/device-hardware-hint/v1\0"
-_MAC_PATTERN = re.compile(r"^[0-9a-f]{12}$")
 
 
 class DeviceIdentityError(StateDataError):
     """Raised when durable device identity state is missing or invalid."""
-
-
-class DeviceHardwareProvider(Protocol):
-    """Best-effort local hardware identifiers used only as anomaly evidence."""
-
-    def mac_addresses(self) -> Iterable[str]: ...
-
-    def machine_id(self) -> str | None: ...
-
-
-class _SystemHardwareProvider:
-    def mac_addresses(self) -> tuple[str, ...]:
-        values: list[str] = []
-        if sys.platform.startswith("linux"):
-            try:
-                values.extend(
-                    address.read_text(encoding="ascii")
-                    for address in Path("/sys/class/net").glob("*/address")
-                )
-            except (OSError, UnicodeError):
-                pass
-        try:
-            node = uuid.getnode()
-            values.append(
-                ":"
-                + ":".join(
-                    f"{(node >> shift) & 0xFF:02x}" for shift in range(40, -1, -8)
-                )
-            )
-        except (OSError, ValueError, TypeError):
-            pass
-        return tuple(values)
-
-    def machine_id(self) -> str | None:
-        if sys.platform.startswith("linux"):
-            try:
-                value = Path("/etc/machine-id").read_text(encoding="ascii").strip()
-            except (OSError, UnicodeError):
-                return None
-            return value or None
-        if sys.platform == "win32":
-            try:
-                import winreg
-
-                with winreg.OpenKey(
-                    winreg.HKEY_LOCAL_MACHINE,
-                    r"SOFTWARE\Microsoft\Cryptography",
-                ) as key:
-                    value, _ = winreg.QueryValueEx(key, "MachineGuid")
-                return (
-                    value.strip() if isinstance(value, str) and value.strip() else None
-                )
-            except (OSError, TypeError):
-                return None
-        return None
-
-
-@dataclass(frozen=True, slots=True)
-class DeviceHardwareHint:
-    """Persisted digest and source presence, never the raw local values."""
-
-    digest: str
-    sources_present: tuple[str, ...]
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.digest, str) or not re.fullmatch(
-            r"[0-9a-f]{64}", self.digest
-        ):
-            raise ValueError("hardware hint digest is invalid")
-        if not isinstance(self.sources_present, tuple) or not all(
-            isinstance(source, str) for source in self.sources_present
-        ):
-            raise ValueError("hardware hint sources are invalid")
-        if tuple(sorted(set(self.sources_present))) != self.sources_present:
-            raise ValueError("hardware hint sources are invalid")
-        if any(
-            not source or not re.fullmatch(r"[a-z0-9-]+", source)
-            for source in self.sources_present
-        ):
-            raise ValueError("hardware hint sources are invalid")
 
 
 @dataclass(frozen=True, slots=True)
@@ -156,7 +79,7 @@ class DeviceIdentity:
     fingerprint: str
     created_at: float
     schema_version: int = DEVICE_IDENTITY_SCHEMA_VERSION
-    hardware_hint: DeviceHardwareHint | None = None
+    hardware_hint: _DeviceHardwareHint | None = None
     hardware_hint_changed: bool = field(default=False, repr=False, compare=False)
     hardware_hint_status: str = field(default="not_recorded", repr=False, compare=False)
     _private_key_bytes: bytes = field(repr=False, compare=False, default=b"")
@@ -210,7 +133,7 @@ class DeviceIdentity:
         cls,
         node_id: NodeId,
         *,
-        hardware_provider: DeviceHardwareProvider | None = None,
+        hardware_provider: _DeviceHardwareProvider | None = None,
         clock: Callable[[], float] = time.time,
     ) -> DeviceIdentity:
         private = Ed25519PrivateKey.generate()
@@ -227,7 +150,7 @@ class DeviceIdentity:
             public_key=public,
             fingerprint=fingerprint_for_public_key(public),
             created_at=float(clock()),
-            hardware_hint=collect_hardware_hint(hardware_provider),
+            hardware_hint=_collect_hardware_hint(hardware_provider),
             _private_key_bytes=private_bytes,
         )
 
@@ -237,7 +160,7 @@ class DeviceIdentity:
         node_identity: NodeIdentity,
         existing: DeviceIdentity | None = None,
         *,
-        hardware_provider: DeviceHardwareProvider | None = None,
+        hardware_provider: _DeviceHardwareProvider | None = None,
         clock: Callable[[], float] = time.time,
     ) -> DeviceIdentity:
         """Represent the active network root as the local device identity."""
@@ -260,7 +183,7 @@ class DeviceIdentity:
         public_key = private_key.public_key().public_bytes(
             serialization.Encoding.Raw, serialization.PublicFormat.Raw
         )
-        current_hint = collect_hardware_hint(hardware_provider)
+        current_hint = _collect_hardware_hint(hardware_provider)
         stored_hint = existing.hardware_hint if existing is not None else None
         changed, hint_status = _hardware_hint_state(stored_hint, current_hint)
         return cls(
@@ -283,7 +206,7 @@ class DeviceIdentity:
         path: Path,
         expected_node_id: NodeId | None = None,
         *,
-        hardware_provider: DeviceHardwareProvider | None = None,
+        hardware_provider: _DeviceHardwareProvider | None = None,
         observer: ObservabilityWatcher | None = None,
     ) -> DeviceIdentity:
         try:
@@ -321,7 +244,7 @@ class DeviceIdentity:
         metadata: dict[str, object],
         expected_node_id: NodeId | None,
         *,
-        hardware_provider: DeviceHardwareProvider | None,
+        hardware_provider: _DeviceHardwareProvider | None,
     ) -> DeviceIdentity:
         raw_node_id = metadata.get("node_id")
         raw_public_key = metadata.get("public_key")
@@ -398,7 +321,7 @@ class DeviceIdentity:
         value: str,
         expected_node_id: NodeId | None = None,
         *,
-        hardware_provider: DeviceHardwareProvider | None = None,
+        hardware_provider: _DeviceHardwareProvider | None = None,
     ) -> DeviceIdentity:
         """Read a legacy full-JSON record; profile loading handles split records."""
         try:
@@ -414,7 +337,7 @@ class DeviceIdentity:
             raise DeviceIdentityError(
                 "device identity NodeId does not match local NodeId"
             )
-        current_hint = collect_hardware_hint(hardware_provider)
+        current_hint = _collect_hardware_hint(hardware_provider)
         changed, hint_status = _hardware_hint_state(
             identity.hardware_hint, current_hint
         )
@@ -525,7 +448,7 @@ class DeviceIdentity:
             if digest is not None and not sources:
                 raise ValueError
             hardware_hint = (
-                None if digest is None else DeviceHardwareHint(digest, tuple(sources))
+                None if digest is None else _DeviceHardwareHint(digest, tuple(sources))
             )
             return cls(
                 node_id=node_id,
@@ -551,46 +474,9 @@ def fingerprint_for_public_key(public_key: bytes) -> str:
     return _FINGERPRINT_PREFIX + sha256(public_key).hexdigest()
 
 
-def normalize_mac_addresses(values: Iterable[str]) -> tuple[str, ...]:
-    normalized: set[str] = set()
-    for value in values:
-        if not isinstance(value, str):
-            continue
-        compact = re.sub(r"[-: .]", "", value.strip().lower())
-        if not _MAC_PATTERN.fullmatch(compact):
-            continue
-        first_octet = int(compact[:2], 16)
-        if first_octet & 1 or compact == "0" * 12:
-            continue
-        normalized.add(compact)
-    return tuple(sorted(normalized))
-
-
-def collect_hardware_hint(
-    provider: DeviceHardwareProvider | None = None,
-) -> DeviceHardwareHint | None:
-    source = provider or _SystemHardwareProvider()
-    macs = normalize_mac_addresses(_safe_macs(source))
-    machine_id = _safe_machine_id(source)
-    values: list[str] = []
-    sources: list[str] = []
-    if macs:
-        values.append("macs:" + ",".join(macs))
-        sources.append("mac")
-    if machine_id:
-        values.append("machine-id:" + machine_id)
-        sources.append("machine-id")
-    if not values:
-        return None
-    digest = sha256(
-        _HARDWARE_HINT_DOMAIN + "\0".join(values).encode("utf-8")
-    ).hexdigest()
-    return DeviceHardwareHint(digest, tuple(sources))
-
-
 def _hardware_hint_state(
-    stored: DeviceHardwareHint | None,
-    current: DeviceHardwareHint | None,
+    stored: _DeviceHardwareHint | None,
+    current: _DeviceHardwareHint | None,
 ) -> tuple[bool, str]:
     if stored is None:
         return False, "not_recorded"
@@ -599,21 +485,6 @@ def _hardware_hint_state(
     if stored.digest != current.digest:
         return True, "changed"
     return False, "match"
-
-
-def _safe_macs(provider: DeviceHardwareProvider) -> Iterable[str]:
-    try:
-        return tuple(provider.mac_addresses())
-    except Exception:  # noqa: BLE001 - hardware hints are best effort.
-        return ()
-
-
-def _safe_machine_id(provider: DeviceHardwareProvider) -> str | None:
-    try:
-        value = provider.machine_id()
-        return value.strip() if isinstance(value, str) and value.strip() else None
-    except Exception:  # noqa: BLE001 - hardware hints are best effort.
-        return None
 
 
 def _encode_bytes(value: bytes) -> str:
@@ -632,7 +503,7 @@ def _decode_bytes(value: object) -> bytes:
 def load_device_identity(
     profile: Path,
     node_identity: NodeIdentity,
-    provider: DeviceHardwareProvider | None = None,
+    provider: _DeviceHardwareProvider | None = None,
     observer: ObservabilityWatcher | None = None,
 ) -> DeviceIdentity:
     """Load or migrate the profile-owned representation of the network root."""

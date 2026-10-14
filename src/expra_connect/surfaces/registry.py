@@ -10,8 +10,8 @@ from enum import Enum
 from types import MappingProxyType
 from typing import cast
 
-from .identity import NodeId
-from .surface_protocol import MAX_SURFACE_ID_LENGTH
+from ..identity import NodeId
+from .protocol import MAX_SURFACE_ID_LENGTH
 
 SurfaceHandler = Callable[[NodeId, dict[str, object]], object]
 
@@ -169,6 +169,49 @@ class SurfaceRegistry:
         cluster_sources: Iterable[Hashable] = (),
         now: float | None = None,
     ) -> object:
+        handler = self._authorized_handler(
+            peer_id,
+            surface_id,
+            access=access,
+            action=action,
+            cluster_sources=cluster_sources,
+            now=now,
+        )
+        try:
+            return handler(peer_id, {} if params is None else params)
+        except Exception as error:
+            raise SurfaceHandlerError("surface handler failed") from error
+
+    def authorize(
+        self,
+        peer_id: NodeId,
+        surface_id: str,
+        *,
+        access: SurfaceAccess | str,
+        action: str | None = None,
+        cluster_sources: Iterable[Hashable] = (),
+        now: float | None = None,
+    ) -> None:
+        """Check surface access without executing its host-owned handler."""
+        self._authorized_handler(
+            peer_id,
+            surface_id,
+            access=access,
+            action=action,
+            cluster_sources=cluster_sources,
+            now=now,
+        )
+
+    def _authorized_handler(
+        self,
+        peer_id: NodeId,
+        surface_id: str,
+        *,
+        access: SurfaceAccess | str,
+        action: str | None,
+        cluster_sources: Iterable[Hashable],
+        now: float | None,
+    ) -> SurfaceHandler:
         if not isinstance(peer_id, NodeId):
             raise TypeError("peer id must be a NodeId")
         normalized = self._access(access)
@@ -194,11 +237,7 @@ class SurfaceRegistry:
         definition = self._definitions.get(surface_id)
         if definition is None:
             raise ValueError("unknown surface")
-        handler = self._handler(definition, normalized, action)
-        try:
-            return handler(peer_id, {} if params is None else params)
-        except Exception as error:
-            raise SurfaceHandlerError("surface handler failed") from error
+        return self._handler(definition, normalized, action)
 
     def _new_grant(
         self,

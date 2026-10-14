@@ -92,7 +92,7 @@ def _listen_state() -> dict[str, Any]:
 
 def _local_discovery() -> dict[str, Any]:
     from expra_connect import ConnectRuntime
-    from expra_connect.discovery_full import SERVICE_TYPE
+    from expra_connect.discovery.network import SERVICE_TYPE
 
     result = _base("discovery", "local_loopback", "LOOPBACK_EXECUTION")
     raw_events: list[str] = []

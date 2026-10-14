@@ -7,15 +7,15 @@ from expra_connect.cluster.models import CapabilityGrant
 from expra_connect.identity import NodeId
 from expra_connect.models import READ_CAPABILITIES, NodePermission
 from expra_connect.remote_models import NodeStatus
+from expra_connect.remote_provider import AuthenticatedNodeProvider
 from expra_connect.remote_service import (
-    AuthenticatedNodeProvider,
     MemoryRemoteTransport,
     RemoteAuthorizationError,
     RemoteExecutionError,
     RemoteService,
 )
 from expra_connect.runtime import ConnectConfig, ConnectRuntime
-from expra_connect.surfaces import SurfaceAccess, SurfaceHandlerError
+from expra_connect.surfaces.registry import SurfaceAccess, SurfaceHandlerError
 from expra_connect.wire_protocol import PeerGrant
 from tests.support import PEER_SECRET as SECRET
 

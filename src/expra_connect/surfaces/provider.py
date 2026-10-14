@@ -2,8 +2,14 @@
 
 from typing import Any
 
-from .cluster.models import CapabilityGrant
-from .surface_protocol import (
+from ..cluster.models import CapabilityGrant
+from ..wire_protocol import (
+    RemoteAuthorizationError,
+    RemoteProtocolError,
+    RemoteRequest,
+    RemoteUnavailableError,
+)
+from .protocol import (
     SURFACE_ACCESS_BY_OPERATION,
     SURFACE_ACTION,
     SURFACE_OPERATIONS,
@@ -11,13 +17,7 @@ from .surface_protocol import (
     SURFACE_REVIEW,
     validate_surface_operation_params,
 )
-from .surfaces import SurfaceRegistry
-from .wire_protocol import (
-    RemoteAuthorizationError,
-    RemoteProtocolError,
-    RemoteRequest,
-    RemoteUnavailableError,
-)
+from .registry import SurfaceRegistry
 
 
 class SurfaceProviderMixin:

@@ -1,14 +1,14 @@
 import unittest
 from types import SimpleNamespace
 
-from expra_connect.discovery import (
+from expra_connect.discovery.backend import ZeroconfBackend
+from expra_connect.discovery.candidates import (
     DiscoveryCandidate,
     DiscoveryRegistry,
     normalize_port,
     preferred_address,
     validate_candidate,
 )
-from expra_connect.discovery_backend import ZeroconfBackend
 
 
 class DiscoveryTests(unittest.TestCase):

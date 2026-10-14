@@ -10,12 +10,14 @@ from unittest.mock import patch
 import msgpack
 import yaml
 
-from expra_connect.device_identity import (
+from expra_connect.device_hardware import (
     DeviceHardwareHint,
+    normalize_mac_addresses,
+)
+from expra_connect.device_identity import (
     DeviceIdentity,
     DeviceIdentityError,
     DeviceIdentityView,
-    normalize_mac_addresses,
 )
 from expra_connect.identity import NodeId, NodeIdentity
 from expra_connect.runtime import ConnectConfig, ConnectRuntime
@@ -34,6 +36,12 @@ class _HardwareProvider:
 
 
 class DeviceIdentityTests(unittest.TestCase):
+    def test_hardware_hint_constructs_with_persisted_values(self) -> None:
+        hint = DeviceHardwareHint("a" * 64, ("mac", "machine-id"))
+
+        self.assertEqual(hint.digest, "a" * 64)
+        self.assertEqual(hint.sources_present, ("mac", "machine-id"))
+
     def test_first_run_creates_ed25519_identity_and_public_view(self) -> None:
         identity = DeviceIdentity.create(
             NodeId("peer-a"),

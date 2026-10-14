@@ -10,13 +10,14 @@ from unittest.mock import patch
 
 from expra_connect import __version__
 from expra_connect.cluster import Cluster, ClusterRole
-from expra_connect.discovery_full import DiscoveryAdvertisement
+from expra_connect.discovery.network import DiscoveryAdvertisement
 from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerprint
 from expra_connect.models import DiscoveredNodeCandidate, NodeCapability, NodePermission
 from expra_connect.observability import ObservabilityWatcher
-from expra_connect.pairing import PeerGrant, TrustedPeer
+from expra_connect.pairing.manager import PeerGrant, TrustedPeer
+from expra_connect.pairing.models import PairingTransaction
 from expra_connect.registry import TrustState
-from expra_connect.remote_service import AuthenticatedNodeProvider, PairingTransaction
+from expra_connect.remote_provider import AuthenticatedNodeProvider
 from expra_connect.role_engine import ClusterRole as RegistryClusterRole
 from expra_connect.runtime import (
     ConnectConfig,
@@ -25,7 +26,7 @@ from expra_connect.runtime import (
     RuntimeStatus,
 )
 from expra_connect.socket_transport import TLSRemoteTransport
-from expra_connect.surfaces import SurfaceAccess
+from expra_connect.surfaces.registry import SurfaceAccess
 from expra_connect.wire_protocol import (
     CapabilityElevationRequest,
     PairingControlRequest,

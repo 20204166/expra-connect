@@ -5,6 +5,7 @@ import unittest
 from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any, cast
+from unittest.mock import patch
 
 from expra_connect.cluster.models import CapabilityGrant
 from expra_connect.identity import NodeId
@@ -15,8 +16,8 @@ from expra_connect.remote_models import (
     NodeStatus,
     ResourceSummary,
 )
+from expra_connect.remote_provider import AuthenticatedNodeProvider
 from expra_connect.remote_service import (
-    AuthenticatedNodeProvider,
     MemoryRemoteTransport,
     RemoteAuthError,
     RemoteAuthorizationError,
@@ -27,8 +28,8 @@ from expra_connect.remote_service import (
 from expra_connect.server import RemoteSocketServer
 from expra_connect.sharing import CapabilityShare
 from expra_connect.socket_transport import RemoteTransportError, SocketRemoteTransport
-from expra_connect.surface_provider import dispatch_surface_request
-from expra_connect.surfaces import SurfaceHandlerError, SurfaceRegistry
+from expra_connect.surfaces.provider import dispatch_surface_request
+from expra_connect.surfaces.registry import SurfaceHandlerError, SurfaceRegistry
 from expra_connect.wire_protocol import (
     IdempotencyCache,
     IdempotencyCollisionError,
@@ -604,6 +605,149 @@ class RemoteServiceTests(unittest.TestCase):
         second_response = json.loads(service.handle(json.dumps(second)))
         self.assertEqual(first_response["payload"], second_response["payload"])
         self.assertEqual(calls, 1)
+
+    def test_cached_surface_action_replay_rechecks_current_pair_permission(
+        self,
+    ) -> None:
+        caller = NodeId("caller")
+        calls = 0
+        surfaces = SurfaceRegistry()
+
+        def save(_peer: NodeId, _params: dict[str, object]) -> object:
+            nonlocal calls
+            calls += 1
+            return {"saved": True}
+
+        surfaces.register(
+            "settings", read=lambda _peer, _params: {}, actions={"save": save}
+        )
+        surfaces.grant_peer(caller, "settings", access="action")
+        management = frozenset({NodePermission.REMOTE_MANAGEMENT})
+        service = self._service(
+            capabilities=frozenset(
+                {NodeCapability.READ_STATE, NodeCapability.REMOTE_MANAGEMENT}
+            ),
+            permissions=management,
+            grants={caller: PeerGrant(caller, SECRET, management)},
+            surface_registry=surfaces,
+        )
+        params = {"surface_id": "settings", "action": "save", "params": {}}
+        first = sign_request(
+            node_id="peer",
+            caller_node_id=caller.value,
+            op="surface_action",
+            params=params,
+            request_id="cached-action-permission-change",
+            nonce="first-nonce",
+            timestamp=time.time(),
+            secret=SECRET,
+        )
+        replay = sign_request(
+            node_id="peer",
+            caller_node_id=caller.value,
+            op="surface_action",
+            params=params,
+            request_id="cached-action-permission-change",
+            nonce="replay-nonce",
+            timestamp=time.time(),
+            secret=SECRET,
+        )
+        revoked_surface_replay = sign_request(
+            node_id="peer",
+            caller_node_id=caller.value,
+            op="surface_action",
+            params=params,
+            request_id="cached-action-permission-change",
+            nonce="revoked-surface-nonce",
+            timestamp=time.time(),
+            secret=SECRET,
+        )
+
+        first_response = json.loads(service.handle(json.dumps(first)))
+        service.update_grants(
+            {caller: PeerGrant(caller, SECRET, frozenset({NodePermission.READ_STATE}))}
+        )
+        replay_response = json.loads(service.handle(json.dumps(replay)))
+        service.update_grants({caller: PeerGrant(caller, SECRET, management)})
+        surfaces.revoke_peer(caller, "settings", access="action")
+        revoked_surface_response = json.loads(
+            service.handle(json.dumps(revoked_surface_replay))
+        )
+
+        self.assertEqual(first_response["status"], "ok")
+        self.assertEqual(replay_response["status"], "error")
+        self.assertEqual(revoked_surface_response["status"], "error")
+        self.assertEqual(calls, 1)
+
+    def test_cached_role_replay_rechecks_fence_after_cache_lookup(self) -> None:
+        caller = NodeId("caller")
+        management = frozenset({NodePermission.REMOTE_MANAGEMENT})
+        role_calls = 0
+
+        def handle_role(_request: RemoteRequest) -> dict[str, bool]:
+            nonlocal role_calls
+            role_calls += 1
+            return {"ok": True}
+
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=frozenset(
+                {NodeCapability.READ_STATE, NodeCapability.REMOTE_MANAGEMENT}
+            ),
+            provider=_Provider(),
+            secret=SECRET,
+            grants={caller: PeerGrant(caller, SECRET, management)},
+            cluster_id="cluster",
+            coordinator_epoch=1,
+            fencing_token="old-fence",
+            role_handler=handle_role,
+        )
+        params = {
+            "cluster_id": "cluster",
+            "epoch": 1,
+            "fencing_token": "old-fence",
+            "target_node_id": "worker",
+        }
+
+        def request(nonce: str) -> dict[str, Any]:
+            return sign_request(
+                node_id="peer",
+                caller_node_id=caller.value,
+                op="pause_worker",
+                params=params,
+                request_id="cached-role-fence-change",
+                nonce=nonce,
+                timestamp=time.time(),
+                secret=SECRET,
+            )
+
+        first_response = json.loads(service.handle(json.dumps(request("first"))))
+        original_run = service._idempotency.run
+
+        def advance_fence_before_cache_return(
+            *args: Any, **kwargs: Any
+        ) -> dict[str, Any]:
+            service.update_cluster_fence(
+                cluster_id="cluster",
+                coordinator_epoch=2,
+                fencing_token="new-fence",
+            )
+            return original_run(*args, **kwargs)
+
+        with patch.object(
+            service._idempotency,
+            "run",
+            side_effect=advance_fence_before_cache_return,
+        ):
+            replay_response = json.loads(service.handle(json.dumps(request("second"))))
+
+        self.assertEqual(first_response["status"], "ok")
+        self.assertEqual(replay_response["status"], "error")
+        self.assertEqual(role_calls, 1)
 
     def test_failed_surface_action_replay_does_not_reexecute(self) -> None:
         caller = NodeId("caller")
@@ -1542,6 +1686,75 @@ class RemoteServiceTests(unittest.TestCase):
         worker.join(1.0)
         self.assertEqual(len(errors), 1)
         self.assertIsInstance(errors[0], RemoteAuthorizationError)
+
+    def test_revocation_during_request_verification_prevents_handler_execution(
+        self,
+    ) -> None:
+        caller = NodeId("caller")
+        grant = PeerGrant(caller, SECRET, frozenset({NodePermission.READ_STATE}))
+        provider_calls = 0
+
+        class CountingProvider(_Provider):
+            def dashboard_snapshot(self) -> DashboardSnapshot:
+                nonlocal provider_calls
+                provider_calls += 1
+                return super().dashboard_snapshot()
+
+        service = RemoteService(
+            node_id=NodeId("peer"),
+            display_name="Peer",
+            hostname="peer-host",
+            platform="Linux",
+            status=NodeStatus.ONLINE,
+            capabilities=READ_CAPABILITIES,
+            provider=CountingProvider(),
+            secret=SECRET,
+            grants={caller: grant},
+        )
+        request = sign_request(
+            node_id="peer",
+            caller_node_id=caller.value,
+            op="dashboard_snapshot",
+            params={},
+            request_id="revoke-during-verification",
+            nonce="revoke-during-verification-nonce",
+            timestamp=time.time(),
+            secret=SECRET,
+        )
+        verification_started = threading.Event()
+        continue_verification = threading.Event()
+        response: list[str] = []
+        errors: list[Exception] = []
+
+        from expra_connect import remote_service as remote_service_module
+
+        verify_request = remote_service_module.verify_request
+
+        def blocking_verify(*args: Any, **kwargs: Any) -> Any:
+            verified = verify_request(*args, **kwargs)
+            verification_started.set()
+            if not continue_verification.wait(1.0):
+                raise TimeoutError("test did not release request verification")
+            return verified
+
+        def invoke() -> None:
+            try:
+                response.append(service.handle(json.dumps(request)))
+            except Exception as error:  # noqa: BLE001 - capture worker failure.
+                errors.append(error)
+
+        with patch.object(remote_service_module, "verify_request", blocking_verify):
+            worker = threading.Thread(target=invoke)
+            worker.start()
+            self.assertTrue(verification_started.wait(1.0))
+            service.update_grants({})
+            continue_verification.set()
+            worker.join(1.0)
+
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(provider_calls, 0)
+        self.assertEqual(json.loads(response[0])["status"], "error")
 
     def test_in_flight_result_rejected_after_connection_resume(self) -> None:
         started = threading.Event()

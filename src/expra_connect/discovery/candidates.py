@@ -8,7 +8,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
-from .models import EndpointCandidate, EndpointSource
+from ..models import EndpointCandidate, EndpointSource
 
 
 @dataclass(frozen=True, slots=True)

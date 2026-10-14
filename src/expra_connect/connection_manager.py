@@ -10,13 +10,13 @@ from threading import RLock
 from typing import Any, cast
 
 from .connection_state import ConnectionState, ConnectionStatus
-from .discovery import endpoint_rank
+from .discovery.candidates import endpoint_rank
 from .identity import NodeId, verify_transport_proof
 from .models import DiscoveredNodeCandidate, EndpointCandidate
 from .observability import ObservabilityWatcher, ObservationToken
-from .pairing import PairingManager
+from .pairing.manager import PairingManager
 from .registry import NodeRegistry
-from .remote_service import AuthenticatedNodeProvider
+from .remote_provider import AuthenticatedNodeProvider
 from .socket_transport import TLSRemoteTransport
 from .wire_protocol import (
     RemoteAuthError,

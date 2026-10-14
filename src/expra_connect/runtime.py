@@ -19,8 +19,9 @@ from typing_extensions import Self
 from ._version import __version__
 from .cluster import Cluster, ClusterState, ClusterStore, FailoverCoordinator, RoleState
 from .connection_manager import ConnectionManager
-from .device_identity import DeviceHardwareProvider, DeviceIdentityRuntimeMixin
-from .discovery_full import (
+from .device_hardware import DeviceHardwareProvider
+from .device_identity import DeviceIdentityRuntimeMixin
+from .discovery.network import (
     REAP_TICK_SECONDS,
     SERVICE_TYPE,
     DiscoveryAdvertisement,
@@ -30,8 +31,6 @@ from .discovery_full import (
 from .identity import (
     NodeId,
     NodeIdentity,
-    TransportGenerationManager,
-    TransportStateError,
     node_identity_fingerprint,
 )
 from .models import (
@@ -42,15 +41,15 @@ from .models import (
     NodePermission,
 )
 from .observability import ObservabilityWatcher, observation_scope
-from .pairing import (
+from .pairing.flow import NetworkPairing
+from .pairing.manager import (
     PairingManager,
     PeerGrant,
     PendingPairing,
     RelationshipState,
     TrustedPeer,
 )
-from .pairing_flow import NetworkPairing
-from .pairing_target import handle_pairing_request
+from .pairing.target import handle_pairing_request
 from .persistence import StateDataError, YamlStateStore, migrate_state
 from .profile_state import ProfileLock, load_profile_identity
 from .registry import NodeRegistry, TrustState
@@ -69,12 +68,13 @@ from .runtime_persistence import (
 )
 from .server import PEER_SERVICE_DEFAULT_PORT, RemoteSocketServer
 from .sharing import CapabilityShare
-from .surfaces import SurfaceRegistry, SurfaceRuntimeMixin
+from .surfaces.registry import SurfaceRegistry, SurfaceRuntimeMixin
 from .tls_material import (
     ensure_tls_material,
     ensure_tls_material_generation,
     server_context,
 )
+from .transport_generation import TransportGenerationManager, TransportStateError
 from .wire_protocol import (
     CapabilityElevationRequest,
     PairingControlRequest,

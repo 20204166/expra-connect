@@ -2,7 +2,7 @@ import math
 import unittest
 
 from expra_connect.models import NodeCapability, NodePermission
-from expra_connect.surface_protocol import (
+from expra_connect.surfaces.protocol import (
     MAX_SURFACE_ID_LENGTH,
     MAX_SURFACE_PARAM_DEPTH,
     SURFACE_ACCESS_BY_OPERATION,

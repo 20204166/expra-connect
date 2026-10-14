@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from expra_connect.connection_manager import ConnectionManager
 from expra_connect.connection_state import ConnectionStatus
-from expra_connect.discovery import (
+from expra_connect.discovery.candidates import (
     DiscoveryCandidate,
     DiscoveryRegistry,
     preferred_endpoint,
@@ -18,9 +18,9 @@ from expra_connect.models import (
     EndpointSource,
 )
 from expra_connect.observability import ObservabilityWatcher
-from expra_connect.pairing import PairingManager, TrustedPeer
+from expra_connect.pairing.manager import PairingManager, TrustedPeer
 from expra_connect.registry import NodeRegistry
-from expra_connect.remote_service import AuthenticatedNodeProvider
+from expra_connect.remote_provider import AuthenticatedNodeProvider
 from expra_connect.wire_protocol import (
     RemoteAuthError,
     RemoteProtocolError,

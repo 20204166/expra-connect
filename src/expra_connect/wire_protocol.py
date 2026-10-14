@@ -18,7 +18,7 @@ from .models import (
     ProcessActionKind,
 )
 from .sharing import _is_valid_capability_id
-from .surface_protocol import (
+from .surfaces.protocol import (
     SURFACE_OPERATION_SAFETY,
     SURFACE_OPERATIONS,
     SURFACE_REQUIRED_CAPABILITY,

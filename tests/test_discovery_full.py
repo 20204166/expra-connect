@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import patch
 
-from expra_connect.discovery_full import (
+from expra_connect.discovery.network import (
     DEFAULT_TTL_SECONDS,
     EVENT_CANDIDATE,
     EVENT_LOST,
@@ -162,8 +162,8 @@ class FullDiscoveryTests(unittest.TestCase):
             ServiceInfo=FakeServiceInfo,
             ServiceBrowser=FakeServiceBrowser,
         )
-        with patch("expra_connect.discovery_full._zeroconf_module", fake_module):
-            from expra_connect.discovery_full import ZeroconfDiscoveryBackend
+        with patch("expra_connect.discovery.network._zeroconf_module", fake_module):
+            from expra_connect.discovery.network import ZeroconfDiscoveryBackend
 
             backend = ZeroconfDiscoveryBackend(lambda *_args: None)
             backend.start(
@@ -211,8 +211,8 @@ class FullDiscoveryTests(unittest.TestCase):
             ServiceBrowser=FakeServiceBrowser,
             IPVersion=SimpleNamespace(All="all", V4Only="v4"),
         )
-        with patch("expra_connect.discovery_full._zeroconf_module", fake_module):
-            from expra_connect.discovery_full import ZeroconfDiscoveryBackend
+        with patch("expra_connect.discovery.network._zeroconf_module", fake_module):
+            from expra_connect.discovery.network import ZeroconfDiscoveryBackend
 
             backend = ZeroconfDiscoveryBackend(lambda *_args: None)
             backend.start(
@@ -813,6 +813,6 @@ class FullDiscoveryTests(unittest.TestCase):
         self.assertEqual(discovery.peers(), ())
 
     def test_default_ttl_exceeds_mdns_record_ttl(self) -> None:
-        from expra_connect.discovery_full import DEFAULT_TTL_SECONDS
+        from expra_connect.discovery.network import DEFAULT_TTL_SECONDS
 
         self.assertGreater(DEFAULT_TTL_SECONDS, 4500.0)

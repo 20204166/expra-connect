@@ -8,9 +8,9 @@
 | `maintenance.remote_support.protocol` | `expra_connect.wire_protocol` | Generalized wire contract |
 | `maintenance.remote_support.server` | `expra_connect.server` | Headless bounded listener |
 | `maintenance.remote` | `expra_connect.remote_service` | Provider/service extraction |
-| `maintenance.components.network_discovery` | `expra_connect.discovery_full` | Adapted backend lifecycle |
+| `maintenance.components.network_discovery` | `expra_connect.discovery.network` | Adapted backend lifecycle |
 | `maintenance.cluster_roles` | `expra_connect.role_engine` | Direct role/fencing extraction |
-| UI pairing actions | `expra_connect.pairing` | Headless transition core |
+| UI pairing actions | `expra_connect.pairing.manager` | Headless transition core |
 | `RemoteService` scanner handlers | `expra_connect.remote_service` | Injected provider only |
 | Tk pages/dialogs | None | Excluded |
 | CPU/GPU/storage/battery code | None | Excluded |

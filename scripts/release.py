@@ -22,7 +22,7 @@ _MINOR_SURFACES = frozenset({"expra_connect/runtime.py", "expra_connect/cli.py"}
 _FEATURE_SURFACES = frozenset(
     {
         "expra_connect/connection_manager.py",
-        "expra_connect/pairing_flow.py",
+        "expra_connect/pairing/flow.py",
         "expra_connect/remote_service.py",
         "expra_connect/sharing.py",
     }

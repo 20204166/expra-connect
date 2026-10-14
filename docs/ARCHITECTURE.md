@@ -20,16 +20,19 @@ topology state, not a transport state.
 | --- | --- | --- |
 | Stable logical identifier | `identity.py` | `NodeId` is public and non-secret |
 | Canonical device cryptographic root | `device_identity.py` | Bridges metadata in `device_identity.yaml` to private material in `device_identity.msgpack` |
+| Best-effort hardware anomaly evidence | `device_hardware.py` | Normalizes local identifiers and persists only a domain-separated digest and source presence |
 | Network compatibility identity | `identity.py` | Bridges metadata in `identity.yaml` to HMAC/root private material in `identity.msgpack` |
-| TLS generation lifecycle | `identity.py`, `tls_material.py` | Manages generation continuity without changing `NodeId` |
-| Candidate discovery and expiry | `discovery_full.py` | Serializes backend lifecycle, normalizes per-service observations, and forwards events |
-| Pairing, grants, trust, and revocation | `pairing.py` | Persists transitions and refreshes the listener ACL |
+| TLS generation lifecycle | `transport_generation.py`, `identity.py`, `tls_material.py` | Manages generation continuity without changing `NodeId`; identity owns proof signing and verification |
+| Candidate discovery and expiry | `discovery/` | `candidates.py` owns validation/ranking/TTL, `network.py` owns lifecycle, and `backend.py` adapts Zeroconf |
+| Pairing, grants, trust, and revocation | `pairing/` | `manager.py` owns directional trust; `flow.py` and `target.py` own outbound and inbound pairing flows |
 | TLS/HMAC request security | `tls_material.py`, `wire_protocol.py`, `remote_service.py` | Composes the authenticated server boundary |
+| Authenticated remote client operations | `remote_provider.py`, `provider_requests.py` | Exposes client operations while reusing shared request, surface, role, and transport mechanisms |
 | One-endpoint socket exchange | `socket_transport.py` | Connects, pins TLS before sending, frames one request/response, and closes the socket |
 | Outgoing connection state and providers | `connection_manager.py`, `connection_state.py` | Connects only discovered trusted peers |
 | Logical sessions and request safety | `session.py`, `provider_requests.py`, `wire_protocol.py` | Authenticates resume, fences old sockets, and bounds idempotent results |
 | Target-owned capability policy | `sharing.py` | Keeps explicit, ephemeral per-peer read-only grants and injects the allowlist into `RemoteService` |
-| Optional cluster membership, roles, invites, leases, and fencing | `cluster/` | Enabled only by `ConnectConfig.cluster_enabled`; flat modules are compatibility re-exports |
+| Optional cluster membership, roles, invites, leases, and fencing | `cluster/` | Enabled only by `ConnectConfig.cluster_enabled`; deliberate flat modules remain public API surfaces |
+| Structured application surfaces | `surfaces/` | `registry.py` owns registration/grants/dispatch, `protocol.py` validates operation contracts, and `provider.py` adapts RPC |
 | Host UI/event-loop delivery | Host application | Queues callbacks onto its own UI/runtime thread |
 
 `runtime.py` is intentionally a composition root and lifecycle facade. It does

@@ -1,7 +1,7 @@
 import unittest
 
 from expra_connect.identity import NodeId, NodeIdentity
-from expra_connect.pairing import (
+from expra_connect.pairing.manager import (
     PairingBusy,
     PairingManager,
     PairingManagerSnapshot,

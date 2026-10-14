@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 
-from .identity import NodeId, verify_transport_proof
+from ..identity import NodeId, verify_transport_proof
 
 # ``ping`` is retained as the legacy read-only operation used by the original
 # pairing API; network pairing uses ``read_state``.

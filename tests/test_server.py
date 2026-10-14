@@ -5,7 +5,8 @@ from typing import Any, cast
 
 from expra_connect.identity import NodeId
 from expra_connect.models import NodePermission
-from expra_connect.remote_service import AuthenticatedNodeProvider, PairingTransaction
+from expra_connect.pairing.models import PairingTransaction
+from expra_connect.remote_provider import AuthenticatedNodeProvider
 from expra_connect.server import (
     PEER_SERVICE_DEFAULT_PORT,
     RemoteSocketServer,

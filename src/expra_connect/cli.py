@@ -16,7 +16,8 @@ from ._version import __version__
 from .identity import NodeId, node_identity_fingerprint
 from .models import READ_CAPABILITIES
 from .remote_models import NodeStatus
-from .remote_service import AuthenticatedNodeProvider, RemoteService
+from .remote_provider import AuthenticatedNodeProvider
+from .remote_service import RemoteService
 from .runtime import ConnectConfig, ConnectRuntime
 from .server import RemoteSocketServer
 from .sharing import CapabilityShare

@@ -46,11 +46,11 @@ def add_file(path):
     })
 
 module_files = {
-    "architecture": ["runtime.py", "discovery_full.py", "registry.py", "connection_manager.py", "pairing.py", "transport.py"],
+    "architecture": ["runtime.py", "discovery/network.py", "registry.py", "connection_manager.py", "pairing/manager.py", "transport.py"],
     "runtime": ["runtime.py", "runtime_diagnostics.py", "runtime_persistence.py"],
     "config": ["runtime.py", "persistence.py"],
-    "models": ["models.py", "remote_models.py", "pairing_models.py"],
-    "capabilities": ["sharing.py", "surfaces.py", "wire_protocol.py"],
+    "models": ["models.py", "remote_models.py", "pairing/models.py"],
+    "capabilities": ["sharing.py", "surfaces/registry.py", "wire_protocol.py"],
     "lifecycle": ["runtime.py", "connection_state.py", "observability.py"],
     "module": ["__init__.py"],
 }

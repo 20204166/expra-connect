@@ -5,7 +5,7 @@ from threading import Barrier, Event, Thread
 
 from expra_connect.identity import NodeId
 from expra_connect.sharing import CapabilityShare
-from expra_connect.surfaces import (
+from expra_connect.surfaces.registry import (
     SurfaceAccess,
     SurfaceHandlerError,
     SurfaceRegistry,

@@ -7,7 +7,7 @@ from typing import Any
 
 from .identity import NodeId
 from .models import NodePermission
-from .pairing import PeerGrant, PendingPairing, TrustedPeer
+from .pairing.manager import PeerGrant, PendingPairing, TrustedPeer
 
 
 def peer_grant_to_json(grant: PeerGrant) -> dict[str, Any]:

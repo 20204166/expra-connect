@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import patch
 
-from expra_connect.discovery_backend import (
+from expra_connect.discovery.backend import (
     ZeroconfBackend,
     _address_text,
     _address_texts,
@@ -82,7 +82,7 @@ class _BackendCase(unittest.TestCase):
     def _make_backend(
         self, module: Any
     ) -> tuple[ZeroconfBackend, list[tuple[str, dict[str, Any]]]]:
-        patcher = patch("expra_connect.discovery_backend._zeroconf_module", module)
+        patcher = patch("expra_connect.discovery.backend._zeroconf_module", module)
         patcher.start()
         self.addCleanup(patcher.stop)
         events: list[tuple[str, dict[str, Any]]] = []
@@ -108,7 +108,7 @@ class StartLifecycleTests(_BackendCase):
             backend.start()
 
         module, zcs, browsers = _recording_module()
-        with patch("expra_connect.discovery_backend._zeroconf_module", module):
+        with patch("expra_connect.discovery.backend._zeroconf_module", module):
             backend.start()
 
         self.assertEqual(len(zcs), 1)
@@ -310,7 +310,7 @@ class EventDeliveryTests(_BackendCase):
             if event == "add":
                 raise RuntimeError("host callback failed")
 
-        patcher = patch("expra_connect.discovery_backend._zeroconf_module", module)
+        patcher = patch("expra_connect.discovery.backend._zeroconf_module", module)
         patcher.start()
         self.addCleanup(patcher.stop)
         backend = ZeroconfBackend(SERVICE_TYPE, on_event)
@@ -342,7 +342,7 @@ class EventDeliveryTests(_BackendCase):
         module = SimpleNamespace(
             Zeroconf=RecordingZeroconf, ServiceBrowser=SynchronousBrowser
         )
-        patcher = patch("expra_connect.discovery_backend._zeroconf_module", module)
+        patcher = patch("expra_connect.discovery.backend._zeroconf_module", module)
         patcher.start()
         self.addCleanup(patcher.stop)
         backend = ZeroconfBackend(
