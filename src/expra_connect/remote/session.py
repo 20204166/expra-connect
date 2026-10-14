@@ -57,9 +57,9 @@ class LogicalSessionRegistry:
         self,
         *,
         clock: Callable[[], float] = time.monotonic,
-        ttl_seconds: float = DEFAULT_SESSION_TTL_SECONDS,
-        max_sessions: int = DEFAULT_MAX_SESSIONS,
-        max_generations_per_session: int = DEFAULT_MAX_GENERATIONS_PER_SESSION,
+        ttl_seconds: object = DEFAULT_SESSION_TTL_SECONDS,
+        max_sessions: object = DEFAULT_MAX_SESSIONS,
+        max_generations_per_session: object = DEFAULT_MAX_GENERATIONS_PER_SESSION,
         session_id_factory: Callable[[], str] | None = None,
     ) -> None:
         self._ttl = _finite_positive(ttl_seconds, name="session ttl")

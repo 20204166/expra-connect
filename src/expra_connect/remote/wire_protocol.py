@@ -848,7 +848,7 @@ class IdempotencyCache:
             return len(self._entries)
 
 
-def validate_operation_params(op: str, params: dict[str, Any]) -> None:
+def validate_operation_params(op: str, params: Any) -> None:
     if not isinstance(op, str) or op not in OP_REQUIRED_CAPABILITY:
         raise RemoteProtocolError(f"unknown operation: {op}")
     if not isinstance(params, dict):

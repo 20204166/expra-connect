@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
+import shutil
 import zipfile
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -14,7 +15,9 @@ from typing import Literal
 VersionBump = Literal["none", "patch", "feature", "minor"]
 
 _VERSION_RE = re.compile(r'(__version__\s*=\s*")(?P<value>\d+\.\d+\.\d+\.\d+)(")')
-_WHEEL_RE = re.compile(r"^expra_connect-(\d+\.\d+\.\d+\.\d+)-py3-none-any\.whl$")
+_WHEEL_RE = re.compile(
+    r"^expra_connect-(\d+\.\d+\.\d+\.\d+)-([^-.]+-[^-.]+-[^-.]+)\.whl$"
+)
 _VERSION_FILE = Path("src") / "expra_connect" / "_version.py"
 _PACKAGE_ROOT = "expra_connect"
 
@@ -117,16 +120,21 @@ def _wheel_manifest(wheel: Path) -> dict[str, str]:
 
 
 def _newest_wheel(dist_dir: Path) -> Path | None:
-    candidates: list[tuple[tuple[int, int, int, int], Path]] = []
+    candidates: list[tuple[tuple[int, int, int, int], int, Path]] = []
     for path in dist_dir.glob("expra_connect-*.whl"):
         match = _WHEEL_RE.match(path.name)
         if match:
-            candidates.append((_parse_version(match.group(1)), path))
-    return (
-        max(candidates, default=None, key=lambda item: item[0])[1]
-        if candidates
-        else None
-    )
+            universal_priority = int(match.group(2) != "py3-none-any")
+            candidates.append(
+                (_parse_version(match.group(1)), universal_priority, path)
+            )
+    if not candidates:
+        return None
+    newest_version = max(item[0] for item in candidates)
+    return min(
+        (item for item in candidates if item[0] == newest_version),
+        key=lambda item: (item[1], item[2].name),
+    )[2]
 
 
 def _wheel_version(path: Path) -> str:
@@ -211,11 +219,57 @@ def newest_wheel(package_dir: Path) -> Path:
     return wheel
 
 
-def rewrite_sha256sums(package_dir: Path) -> None:
-    wheel = newest_wheel(package_dir)
-    (package_dir / "dist" / "SHA256SUMS").write_text(
-        f"{_sha256(wheel.read_bytes())}  {wheel.name}\n", encoding="utf-8"
+def sync_artifacts(package_dir: Path, artifact_dir: Path) -> None:
+    version = read_current_version(package_dir)
+    dist_dir = package_dir / "dist"
+    dist_dir.mkdir(parents=True, exist_ok=True)
+    candidates = sorted(
+        path
+        for path in artifact_dir.glob("expra_connect-*.whl")
+        if _WHEEL_RE.match(path.name) and _wheel_version(path) == version
     )
+    if not candidates:
+        raise FileNotFoundError(f"no wheel artifacts found for version {version}")
+    if not any(path.name.endswith("-py3-none-any.whl") for path in candidates):
+        raise FileNotFoundError(
+            f"artifact set has no pure-Python fallback for {version}"
+        )
+    if not any(not path.name.endswith("-py3-none-any.whl") for path in candidates):
+        raise FileNotFoundError(f"artifact set has no native wheel for {version}")
+
+    sums_path = dist_dir / "SHA256SUMS"
+    existing_lines = (
+        sums_path.read_text(encoding="utf-8").splitlines() if sums_path.exists() else []
+    )
+    checksums: dict[str, list[str]] = {}
+    for line in existing_lines:
+        fields = line.split()
+        if len(fields) >= 2:
+            checksums.setdefault(fields[-1], []).append(fields[0])
+
+    validated: list[tuple[Path, Path, str]] = []
+    for source in candidates:
+        destination = dist_dir / source.name
+        source_digest = _sha256(source.read_bytes())
+        if any(digest != source_digest for digest in checksums.get(source.name, [])):
+            raise ValueError(f"checksum mismatch for existing artifact: {source.name}")
+        if destination.exists() and destination.read_bytes() != source.read_bytes():
+            raise FileExistsError(
+                f"refusing to replace existing release artifact: {destination.name}"
+            )
+        validated.append((source, destination, source_digest))
+
+    new_lines: list[str] = []
+    for source, destination, source_digest in validated:
+        if not destination.exists():
+            shutil.copy2(source, destination)
+        if source.name not in checksums:
+            new_lines.append(f"{source_digest}  {source.name}")
+    if new_lines:
+        (sums_path).write_text(
+            "\n".join([*existing_lines, *new_lines]).rstrip() + "\n",
+            encoding="utf-8",
+        )
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -230,6 +284,7 @@ def _parser() -> argparse.ArgumentParser:
     newest.add_argument("--package-dir", required=True)
     sync = sub.add_parser("sync-artifacts")
     sync.add_argument("--package-dir", required=True)
+    sync.add_argument("--artifact-dir", required=True)
     return parser
 
 
@@ -241,7 +296,7 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "newest-wheel":
         print(newest_wheel(package_dir))
     else:
-        rewrite_sha256sums(package_dir)
+        sync_artifacts(package_dir, Path(args.artifact_dir).resolve())
     return 0
 
 

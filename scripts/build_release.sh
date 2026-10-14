@@ -10,12 +10,25 @@ mkdir -p dist
 # leak removed modules into the release wheel.
 BUILD_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/expra-connect-release.XXXXXX")
 trap 'rm -rf "$BUILD_ROOT"' EXIT
-mkdir -p "$BUILD_ROOT/source"
-cp pyproject.toml "$BUILD_ROOT/source/"
+mkdir -p "$BUILD_ROOT/source" "$BUILD_ROOT/artifacts"
+cp pyproject.toml setup.py "$BUILD_ROOT/source/"
 cp -a src "$BUILD_ROOT/source/"
-"$PYTHON_BIN" -m pip wheel --no-deps --wheel-dir "$ROOT_DIR/dist" "$BUILD_ROOT/source"
-wheel=$("$PYTHON_BIN" scripts/release.py newest-wheel --package-dir .)
-"$PYTHON_BIN" scripts/verify_wheel.py "$wheel"
-"$PYTHON_BIN" scripts/release.py sync-artifacts --package-dir .
-printf 'Built %s\n' "$wheel"
+cp -a "$BUILD_ROOT/source" "$BUILD_ROOT/pure-source"
+cp -a "$BUILD_ROOT/source" "$BUILD_ROOT/native-source"
+
+# Build each variant from an isolated clean source tree so generated C and
+# extension outputs can never leak into the pure-Python fallback.
+"$PYTHON_BIN" -m pip wheel --no-deps --wheel-dir "$BUILD_ROOT/artifacts" \
+  "$BUILD_ROOT/pure-source"
+EXPRA_CONNECT_CYTHON=1 "$PYTHON_BIN" -m pip wheel --no-deps \
+  --wheel-dir "$BUILD_ROOT/artifacts" "$BUILD_ROOT/native-source"
+
+for wheel in "$BUILD_ROOT"/artifacts/*.whl; do
+  "$PYTHON_BIN" scripts/verify_wheel.py "$wheel" \
+    --source-package "$BUILD_ROOT/source/src/expra_connect"
+done
+"$PYTHON_BIN" scripts/release.py sync-artifacts \
+  --package-dir . --artifact-dir "$BUILD_ROOT/artifacts"
+printf 'Built release artifacts:\n'
+ls -1 "$BUILD_ROOT"/artifacts/*.whl
 cat dist/SHA256SUMS
