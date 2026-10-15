@@ -26,6 +26,7 @@ def _write_native_wheel(
     path: Path,
     *,
     include_extensions: bool,
+    omit_extension: str | None = None,
     tag: str = "cp312-cp312-linux_x86_64",
     extension_abi: str = "312",
 ) -> None:
@@ -34,17 +35,22 @@ def _write_native_wheel(
         wheel.writestr("expra_connect/remote/__init__.py", "")
         wheel.writestr("expra_connect/remote/session.py", "")
         wheel.writestr("expra_connect/remote/wire_protocol.py", "")
+        wheel.writestr("expra_connect/cluster/__init__.py", "")
+        for module in ("models", "operations", "roles", "state"):
+            wheel.writestr(f"expra_connect/cluster/{module}.py", "")
         if include_extensions:
-            wheel.writestr(
-                "expra_connect/remote/session.cpython-"
-                f"{extension_abi}-x86_64-linux-gnu.so",
-                b"",
+            modules = (
+                "expra_connect/cluster/models",
+                "expra_connect/cluster/operations",
+                "expra_connect/cluster/state",
             )
-            wheel.writestr(
-                "expra_connect/remote/wire_protocol.cpython-"
-                f"{extension_abi}-x86_64-linux-gnu.so",
-                b"",
-            )
+            for module in modules:
+                if module == omit_extension:
+                    continue
+                wheel.writestr(
+                    f"{module}.cpython-{extension_abi}-x86_64-linux-gnu.so",
+                    b"",
+                )
         wheel.writestr(
             "expra_connect-1.8.0.0.dist-info/METADATA",
             "Name: expra-connect\nVersion: 1.8.0.0\n"
@@ -72,6 +78,31 @@ class VerifyWheelTests(unittest.TestCase):
 
             _write_native_wheel(wheel_path, include_extensions=False)
             with self.assertRaises(SystemExit):
+                verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
+
+    def test_native_wheel_does_not_require_unselected_cluster_roles_extension(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            wheel_path = Path(directory) / (
+                "expra_connect-1.8.0.0-cp312-cp312-linux_x86_64.whl"
+            )
+            _write_native_wheel(wheel_path, include_extensions=True)
+
+            verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
+
+    def test_native_wheel_requires_cluster_state_extensions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            wheel_path = Path(directory) / (
+                "expra_connect-1.8.0.0-cp312-cp312-linux_x86_64.whl"
+            )
+            _write_native_wheel(
+                wheel_path,
+                include_extensions=True,
+                omit_extension="expra_connect/cluster/state",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "expra_connect/cluster/state"):
                 verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
 
     def test_source_package_check_rejects_incomplete_wheel(self) -> None:

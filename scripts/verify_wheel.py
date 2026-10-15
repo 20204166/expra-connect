@@ -30,8 +30,9 @@ CPYTHON_NATIVE_TAG = re.compile(
 )
 EXTENSION_SUFFIXES = (".so", ".pyd")
 CYTHON_MODULES = (
-    "expra_connect/remote/session",
-    "expra_connect/remote/wire_protocol",
+    "expra_connect/cluster/models",
+    "expra_connect/cluster/operations",
+    "expra_connect/cluster/state",
 )
 
 

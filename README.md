@@ -223,6 +223,8 @@ Install editable before running the suite so no `PYTHONPATH` is needed:
 (`tools/expra_connect_mcp/`, configured in `.mcp.json` and `opencode.json`)
 exposes read-only diagnostics only; it is never part of the wheel.
 
+PyPy 3.11 is also exercised in GitHub Actions, including the full unittest suite.
+
 The CLI includes diagnostics and a deliberately small demo surface:
 
 ```sh

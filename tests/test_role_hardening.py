@@ -65,6 +65,31 @@ class RoleAuthorityTests(unittest.TestCase):
         self.worker = worker()
         self.sub = subcoordinator()
 
+    def test_cached_role_indexes_are_read_only_and_state_local(self) -> None:
+        grant = CapabilityGrant(
+            NodeId("sub"),
+            NodeId("worker"),
+            frozenset({PERMISSION}),
+            1.0,
+            100.0,
+        )
+        state = RoleState(
+            assignments=(self.coord, self.sub, self.worker),
+            capability_grants=(grant,),
+        )
+
+        self.assertIs(state.assignment_for(NodeId("worker")), self.worker)
+        self.assertIs(state.capability_grant(NodeId("sub"), NodeId("worker")), grant)
+        self.assertIsNotNone(state._assignment_index)
+        self.assertIsNotNone(state._grant_index)
+        with self.assertRaises(TypeError):
+            state._assignment_index[NodeId("worker")] = self.coord  # type: ignore[index,union-attr]
+
+        updated = state.pause(actor=self.coord, target=NodeId("worker"))
+
+        self.assertFalse(state.assignment_for(NodeId("worker")).paused)  # type: ignore[union-attr]
+        self.assertTrue(updated.assignment_for(NodeId("worker")).paused)  # type: ignore[union-attr]
+
     def test_forged_coordinator_assignment_cannot_control(self) -> None:
         state = RoleState(assignments=(self.coord, self.worker))
         forged = coordinator("attacker")

@@ -6,7 +6,10 @@ import hashlib
 import hmac
 import math
 import secrets
-from dataclasses import dataclass, replace
+from collections.abc import Mapping
+from dataclasses import dataclass, field, replace
+from threading import Lock
+from types import MappingProxyType
 
 from ..identity import NodeId
 from ..models import NodePermission
@@ -20,6 +23,7 @@ from .models import (
 )
 
 HEARTBEAT_TIMEOUT_SECONDS = 120.0
+_ROLE_STATE_INDEX_LOCK = Lock()
 
 
 def _finite(value: object) -> bool:
@@ -44,6 +48,12 @@ class RoleState:
     epoch: CoordinatorEpoch | None = None
     promotion_epochs: frozenset[int] = frozenset()
     capability_grants: tuple[CapabilityGrant, ...] = ()
+    _assignment_index: Mapping[NodeId, RoleAssignment] | None = field(
+        init=False, repr=False, compare=False, default=None
+    )
+    _grant_index: Mapping[tuple[NodeId, NodeId], CapabilityGrant] | None = field(
+        init=False, repr=False, compare=False, default=None
+    )
 
     def __post_init__(self) -> None:
         # Unbound assignments are valid intermediate values; only persisted or
@@ -76,8 +86,41 @@ class RoleState:
         if any(type(item) is not int or item < 0 for item in self.promotion_epochs):
             raise ValueError("invalid promotion epoch marker")
 
+    def _assignment_index_for(self) -> Mapping[NodeId, RoleAssignment]:
+        index = self._assignment_index
+        if index is None:
+            with _ROLE_STATE_INDEX_LOCK:
+                index = self._assignment_index
+                if index is None:
+                    index = MappingProxyType(
+                        {
+                            assignment.node_id: assignment
+                            for assignment in self.assignments
+                            if assignment.node_id is not None
+                        }
+                    )
+                    object.__setattr__(self, "_assignment_index", index)
+        return index
+
+    def _grant_index_for(
+        self,
+    ) -> Mapping[tuple[NodeId, NodeId], CapabilityGrant]:
+        index = self._grant_index
+        if index is None:
+            with _ROLE_STATE_INDEX_LOCK:
+                index = self._grant_index
+                if index is None:
+                    index = MappingProxyType(
+                        {
+                            (item.subject, item.target): item
+                            for item in self.capability_grants
+                        }
+                    )
+                    object.__setattr__(self, "_grant_index", index)
+        return index
+
     def assignment_for(self, node_id: NodeId) -> RoleAssignment | None:
-        return next((a for a in self.assignments if a.node_id == node_id), None)
+        return self._assignment_index_for().get(node_id)
 
     def active_coordinator(self) -> RoleAssignment | None:
         return next(
@@ -96,14 +139,7 @@ class RoleState:
     def capability_grant(
         self, subject: NodeId, target: NodeId, *, now: float | None = None
     ) -> CapabilityGrant | None:
-        grant = next(
-            (
-                g
-                for g in self.capability_grants
-                if (g.subject, g.target) == (subject, target)
-            ),
-            None,
-        )
+        grant = self._grant_index_for().get((subject, target))
         if grant is None or now is None:
             return grant
         if not _finite(now):

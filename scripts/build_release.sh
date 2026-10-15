@@ -13,13 +13,10 @@ trap 'rm -rf "$BUILD_ROOT"' EXIT
 mkdir -p "$BUILD_ROOT/source" "$BUILD_ROOT/artifacts"
 cp pyproject.toml setup.py "$BUILD_ROOT/source/"
 cp -a src "$BUILD_ROOT/source/"
-cp -a "$BUILD_ROOT/source" "$BUILD_ROOT/pure-source"
 cp -a "$BUILD_ROOT/source" "$BUILD_ROOT/native-source"
 
-# Build each variant from an isolated clean source tree so generated C and
-# extension outputs can never leak into the pure-Python fallback.
-"$PYTHON_BIN" -m pip wheel --no-deps --wheel-dir "$BUILD_ROOT/artifacts" \
-  "$BUILD_ROOT/pure-source"
+# Build from a clean source tree so ignored/stale build outputs cannot leak into
+# the Cython wheel.
 EXPRA_CONNECT_CYTHON=1 "$PYTHON_BIN" -m pip wheel --no-deps \
   --wheel-dir "$BUILD_ROOT/artifacts" "$BUILD_ROOT/native-source"
 

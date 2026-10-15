@@ -9,13 +9,27 @@ import secrets
 import time
 from collections.abc import Callable
 from dataclasses import replace
-from typing import Any
+from typing import Any, Protocol
 
 from ..identity import NodeId
 from .invites import ClusterDataError, create_invite, invite_to_dict
-from .models import ClusterRole, CoordinatorEpoch, InviteRecord, RoleAssignment
+from .models import (
+    CapabilityGrant,
+    ClusterRole,
+    CoordinatorEpoch,
+    InviteRecord,
+    RoleAssignment,
+)
 from .roles import RoleState, hash_invite, new_fencing_token
 from .state import role_state_from_dict, role_state_to_dict
+
+
+class _ClusterStateStore(Protocol):
+    """Persistence boundary accepted by the cluster facade."""
+
+    def save(self, state: dict[str, Any], /) -> None: ...
+
+    def load(self) -> ClusterState | dict[str, Any]: ...
 
 
 class ClusterState:
@@ -30,7 +44,7 @@ class ClusterState:
         join_admissions: tuple[InviteRecord, ...] = (),
         used_invites: frozenset[str] = frozenset(),
         promotion_epochs: frozenset[int] = frozenset(),
-        capability_grants: tuple[Any, ...] = (),
+        capability_grants: tuple[CapabilityGrant, ...] = (),
     ) -> None:
         self.local_node_id = local_node_id
         self.cluster_id = cluster_id
@@ -303,6 +317,22 @@ class Cluster:
             RoleAssignment(frozenset({ClusterRole.WORKER}), self.local_id),
         )
 
+    def _role_state(self) -> RoleState:
+        return RoleState(
+            tuple(self.assignments.values()),
+            self.epoch,
+            self.promotion_epochs,
+            self.capability_grants,
+        )
+
+    def _apply_role_state(self, state: RoleState) -> None:
+        self.assignments = {
+            assignment.node_id: assignment
+            for assignment in state.assignments
+            if assignment.node_id is not None
+        }
+        self.capability_grants = state.capability_grants
+
     def create_invite(
         self, target_id: NodeId, *, now: float | None = None
     ) -> InviteRecord:
@@ -323,13 +353,13 @@ class Cluster:
     def assign(self, node_id: NodeId, role: ClusterRole) -> None:
         if not self.is_active_coordinator:
             raise PermissionError("only an active local Coordinator may assign roles")
-        if role is ClusterRole.COORDINATOR and any(
-            not item.revoked and ClusterRole.COORDINATOR in item.roles
-            for key, item in self.assignments.items()
-            if key != node_id
-        ):
-            raise ValueError("cluster cannot have two active coordinators")
-        self.assignments[node_id] = RoleAssignment(frozenset({role}), node_id)
+        updated, _change = self._role_state().assign(
+            actor=self.local_assignment,
+            target=node_id,
+            roles=frozenset({role}),
+            now=self._clock(),
+        )
+        self._apply_role_state(updated)
         self._online.setdefault(node_id, True)
 
     def consume_invite(
@@ -417,23 +447,33 @@ class Cluster:
             capability_grants=self.capability_grants,
         ).to_dict()
 
-    def save(self, store: Any) -> None:
+    def save(self, store: _ClusterStateStore) -> None:
         store.save(self.to_dict())
 
     @classmethod
-    def load(
-        cls, local_id: NodeId, store: Any, *, clock: Callable[[], float] = time.time
+    def from_state(
+        cls,
+        local_id: NodeId,
+        state: ClusterState,
+        *,
+        clock: Callable[[], float] = time.time,
     ) -> Cluster:
-        state = ClusterState.from_dict(store.load())
+        """Hydrate runtime-owned state from the canonical persisted aggregate."""
         if state.local_node_id != local_id.value or local_id not in (
-            a.node_id for a in state.role_assignments
+            assignment.node_id for assignment in state.role_assignments
         ):
             raise ValueError("persisted cluster belongs to another local node")
-        result = cls(local_id, clock=clock)
         if state.coordinator_epoch is None:
             raise ValueError("persisted cluster has no coordinator epoch")
-        result.cluster_id, result.epoch = state.cluster_id, state.coordinator_epoch
-        result.assignments = {a.node_id: a for a in state.role_assignments if a.node_id}
+
+        result = cls(local_id, clock=clock)
+        result.cluster_id = state.cluster_id
+        result.epoch = state.coordinator_epoch
+        result.assignments = {
+            assignment.node_id: assignment
+            for assignment in state.role_assignments
+            if assignment.node_id is not None
+        }
         result._used_invites = set(state.used_invites)
         result.promotion_epochs = frozenset(state.promotion_epochs)
         result.capability_grants = tuple(state.capability_grants)
@@ -442,6 +482,22 @@ class Cluster:
             item.token_hash: item for item in state.join_admissions
         }
         return result
+
+    @classmethod
+    def load(
+        cls,
+        local_id: NodeId,
+        store: _ClusterStateStore,
+        *,
+        clock: Callable[[], float] = time.time,
+    ) -> Cluster:
+        stored_state = store.load()
+        state = (
+            stored_state
+            if isinstance(stored_state, ClusterState)
+            else ClusterState.from_dict(stored_state)
+        )
+        return cls.from_state(local_id, state, clock=clock)
 
     def is_member(self, node_id: NodeId) -> bool:
         return node_id in self.assignments and not self.assignments[node_id].revoked
@@ -455,18 +511,12 @@ class Cluster:
     def revoke(self, node_id: NodeId) -> None:
         if not self.is_active_coordinator:
             raise PermissionError("only an active local Coordinator may revoke roles")
-        if node_id in self.assignments:
-            self.assignments[node_id] = replace(
-                self.assignments[node_id],
-                revoked=True,
-                paused=False,
-                has_active_job=False,
-            )
-            self.capability_grants = tuple(
-                grant
-                for grant in self.capability_grants
-                if node_id not in (grant.subject, grant.target)
-            )
+        current = self.assignments.get(node_id)
+        if current is None or current.revoked:
+            return
+        self._apply_role_state(
+            self._role_state().revoke(actor=self.local_assignment, target=node_id)
+        )
 
     def authorize(self, *, cluster_id: str, epoch: int, fencing_token: str) -> None:
         if (

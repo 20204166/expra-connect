@@ -51,7 +51,7 @@ def _stage_wheels(root: Path, version: str, tags: tuple[str, ...]) -> None:
 
 
 class ReleaseTests(unittest.TestCase):
-    def test_native_wheels_share_version_and_pure_wheel_is_manifest_baseline(
+    def test_native_wheels_share_version_and_newest_native_is_manifest_baseline(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -62,7 +62,7 @@ class ReleaseTests(unittest.TestCase):
 
             self.assertEqual(release._wheel_version(pure), "0.1.2.0")
             self.assertEqual(release._wheel_version(native), "0.1.2.0")
-            self.assertEqual(release.newest_wheel(root), pure)
+            self.assertEqual(release.newest_wheel(root), native)
 
     def test_sync_artifacts_adds_new_wheels_without_dropping_old_sums(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -77,21 +77,20 @@ class ReleaseTests(unittest.TestCase):
 
             artifacts = root / "artifacts"
             artifacts.mkdir()
-            for tag in ("py3-none-any", "cp312-cp312-linux_x86_64"):
-                wheel = artifacts / f"expra_connect-0.1.2.0-{tag}.whl"
-                wheel.write_bytes(tag.encode())
+            tag = "cp312-cp312-linux_x86_64"
+            wheel = artifacts / f"expra_connect-0.1.2.0-{tag}.whl"
+            wheel.write_bytes(tag.encode())
 
             release.sync_artifacts(root, artifacts)
 
             sums = (dist / "SHA256SUMS").read_text(encoding="utf-8")
             self.assertIn(old_row, sums)
-            for tag in ("py3-none-any", "cp312-cp312-linux_x86_64"):
-                name = f"expra_connect-0.1.2.0-{tag}.whl"
-                self.assertEqual((dist / name).read_bytes(), tag.encode())
-                self.assertIn(name, sums)
+            name = f"expra_connect-0.1.2.0-{tag}.whl"
+            self.assertEqual((dist / name).read_bytes(), tag.encode())
+            self.assertIn(name, sums)
             self.assertEqual(old_wheel.read_bytes(), b"unchanged historical wheel")
 
-    def test_sync_artifacts_requires_native_and_fallback_wheels(self) -> None:
+    def test_sync_artifacts_rejects_pure_python_fallback(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             _make_package(root, "0.1.2.0")
@@ -101,8 +100,23 @@ class ReleaseTests(unittest.TestCase):
                 b"pure wheel"
             )
 
-            with self.assertRaisesRegex(FileNotFoundError, "native wheel"):
+            with self.assertRaisesRegex(FileNotFoundError, "native-only"):
                 release.sync_artifacts(root, artifacts)
+
+    def test_sync_artifacts_accepts_native_wheel_without_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _make_package(root, "0.1.2.0")
+            artifacts = root / "artifacts"
+            _stage_wheels(artifacts, "0.1.2.0", ("cp312-cp312-linux_x86_64",))
+
+            release.sync_artifacts(root, artifacts)
+
+            native_name = "expra_connect-0.1.2.0-cp312-cp312-linux_x86_64.whl"
+            self.assertTrue((root / "dist" / native_name).is_file())
+            self.assertNotIn(
+                "py3-none-any.whl", (root / "dist" / "SHA256SUMS").read_text()
+            )
 
     def test_sync_artifacts_rejects_stale_checksum_before_copying(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -110,24 +124,21 @@ class ReleaseTests(unittest.TestCase):
             _make_package(root, "0.1.2.0")
             dist = root / "dist"
             dist.mkdir()
-            pure_name = "expra_connect-0.1.2.0-py3-none-any.whl"
+            native_name = "expra_connect-0.1.2.0-cp312-cp312-linux_x86_64.whl"
             (dist / "SHA256SUMS").write_text(
-                f"wrong-digest  {pure_name}\n", encoding="utf-8"
+                f"wrong-digest  {native_name}\n", encoding="utf-8"
             )
             artifacts = root / "artifacts"
             _stage_wheels(
                 artifacts,
                 "0.1.2.0",
-                ("py3-none-any", "cp312-cp312-linux_x86_64"),
+                ("cp312-cp312-linux_x86_64",),
             )
 
             with self.assertRaisesRegex(ValueError, "checksum mismatch"):
                 release.sync_artifacts(root, artifacts)
 
-            self.assertFalse((dist / pure_name).exists())
-            self.assertFalse(
-                (dist / "expra_connect-0.1.2.0-cp312-cp312-linux_x86_64.whl").exists()
-            )
+            self.assertFalse((dist / native_name).exists())
 
     def test_sync_artifacts_preflights_collisions_before_copying(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -135,20 +146,20 @@ class ReleaseTests(unittest.TestCase):
             _make_package(root, "0.1.2.0")
             dist = root / "dist"
             dist.mkdir()
-            pure_name = "expra_connect-0.1.2.0-py3-none-any.whl"
-            (dist / pure_name).write_bytes(b"different existing wheel")
+            native_name = "expra_connect-0.1.2.0-cp312-cp312-linux_x86_64.whl"
+            (dist / native_name).write_bytes(b"different existing wheel")
             artifacts = root / "artifacts"
             _stage_wheels(
                 artifacts,
                 "0.1.2.0",
-                ("py3-none-any", "cp312-cp312-linux_x86_64"),
+                ("cp312-cp312-linux_x86_64",),
             )
 
             with self.assertRaises(FileExistsError):
                 release.sync_artifacts(root, artifacts)
 
-            self.assertFalse(
-                (dist / "expra_connect-0.1.2.0-cp312-cp312-linux_x86_64.whl").exists()
+            self.assertEqual(
+                (dist / native_name).read_bytes(), b"different existing wheel"
             )
 
     def test_published_checksum_manifest_references_local_wheels(self) -> None:

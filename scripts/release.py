@@ -124,10 +124,8 @@ def _newest_wheel(dist_dir: Path) -> Path | None:
     for path in dist_dir.glob("expra_connect-*.whl"):
         match = _WHEEL_RE.match(path.name)
         if match:
-            universal_priority = int(match.group(2) != "py3-none-any")
-            candidates.append(
-                (_parse_version(match.group(1)), universal_priority, path)
-            )
+            native_priority = int(match.group(2) == "py3-none-any")
+            candidates.append((_parse_version(match.group(1)), native_priority, path))
     if not candidates:
         return None
     newest_version = max(item[0] for item in candidates)
@@ -230,12 +228,14 @@ def sync_artifacts(package_dir: Path, artifact_dir: Path) -> None:
     )
     if not candidates:
         raise FileNotFoundError(f"no wheel artifacts found for version {version}")
-    if not any(path.name.endswith("-py3-none-any.whl") for path in candidates):
+    pure_wheels = [
+        path for path in candidates if path.name.endswith("-py3-none-any.whl")
+    ]
+    if pure_wheels:
         raise FileNotFoundError(
-            f"artifact set has no pure-Python fallback for {version}"
+            f"artifact set must be native-only for {version}; found "
+            + ", ".join(path.name for path in pure_wheels)
         )
-    if not any(not path.name.endswith("-py3-none-any.whl") for path in candidates):
-        raise FileNotFoundError(f"artifact set has no native wheel for {version}")
 
     sums_path = dist_dir / "SHA256SUMS"
     existing_lines = (

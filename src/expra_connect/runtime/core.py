@@ -439,23 +439,7 @@ class ConnectRuntime(
             self._cluster_store = cluster_store
             if cluster_store.exists():
                 persisted = cluster_store.load()
-                if persisted.local_node_id != self._identity.node_id.value:
-                    raise ValueError("persisted cluster belongs to another local node")
-                self._cluster = Cluster(self._identity.node_id)
-                self._cluster.cluster_id = persisted.cluster_id
-                self._cluster.epoch = persisted.coordinator_epoch
-                self._cluster.assignments = {
-                    item.node_id: item
-                    for item in persisted.role_assignments
-                    if item.node_id is not None
-                }
-                self._cluster._used_invites = set(persisted.used_invites)
-                self._cluster._restore_invites(persisted.active_invites)
-                self._cluster._join_admissions = {
-                    item.token_hash: item for item in persisted.join_admissions
-                }
-                self._cluster.promotion_epochs = frozenset(persisted.promotion_epochs)
-                self._cluster.capability_grants = tuple(persisted.capability_grants)
+                self._cluster = Cluster.from_state(self._identity.node_id, persisted)
                 self._cluster_capability_grants = tuple(persisted.capability_grants)
             else:
                 self._cluster = Cluster(self._identity.node_id)

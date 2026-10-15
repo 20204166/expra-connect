@@ -22,9 +22,17 @@ class ClusterTests(unittest.TestCase):
 
         with self.assertRaises(PermissionError):
             worker.join(invite, coordinator, pairing=lambda _peer: False, now=100.0)
-
         self.assertFalse(coordinator.is_member(NodeId("worker")))
         worker.join(invite, coordinator, pairing=lambda _peer: True, now=100.0)
+
+    def test_facade_delegates_role_assignment_invariants_to_role_state(self) -> None:
+        coordinator = Cluster(NodeId("coord"))
+        coordinator.assign(NodeId("sub-1"), ClusterRole.SUBCOORDINATOR)
+
+        with self.assertRaises(ValueError):
+            coordinator.assign(NodeId("sub-2"), ClusterRole.SUBCOORDINATOR)
+
+        self.assertFalse(coordinator.is_member(NodeId("sub-2")))
 
     def test_offline_does_not_remove_membership(self) -> None:
         cluster = Cluster(NodeId("coord"))
@@ -44,6 +52,14 @@ class ClusterTests(unittest.TestCase):
             )
         cluster.revoke(NodeId("worker"))
         self.assertFalse(cluster.is_member(NodeId("worker")))
+
+    def test_coordinator_cannot_revoke_its_own_role(self) -> None:
+        cluster = Cluster(NodeId("coord"))
+
+        with self.assertRaises(ValueError):
+            cluster.revoke(NodeId("coord"))
+
+        self.assertTrue(cluster.is_active_coordinator)
 
     def test_consume_invite_records_one_time_membership_admission(self) -> None:
         cluster = Cluster(NodeId("coord"))

@@ -3,12 +3,41 @@ import unittest
 from pathlib import Path
 from typing import cast
 
-from expra_connect.cluster import Cluster, ClusterDataError, ClusterRole, ClusterState
+from expra_connect.cluster import (
+    Cluster,
+    ClusterDataError,
+    ClusterRole,
+    ClusterState,
+)
+from expra_connect.cluster.persistence import ClusterStore
 from expra_connect.identity import NodeId
 from expra_connect.persistence import YamlStateStore
 
 
 class ClusterPersistenceTests(unittest.TestCase):
+    def test_cluster_from_state_restores_runtime_owned_collections(self) -> None:
+        cluster = Cluster(NodeId("coord"))
+        cluster.assign(NodeId("worker"), ClusterRole.WORKER)
+        state = ClusterState.from_dict(cluster.to_dict())
+
+        restored = Cluster.from_state(NodeId("coord"), state)
+
+        self.assertEqual(restored.cluster_id, cluster.cluster_id)
+        self.assertEqual(restored.assignments, cluster.assignments)
+        self.assertTrue(restored.online(NodeId("coord")))
+
+    def test_cluster_facade_round_trips_through_cluster_store(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = ClusterStore(Path(directory) / "cluster.yaml")
+            cluster = Cluster(NodeId("coord"))
+            cluster.assign(NodeId("worker"), ClusterRole.WORKER)
+
+            cluster.save(store)
+            restored = Cluster.load(NodeId("coord"), store)
+
+            self.assertEqual(restored.cluster_id, cluster.cluster_id)
+            self.assertEqual(restored.assignments, cluster.assignments)
+
     def test_persisted_membership_keeps_role_and_coordinator_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             cluster = Cluster(NodeId("coord"))

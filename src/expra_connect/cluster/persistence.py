@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..persistence import StateDataError, YamlStateStore
 from .invites import ClusterDataError
+
+if TYPE_CHECKING:
+    from .operations import ClusterState
 
 
 class ClusterStore:
@@ -16,10 +20,13 @@ class ClusterStore:
     def exists(self) -> bool:
         return YamlStateStore(self.path).exists()
 
-    def save(self, state: Any) -> None:
-        YamlStateStore(self.path).save(state.to_dict())
+    def save(self, state: ClusterState | Mapping[str, Any]) -> None:
+        from .operations import ClusterState
 
-    def load(self) -> Any:
+        document = state.to_dict() if isinstance(state, ClusterState) else dict(state)
+        YamlStateStore(self.path).save(document)
+
+    def load(self) -> ClusterState:
         from .operations import ClusterState
 
         try:

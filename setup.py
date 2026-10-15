@@ -17,8 +17,9 @@ def _native_extensions() -> list[Extension]:
     from Cython.Build import cythonize
 
     modules = (
-        "expra_connect.remote.session",
-        "expra_connect.remote.wire_protocol",
+        "expra_connect.cluster.models",
+        "expra_connect.cluster.operations",
+        "expra_connect.cluster.state",
     )
     extensions = [
         Extension(module, [f"src/{module.replace('.', '/')}.py"]) for module in modules
