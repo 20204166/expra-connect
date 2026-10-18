@@ -212,6 +212,9 @@ Release builds run `scripts/release.py prepare-build` first. The helper compares
 the importable package manifest with the newest four-segment wheel, selects a
 repo-specific patch/feature/minor bump, updates `_version.py`, then builds and
 verifies the wheel. Use `--bump none` for an intentional baseline build.
+The release wrapper accepts `--bump patch|feature|minor` to request an explicit
+bump and `--universal` to additionally build a pure-Python wheel; its default is
+still automatic bump selection and native-only output.
 
 ```sh
 .venv/bin/python -m unittest discover -s tests -t .

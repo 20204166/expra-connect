@@ -10,18 +10,25 @@ be repeatable after the tables change, without hand-copying chart values.
 
 ## Source of truth and update workflow
 
-- Existing Markdown tables remain the canonical benchmark data. Do not move or
-  rewrite their values into a second data file.
+- Existing Markdown tables remain the canonical data for the historical
+  diagrams. Do not move or rewrite their values into a second data file.
+- Same-version native/universal build comparisons are a separate addition: the
+  validated raw shared-harness JSON runs in
+  `docs/performance-build-comparison-results/` are their source of truth.
 - A small standard-library Python updater parses those tables, validates the
-  expected version columns and workload rows, and generates four SVG files in
-  `docs/images/`.
+  expected version columns and workload rows, and generates the four historical
+  SVG files in `docs/images/`.
 - The baseline Markdown embeds the generated SVGs with descriptive alt text.
 - Running `.venv/bin/python scripts/update_performance_diagrams.py` refreshes
-  the SVGs; `--check` verifies that committed SVGs match the current tables and
-  exits nonzero when they are stale or table parsing is incomplete.
+  the historical SVGs; `--check` verifies those diagrams against the canonical
+  source inputs and exits nonzero when they are stale or parsing is incomplete.
 - Automated tests cover table parsing, chart input coverage, missing/N/A
   values, and SVG output structure. The updater must fail clearly on malformed
   or unexpectedly changed source tables rather than silently omit data.
+- Run `.venv/bin/python -m scripts.update_performance_diagrams
+  --build-comparison-dir docs/performance-build-comparison-results` to generate
+  or check supplemental paired-build diagrams independently of local-only
+  historical baseline inputs.
 
 ## Four diagrams
 

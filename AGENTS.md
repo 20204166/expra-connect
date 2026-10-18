@@ -47,15 +47,17 @@ Never let one substitute for another.
 - Build releases only through `scripts/build_release.sh`. It auto-selects a
   patch/feature/minor four-segment bump via `scripts/release.py prepare-build`,
   builds and verifies native Cython wheels only, then adds their checksums
-  without dropping prior manifest rows. Do not hand-edit `_version.py` except
-  through the helper (`--bump none` for a baseline build).
+  without dropping prior manifest rows. Explicit helper bump choices may be
+  passed through the wrapper; do not hand-edit `_version.py` (`--bump none` for
+  a baseline build).
 - Every published release commits all wheels for that version and their entries
   in `dist/SHA256SUMS`; installers must select a compatible exact filename and
   verify its matching checksum. Never replace historical release artifacts.
 - Native Cython wheels compile only the explicitly selected modules and keep
-  their Python source files. Cython annotation typing remains enabled. Release
-  artifacts are platform- and CPython-version-specific; no universal fallback
-  wheel is built.
+  their Python source files. Cython annotation typing remains enabled. Native
+  artifacts are platform- and CPython-version-specific. The default release
+  build remains native-only; `scripts/build_release.sh --universal` explicitly
+  adds a pure-Python `py3-none-any` wheel alongside the native wheel(s).
 - The wheel must contain only `expra_connect/` and its dist-info. The MCP server
   under `tools/expra_connect_mcp/` is a development-only diagnostic surface and
   must never enter the wheel. `scripts/verify_wheel.py` enforces the headless

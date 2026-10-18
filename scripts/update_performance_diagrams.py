@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
-from scripts.benchmark_support import BenchmarkRun, load_results
+from scripts.benchmark_support import BenchmarkOutcome, BenchmarkRun, load_results
 
 FULL_VERSIONS = (
     "1.8.0.0",
@@ -362,6 +362,174 @@ def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun,
                     )
         loaded[group] = runs
     return loaded
+
+
+BUILD_COMPARISON_SUITES = ("cluster_state", "persistence", "connect")
+BUILD_COMPARISON_VERSION = "2.2.0.4"
+
+
+def load_build_comparison_runs(
+    results_dir: Path,
+) -> dict[str, tuple[BenchmarkRun, BenchmarkRun]]:
+    """Load the matched native/universal run pair for each full benchmark suite."""
+
+    pairs: dict[str, tuple[BenchmarkRun, BenchmarkRun]] = {}
+    for suite in BUILD_COMPARISON_SUITES:
+        pairs[suite] = (
+            load_results(results_dir / f"native-{suite}.json"),
+            load_results(results_dir / f"universal-{suite}.json"),
+        )
+    return pairs
+
+
+def render_build_comparison_diagrams(
+    pairs: dict[str, tuple[BenchmarkRun, BenchmarkRun]],
+) -> dict[str, str]:
+    """Render separate paired-build diagrams without altering historical charts."""
+
+    diagrams: dict[str, str] = {}
+    for suite, (native, universal) in pairs.items():
+        _validate_build_comparison_pair(suite, native, universal)
+        outcomes_by_id = [
+            {outcome.case_id: outcome for outcome in run.outcomes}
+            for run in (native, universal)
+        ]
+        outcome_pairs = [
+            (outcomes_by_id[0][case_id], outcomes_by_id[1][case_id])
+            for case_id in sorted(
+                outcomes_by_id[0],
+                key=lambda case_id: (
+                    outcomes_by_id[0][case_id].size,
+                    outcomes_by_id[0][case_id].operation,
+                ),
+            )
+        ]
+        diagrams[f"performance-build-comparison-{suite}.svg"] = (
+            _render_build_comparison_svg(suite, outcome_pairs)
+        )
+    return diagrams
+
+
+def _validate_build_comparison_pair(
+    suite: str, native: BenchmarkRun, universal: BenchmarkRun
+) -> None:
+    for label, run in (("native", native), ("universal", universal)):
+        metadata = run.metadata
+        if (
+            metadata.suite != suite
+            or metadata.package_version != BUILD_COMPARISON_VERSION
+        ):
+            raise ValueError(
+                f"{suite}: expected matching {BUILD_COMPARISON_VERSION} {label} run"
+            )
+    native_metadata, universal_metadata = native.metadata, universal.metadata
+    if (
+        native_metadata.python_version != universal_metadata.python_version
+        or native_metadata.platform != universal_metadata.platform
+        or native_metadata.config != universal_metadata.config
+    ):
+        raise ValueError(f"{suite}: native and universal run metadata differs")
+    if not any(
+        Path(path).suffix.lower() in (".so", ".pyd")
+        for path in native_metadata.modules.values()
+    ):
+        raise ValueError(f"{suite}: native run has no compiled extension provenance")
+    if not universal_metadata.modules or any(
+        Path(path).suffix.lower() != ".py"
+        for path in universal_metadata.modules.values()
+    ):
+        raise ValueError(f"{suite}: universal run must use Python source modules")
+
+    native_cases = {outcome.case_id: outcome for outcome in native.outcomes}
+    universal_cases = {outcome.case_id: outcome for outcome in universal.outcomes}
+    if native_cases.keys() != universal_cases.keys():
+        raise ValueError(f"{suite}: fixture or operation coverage differs")
+    for case_id, native_outcome in native_cases.items():
+        universal_outcome = universal_cases[case_id]
+        if (
+            native_outcome.operation != universal_outcome.operation
+            or native_outcome.fixture != universal_outcome.fixture
+            or native_outcome.size != universal_outcome.size
+            or native_outcome.payload_bytes != universal_outcome.payload_bytes
+            or native_outcome.config != universal_outcome.config
+            or (native_outcome.result is None) != (universal_outcome.result is None)
+        ):
+            raise ValueError(f"{suite}: fixture or operation coverage differs")
+
+
+def _render_build_comparison_svg(
+    suite: str, outcome_pairs: list[tuple[BenchmarkOutcome, BenchmarkOutcome]]
+) -> str:
+    width = 1500
+    row_height = 46
+    top = 126
+    height = top + row_height * max(1, len(outcome_pairs)) + 28
+    plot_left, plot_right = 460, 1050
+    measured = [
+        outcome.result.p50
+        for pair in outcome_pairs
+        for outcome in pair
+        if outcome.result is not None
+    ]
+    smallest = min(measured, default=1.0)
+    largest = max(measured, default=1.0)
+    min_log = math.log10(max(smallest, 1e-9))
+    max_log = math.log10(max(largest, smallest * 1.01))
+    span = max(max_log - min_log, 1e-9)
+    title = {
+        "cluster_state": f"{BUILD_COMPARISON_VERSION} native vs universal · cluster state",
+        "persistence": f"{BUILD_COMPARISON_VERSION} native vs universal · persistence",
+        "connect": f"{BUILD_COMPARISON_VERSION} native vs universal · connect",
+    }.get(suite, f"{BUILD_COMPARISON_VERSION} native vs universal · {suite}")
+    escaped_title = escape(title)
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="{escaped_title}">',
+        f"<title>{escaped_title}</title>",
+        f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
+        _text(16, 30, title, size=22, weight="bold"),
+    ]
+    parts.extend(
+        (
+            _text(
+                18,
+                76,
+                "Bars use a shared logarithmic scale; right column shows p50 µs and universal/native ratio.",
+                size=13,
+            ),
+            _text(460, 103, "Native Cython", size=12, color="#2166ac"),
+            _text(600, 103, "Universal Python", size=12, color="#b2182b"),
+            _text(1190, 103, "p50 µs · universal/native", size=12),
+        )
+    )
+    colors = ("#2166ac", "#b2182b")
+    for index, (native, universal) in enumerate(outcome_pairs):
+        y = top + index * row_height
+        fixture_label = f"{native.size:,} · {native.operation}"
+        parts.append(_text(18, y + 15, fixture_label, size=11))
+        values = (native.result, universal.result)
+        if values[0] is None or values[1] is None:
+            parts.append(_text(plot_left, y + 15, "not supported", size=11))
+            continue
+        latencies = (values[0].p50, values[1].p50)
+        for side, latency in enumerate(latencies):
+            position = (math.log10(max(latency, 1e-9)) - min_log) / span
+            bar_width = 8 + position * (plot_right - plot_left - 8)
+            bar_y = y + side * 13
+            parts.append(
+                f'<rect x="{plot_left}" y="{bar_y}" width="{bar_width:.1f}" '
+                f'height="9" fill="{colors[side]}"/>'
+            )
+        ratio = latencies[1] / latencies[0] if latencies[0] else math.inf
+        parts.append(
+            _text(
+                1190,
+                y + 12,
+                f"{latencies[0]:,.3f} / {latencies[1]:,.3f} · {ratio:.3f}×",
+                size=10,
+            )
+        )
+    parts.append("</svg>")
+    return "\n".join(parts)
 
 
 PALETTE = (
@@ -813,13 +981,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="check whether generated SVG files match the canonical measurement JSON",
     )
+    parser.add_argument(
+        "--build-comparison-dir",
+        type=Path,
+        help="render only the native/universal paired-build diagrams from this results directory",
+    )
     args = parser.parse_args(argv)
     repository_root = Path(__file__).resolve().parents[1]
-    data_path = repository_root / "docs" / "performance-baseline-data.json"
     output_dir = repository_root / "docs" / "images"
     try:
-        baseline = load_measurements(data_path)
-        diagrams = render_diagrams(baseline)
+        if args.build_comparison_dir is not None:
+            pairs = load_build_comparison_runs(args.build_comparison_dir)
+            diagrams = render_build_comparison_diagrams(pairs)
+        else:
+            data_path = repository_root / "docs" / "performance-baseline-data.json"
+            baseline = load_measurements(data_path)
+            diagrams = render_diagrams(baseline)
         stale = sync_diagrams(diagrams, output_dir, check=args.check)
     except (OSError, TypeError, ValueError) as error:
         print(f"performance diagram update failed: {error}", file=sys.stderr)

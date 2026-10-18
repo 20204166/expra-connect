@@ -7,11 +7,19 @@ import unittest
 from pathlib import Path
 from xml.etree import ElementTree
 
+from scripts.benchmark_support import (
+    BenchmarkOutcome,
+    BenchmarkRun,
+    MeasurementConfig,
+    RunMetadata,
+    measure,
+)
 from scripts.update_performance_diagrams import (
     FOCUSED_METRICS,
     FULL_METRICS,
     load_measurements,
     load_shared_harness_runs,
+    render_build_comparison_diagrams,
     render_diagrams,
     sync_diagrams,
 )
@@ -19,6 +27,112 @@ from scripts.update_performance_diagrams import (
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE_PATH = ROOT / "docs" / "native-wheel-performance-baseline.md"
 DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
+
+
+class BuildComparisonTests(unittest.TestCase):
+    def test_baseline_embeds_paired_build_diagrams_and_refresh_command(self) -> None:
+        source = BASELINE_PATH.read_text(encoding="utf-8")
+
+        for suite in ("cluster_state", "persistence", "connect"):
+            self.assertIn(f"performance-build-comparison-{suite}.svg", source)
+        self.assertIn("--build-comparison-dir", source)
+        self.assertIn("docs/performance-build-comparison-results", source)
+
+    def test_paired_diagrams_compare_native_and_universal_runs(self) -> None:
+        config = MeasurementConfig(warmups=1, repetitions=2, track_allocations=False)
+        fixture = {"shape": "small", "size": 1}
+
+        def make_run(flavor: str, samples: tuple[int, ...]) -> BenchmarkRun:
+            clock_values = [0]
+            for sample in samples:
+                clock_values.extend((clock_values[-1] + sample * 1_000,) * 2)
+            ticks = iter(clock_values)
+            result = measure(
+                lambda: None,
+                config,
+                clock_ns=lambda: next(ticks),
+            )
+            suffix = ".so" if flavor == "native" else ".py"
+            return BenchmarkRun(
+                RunMetadata(
+                    schema_version=1,
+                    suite="connect",
+                    package_version="2.2.0.4",
+                    python_version="3.12.3",
+                    platform="Linux test",
+                    modules={
+                        "expra_connect.remote.wire_protocol": f"/wheel/{flavor}/wire_protocol{suffix}"
+                    },
+                    config=config,
+                ),
+                (
+                    BenchmarkOutcome(
+                        case_id="ping",
+                        operation="ping",
+                        fixture=fixture,
+                        size=1,
+                        payload_bytes=16,
+                        config=config,
+                        result=result,
+                    ),
+                ),
+            )
+
+        diagrams = render_build_comparison_diagrams(
+            {
+                "connect": (
+                    make_run("native", (10, 12)),
+                    make_run("universal", (20, 22)),
+                )
+            }
+        )
+
+        self.assertEqual(set(diagrams), {"performance-build-comparison-connect.svg"})
+        svg = diagrams["performance-build-comparison-connect.svg"]
+        self.assertIn("Native Cython", svg)
+        self.assertIn("Universal Python", svg)
+        self.assertIn("1.909×", svg)
+        self.assertEqual(
+            ElementTree.fromstring(svg).attrib["role"],
+            "img",
+        )
+
+    def test_paired_diagrams_reject_different_fixture_shapes(self) -> None:
+        config = MeasurementConfig(warmups=0, repetitions=1, track_allocations=False)
+        outcome = BenchmarkOutcome(
+            case_id="one",
+            operation="ping",
+            fixture={"shape": "small"},
+            size=1,
+            payload_bytes=1,
+            config=config,
+            result=measure(lambda: None, config, clock_ns=iter((0, 1_000)).__next__),
+        )
+        native = BenchmarkRun(
+            RunMetadata(
+                1, "connect", "2.2.0.4", "3.12.3", "Linux", {"m": "/a.so"}, config
+            ),
+            (outcome,),
+        )
+        universal = BenchmarkRun(
+            RunMetadata(
+                1, "connect", "2.2.0.4", "3.12.3", "Linux", {"m": "/b.py"}, config
+            ),
+            (
+                BenchmarkOutcome(
+                    case_id="one",
+                    operation="ping",
+                    fixture={"shape": "different"},
+                    size=1,
+                    payload_bytes=1,
+                    config=config,
+                    result=outcome.result,
+                ),
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "fixture or operation coverage"):
+            render_build_comparison_diagrams({"connect": (native, universal)})
 
 
 @unittest.skipUnless(

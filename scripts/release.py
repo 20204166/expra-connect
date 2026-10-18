@@ -217,7 +217,12 @@ def newest_wheel(package_dir: Path) -> Path:
     return wheel
 
 
-def sync_artifacts(package_dir: Path, artifact_dir: Path) -> None:
+def sync_artifacts(
+    package_dir: Path,
+    artifact_dir: Path,
+    *,
+    allow_universal: bool = False,
+) -> None:
     version = read_current_version(package_dir)
     dist_dir = package_dir / "dist"
     dist_dir.mkdir(parents=True, exist_ok=True)
@@ -232,10 +237,15 @@ def sync_artifacts(package_dir: Path, artifact_dir: Path) -> None:
         path for path in candidates if path.name.endswith("-py3-none-any.whl")
     ]
     if pure_wheels:
-        raise FileNotFoundError(
-            f"artifact set must be native-only for {version}; found "
-            + ", ".join(path.name for path in pure_wheels)
-        )
+        if not allow_universal:
+            raise FileNotFoundError(
+                f"artifact set must be native-only for {version}; found "
+                + ", ".join(path.name for path in pure_wheels)
+            )
+        if not any(path not in pure_wheels for path in candidates):
+            raise FileNotFoundError(
+                f"universal artifact set requires a native sibling for {version}"
+            )
 
     sums_path = dist_dir / "SHA256SUMS"
     existing_lines = (
@@ -285,6 +295,7 @@ def _parser() -> argparse.ArgumentParser:
     sync = sub.add_parser("sync-artifacts")
     sync.add_argument("--package-dir", required=True)
     sync.add_argument("--artifact-dir", required=True)
+    sync.add_argument("--allow-universal", action="store_true")
     return parser
 
 
@@ -296,7 +307,11 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "newest-wheel":
         print(newest_wheel(package_dir))
     else:
-        sync_artifacts(package_dir, Path(args.artifact_dir).resolve())
+        sync_artifacts(
+            package_dir,
+            Path(args.artifact_dir).resolve(),
+            allow_universal=args.allow_universal,
+        )
     return 0
 
 

@@ -70,6 +70,53 @@ not historical baseline measurements and make no source-attribution claim.
 
 ![Shared-harness results, shown separately from the historical baseline.](images/performance-shared-harness.svg)
 
+## Same-version native vs universal build
+
+The following is a separate comparison of the 2.2.0.4 Linux CPython 3.12 native
+Cython wheel and `py3-none-any` universal wheel. The explicit patch bump was
+requested for this checkout; package source files are unchanged from 2.2.0.3,
+so the source change between versions is the version metadata only. The native
+and universal artifacts retain their expected compiled-module versus Python
+source difference. Only these two wheel types were measured; no historical
+wheel was rerun. The raw run JSON is stored in
+`docs/performance-build-comparison-results/` and is the source for these
+diagrams. The results are not merged with either earlier measurement set.
+
+### Cluster-state workloads
+
+![Cluster-state benchmark comparison between the native Cython and universal Python wheels.](images/performance-build-comparison-cluster_state.svg)
+
+### Persistence workloads
+
+![Persistence benchmark comparison between the native Cython and universal Python wheels.](images/performance-build-comparison-persistence.svg)
+
+### Connect workloads
+
+![Connect benchmark comparison between the native Cython and universal Python wheels.](images/performance-build-comparison-connect.svg)
+
+Both wheels ran on CPython 3.12.3, Linux x86_64, glibc 2.39. The cluster-state
+suite used sizes 1k/30k/100k, 2 warmups, 9 samples, and no allocation tracking;
+the persistence suite used 30k/100k/200k with 2 warmups and 9 samples; connect
+used 10 warmups and 50 samples (identity creation retains the harness's
+10/200 configuration). All suites used batch count 1. Module paths and exact
+samples are recorded in the raw results. The native wheel SHA-256 is
+`ed1faf57de9c8b5f77aaf1d67bd077af47e0f0ef3b5835f2d41d59bb103c71f1`; the
+universal wheel SHA-256 is
+`2207230eb5731d20cd50b375734715c0e99376630bacf873ceebc9f0d27d75fe`.
+The native suite triplet ran before the universal suite triplet. These are
+descriptive paired results from one sequential pass, not an order-randomized or
+repeated A/B study; cache, thermal, and time-order effects may influence the
+ratios. In particular, do not treat them as causal Cython speedup claims.
+
+Refresh or check only these three paired-build diagrams with:
+
+```sh
+.venv/bin/python -m scripts.update_performance_diagrams \
+  --build-comparison-dir docs/performance-build-comparison-results
+.venv/bin/python -m scripts.update_performance_diagrams --check \
+  --build-comparison-dir docs/performance-build-comparison-results
+```
+
 ## Interpretation and limitations
 
 - The 2.2.0.1 wheel is the first in this comparison that includes

@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1718" viewBox="0 0 1500 1718" role="img" aria-label="2.2.0.4 native vs universal · persistence">
+<title>2.2.0.4 native vs universal · persistence</title>
+<rect width="1500" height="1718" fill="#ffffff"/>
+<text x="16.0" y="30.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">2.2.0.4 native vs universal · persistence</text>
+<text x="18.0" y="76.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">Bars use a shared logarithmic scale; right column shows p50 µs and universal/native ratio.</text>
+<text x="460.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#2166ac" font-weight="normal">Native Cython</text>
+<text x="600.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#b2182b" font-weight="normal">Universal Python</text>
+<text x="1190.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="normal">p50 µs · universal/native</text>
+<text x="18.0" y="141.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON decode</text>
+<rect x="460" y="126" width="416.8" height="9" fill="#2166ac"/>
+<rect x="460" y="139" width="413.1" height="9" fill="#b2182b"/>
+<text x="1190.0" y="138.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">7,195.886 / 6,570.166 · 0.913×</text>
+<text x="18.0" y="187.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON encode</text>
+<rect x="460" y="172" width="420.9" height="9" fill="#2166ac"/>
+<rect x="460" y="185" width="421.8" height="9" fill="#b2182b"/>
+<text x="1190.0" y="184.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">7,935.911 / 8,113.042 · 1.022×</text>
+<text x="18.0" y="233.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON file read</text>
+<rect x="460" y="218" width="252.8" height="9" fill="#2166ac"/>
+<rect x="460" y="231" width="239.8" height="9" fill="#b2182b"/>
+<text x="1190.0" y="230.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">134.022 / 97.714 · 0.729×</text>
+<text x="18.0" y="279.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON object-root validation</text>
+<rect x="460" y="264" width="18.3" height="9" fill="#2166ac"/>
+<rect x="460" y="277" width="13.5" height="9" fill="#b2182b"/>
+<text x="1190.0" y="276.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.451 / 0.401 · 0.889×</text>
+<text x="18.0" y="325.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON store load</text>
+<rect x="460" y="310" width="415.8" height="9" fill="#2166ac"/>
+<rect x="460" y="323" width="410.4" height="9" fill="#b2182b"/>
+<text x="1190.0" y="322.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">7,009.276 / 6,160.183 · 0.879×</text>
+<text x="18.0" y="371.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON store save</text>
+<rect x="460" y="356" width="515.2" height="9" fill="#2166ac"/>
+<rect x="460" y="369" width="509.7" height="9" fill="#b2182b"/>
+<text x="1190.0" y="368.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">78,491.153 / 68,539.514 · 0.873×</text>
+<text x="18.0" y="417.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack decode</text>
+<rect x="460" y="402" width="448.4" height="9" fill="#2166ac"/>
+<rect x="460" y="415" width="442.8" height="9" fill="#b2182b"/>
+<text x="1190.0" y="414.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">15,490.013 / 13,516.069 · 0.873×</text>
+<text x="18.0" y="463.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack decode + root validation</text>
+<rect x="460" y="448" width="443.5" height="9" fill="#2166ac"/>
+<rect x="460" y="461" width="442.7" height="9" fill="#b2182b"/>
+<text x="1190.0" y="460.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">13,737.070 / 13,497.484 · 0.983×</text>
+<text x="18.0" y="509.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack encode</text>
+<rect x="460" y="494" width="412.9" height="9" fill="#2166ac"/>
+<rect x="460" y="507" width="410.2" height="9" fill="#b2182b"/>
+<text x="1190.0" y="506.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">6,545.742 / 6,121.871 · 0.935×</text>
+<text x="18.0" y="555.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack file read</text>
+<rect x="460" y="540" width="226.9" height="9" fill="#2166ac"/>
+<rect x="460" y="553" width="220.0" height="9" fill="#b2182b"/>
+<text x="1190.0" y="552.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">71.425 / 60.454 · 0.846×</text>
+<text x="18.0" y="601.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack root validation</text>
+<rect x="460" y="586" width="58.0" height="9" fill="#2166ac"/>
+<rect x="460" y="599" width="39.3" height="9" fill="#b2182b"/>
+<text x="1190.0" y="598.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.183 / 0.751 · 0.635×</text>
+<text x="18.0" y="647.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack store load</text>
+<rect x="460" y="632" width="449.6" height="9" fill="#2166ac"/>
+<rect x="460" y="645" width="446.0" height="9" fill="#b2182b"/>
+<text x="1190.0" y="644.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">15,957.052 / 14,598.548 · 0.915×</text>
+<text x="18.0" y="693.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack store save</text>
+<rect x="460" y="678" width="459.9" height="9" fill="#2166ac"/>
+<rect x="460" y="691" width="455.0" height="9" fill="#b2182b"/>
+<text x="1190.0" y="690.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">20,460.627 / 18,168.563 · 0.888×</text>
+<text x="18.0" y="739.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON decode</text>
+<rect x="460" y="724" width="480.5" height="9" fill="#2166ac"/>
+<rect x="460" y="737" width="479.6" height="9" fill="#b2182b"/>
+<text x="1190.0" y="736.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">33,754.001 / 33,054.202 · 0.979×</text>
+<text x="18.0" y="785.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON encode</text>
+<rect x="460" y="770" width="476.3" height="9" fill="#2166ac"/>
+<rect x="460" y="783" width="469.9" height="9" fill="#b2182b"/>
+<text x="1190.0" y="782.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,506.492 / 26,120.893 · 0.856×</text>
+<text x="18.0" y="831.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON file read</text>
+<rect x="460" y="816" width="380.0" height="9" fill="#2166ac"/>
+<rect x="460" y="829" width="373.8" height="9" fill="#b2182b"/>
+<text x="1190.0" y="828.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">2,939.198 / 2,528.614 · 0.860×</text>
+<text x="18.0" y="877.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON object-root validation</text>
+<rect x="460" y="862" width="8.0" height="9" fill="#2166ac"/>
+<rect x="460" y="875" width="12.3" height="9" fill="#b2182b"/>
+<text x="1190.0" y="874.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.351 / 0.390 · 1.111×</text>
+<text x="18.0" y="923.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON store load</text>
+<rect x="460" y="908" width="484.9" height="9" fill="#2166ac"/>
+<rect x="460" y="921" width="479.2" height="9" fill="#b2182b"/>
+<text x="1190.0" y="920.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">37,528.812 / 32,739.620 · 0.872×</text>
+<text x="18.0" y="969.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON store save</text>
+<rect x="460" y="954" width="562.0" height="9" fill="#2166ac"/>
+<rect x="460" y="967" width="557.2" height="9" fill="#b2182b"/>
+<text x="1190.0" y="966.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">244,108.777 / 217,412.339 · 0.891×</text>
+<text x="18.0" y="1015.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack decode</text>
+<rect x="460" y="1000" width="466.4" height="9" fill="#2166ac"/>
+<rect x="460" y="1013" width="464.3" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1012.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">23,943.128 / 22,762.126 · 0.951×</text>
+<text x="18.0" y="1061.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack decode + root validation</text>
+<rect x="460" y="1046" width="468.7" height="9" fill="#2166ac"/>
+<rect x="460" y="1059" width="462.4" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1058.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">25,328.398 / 21,764.637 · 0.859×</text>
+<text x="18.0" y="1107.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack encode</text>
+<rect x="460" y="1092" width="445.7" height="9" fill="#2166ac"/>
+<rect x="460" y="1105" width="444.0" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1104.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">14,494.176 / 13,914.410 · 0.960×</text>
+<text x="18.0" y="1153.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack file read</text>
+<rect x="460" y="1138" width="213.1" height="9" fill="#2166ac"/>
+<rect x="460" y="1151" width="217.4" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1150.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">51.126 / 56.746 · 1.110×</text>
+<text x="18.0" y="1199.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack root validation</text>
+<rect x="460" y="1184" width="40.4" height="9" fill="#2166ac"/>
+<rect x="460" y="1197" width="43.0" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1196.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.771 / 0.822 · 1.066×</text>
+<text x="18.0" y="1245.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack store load</text>
+<rect x="460" y="1230" width="469.7" height="9" fill="#2166ac"/>
+<rect x="460" y="1243" width="463.4" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1242.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">25,982.961 / 22,288.133 · 0.858×</text>
+<text x="18.0" y="1291.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack store save</text>
+<rect x="460" y="1276" width="471.4" height="9" fill="#2166ac"/>
+<rect x="460" y="1289" width="469.8" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1288.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">27,046.154 / 26,007.458 · 0.962×</text>
+<text x="18.0" y="1337.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON decode</text>
+<rect x="460" y="1322" width="511.2" height="9" fill="#2166ac"/>
+<rect x="460" y="1335" width="506.4" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1334.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">71,160.853 / 63,272.714 · 0.889×</text>
+<text x="18.0" y="1383.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON encode</text>
+<rect x="460" y="1368" width="500.5" height="9" fill="#2166ac"/>
+<rect x="460" y="1381" width="496.1" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1380.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">54,875.983 / 49,360.608 · 0.899×</text>
+<text x="18.0" y="1429.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON file read</text>
+<rect x="460" y="1414" width="411.2" height="9" fill="#2166ac"/>
+<rect x="460" y="1427" width="403.7" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1426.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">6,281.504 / 5,229.290 · 0.832×</text>
+<text x="18.0" y="1475.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON object-root validation</text>
+<rect x="460" y="1460" width="14.4" height="9" fill="#2166ac"/>
+<rect x="460" y="1473" width="13.4" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1472.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.410 / 0.400 · 0.976×</text>
+<text x="18.0" y="1521.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON store load</text>
+<rect x="460" y="1506" width="514.5" height="9" fill="#2166ac"/>
+<rect x="460" y="1519" width="511.9" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1518.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">77,149.776 / 72,450.842 · 0.939×</text>
+<text x="18.0" y="1567.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON store save</text>
+<rect x="460" y="1552" width="590.0" height="9" fill="#2166ac"/>
+<rect x="460" y="1565" width="587.8" height="9" fill="#b2182b"/>
+<text x="1190.0" y="1564.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">482,182.863 / 456,838.843 · 0.947×</text>
+<text x="18.0" y="1613.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · MessagePack store load</text>
+<text x="460.0" y="1613.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">not supported</text>
+<text x="18.0" y="1659.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · MessagePack store save</text>
+<text x="460.0" y="1659.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">not supported</text>
+</svg>

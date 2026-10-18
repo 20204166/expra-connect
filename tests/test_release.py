@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -51,6 +53,68 @@ def _stage_wheels(root: Path, version: str, tags: tuple[str, ...]) -> None:
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_build_release_rejects_unknown_option_before_running_python(self) -> None:
+        root = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            fake_python = temporary / "fake-python"
+            marker = temporary / "python-was-run"
+            fake_python.write_text(
+                '#!/bin/sh\n: > "$INVOCATION_MARKER"\nexit 0\n',
+                encoding="utf-8",
+            )
+            fake_python.chmod(0o755)
+            environment = os.environ.copy()
+            environment["PYTHON"] = str(fake_python)
+            environment["INVOCATION_MARKER"] = str(marker)
+
+            completed = subprocess.run(
+                ["bash", str(root / "scripts" / "build_release.sh"), "--unknown"],
+                capture_output=True,
+                check=False,
+                env=environment,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 2, completed.stderr)
+            self.assertFalse(marker.exists())
+
+    def test_build_release_forwards_explicit_bump_to_prepare_build(self) -> None:
+        root = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            fake_python = temporary / "fake-python"
+            marker = temporary / "python-arguments"
+            fake_python.write_text(
+                '#!/bin/sh\nprintf "%s\\n" "$*" >> "$INVOCATION_MARKER"\n'
+                'case "$*" in *"scripts/release.py prepare-build"*) exit 37;; esac\n',
+                encoding="utf-8",
+            )
+            fake_python.chmod(0o755)
+            environment = os.environ.copy()
+            environment["PYTHON"] = str(fake_python)
+            environment["INVOCATION_MARKER"] = str(marker)
+
+            completed = subprocess.run(
+                [
+                    "bash",
+                    str(root / "scripts" / "build_release.sh"),
+                    "--universal",
+                    "--bump",
+                    "patch",
+                ],
+                capture_output=True,
+                check=False,
+                env=environment,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 37, completed.stderr)
+            self.assertIn(
+                "scripts/release.py prepare-build --package-dir . --bump patch",
+                marker.read_text(encoding="utf-8"),
+            )
+
     def test_native_wheels_share_version_and_newest_native_is_manifest_baseline(
         self,
     ) -> None:
@@ -117,6 +181,69 @@ class ReleaseTests(unittest.TestCase):
             self.assertNotIn(
                 "py3-none-any.whl", (root / "dist" / "SHA256SUMS").read_text()
             )
+
+    def test_sync_artifacts_accepts_opt_in_universal_with_native_sibling(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _make_package(root, "0.1.2.0")
+            dist = root / "dist"
+            dist.mkdir()
+            old_name = "expra_connect-0.1.1.0-cp312-cp312-linux_x86_64.whl"
+            old_row = "old-checksum  " + old_name
+            (dist / old_name).write_bytes(b"old native wheel")
+            (dist / "SHA256SUMS").write_text(old_row + "\n", encoding="utf-8")
+
+            artifacts = root / "artifacts"
+            _stage_wheels(
+                artifacts,
+                "0.1.2.0",
+                ("cp312-cp312-linux_x86_64", "py3-none-any"),
+            )
+
+            release.sync_artifacts(root, artifacts, allow_universal=True)
+
+            sums = (dist / "SHA256SUMS").read_text(encoding="utf-8")
+            self.assertIn(old_row, sums)
+            self.assertTrue(
+                (dist / "expra_connect-0.1.2.0-cp312-cp312-linux_x86_64.whl").is_file()
+            )
+            self.assertTrue((dist / "expra_connect-0.1.2.0-py3-none-any.whl").is_file())
+            self.assertIn("expra_connect-0.1.2.0-py3-none-any.whl", sums)
+
+    def test_sync_artifacts_rejects_opt_in_universal_without_native_sibling(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _make_package(root, "0.1.2.0")
+            artifacts = root / "artifacts"
+            _stage_wheels(artifacts, "0.1.2.0", ("py3-none-any",))
+
+            with self.assertRaisesRegex(FileNotFoundError, "native sibling"):
+                release.sync_artifacts(root, artifacts, allow_universal=True)
+
+            self.assertFalse((root / "dist" / "SHA256SUMS").exists())
+            self.assertFalse(
+                (root / "dist" / "expra_connect-0.1.2.0-py3-none-any.whl").exists()
+            )
+
+    def test_sync_artifacts_cli_requires_explicit_universal_opt_in(self) -> None:
+        default_args = release._parser().parse_args(
+            ["sync-artifacts", "--package-dir", ".", "--artifact-dir", "artifacts"]
+        )
+        opted_in_args = release._parser().parse_args(
+            [
+                "sync-artifacts",
+                "--package-dir",
+                ".",
+                "--artifact-dir",
+                "artifacts",
+                "--allow-universal",
+            ]
+        )
+
+        self.assertFalse(default_args.allow_universal)
+        self.assertTrue(opted_in_args.allow_universal)
 
     def test_sync_artifacts_rejects_stale_checksum_before_copying(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

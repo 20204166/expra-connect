@@ -7,9 +7,10 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from types import ModuleType
 
 
-def _verify_module():
+def _verify_module() -> ModuleType:
     path = Path(__file__).parents[1] / "scripts" / "verify_wheel.py"
     spec = importlib.util.spec_from_file_location("expra_connect_verify_wheel", path)
     if spec is None or spec.loader is None:
@@ -20,6 +21,28 @@ def _verify_module():
 
 
 verify_wheel = _verify_module()
+
+
+def _write_pure_wheel(path: Path, *, include_extension: bool = False) -> None:
+    with zipfile.ZipFile(path, "w") as wheel:
+        wheel.writestr("expra_connect/__init__.py", "")
+        wheel.writestr("expra_connect/module.py", "")
+        if include_extension:
+            wheel.writestr("expra_connect/module.cpython-312-x86_64-linux-gnu.so", b"")
+        wheel.writestr(
+            "expra_connect-1.8.0.0.dist-info/METADATA",
+            "Name: expra-connect\nVersion: 1.8.0.0\n"
+            "Requires-Dist: cryptography\nRequires-Dist: typing-extensions\n"
+            "Requires-Dist: zeroconf\n",
+        )
+        wheel.writestr(
+            "expra_connect-1.8.0.0.dist-info/entry_points.txt",
+            "[console_scripts]\nexpra-peer = expra_connect.cli:main\n",
+        )
+        wheel.writestr(
+            "expra_connect-1.8.0.0.dist-info/WHEEL",
+            "Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
+        )
 
 
 def _write_native_wheel(
@@ -73,6 +96,32 @@ def _write_native_wheel(
 
 
 class VerifyWheelTests(unittest.TestCase):
+    def test_pure_wheel_requires_matching_source_and_has_no_extensions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheel_path = root / "expra_connect-1.8.0.0-py3-none-any.whl"
+            source_package = root / "source" / "expra_connect"
+            source_package.mkdir(parents=True)
+            (source_package / "__init__.py").write_text("", encoding="utf-8")
+            (source_package / "module.py").write_text("", encoding="utf-8")
+
+            _write_pure_wheel(wheel_path)
+            verify_wheel.verify(
+                wheel_path,
+                expected_version="1.8.0.0",
+                source_package=source_package,
+            )
+
+            _write_pure_wheel(wheel_path, include_extension=True)
+            with self.assertRaisesRegex(
+                SystemExit, "pure-Python wheel contains native"
+            ):
+                verify_wheel.verify(
+                    wheel_path,
+                    expected_version="1.8.0.0",
+                    source_package=source_package,
+                )
+
     def test_native_wheel_requires_extensions_and_python_fallback_sources(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             wheel_path = Path(directory) / (

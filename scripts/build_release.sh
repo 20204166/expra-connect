@@ -4,8 +4,54 @@ set -euo pipefail
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT_DIR"
 PYTHON_BIN=${PYTHON:-python3}
+
+BUILD_UNIVERSAL=0
+BUILD_BUMP=
+while (($#)); do
+  case "$1" in
+    --universal)
+      if [[ "$BUILD_UNIVERSAL" -eq 1 ]]; then
+        printf 'error: --universal may only be specified once\n' >&2
+        exit 2
+      fi
+      BUILD_UNIVERSAL=1
+      ;;
+    --bump)
+      if [[ -n "$BUILD_BUMP" || $# -lt 2 || -z "${2:-}" ]]; then
+        printf 'error: --bump requires one value and may only be specified once\n' >&2
+        exit 2
+      fi
+      BUILD_BUMP=$2
+      shift
+      ;;
+    --bump=*)
+      if [[ -n "$BUILD_BUMP" || -z "${1#--bump=}" ]]; then
+        printf 'error: --bump must be non-empty and may only be specified once\n' >&2
+        exit 2
+      fi
+      BUILD_BUMP=${1#--bump=}
+      ;;
+    *)
+      printf 'usage: %s [--universal] [--bump auto|none|patch|feature|minor]\n' "$0" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
 mkdir -p dist
-"$PYTHON_BIN" scripts/release.py prepare-build --package-dir .
+PREPARE_ARGS=(prepare-build --package-dir .)
+if [[ -n "$BUILD_BUMP" ]]; then
+  case "$BUILD_BUMP" in
+    auto|none|patch|feature|minor) ;;
+    *)
+      printf 'error: invalid bump value: %s\n' "$BUILD_BUMP" >&2
+      exit 2
+      ;;
+  esac
+  PREPARE_ARGS+=(--bump "$BUILD_BUMP")
+fi
+"$PYTHON_BIN" scripts/release.py "${PREPARE_ARGS[@]}"
 # Build from a clean source copy so ignored/stale ``build/lib`` contents cannot
 # leak removed modules into the release wheel.
 BUILD_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/expra-connect-release.XXXXXX")
@@ -13,19 +59,44 @@ trap 'rm -rf "$BUILD_ROOT"' EXIT
 mkdir -p "$BUILD_ROOT/source" "$BUILD_ROOT/artifacts"
 cp pyproject.toml setup.py "$BUILD_ROOT/source/"
 cp -a src "$BUILD_ROOT/source/"
-cp -a "$BUILD_ROOT/source" "$BUILD_ROOT/native-source"
 
-# Build from a clean source tree so ignored/stale build outputs cannot leak into
-# the Cython wheel.
-EXPRA_CONNECT_CYTHON=1 "$PYTHON_BIN" -m pip wheel --no-deps \
-  --wheel-dir "$BUILD_ROOT/artifacts" "$BUILD_ROOT/native-source"
+BUILD_NATIVE=1
+if [[ "$BUILD_UNIVERSAL" -eq 1 ]] && compgen -G "dist/expra_connect-*.whl" >/dev/null; then
+  BUILD_VERSION=$("$PYTHON_BIN" -c \
+    'from pathlib import Path; from scripts.release import read_current_version; print(read_current_version(Path(".")))')
+  LATEST_WHEEL=$("$PYTHON_BIN" scripts/release.py newest-wheel --package-dir .)
+  LATEST_WHEEL_NAME=${LATEST_WHEEL##*/}
+  if [[ "$LATEST_WHEEL_NAME" == "expra_connect-${BUILD_VERSION}-"* \
+    && "$LATEST_WHEEL_NAME" != *-py3-none-any.whl ]]; then
+    cp "$LATEST_WHEEL" "$BUILD_ROOT/artifacts/"
+    BUILD_NATIVE=0
+    printf 'Reusing matching native wheel: %s\n' "$LATEST_WHEEL_NAME"
+  fi
+fi
+
+if [[ "$BUILD_NATIVE" -eq 1 ]]; then
+  cp -a "$BUILD_ROOT/source" "$BUILD_ROOT/native-source"
+  # Build from a clean source tree so ignored/stale build outputs cannot leak
+  # into the Cython wheel.
+  EXPRA_CONNECT_CYTHON=1 "$PYTHON_BIN" -m pip wheel --no-deps \
+    --wheel-dir "$BUILD_ROOT/artifacts" "$BUILD_ROOT/native-source"
+fi
+
+if [[ "$BUILD_UNIVERSAL" -eq 1 ]]; then
+  cp -a "$BUILD_ROOT/source" "$BUILD_ROOT/universal-source"
+  env -u EXPRA_CONNECT_CYTHON "$PYTHON_BIN" -m pip wheel --no-deps \
+    --wheel-dir "$BUILD_ROOT/artifacts" "$BUILD_ROOT/universal-source"
+fi
 
 for wheel in "$BUILD_ROOT"/artifacts/*.whl; do
   "$PYTHON_BIN" scripts/verify_wheel.py "$wheel" \
     --source-package "$BUILD_ROOT/source/src/expra_connect"
 done
-"$PYTHON_BIN" scripts/release.py sync-artifacts \
-  --package-dir . --artifact-dir "$BUILD_ROOT/artifacts"
+SYNC_ARGS=(--package-dir . --artifact-dir "$BUILD_ROOT/artifacts")
+if [[ "$BUILD_UNIVERSAL" -eq 1 ]]; then
+  SYNC_ARGS+=(--allow-universal)
+fi
+"$PYTHON_BIN" scripts/release.py sync-artifacts "${SYNC_ARGS[@]}"
 printf 'Built release artifacts:\n'
 ls -1 "$BUILD_ROOT"/artifacts/*.whl
 cat dist/SHA256SUMS
