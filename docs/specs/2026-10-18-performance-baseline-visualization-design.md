@@ -27,12 +27,14 @@ updateable.
   are not conflated.
 - Use the already-recorded 2.2.0.3 full-workload JSON and MessagePack save/load
   results at 30k and 100k. Do not label these as focused-persistence results.
-  Focused persistence remains unavailable for 2.2.0.3; no focused run is in
-  scope.
+  Run the focused persistence harness at 200k for all seven wheels for JSON
+  encode/decode/store load/save. The 2.2.0.3 focused rows are therefore measured
+  at 200k only; its 30k/100k focused cells remain unavailable.
 - Keep 200k MessagePack StateStore save/load unavailable: the existing fixture
-  exceeds the store's payload and array limits. Do not change those limits or
-  add a separate codec-only run. JSON 200k and the other existing full-workload
-  measurements remain as recorded.
+  exceeds the store's payload and array limits. Mark focused 200k MessagePack
+  operations unsupported for all versions. Do not change those limits or add a
+  separate codec-only run. Existing full-workload measurements remain as
+  recorded.
 - Remove the old numeric benchmark tables and pairwise comparison matrices
   from the Markdown page to avoid duplicate/conflicting presentation. Preserve
   all recorded measurements in JSON; derive pairwise values from the canonical
@@ -46,11 +48,14 @@ Add a machine-readable JSON file under `docs/` containing:
 - run metadata: measurement date, Python version, platform, and wheel versions;
 - full-workload p50 values keyed by fixture size, metric, and version;
 - focused-persistence p50 values keyed by fixture size, operation, and version;
+- focused 30k/100k rows for six measured versions and 200k rows for all seven
+  versions, with version coverage explicit in the JSON dataset;
 - explicit `null` cells for unsupported or unmeasured values, with a reason
   field distinguishing unsupported 200k MessagePack store operations from the
   unmeasured 2.2.0.3 focused-persistence rows;
-- fixture/harness notes that explain the 100k compact-pair fixture and the
-  200k seeded-session-registry measurement.
+- fixture/harness notes that explain the 100k compact-pair fixture, the 200k
+  focused compact-pair fixture, and the 200k seeded-session-registry
+  full-workload measurement.
 
 Move values exactly from the existing tables. Do not recompute, round, or
 otherwise change recorded values during migration. A migration test must compare
@@ -95,16 +100,17 @@ claim that the SVGs contain newly measured results.
   exact p50 tooltip values, explicit gaps/reasons, SVG XML validity,
   deterministic output, and write/check behavior.
 - Verify all current measurements are preserved, including 2.2.0.3 full-run
-  JSON/MessagePack save/load at 30k and 100k, all 200k N/A cells, and focused
-  2.2.0.3 unavailable cells.
+  JSON/MessagePack save/load at 30k and 100k, all 200k MessagePack N/A cells,
+  and focused 2.2.0.3 unavailable cells at 30k/100k. Verify the new 200k
+  focused JSON measurements and unsupported MessagePack reasons for all wheels.
 - Run the focused diagram tests, updater `--check`, Ruff, Pyright, Mypy, the
   full unittest suite, and `git diff --check`. Report any pre-existing
   repository-wide validation failures separately.
 
 ## Out of scope
 
-- No benchmark reruns, including focused 2.2.0.3 persistence or a 200k raw
-  MessagePack codec-only measurement.
+- No reruns of existing measurements or focused persistence at 30k/100k.
+- No 200k raw MessagePack codec-only measurement.
 - No changes to MessagePack payload/array limits or StateStore behavior.
 - No fabricated values or mixing of full-workload and focused-persistence
   measurements.
