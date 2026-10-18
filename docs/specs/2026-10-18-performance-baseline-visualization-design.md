@@ -14,9 +14,11 @@ updateable.
   measurements. Markdown numeric tables will be removed from the baseline page;
   the SVGs are generated views, not the data source.
 - Retain the current four-diagram structure and keep the existing
-  relative-to-row-fastest `×` labels as the primary cell labels. Improve their
-  readability with consistent sizing and a clear legend; do not add `µs` values
-  to cell labels. Preserve exact p50 microseconds in hover tooltips.
+  relative `×` labels as the primary cell labels, but normalize each value to
+  the matching 1.8.0.0 p50 for the same metric and fixture size. A ratio below
+  `1×` means faster than 1.8.0.0; a ratio above `1×` means slower. Improve label
+  readability and legend clarity; do not add `µs` values to cells. Preserve
+  exact p50 microseconds in hover tooltips.
 - The all-workload overview and persistence view must expose the full-run
   sections—not just JSON and MessagePack. Group the full-run metrics under
   identity, lookups, state, sessions, requests, and persistence. Keep focused
@@ -57,9 +59,11 @@ removed (or use a checked-in expected digest/value inventory in the test).
 ## Diagrams and documentation
 
 Keep four deterministic standalone SVG outputs. Keep multiplier labels in the
-cells, with consistent legible number formatting. Exact p50 microseconds remain
-available in tooltips. Relative colors are supplemental, not the sole carrier
-of meaning. Show explicit unavailable markers with explanatory reasons.
+cells, calculated as candidate p50 / 1.8.0.0 p50 for the same metric and size.
+Use consistent legible number formatting and state clearly that below `1×` is
+faster. Exact p50 microseconds remain available in tooltips. Relative colors are
+supplemental, not the sole carrier of meaning. Show explicit unavailable
+markers with explanatory reasons.
 
 The persistence view will have distinct panels for full-workload categories
 (identity, lookups, state, sessions, requests, JSON/MessagePack persistence)
@@ -84,9 +88,9 @@ results.
 - Keep write mode deterministic and `--check` read-only; fail clearly on a
   missing metric, malformed value, unexpected version, or invalid unavailable
   reason.
-- Add tests for JSON schema/coverage, ratio labels and exact p50 tooltip values,
-  explicit gaps/reasons, SVG XML validity, deterministic output, and
-  write/check behavior.
+- Add tests for JSON schema/coverage, ratios against the 1.8.0.0 reference,
+  exact p50 tooltip values, explicit gaps/reasons, SVG XML validity,
+  deterministic output, and write/check behavior.
 - Verify all current measurements are preserved, including 2.2.0.3 full-run
   JSON/MessagePack save/load at 30k and 100k, all 200k N/A cells, and focused
   2.2.0.3 unavailable cells.
