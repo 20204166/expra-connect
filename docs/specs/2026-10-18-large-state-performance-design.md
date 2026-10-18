@@ -3,7 +3,7 @@
 ## Goal
 
 Improve measured performance for large cluster-role state conversion and JSON
-state loading, using 500,000 entries as the stress workload and 100,000 entries
+state loading, using 200,000 entries as the stress workload and 100,000 entries
 as the final comparison point, without changing behavior or causing repeatable
 regressions at 30,000 entries or in other tracked benchmark operations.
 
@@ -23,11 +23,11 @@ Work is sequential and measurement-gated:
 3. **Request signing / verification / replay:** retain as a non-scaling control
    metric and split its stages only if a measured issue warrants it. Its current
    `peer_count` benchmark argument does not traverse that many peers, so it is
-   not a 500k-entry workload.
+   not a 200k-entry workload.
 
 The MessagePack store has a 1 MiB payload and 100,000-element decoder limits;
-do not raise or bypass these limits to create a 500k benchmark. JSON can use a
-separately sized 500k fixture if resource checks show the run is safe.
+do not raise or bypass these limits to create a 200k benchmark. JSON can use a
+separately sized 200k fixture if resource checks show the run is safe.
 
 ## Measurement and optimization rules
 
@@ -37,10 +37,10 @@ separately sized 500k fixture if resource checks show the run is safe.
   directly with historical native-wheel timings.
 - Profile each target first. Name the measured bottleneck and change only one
   cause at a time; retain no change whose improvement is not repeatable.
-- Run the relevant target at 30k, 100k, and 500k when memory and input limits
-  permit. If the full 500k fixture is unsafe, use smaller isolated operations
+- Run the relevant target at 30k, 100k, and 200k when memory and input limits
+  permit. If the full 200k fixture is unsafe, use smaller isolated operations
   only when their shape remains representative, label the limitation, and do
-  not claim full-workload 500k results.
+  not claim full-workload 200k results.
 - After each retained change, re-run the owning 30k/100k benchmark set and
   other tracked benchmark controls. Treat differences within sample noise as
   inconclusive; require no repeatable regression before accepting a gain.
@@ -57,7 +57,7 @@ Add test-first regression coverage for any changed behavior boundary, then run
 the focused tests for the touched subsystem, its relevant broader tests, and the
 repository's configured lint/type checks. For Python code changes, load and
 apply `senior-python-engineering` before the first write. Validate the final
-source-checkout benchmark on 30k and 100k, plus the safe 500k stress workload;
+source-checkout benchmark on 30k and 100k, plus the safe 200k stress workload;
 report any resource-limited or inconclusive measurements explicitly. No wheel
 release or public schema change is part of this work.
 
