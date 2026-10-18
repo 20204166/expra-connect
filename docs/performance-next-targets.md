@@ -16,17 +16,18 @@ regression or compatibility question specifically needs that comparison.
 | Request sign + verify + replay | 44.193 µs at 30k; 53.024 µs at 100k | Versus saved 2.2.0.1 results: 29.6% faster at 30k and 2.1% faster at 100k. This combines three stages; the `peer_count` parameter is scalar and does not process all 30k/100k entries. |
 | JSON store load, full workload | 12,653.623 µs at 30k; 33,198.291 µs at 100k | Versus saved 2.2.0.1 full-workload results: 46.7% faster at 30k, 19.4% slower at 100k. Earlier focused-load measurements use a different harness context; do not conflate them. |
 
-These are investigation priorities, not proven bottlenecks or guaranteed
-optimization opportunities. The 100k persistence fixture uses compact
-`[integer, boolean]` pairs, unlike the 30k dictionary-record fixture. Only the
-2.2.0.3 wheel was run for this update; prior results were not rerun. The 100k
-session-population stage was slower in this run than in the saved 2.2.0.1 run,
-so treat cross-version differences as noisy signals, not controlled attribution.
+These earlier full-workload priorities are investigation leads, not proven
+bottlenecks or guaranteed optimization opportunities. The 100k persistence
+fixture uses compact `[integer, boolean]` pairs, unlike the 30k dictionary-record
+fixture. Only the 2.2.0.3 wheel was run for the historical update summarized
+above; saved 2.2.0.1 results were not rerun then. The 100k session-population
+stage was slower in that run than the saved 2.2.0.1 result, so treat the
+difference as a noisy signal, not controlled attribution.
 
 ## Follow-up from the shared-harness comparison
 
-The following is a separate, matched-harness view of 2.2.0.3 versus 2.2.0.1;
-it does not replace or merge with the historical full-workload priorities above.
+The following is a separate, matched-harness view of 2.2.0.3 versus 2.2.0.1; it
+does not replace or merge with the historical full-workload priorities above.
 Each pair uses the same operation, fixture, and sampling configuration within
 its suite. Values are p50 microseconds per operation; ratios below 1× are lower
 latency. These are cross-version measurements, not source-identical A/B tests.
@@ -35,24 +36,35 @@ latency. These are cross-version measurements, not source-identical A/B tests.
 |---|---:|---:|---:|---:|
 | Role-state decode | 100k assignments/grants | 1,555,487.998 µs | 1,604,481.567 µs | 0.969× |
 | Cluster encode | 100k assignments/grants | 648,875.038 µs | 632,284.528 µs | 1.03× |
-| Cluster round-trip | 100k assignments/grants | 2,032,573.385 µs | 2,128,261.628 µs | 0.955× |
+| Cluster round-trip (full cluster run) | 100k assignments/grants | 2,032,573.385 µs | 2,128,261.628 µs | 0.955× |
 | Request sign + verify + replay | ping request | 48.001 µs | 45.686 µs | 1.05× |
 | JSON store load | 200k compact pairs | 75,766.272 µs | 73,407.054 µs | 1.03× |
 | JSON store save | 200k compact pairs | 433,646.930 µs | 495,830.952 µs | 0.875× |
 
 The cluster rows used one warmup and three samples; connect used ten warmups
 and fifty samples; persistence used two warmups and nine samples. Allocation
-tracking was disabled. The exact p50s and distributions are visible in the
-shared-harness diagram in the baseline page. The 2.2.0.3 30k/100k persistence
-cases remain intentionally unmeasured, so no such comparison is inferred.
+tracking was disabled. The shared-harness diagram in the baseline page shows
+exact p50s and ratios, not raw distributions; sample distributions remain in
+the local benchmark files. The 2.2.0.3 30k/100k persistence cases remain
+intentionally unmeasured, so no such comparison is inferred.
+
+The cluster round-trip row comes from the `cluster-large` run, which measured
+the full cluster operation set. A separate run measuring only cluster
+round-trip produced different p50s: at 30k, 862,397.939 µs for 2.2.0.3 versus
+709,260.875 µs for 2.2.0.1 (1.22×); at 100k, 2,560,372.569 µs versus
+2,668,379.242 µs (0.960×). Keep those isolated-run numbers separate from the
+table because the run contexts differ. Their disagreement, and the overlapping
+sample ranges in the full-run 100k cluster round-trip results, make repeat
+measurement of cluster round-trip the first follow-up, before profiling or
+attributing a cross-version change.
 
 ### Updated follow-up order
 
-1. **Profile 100k cluster serialization before changing it.** Role decode and
-   the end-to-end cluster round-trip remain the largest CPU stages in this
-   matched set. The 2.2.0.3 medians are modestly lower than 2.2.0.1, so these
-   numbers identify expensive work, not a demonstrated regression. Repeat the
-   target wheel and profile encode/decode separately before proposing changes.
+1. **Repeat the cluster round-trip comparison in one controlled run context.**
+   The full-operation run and isolated run disagree on absolute p50s and the
+   30k direction. Use the same command, fixture, warmup, and sample count for
+   both wheels; only then profile the 100k encode/decode work if the result
+   remains a meaningful cost.
 2. **Keep 200k JSON persistence as a diagnostic target.** Load is about 76 ms
    and save about 434 ms in this run. Attribute file read, JSON decode, and
    store validation separately; save includes durability operations and must
