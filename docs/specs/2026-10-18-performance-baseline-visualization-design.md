@@ -13,11 +13,10 @@ updateable.
 - Use a versioned JSON file as the single canonical source for recorded
   measurements. Markdown numeric tables will be removed from the baseline page;
   the SVGs are generated views, not the data source.
-- Retain the current four-diagram structure and update all diagrams to show
-  the exact p50 measurement in microseconds as the primary cell label. Keep the
-  relative-to-row-fastest multiplier as a smaller secondary cue, and retain a
-  visible relative-performance legend. Tooltips may repeat fixture details but
-  must not be the only way to discover the measurement.
+- Retain the current four-diagram structure and keep the existing
+  relative-to-row-fastest `×` labels as the primary cell labels. Improve their
+  readability with consistent sizing and a clear legend; do not add `µs` values
+  to cell labels. Preserve exact p50 microseconds in hover tooltips.
 - The all-workload overview and persistence view must expose the full-run
   sections—not just JSON and MessagePack. Group the full-run metrics under
   identity, lookups, state, sessions, requests, and persistence. Keep focused
@@ -57,9 +56,9 @@ removed (or use a checked-in expected digest/value inventory in the test).
 
 ## Diagrams and documentation
 
-Keep four deterministic standalone SVG outputs. All numeric labels include
-units and use consistent number formatting; exact p50 is primary and the ratio
-is visibly secondary. Relative colors are supplemental, not the sole carrier
+Keep four deterministic standalone SVG outputs. Keep multiplier labels in the
+cells, with consistent legible number formatting. Exact p50 microseconds remain
+available in tooltips. Relative colors are supplemental, not the sole carrier
 of meaning. Show explicit unavailable markers with explanatory reasons.
 
 The persistence view will have distinct panels for full-workload categories
@@ -85,8 +84,8 @@ results.
 - Keep write mode deterministic and `--check` read-only; fail clearly on a
   missing metric, malformed value, unexpected version, or invalid unavailable
   reason.
-- Add tests for JSON schema/coverage, exact displayed measurements, secondary
-  ratios, explicit gaps/reasons, SVG XML validity, deterministic output, and
+- Add tests for JSON schema/coverage, ratio labels and exact p50 tooltip values,
+  explicit gaps/reasons, SVG XML validity, deterministic output, and
   write/check behavior.
 - Verify all current measurements are preserved, including 2.2.0.3 full-run
   JSON/MessagePack save/load at 30k and 100k, all 200k N/A cells, and focused
