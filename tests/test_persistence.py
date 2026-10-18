@@ -75,9 +75,7 @@ class PersistenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.json"
             JsonStateStore(path).save({"z": 1, "a": 2})
-            self.assertEqual(
-                path.read_text(encoding="utf-8"), '{"a": 2, "z": 1}'
-            )
+            self.assertEqual(path.read_text(encoding="utf-8"), '{"a": 2, "z": 1}')
 
     def test_corrupt_or_non_object_state_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
