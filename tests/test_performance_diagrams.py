@@ -15,8 +15,7 @@ from scripts.benchmark_support import (
     measure,
 )
 from scripts.update_performance_diagrams import (
-    FOCUSED_METRICS,
-    FULL_METRICS,
+    SHARED_HARNESS_LABELS,
     load_measurements,
     load_shared_harness_runs,
     render_build_comparison_diagrams,
@@ -31,18 +30,32 @@ DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 class BuildComparisonTests(unittest.TestCase):
     def test_shared_harness_chart_includes_both_2204_builds(self) -> None:
-        diagrams = render_diagrams(load_measurements(DATA_PATH))
-        svg = diagrams["performance-shared-harness.svg"]
+        diagrams = render_diagrams()
+        self.assertEqual(set(diagrams), {"performance-comparison.svg"})
+        svg = diagrams["performance-comparison.svg"]
 
         self.assertIn("2.2.0.4 native", svg)
         self.assertIn("2.2.0.4 universal", svg)
+        self.assertIn("Composite index · equal-suite geometric mean", svg)
+        self.assertIn("cluster state", svg)
+        self.assertIn("persistence", svg)
+        self.assertIn("connect", svg)
 
-    def test_baseline_embeds_paired_build_diagrams_and_refresh_command(self) -> None:
+    def test_baseline_embeds_only_unified_chart(self) -> None:
         source = BASELINE_PATH.read_text(encoding="utf-8")
 
-        for suite in ("cluster_state", "persistence", "connect"):
-            self.assertIn(f"performance-build-comparison-{suite}.svg", source)
-        self.assertIn("--build-comparison-dir", source)
+        self.assertIn("images/performance-comparison.svg", source)
+        for old_chart in (
+            "performance-overview.svg",
+            "performance-state-scaling.svg",
+            "performance-operation-latency.svg",
+            "performance-persistence.svg",
+            "performance-shared-harness.svg",
+            "performance-build-comparison-cluster_state.svg",
+            "performance-build-comparison-persistence.svg",
+            "performance-build-comparison-connect.svg",
+        ):
+            self.assertNotIn(old_chart, source)
         self.assertIn("docs/performance-build-comparison-results", source)
 
     def test_paired_diagrams_compare_native_and_universal_runs(self) -> None:
@@ -224,16 +237,10 @@ class BaselineTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "metric rows"):
                 load_measurements(path)
 
-    def test_baseline_embeds_each_generated_diagram_and_refresh_command(self) -> None:
+    def test_baseline_embeds_unified_diagram_and_refresh_command(self) -> None:
         source = BASELINE_PATH.read_text(encoding="utf-8")
 
-        for filename in (
-            "performance-overview.svg",
-            "performance-state-scaling.svg",
-            "performance-operation-latency.svg",
-            "performance-persistence.svg",
-            "performance-shared-harness.svg",
-        ):
+        for filename in ("performance-comparison.svg",):
             with self.subTest(filename=filename):
                 self.assertIn(f"images/{filename}", source)
         self.assertIn(".venv/bin/python -m scripts.update_performance_diagrams", source)
@@ -241,9 +248,9 @@ class BaselineTests(unittest.TestCase):
     def test_baseline_explains_local_sources_and_ratios(self) -> None:
         source = BASELINE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("local raw", source)
-        self.assertIn("candidate p50 divided by the matching 1.8.0.0 p50", source)
-        self.assertIn("0.7× means 30% lower", source)
+        self.assertIn("local `tools/shared-benchmark-results/`", source)
+        self.assertIn("geometric mean", source)
+        self.assertIn("weighted equally", source)
         self.assertFalse(
             any(line.lstrip().startswith("|") for line in source.splitlines())
         )
@@ -323,13 +330,7 @@ class PublishedBaselineTests(unittest.TestCase):
         self,
     ) -> None:
         source = BASELINE_PATH.read_text(encoding="utf-8")
-        for filename in (
-            "performance-overview.svg",
-            "performance-state-scaling.svg",
-            "performance-operation-latency.svg",
-            "performance-persistence.svg",
-            "performance-shared-harness.svg",
-        ):
+        for filename in ("performance-comparison.svg",):
             with self.subTest(filename=filename):
                 self.assertTrue((ROOT / "docs/images" / filename).is_file())
                 self.assertIn(f"images/{filename}", source)
@@ -342,65 +343,25 @@ class PublishedBaselineTests(unittest.TestCase):
     "local benchmark source artifacts are not present in this checkout",
 )
 class DiagramTests(unittest.TestCase):
-    def test_renders_five_complete_deterministic_svg_diagrams(self) -> None:
-        baseline = load_measurements(DATA_PATH)
-
-        diagrams = render_diagrams(baseline)
+    def test_renders_one_complete_deterministic_svg_diagram(self) -> None:
+        diagrams = render_diagrams()
 
         self.assertEqual(
             set(diagrams),
-            {
-                "performance-overview.svg",
-                "performance-state-scaling.svg",
-                "performance-operation-latency.svg",
-                "performance-persistence.svg",
-                "performance-shared-harness.svg",
-            },
+            {"performance-comparison.svg"},
         )
         for name, svg in diagrams.items():
             with self.subTest(diagram=name):
                 root = ElementTree.fromstring(svg)
                 self.assertTrue(root.tag.endswith("svg"))
-                self.assertEqual(svg, render_diagrams(baseline)[name])
-                for version in baseline.full_workloads[30_000].versions:
+                self.assertEqual(svg, render_diagrams()[name])
+                for version in SHARED_HARNESS_LABELS:
                     self.assertIn(version, svg)
 
-        self.assertIn("MessagePack store save", diagrams["performance-overview.svg"])
-        for metric in FULL_METRICS:
-            self.assertIn(metric, diagrams["performance-overview.svg"])
-            self.assertIn(metric, diagrams["performance-persistence.svg"])
-        self.assertIn("Role-state decode", diagrams["performance-state-scaling.svg"])
-        self.assertIn(
-            "Cluster-state round-trip", diagrams["performance-state-scaling.svg"]
-        )
-        self.assertIn(
-            "Request sign + verify + replay",
-            diagrams["performance-operation-latency.svg"],
-        )
-        for metric in FULL_METRICS[:4] + FULL_METRICS[6:9]:
-            self.assertIn(metric, diagrams["performance-operation-latency.svg"])
-        for metric in FOCUSED_METRICS:
-            self.assertIn(metric, diagrams["performance-persistence.svg"])
-        self.assertIn(
-            "Not measured for 2.2.0.3", diagrams["performance-persistence.svg"]
-        )
-        self.assertIn(
-            "Unsupported by payload and array limits",
-            diagrams["performance-persistence.svg"],
-        )
-        exact_ratio = f"{10_635.092 / 11_852.171:.3g}×"
-        self.assertIn(exact_ratio, diagrams["performance-persistence.svg"])
-        self.assertIn("1×", diagrams["performance-persistence.svg"])
-        self.assertIn(
-            "10,635.092 µs",
-            diagrams["performance-persistence.svg"],
-        )
-        self.assertIn(
-            f"{10_635.092 / 11_852.171:.6g}× versus 1.8.0.0",
-            diagrams["performance-persistence.svg"],
-        )
-        shared_svg = diagrams["performance-shared-harness.svg"]
+        shared_svg = diagrams["performance-comparison.svg"]
         self.assertIn("Not measured for 2.2.0.3", shared_svg)
+        self.assertIn("200k compact pairs", shared_svg)
+        self.assertIn("MessagePack store", shared_svg)
         shared_runs = load_shared_harness_runs(
             ROOT / "tools" / "shared-benchmark-results"
         )
@@ -420,14 +381,16 @@ class DiagramTests(unittest.TestCase):
         self.assertIn(f"{last_role.result.p50:,.3f} µs", shared_svg)
 
     def test_sync_writes_and_detects_stale_svg_files(self) -> None:
-        baseline = load_measurements(DATA_PATH)
-        diagrams = render_diagrams(baseline)
+        diagrams = render_diagrams()
 
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
+            obsolete = output / "performance-overview.svg"
+            obsolete.write_text("obsolete", encoding="utf-8")
             self.assertEqual(sync_diagrams(diagrams, output, check=False), ())
+            self.assertFalse(obsolete.exists())
             self.assertEqual(sync_diagrams(diagrams, output, check=True), ())
-            stale_path = output / "performance-overview.svg"
+            stale_path = output / "performance-comparison.svg"
             stale_path.write_text("stale", encoding="utf-8")
 
             self.assertEqual(sync_diagrams(diagrams, output, check=True), (stale_path,))

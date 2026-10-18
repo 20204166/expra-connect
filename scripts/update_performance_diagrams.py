@@ -297,6 +297,7 @@ class HeatmapRow:
     label: str
     values: tuple[float | None, ...]
     missing_reasons: tuple[str | None, ...]
+    value_unit: str = "µs"
 
 
 def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun, ...]]:
@@ -574,58 +575,85 @@ VERSION_COLORS = (
 )
 
 
-def render_diagrams(baseline: BaselineData) -> dict[str, str]:
-    """Render historical diagrams and an isolated shared-harness comparison."""
+def render_diagrams() -> dict[str, str]:
+    """Render one across-release comparison with a composite and suite detail."""
 
-    versions = baseline.full_workloads[30_000].versions
-    overview = [
-        (
-            f"{size:,} entries",
-            _rows_from_table(
-                baseline,
-                "full_workloads",
-                size,
-                baseline.full_workloads[size],
-                FULL_METRICS,
-            ),
-        )
-        for size in (30_000, 100_000, 200_000)
-    ]
-    operations = [
-        (
-            f"{size:,} entries",
-            _rows_from_table(
-                baseline,
-                "full_workloads",
-                size,
-                baseline.full_workloads[size],
-                FULL_METRICS[:4] + FULL_METRICS[6:9],
-            ),
-        )
-        for size in (30_000, 100_000, 200_000)
-    ]
-    persistence = _persistence_panels(baseline)
     shared_results = (
         Path(__file__).resolve().parents[1] / "tools" / "shared-benchmark-results"
     )
     shared_runs = load_shared_harness_runs(shared_results)
+    panels = _shared_harness_panels(shared_runs)
+    panels.insert(0, ("Composite", [_composite_performance_row(shared_runs)]))
     return {
-        "performance-overview.svg": _render_heatmap_svg(
-            "All full-workload metrics", versions, overview
-        ),
-        "performance-state-scaling.svg": _render_state_scaling_svg(baseline),
-        "performance-operation-latency.svg": _render_heatmap_svg(
-            "Identity, lookup, session, and request latency", versions, operations
-        ),
-        "performance-persistence.svg": _render_heatmap_svg(
-            "Full-run sections and focused persistence", versions, persistence
-        ),
-        "performance-shared-harness.svg": _render_heatmap_svg(
-            "Shared-harness results · separate from historical baseline",
+        "performance-comparison.svg": _render_heatmap_svg(
+            "Across-release performance comparison",
             SHARED_HARNESS_LABELS,
-            _shared_harness_panels(shared_runs),
+            panels,
         ),
     }
+
+
+def _composite_performance_row(
+    groups: dict[str, tuple[BenchmarkRun, ...]],
+) -> HeatmapRow:
+    """Combine common measured cases into equally weighted suite indices."""
+
+    suite_groups = {
+        "cluster state": ("cluster-1k", "cluster-large"),
+        "persistence": ("persistence-200k",),
+        "connect": ("connect",),
+    }
+    suite_values: list[tuple[float, ...]] = []
+    for suite, group_names in suite_groups.items():
+        case_vectors: list[tuple[float, ...]] = []
+        for group in group_names:
+            runs = groups[group]
+            outcomes = [
+                {outcome.case_id: outcome for outcome in run.outcomes} for run in runs
+            ]
+            common_ids = set(outcomes[0])
+            for cases in outcomes[1:]:
+                common_ids.intersection_update(cases)
+            for case_id in sorted(common_ids):
+                values_list: list[float | None] = []
+                for cases in outcomes:
+                    result = cases[case_id].result
+                    values_list.append(None if result is None else result.p50)
+                values = tuple(values_list)
+                if all(value is not None and value > 0 for value in values):
+                    case_vectors.append(
+                        tuple(value for value in values if value is not None)
+                    )
+        if not case_vectors:
+            raise ValueError(f"composite score has no common measured {suite} cases")
+        reference_values = [values[0] for values in case_vectors]
+        suite_values.append(
+            tuple(
+                math.exp(
+                    sum(
+                        math.log(values[index] / reference)
+                        for values, reference in zip(
+                            case_vectors, reference_values, strict=True
+                        )
+                    )
+                    / len(case_vectors)
+                )
+                for index in range(len(SHARED_HARNESS_LABELS))
+            )
+        )
+
+    composite = tuple(
+        math.exp(
+            sum(math.log(suite[index]) for suite in suite_values) / len(suite_values)
+        )
+        for index in range(len(SHARED_HARNESS_LABELS))
+    )
+    return HeatmapRow(
+        "Composite index · equal-suite geometric mean",
+        composite,
+        (None,) * len(composite),
+        value_unit="index",
+    )
 
 
 def _shared_harness_panels(
@@ -767,7 +795,7 @@ def _render_heatmap_svg(
 ) -> str:
     left, cell_width, row_height = 345, 112, 32
     width = left + cell_width * len(versions) + 32
-    height = 88 + sum(42 + row_height * len(rows) for _, rows in panels) + 104
+    height = 142 + sum(66 + row_height * len(rows) for _, rows in panels)
     parts = _svg_header(width, height, title)
     reference_index = versions.index(REFERENCE_VERSION)
     y = 72
@@ -796,7 +824,7 @@ def _render_heatmap_svg(
                         color = "#e6e6e6"
                         label = "N/A"
                         detail = (
-                            f"{row.label}, {versions[index]}: {value:,.3f} µs; "
+                            f"{row.label}, {versions[index]}: {value:,.3f} {row.value_unit}; "
                             f"{REFERENCE_VERSION} reference unavailable"
                         )
                         text_color = "#333333"
@@ -806,7 +834,7 @@ def _render_heatmap_svg(
                         color = PALETTE[bucket]
                         label = f"{ratio:.3g}×"
                         detail = (
-                            f"{row.label}, {versions[index]}: {value:,.3f} µs; "
+                            f"{row.label}, {versions[index]}: {value:,.3f} {row.value_unit}; "
                             f"{ratio:.6g}× versus {REFERENCE_VERSION}"
                         )
                         text_color = (
@@ -859,7 +887,7 @@ def _svg_header(width: int, height: int, title: str) -> list[str]:
         _text(
             16,
             51,
-            "Cell labels compare p50 with 1.8.0.0 for the same metric and size; below 1× is faster; hover for p50 µs.",
+            "Cells compare matched workloads with 1.8.0.0; below 1× is faster. Composite weights cluster, persistence, and connect equally.",
             size=12,
             color="#454545",
         ),
@@ -983,6 +1011,16 @@ def sync_diagrams(
 ) -> tuple[Path, ...]:
     """Write generated diagrams or return paths that differ from their source."""
 
+    obsolete_filenames = (
+        "performance-overview.svg",
+        "performance-state-scaling.svg",
+        "performance-operation-latency.svg",
+        "performance-persistence.svg",
+        "performance-shared-harness.svg",
+        "performance-build-comparison-cluster_state.svg",
+        "performance-build-comparison-persistence.svg",
+        "performance-build-comparison-connect.svg",
+    )
     stale: list[Path] = []
     for filename, content in sorted(diagrams.items()):
         if Path(filename).name != filename:
@@ -999,6 +1037,15 @@ def sync_diagrams(
         else:
             output_dir.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
+
+    for filename in obsolete_filenames:
+        path = output_dir / filename
+        if not path.exists():
+            continue
+        if check:
+            stale.append(path)
+        else:
+            path.unlink()
     return tuple(stale)
 
 
@@ -1009,22 +1056,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="check whether generated SVG files match the canonical measurement JSON",
     )
-    parser.add_argument(
-        "--build-comparison-dir",
-        type=Path,
-        help="render only the native/universal paired-build diagrams from this results directory",
-    )
     args = parser.parse_args(argv)
     repository_root = Path(__file__).resolve().parents[1]
     output_dir = repository_root / "docs" / "images"
     try:
-        if args.build_comparison_dir is not None:
-            pairs = load_build_comparison_runs(args.build_comparison_dir)
-            diagrams = render_build_comparison_diagrams(pairs)
-        else:
-            data_path = repository_root / "docs" / "performance-baseline-data.json"
-            baseline = load_measurements(data_path)
-            diagrams = render_diagrams(baseline)
+        diagrams = render_diagrams()
         stale = sync_diagrams(diagrams, output_dir, check=args.check)
     except (OSError, TypeError, ValueError) as error:
         print(f"performance diagram update failed: {error}", file=sys.stderr)

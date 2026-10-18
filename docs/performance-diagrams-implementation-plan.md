@@ -1,5 +1,10 @@
 # Performance Diagrams Implementation Plan
 
+> **Superseded:** The current implementation is documented in
+> [`performance-diagrams-design.md`](performance-diagrams-design.md). The
+> standalone charts in this original plan were replaced by
+> `docs/images/performance-comparison.svg`; do not recreate them.
+
 > **For agentic workers:** Follow the tasks in order with review checkpoints; keep the existing benchmark tables unchanged.
 
 **Goal:** Generate four distinct, accurate SVG diagrams from the performance-baseline Markdown tables and make refresh/check operations repeatable.
