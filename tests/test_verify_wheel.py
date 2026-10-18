@@ -32,6 +32,7 @@ def _write_native_wheel(
 ) -> None:
     with zipfile.ZipFile(path, "w") as wheel:
         wheel.writestr("expra_connect/__init__.py", "")
+        wheel.writestr("expra_connect/persistence.py", "")
         wheel.writestr("expra_connect/remote/__init__.py", "")
         wheel.writestr("expra_connect/remote/session.py", "")
         wheel.writestr("expra_connect/remote/wire_protocol.py", "")
@@ -42,7 +43,11 @@ def _write_native_wheel(
             modules = (
                 "expra_connect/cluster/models",
                 "expra_connect/cluster/operations",
+                "expra_connect/cluster/roles",
                 "expra_connect/cluster/state",
+                "expra_connect/remote/session",
+                "expra_connect/remote/wire_protocol",
+                "expra_connect/persistence",
             )
             for module in modules:
                 if module == omit_extension:
@@ -80,16 +85,35 @@ class VerifyWheelTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
 
-    def test_native_wheel_does_not_require_unselected_cluster_roles_extension(
+    def test_native_wheel_requires_cluster_roles_extension(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             wheel_path = Path(directory) / (
                 "expra_connect-1.8.0.0-cp312-cp312-linux_x86_64.whl"
             )
-            _write_native_wheel(wheel_path, include_extensions=True)
+            _write_native_wheel(
+                wheel_path,
+                include_extensions=True,
+                omit_extension="expra_connect/cluster/roles",
+            )
 
-            verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
+            with self.assertRaisesRegex(SystemExit, "expra_connect/cluster/roles"):
+                verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
+
+    def test_native_wheel_requires_persistence_extension(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            wheel_path = Path(directory) / (
+                "expra_connect-1.8.0.0-cp312-cp312-linux_x86_64.whl"
+            )
+            _write_native_wheel(
+                wheel_path,
+                include_extensions=True,
+                omit_extension="expra_connect/persistence",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "expra_connect/persistence"):
+                verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
 
     def test_native_wheel_requires_cluster_state_extensions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
