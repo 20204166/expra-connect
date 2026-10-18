@@ -48,9 +48,10 @@ def _save_text_document(
 ) -> None:
     """Write YAML documents, retaining JSON encoding for legacy ``.json`` paths."""
     if path.suffix == ".json":
-        atomic_write(
+        _save_json_document(
             path,
-            lambda file: json.dump(value, file, sort_keys=True),
+            value,
+            atomic_write=atomic_write,
             sync_directory=sync_directory,
         )
     else:
@@ -61,6 +62,21 @@ def _save_text_document(
             ),
             sync_directory=sync_directory,
         )
+
+
+def _save_json_document(
+    path: Path,
+    value: dict[str, Any],
+    *,
+    atomic_write: Callable[..., None] = _atomic_write,
+    sync_directory: bool = True,
+) -> None:
+    """Write deterministic JSON through the configured atomic boundary."""
+    atomic_write(
+        path,
+        lambda file: json.dump(value, file, sort_keys=True),
+        sync_directory=sync_directory,
+    )
 
 
 def _atomic_write_bytes(
@@ -189,10 +205,7 @@ class JsonStateStore:
         self.kind = kind
 
     def save(self, value: dict[str, Any]) -> None:
-        _atomic_write(
-            self.path,
-            lambda file: json.dump(value, file, sort_keys=True),
-        )
+        _save_json_document(self.path, value)
 
     def load(self) -> dict[str, Any]:
         try:
