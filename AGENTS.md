@@ -1,5 +1,13 @@
 # Repository Guide
 
+## Python engineering baseline
+
+Before creating, editing, refactoring, optimizing, or generating Python code—including tests, scripts, tools, migrations, and scaffolding—load the global `senior-python-engineering` skill with the OpenCode `skill` tool (`id: senior-python-engineering`). Apply its general rules and only the task-relevant scopes (for example security, persistence, concurrency, performance, runtime, refactoring, API, and testing). Keep it active through verification.
+
+The active specialized skill retains its workflow and may add stricter domain rules. Explicit task requirements and current repository contracts take precedence; identify and resolve real conflicts rather than silently dropping either constraint. Read-only skills remain read-only; a later separately authorized implementation must load the baseline before Python edits.
+
+This is prompt-level enforcement: OpenCode V2 has no declarative skill-dependency or guaranteed auto-load mechanism. Do not claim that loading is technically enforced by configuration.
+
 Expra Connect is a headless connection library. Do not add Tk, scanner,
 hardware, game-engine, or streaming dependencies. Keep discovery, pairing,
 authentication, authorization, connection, sharing, and cluster membership as
