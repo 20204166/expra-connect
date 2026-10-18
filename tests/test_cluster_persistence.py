@@ -4,17 +4,98 @@ from pathlib import Path
 from typing import cast
 
 from expra_connect.cluster import (
+    CapabilityGrant,
     Cluster,
     ClusterDataError,
     ClusterRole,
     ClusterState,
+    CoordinatorEpoch,
+    InviteRecord,
+    RoleAssignment,
 )
 from expra_connect.cluster.persistence import ClusterStore
+from expra_connect.data.permissions import NodePermission
 from expra_connect.identity import NodeId
 from expra_connect.persistence import YamlStateStore
 
 
 class ClusterPersistenceTests(unittest.TestCase):
+    def test_cluster_state_round_trip_preserves_persisted_fields_and_hides_tokens(
+        self,
+    ) -> None:
+        active_invite = InviteRecord(
+            "a" * 64,
+            "worker",
+            20.0,
+            token="one-time-secret",
+            cluster_id="cluster",
+            coordinator_id="coord",
+            epoch=4,
+            fencing_token="fence",
+        )
+        admission = InviteRecord(
+            "b" * 64,
+            "worker",
+            20.0,
+            cluster_id="cluster",
+            coordinator_id="coord",
+            epoch=4,
+            fencing_token="fence",
+        )
+        grant = CapabilityGrant(
+            NodeId("sub"),
+            NodeId("worker"),
+            frozenset({NodePermission.READ_STATE}),
+            1.0,
+            10.0,
+        )
+        state = ClusterState(
+            local_node_id="coord",
+            cluster_id="cluster",
+            role_assignments=(
+                RoleAssignment(frozenset({ClusterRole.COORDINATOR}), NodeId("coord")),
+                RoleAssignment(frozenset({ClusterRole.SUBCOORDINATOR}), NodeId("sub")),
+                RoleAssignment(frozenset({ClusterRole.WORKER}), NodeId("worker")),
+            ),
+            coordinator_epoch=CoordinatorEpoch(4, NodeId("coord"), "fence", 1, 10),
+            active_invites=(active_invite,),
+            join_admissions=(admission,),
+            used_invites=frozenset({"c" * 64}),
+            promotion_epochs=frozenset({2, 3}),
+            capability_grants=(grant,),
+        )
+
+        encoded = state.to_dict()
+        restored = ClusterState.from_dict(encoded)
+
+        self.assertEqual(encoded["schema_version"], 2)
+        self.assertEqual(encoded["local_node_id"], "coord")
+        self.assertEqual(encoded["local_id"], "coord")
+        self.assertEqual(encoded["assignments"][0]["role"], "coordinator")
+        self.assertNotIn("one-time-secret", repr(encoded))
+        self.assertEqual(restored.local_node_id, state.local_node_id)
+        self.assertEqual(restored.cluster_id, state.cluster_id)
+        self.assertEqual(restored.role_assignments, state.role_assignments)
+        self.assertEqual(restored.coordinator_epoch, state.coordinator_epoch)
+        self.assertEqual(
+            restored.active_invites,
+            (
+                InviteRecord(
+                    active_invite.token_hash,
+                    active_invite.target_node_id,
+                    active_invite.expires_at,
+                    cluster_id=active_invite.cluster_id,
+                    coordinator_id=active_invite.coordinator_id,
+                    epoch=active_invite.epoch,
+                    fencing_token=active_invite.fencing_token,
+                ),
+            ),
+        )
+        self.assertEqual(restored.join_admissions, state.join_admissions)
+        self.assertEqual(restored.used_invites, state.used_invites)
+        self.assertEqual(restored.promotion_epochs, state.promotion_epochs)
+        self.assertEqual(restored.capability_grants, state.capability_grants)
+
     def test_cluster_from_state_restores_runtime_owned_collections(self) -> None:
         cluster = Cluster(NodeId("coord"))
         cluster.assign(NodeId("worker"), ClusterRole.WORKER)

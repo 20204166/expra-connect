@@ -16,7 +16,11 @@ def role_state_to_dict(state: RoleState) -> dict[str, Any]:
         "assignments": [
             {
                 "node_id": a.node_id.value if a.node_id else None,
-                "roles": sorted(r.value for r in a.roles),
+                "roles": (
+                    [next(iter(a.roles)).value]
+                    if len(a.roles) == 1
+                    else sorted(role.value for role in a.roles)
+                ),
                 "paused": a.paused,
                 "revoked": a.revoked,
                 "has_active_job": a.has_active_job,
@@ -38,7 +42,11 @@ def role_state_to_dict(state: RoleState) -> dict[str, Any]:
             {
                 "subject": g.subject.value,
                 "target": g.target.value,
-                "permissions": sorted(p.value for p in g.permissions),
+                "permissions": (
+                    [next(iter(g.permissions)).value]
+                    if len(g.permissions) == 1
+                    else sorted(permission.value for permission in g.permissions)
+                ),
                 "issued_at": g.issued_at,
                 "expires_at": g.expires_at,
             }

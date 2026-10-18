@@ -1,6 +1,7 @@
 import unittest
 
 from expra_connect.cluster import (
+    CapabilityGrant,
     ClusterRole,
     CoordinatorEpoch,
     FencingError,
@@ -96,6 +97,88 @@ class RoleEngineTests(unittest.TestCase):
             self.fail("persisted role assignment was lost")
         self.assertFalse(assignment.has_active_job)
         self.assertEqual(restored.epoch, state.epoch)
+
+    def test_role_state_round_trip_preserves_all_persisted_fields(self) -> None:
+        grant = CapabilityGrant(
+            NodeId("sub"),
+            NodeId("worker"),
+            frozenset({NodePermission.READ_STATE, NodePermission.CLEANUP}),
+            2.0,
+            8.0,
+        )
+        state = RoleState(
+            assignments=(
+                self.coordinator,
+                self.sub,
+                RoleAssignment(
+                    frozenset({ClusterRole.WORKER}),
+                    NodeId("worker"),
+                    paused=True,
+                    has_active_job=True,
+                ),
+            ),
+            epoch=CoordinatorEpoch(3, NodeId("coord"), "fence", 1.0, 9.0),
+            promotion_epochs=frozenset({1, 2}),
+            capability_grants=(grant,),
+        )
+
+        encoded = role_state_to_dict(state)
+        restored = role_state_from_dict(encoded)
+
+        self.assertEqual(
+            encoded["assignments"],
+            [
+                {
+                    "node_id": "coord",
+                    "roles": ["coordinator", "worker"],
+                    "paused": False,
+                    "revoked": False,
+                    "has_active_job": False,
+                },
+                {
+                    "node_id": "sub",
+                    "roles": ["subcoordinator"],
+                    "paused": False,
+                    "revoked": False,
+                    "has_active_job": False,
+                },
+                {
+                    "node_id": "worker",
+                    "roles": ["worker"],
+                    "paused": True,
+                    "revoked": False,
+                    "has_active_job": True,
+                },
+            ],
+        )
+        self.assertEqual(
+            encoded["capability_grants"],
+            [
+                {
+                    "subject": "sub",
+                    "target": "worker",
+                    "permissions": ["cleanup", "read_state"],
+                    "issued_at": 2.0,
+                    "expires_at": 8.0,
+                }
+            ],
+        )
+        self.assertEqual(
+            restored.assignments,
+            tuple(
+                RoleAssignment(
+                    assignment.roles,
+                    assignment.node_id,
+                    paused=assignment.paused,
+                    revoked=assignment.revoked,
+                )
+                for assignment in state.assignments
+            ),
+        )
+        self.assertEqual(restored.epoch, state.epoch)
+        self.assertEqual(restored.promotion_epochs, state.promotion_epochs)
+        self.assertEqual(restored.capability_grants, state.capability_grants)
+        self.assertFalse(restored.assignment_for(NodeId("worker")).has_active_job)  # type: ignore[union-attr]
 
     def test_role_state_rejects_duplicate_active_coordinators(self) -> None:
         with self.assertRaises(ValueError):
