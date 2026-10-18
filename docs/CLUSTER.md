@@ -41,7 +41,8 @@ The implementation lives under `expra_connect.cluster`:
 - `persistence.py`: versioned cluster-only persistence and migration.
 - `operations.py`: pair-gated join and cluster mutation facade.
 
-`role_engine.py`, `failover.py`, and the old flat `cluster.py` remain only as
+Cluster behavior is owned by the modules above; there is no parallel legacy
+`cluster.py` or `role_engine.py` implementation.
 
 ## Security Intersection
 

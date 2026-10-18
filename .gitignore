@@ -27,6 +27,7 @@ CLAUDE.local.md
 docs/bug_hunts/
 docs/plans/
 docs/specs/
+docs/compliance/
 
 # Local MCP client configuration and generated endpoint state
 .expra-connect-mcp.toml

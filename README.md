@@ -5,6 +5,9 @@ It owns identity, discovery, TLS-pinned transport, pairing, authorization,
 explicit capability sharing, and optional cluster membership. It does not own
 Tk, hardware scanning, a game engine, or streaming.
 
+For installation, integration examples, feature boundaries, profile storage,
+and security guidance, see the [Developer Guide](docs/USER_GUIDE.md).
+
 ## Boundary Design
 
 The host application owns its UI and application logic. Expra Connect is the
