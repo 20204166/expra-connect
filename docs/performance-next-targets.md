@@ -23,6 +23,45 @@ optimization opportunities. The 100k persistence fixture uses compact
 session-population stage was slower in this run than in the saved 2.2.0.1 run,
 so treat cross-version differences as noisy signals, not controlled attribution.
 
+## Follow-up from the shared-harness comparison
+
+The following is a separate, matched-harness view of 2.2.0.3 versus 2.2.0.1;
+it does not replace or merge with the historical full-workload priorities above.
+Each pair uses the same operation, fixture, and sampling configuration within
+its suite. Values are p50 microseconds per operation; ratios below 1× are lower
+latency. These are cross-version measurements, not source-identical A/B tests.
+
+| Shared-harness stage | Fixture | 2.2.0.3 p50 | 2.2.0.1 p50 | Ratio |
+|---|---:|---:|---:|---:|
+| Role-state decode | 100k assignments/grants | 1,555,487.998 µs | 1,604,481.567 µs | 0.969× |
+| Cluster encode | 100k assignments/grants | 648,875.038 µs | 632,284.528 µs | 1.03× |
+| Cluster round-trip | 100k assignments/grants | 2,032,573.385 µs | 2,128,261.628 µs | 0.955× |
+| Request sign + verify + replay | ping request | 48.001 µs | 45.686 µs | 1.05× |
+| JSON store load | 200k compact pairs | 75,766.272 µs | 73,407.054 µs | 1.03× |
+| JSON store save | 200k compact pairs | 433,646.930 µs | 495,830.952 µs | 0.875× |
+
+The cluster rows used one warmup and three samples; connect used ten warmups
+and fifty samples; persistence used two warmups and nine samples. Allocation
+tracking was disabled. The exact p50s and distributions are visible in the
+shared-harness diagram in the baseline page. The 2.2.0.3 30k/100k persistence
+cases remain intentionally unmeasured, so no such comparison is inferred.
+
+### Updated follow-up order
+
+1. **Profile 100k cluster serialization before changing it.** Role decode and
+   the end-to-end cluster round-trip remain the largest CPU stages in this
+   matched set. The 2.2.0.3 medians are modestly lower than 2.2.0.1, so these
+   numbers identify expensive work, not a demonstrated regression. Repeat the
+   target wheel and profile encode/decode separately before proposing changes.
+2. **Keep 200k JSON persistence as a diagnostic target.** Load is about 76 ms
+   and save about 434 ms in this run. Attribute file read, JSON decode, and
+   store validation separately; save includes durability operations and must
+   not be optimized by weakening them.
+3. **Monitor request verification, but do not prioritize its small delta yet.**
+   The combined ping path is about 48 µs, around 5% above 2.2.0.1 in this set.
+   Repeat on the exact current wheel and inspect component stages before
+   treating that cross-version difference as actionable.
+
 ## Other areas to monitor
 
 These are secondary candidates, not current optimization recommendations:
@@ -60,9 +99,10 @@ These are secondary candidates, not current optimization recommendations:
   2.2.0.0. Keep them as supporting measurements for persistence work rather
   than independent targets for now.
 
-The best next work remains the four priority areas above. Revisit these
-secondary candidates only when focused measurements reproduce a meaningful
-cost or a real workload makes them important.
+The four priorities above preserve the earlier full-workload investigation
+record. For the next follow-up, use the separately labeled shared-harness order
+below; revisit secondary candidates only when focused measurements reproduce a
+meaningful cost or a real workload makes them important.
 
 ## Owning implementation and tests
 
