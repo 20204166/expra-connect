@@ -6,6 +6,7 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 .venv/
+.venv-pypy/
 dist/*
 !dist/SHA256SUMS
 !dist/expra_connect-0.4.0.0-py3-none-any.whl
@@ -33,3 +34,4 @@ docs/specs/
 opencode.json
 .expra-endpoint-*/
 .expra-windows-target/
+/:LOCALAPPDATA*
