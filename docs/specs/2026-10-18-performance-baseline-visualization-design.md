@@ -78,8 +78,10 @@ The Markdown baseline page will retain explanatory prose, measurement
 limitations, raw-log references, and descriptive image alt text, while removing
 the old numeric workload tables, focused-persistence tables, and pairwise
 matrices. It will identify the JSON file as canonical data and document the
-refresh and check commands. Do not claim that the SVGs contain newly measured
-results.
+refresh and check commands. State the ratio formula explicitly: each cell is
+the version's p50 divided by the matching 1.8.0.0 p50 for the same metric and
+fixture size; `0.7×` therefore means 30% lower p50 latency than 1.8.0.0. Do not
+claim that the SVGs contain newly measured results.
 
 ## Update workflow and validation
 
