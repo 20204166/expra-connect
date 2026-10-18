@@ -10,6 +10,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from threading import Lock
 from types import MappingProxyType
+from typing import TypeGuard
 
 from ..identity import NodeId
 from ..models import NodePermission
@@ -26,7 +27,7 @@ HEARTBEAT_TIMEOUT_SECONDS = 120.0
 _ROLE_STATE_INDEX_LOCK = Lock()
 
 
-def _finite(value: object) -> bool:
+def _finite(value: object) -> TypeGuard[int | float]:
     return (
         not isinstance(value, bool)
         and isinstance(value, (int, float))
@@ -137,7 +138,7 @@ class RoleState:
         )
 
     def capability_grant(
-        self, subject: NodeId, target: NodeId, *, now: float | None = None
+        self, subject: NodeId, target: NodeId, *, now: object = None
     ) -> CapabilityGrant | None:
         grant = self._grant_index_for().get((subject, target))
         if grant is None or now is None:
@@ -339,7 +340,12 @@ class RoleState:
         )
 
     def allows(
-        self, *, subject: NodeId, target: NodeId, permission: NodePermission, now: float
+        self,
+        *,
+        subject: NodeId,
+        target: NodeId,
+        permission: NodePermission,
+        now: object,
     ) -> bool:
         if not _finite(now):
             return False
@@ -416,9 +422,9 @@ def renew_lease(
     epoch: CoordinatorEpoch,
     *,
     coordinator_id: NodeId,
-    fencing_token: str,
-    now: float,
-    lease_seconds: float = HEARTBEAT_TIMEOUT_SECONDS,
+    fencing_token: object,
+    now: object,
+    lease_seconds: object = HEARTBEAT_TIMEOUT_SECONDS,
 ) -> CoordinatorEpoch:
     if epoch.coordinator_id != coordinator_id or not isinstance(fencing_token, str):
         raise FencingError("heartbeat fencing token is stale")
@@ -442,8 +448,8 @@ def can_promote(
     state: RoleState,
     *,
     subcoordinator_id: NodeId,
-    now: float,
-    authenticated: bool = True,
+    now: object,
+    authenticated: object = True,
 ) -> bool:
     a = state.assignment_for(subcoordinator_id)
     return bool(
@@ -460,7 +466,7 @@ def can_promote(
 
 
 def promote_subcoordinator(
-    state: RoleState, *, now: float, authenticated: bool = True
+    state: RoleState, *, now: object, authenticated: object = True
 ) -> PromotionDecision:
     if state.epoch is None:
         raise FencingError("no coordinator epoch exists")
@@ -514,7 +520,7 @@ def promote_subcoordinator(
 
 
 def rejoin_as_worker(
-    state: RoleState, *, node_id: NodeId, current_epoch: int
+    state: RoleState, *, node_id: NodeId, current_epoch: object
 ) -> RoleState:
     if type(current_epoch) is not int or current_epoch < 0:
         raise FencingError("returning node presented an invalid epoch")

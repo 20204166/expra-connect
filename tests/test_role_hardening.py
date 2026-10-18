@@ -442,7 +442,7 @@ class CapabilityGrantTests(unittest.TestCase):
                 state.capability_grant(
                     NodeId("sub"),
                     NodeId("worker"),
-                    now=bad,  # type: ignore[arg-type]
+                    now=bad,
                 )
             )
             self.assertFalse(
@@ -450,7 +450,7 @@ class CapabilityGrantTests(unittest.TestCase):
                     subject=NodeId("sub"),
                     target=NodeId("worker"),
                     permission=PERMISSION,
-                    now=bad,  # type: ignore[arg-type]
+                    now=bad,
                 )
             )
 
@@ -693,7 +693,7 @@ class LeaseTests(unittest.TestCase):
             renew_lease(
                 self.epoch,
                 coordinator_id=NodeId("coord"),
-                fencing_token=None,  # type: ignore[arg-type]
+                fencing_token=None,
                 now=1.0,
             )
 
@@ -704,7 +704,7 @@ class LeaseTests(unittest.TestCase):
                     self.epoch,
                     coordinator_id=NodeId("coord"),
                     fencing_token="token",
-                    now=bad,  # type: ignore[arg-type]
+                    now=bad,
                 )
 
     def test_invalid_lease_duration_is_rejected(self) -> None:
@@ -756,14 +756,14 @@ class PromotionTests(unittest.TestCase):
                     state,
                     subcoordinator_id=NodeId("sub"),
                     now=100.0,
-                    authenticated=bad,  # type: ignore[arg-type]
+                    authenticated=bad,
                 )
             )
             with self.assertRaises(FencingError):
                 promote_subcoordinator(
                     state,
                     now=100.0,
-                    authenticated=bad,  # type: ignore[arg-type]
+                    authenticated=bad,
                 )
         self.assertTrue(
             can_promote(
@@ -910,7 +910,7 @@ class RejoinTests(unittest.TestCase):
                 rejoin_as_worker(
                     state,
                     node_id=NodeId("coord"),
-                    current_epoch=bad,  # type: ignore[arg-type]
+                    current_epoch=bad,
                 )
 
     def test_equal_epoch_demotes_former_coordinator(self) -> None:
