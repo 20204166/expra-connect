@@ -1,0 +1,19 @@
+Suite: cluster_state
+Version: 2.0.0.0
+Python/platform: 3.12.3 / Linux-7.0.0-34-generic-x86_64-with-glibc2.39
+Sampling: {'batch_count': 1, 'repetitions': 9, 'track_allocations': False, 'warmups': 2}
+Modules:
+  expra_connect.cluster.models: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/models.cpython-312-x86_64-linux-gnu.so
+  expra_connect.cluster.operations: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/operations.cpython-312-x86_64-linux-gnu.so
+  expra_connect.cluster.roles: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/roles.py
+  expra_connect.cluster.state: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/state.cpython-312-x86_64-linux-gnu.so
+Cases:
+  1000:role encode size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=227032 p50_us=2367.75 p95_us=5649.61 samples=[1826.815, 2241.568, 1893.601, 2159.102, 2511.718, 2367.746, 5550.9, 5715.41, 4670.228]
+  1000:role decode size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=227032 p50_us=10161.8 p95_us=20093.5 samples=[10764.112, 10619.901, 10161.767, 10210.228, 26313.171, 9076.75, 9821.875, 9158.224, 9742.666]
+  1000:cluster encode size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=227032 p50_us=2483.49 p95_us=3172.49 samples=[2338.231, 3095.869, 3056.585, 3084.287, 2409.705, 2483.494, 2324.654, 3223.57, 2452.386]
+  1000:cluster decode size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=227032 p50_us=12026.9 p95_us=21558.7 samples=[25823.457, 10872.848, 10564.376, 12026.935, 12633.288, 15161.577, 13290.338, 11773.286, 11856.694]
+  1000:cluster document round-trip size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=227032 p50_us=12246.9 p95_us=27903.6 samples=[13594.09, 35789.594, 16074.529, 12020.853, 12246.94, 12405.288, 12004.022, 12104.01, 11665.453]
+  1000:cluster round-trip size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=227032 p50_us=13335.2 p95_us=29827.3 samples=[12921.502, 12740.531, 13118.163, 14111.616, 15426.286, 13335.172, 13076.835, 39427.927, 14551.196]
+  1000:YAML encode size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=206987 p50_us=472986 p95_us=554866 samples=[594173.167, 465928.769, 495905.308, 459282.192, 472985.626, 487217.31, 469792.213, 472773.195, 486482.823]
+  1000:YAML parse size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=206987 p50_us=956448 p95_us=988119 samples=[964518.595, 968173.778, 997759.528, 914061.631, 973658.605, 956448.282, 942912.669, 915279.138, 924697.73]
+  1000:YAML cluster round-trip size=1000 fixture={'assignments': 1000, 'grants': 1000, 'name': 'staged_role_cluster'} payload_bytes=206987 p50_us=1.52394e+06 p95_us=1.6442e+06 samples=[1492862.664, 1523938.24, 1547908.393, 1648760.583, 1624488.918, 1637354.977, 1520083.317, 1488633.164, 1493210.032]

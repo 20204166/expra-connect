@@ -19,6 +19,7 @@ Statistics: min, p50, p95, mean (all in microseconds), and throughput (ops/s).
 from __future__ import annotations
 
 import argparse
+import importlib
 import platform
 import secrets
 import sys
@@ -33,16 +34,6 @@ from typing import Any
 # Imports from the canonical library (no algorithm duplication)
 # ---------------------------------------------------------------------------
 from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerprint
-from expra_connect.persistence import MessagePackStateStore, YamlStateStore
-from expra_connect.remote.session import LogicalSessionRegistry
-from expra_connect.remote.wire_protocol import (
-    RemoteRequest,
-    ReplayCache,
-    sign_request,
-    sign_response,
-    verify_request,
-    verify_response,
-)
 from scripts.benchmark_support import (
     BenchmarkOutcome,
     MeasurementConfig,
@@ -58,6 +49,33 @@ from scripts.benchmark_support import (
 # ---------------------------------------------------------------------------
 WARMUP = 500
 MEASURE = 5_000
+
+
+def _import_version_module(primary: str, legacy: str) -> Any:
+    try:
+        return importlib.import_module(primary)
+    except ModuleNotFoundError as error:
+        if error.name != "expra_connect.remote":
+            raise
+        return importlib.import_module(legacy)
+
+
+_persistence = importlib.import_module("expra_connect.persistence")
+MessagePackStateStore = getattr(_persistence, "MessagePackStateStore", None)
+YamlStateStore = getattr(_persistence, "YamlStateStore", None)
+_wire_protocol = _import_version_module(
+    "expra_connect.remote.wire_protocol", "expra_connect.wire_protocol"
+)
+_session = _import_version_module(
+    "expra_connect.remote.session", "expra_connect.session"
+)
+RemoteRequest: Any = _wire_protocol.RemoteRequest
+ReplayCache = _wire_protocol.ReplayCache
+sign_request = _wire_protocol.sign_request
+sign_response = _wire_protocol.sign_response
+verify_request = _wire_protocol.verify_request
+verify_response = _wire_protocol.verify_response
+LogicalSessionRegistry = _session.LogicalSessionRegistry
 
 # ---------------------------------------------------------------------------
 # Workload descriptors
@@ -175,28 +193,28 @@ _YAML_PAYLOAD: dict[str, Any] = {
 _MSGPACK_PAYLOAD = _YAML_PAYLOAD.copy()
 
 
-def _bench_yaml_save(store: YamlStateStore) -> Callable[[], None]:
+def _bench_yaml_save(store: Any) -> Callable[[], None]:
     def _run() -> None:
         store.save(_YAML_PAYLOAD)
 
     return _run
 
 
-def _bench_yaml_load(store: YamlStateStore) -> Callable[[], None]:
+def _bench_yaml_load(store: Any) -> Callable[[], None]:
     def _run() -> None:
         store.load()
 
     return _run
 
 
-def _bench_msgpack_save(store: MessagePackStateStore) -> Callable[[], None]:
+def _bench_msgpack_save(store: Any) -> Callable[[], None]:
     def _run() -> None:
         store.save(_MSGPACK_PAYLOAD)
 
     return _run
 
 
-def _bench_msgpack_load(store: MessagePackStateStore) -> Callable[[], None]:
+def _bench_msgpack_load(store: Any) -> Callable[[], None]:
     def _run() -> None:
         store.load()
 
@@ -232,7 +250,7 @@ _SESSION_REG = LogicalSessionRegistry(
 _GEN_COUNTER = 0
 
 
-def _make_anon_request(rid: str, nonce: str) -> RemoteRequest:
+def _make_anon_request(rid: str, nonce: str) -> Any:
     return RemoteRequest(
         node_id=NODE_A,
         caller_node_id=None,
@@ -321,8 +339,8 @@ def main() -> None:
         (
             "expra_connect.identity",
             "expra_connect.persistence",
-            "expra_connect.remote.session",
-            "expra_connect.remote.wire_protocol",
+            _session.__name__,
+            _wire_protocol.__name__,
         )
     )
     print(
@@ -336,12 +354,16 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         yaml_path = Path(tmpdir) / "state.yaml"
         msgpack_path = Path(tmpdir) / "state.msgpack"
-        yaml_store = YamlStateStore(yaml_path)
-        yaml_store.save(_YAML_PAYLOAD)
-        msgpack_store = MessagePackStateStore(msgpack_path)
-        msgpack_store.save(_MSGPACK_PAYLOAD)
+        yaml_store = None
+        if YamlStateStore is not None:
+            yaml_store = YamlStateStore(yaml_path)
+            yaml_store.save(_YAML_PAYLOAD)
+        msgpack_store = None
+        if MessagePackStateStore is not None:
+            msgpack_store = MessagePackStateStore(msgpack_path)
+            msgpack_store.save(_MSGPACK_PAYLOAD)
         state_fixture = {"shape": "five_peer_state", "peers": 5}
-        operations = (
+        operations: list[OperationSpec] = [
             OperationSpec(
                 "identity fingerprint", _bench_fingerprint, {"shape": "node_id"}, 1
             ),
@@ -365,34 +387,6 @@ def main() -> None:
                 stateful=True,
             ),
             OperationSpec(
-                "yaml save (5-peer payload)",
-                _bench_yaml_save(yaml_store),
-                state_fixture,
-                5,
-                payload_bytes=yaml_path.stat().st_size,
-            ),
-            OperationSpec(
-                "yaml load",
-                _bench_yaml_load(yaml_store),
-                state_fixture,
-                5,
-                payload_bytes=yaml_path.stat().st_size,
-            ),
-            OperationSpec(
-                "msgpack save (5-peer payload)",
-                _bench_msgpack_save(msgpack_store),
-                state_fixture,
-                5,
-                payload_bytes=msgpack_path.stat().st_size,
-            ),
-            OperationSpec(
-                "msgpack load",
-                _bench_msgpack_load(msgpack_store),
-                state_fixture,
-                5,
-                payload_bytes=msgpack_path.stat().st_size,
-            ),
-            OperationSpec(
                 "replay cache check_and_record",
                 _bench_replay_cache,
                 {"shape": "unique_replay_record"},
@@ -414,7 +408,113 @@ def main() -> None:
                 warmups=10,
                 repetitions=200,
             ),
-        )
+        ]
+        if yaml_store is not None:
+            operations.extend(
+                (
+                    OperationSpec(
+                        "yaml save (5-peer payload)",
+                        _bench_yaml_save(yaml_store),
+                        state_fixture,
+                        5,
+                        payload_bytes=yaml_path.stat().st_size,
+                    ),
+                    OperationSpec(
+                        "yaml load",
+                        _bench_yaml_load(yaml_store),
+                        state_fixture,
+                        5,
+                        payload_bytes=yaml_path.stat().st_size,
+                    ),
+                )
+            )
+        if msgpack_store is not None:
+            operations.extend(
+                (
+                    OperationSpec(
+                        "msgpack save (5-peer payload)",
+                        _bench_msgpack_save(msgpack_store),
+                        state_fixture,
+                        5,
+                        payload_bytes=msgpack_path.stat().st_size,
+                    ),
+                    OperationSpec(
+                        "msgpack load",
+                        _bench_msgpack_load(msgpack_store),
+                        state_fixture,
+                        5,
+                        payload_bytes=msgpack_path.stat().st_size,
+                    ),
+                )
+            )
+        if yaml_store is None and (
+            args.operation is None
+            or args.operation
+            in (
+                "yaml save (5-peer payload)",
+                "yaml load",
+            )
+        ):
+            unavailable_names = (
+                (args.operation,)
+                if args.operation is not None
+                else ("yaml save (5-peer payload)", "yaml load")
+            )
+            unavailable_config = MeasurementConfig(
+                warmups=WARMUP if args.warmups is None else args.warmups,
+                repetitions=MEASURE if args.repetitions is None else args.repetitions,
+                batch_count=args.batch_count,
+                track_allocations=args.track_allocations,
+            )
+            for name in unavailable_names:
+                outcomes.append(
+                    BenchmarkOutcome(
+                        case_id=name,
+                        operation=name,
+                        fixture=state_fixture,
+                        size=5,
+                        payload_bytes=None,
+                        config=unavailable_config,
+                        unavailable_reason=(
+                            f"YamlStateStore is not available in package {__version__}"
+                        ),
+                    )
+                )
+                print(f"{name}: unavailable (YamlStateStore API not present)")
+        if msgpack_store is None and (
+            args.operation is None
+            or args.operation
+            in (
+                "msgpack save (5-peer payload)",
+                "msgpack load",
+            )
+        ):
+            unavailable_names = (
+                (args.operation,)
+                if args.operation is not None
+                else ("msgpack save (5-peer payload)", "msgpack load")
+            )
+            unavailable_config = MeasurementConfig(
+                warmups=WARMUP if args.warmups is None else args.warmups,
+                repetitions=MEASURE if args.repetitions is None else args.repetitions,
+                batch_count=args.batch_count,
+                track_allocations=args.track_allocations,
+            )
+            for name in unavailable_names:
+                outcomes.append(
+                    BenchmarkOutcome(
+                        case_id=name,
+                        operation=name,
+                        fixture=state_fixture,
+                        size=5,
+                        payload_bytes=None,
+                        config=unavailable_config,
+                        unavailable_reason=(
+                            f"MessagePackStateStore is not available in package {__version__}"
+                        ),
+                    )
+                )
+                print(f"{name}: unavailable (MessagePackStateStore API not present)")
         for spec in operations:
             if args.operation is not None and spec.name != args.operation:
                 continue

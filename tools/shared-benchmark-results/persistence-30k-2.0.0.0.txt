@@ -1,0 +1,22 @@
+Suite: persistence
+Version: 2.0.0.0
+Python/platform: 3.12.3 / Linux-7.0.0-34-generic-x86_64-with-glibc2.39
+Sampling: {'batch_count': 1, 'repetitions': 9, 'track_allocations': False, 'warmups': 2}
+Modules:
+  expra_connect.persistence: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/persistence.py
+  json: /usr/lib/python3.12/json/__init__.py
+  msgpack: /home/btn17/Downloads/expra-connect/.venv/lib/python3.12/site-packages/msgpack/__init__.py
+Cases:
+  30000:MessagePack:MessagePack encode size=30000 fixture={'codec': 'msgpack', 'shape': 'dictionary_records'} payload_bytes=678909 p50_us=8030.72 p95_us=9346.27 samples=[8186.746, 9410.615, 8911.574, 9249.752, 7374.323, 6633.856, 6863.359, 6803.486, 8030.721]
+  30000:MessagePack:MessagePack file read size=30000 fixture={'codec': 'msgpack', 'shape': 'dictionary_records'} payload_bytes=678909 p50_us=83.868 p95_us=119.421 samples=[82.375, 79.119, 85.221, 78.969, 77.146, 86.273, 83.868, 103.966, 129.725]
+  30000:MessagePack:MessagePack decode size=30000 fixture={'codec': 'msgpack', 'shape': 'dictionary_records'} payload_bytes=678909 p50_us=21835 p95_us=22189.9 samples=[18167.727, 21568.283, 22003.313, 22184.956, 21989.988, 18905.609, 21834.965, 22193.121, 21363.196]
+  30000:MessagePack:MessagePack root validation size=30000 fixture={'codec': 'msgpack', 'shape': 'dictionary_records'} payload_bytes=678909 p50_us=1.142 p95_us=1.358 samples=[1.352, 1.362, 1.183, 1.142, 1.072, 1.253, 1.052, 0.962, 0.851]
+  30000:MessagePack:MessagePack decode + root validation size=30000 fixture={'codec': 'msgpack', 'shape': 'dictionary_records'} payload_bytes=678909 p50_us=15919.6 p95_us=24295 samples=[15627.904, 29032.705, 15773.19, 15420.964, 15443.187, 15919.605, 16117.358, 17188.559, 17095.564]
+  30000:MessagePack:MessagePack store load size=30000 fixture={'codec': 'msgpack', 'shape': 'dictionary_records'} payload_bytes=678909 p50_us=17329 p95_us=18958.5 samples=[17303.766, 16951.532, 19255.839, 17328.964, 17887.628, 18512.447, 16600.29, 17251.678, 17518.101]
+  30000:MessagePack:MessagePack store save size=30000 fixture={'codec': 'msgpack', 'shape': 'dictionary_records'} payload_bytes=678909 p50_us=19406.2 p95_us=22541.2 samples=[19282.169, 18733.865, 20014.871, 17924.117, 21716.973, 22320.652, 19125.835, 19406.153, 22688.245]
+  30000:JSON:JSON encode size=30000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=453915 p50_us=8018.8 p95_us=8810.76 samples=[8847.202, 8241.058, 7602.674, 7941.693, 7365.016, 7941.263, 8295.0, 8756.1, 8018.799]
+  30000:JSON:JSON file read size=30000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=453915 p50_us=168.087 p95_us=186.905 samples=[168.828, 162.397, 174.028, 168.087, 163.328, 166.775, 164.52, 173.768, 195.489]
+  30000:JSON:JSON decode size=30000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=453915 p50_us=7322.85 p95_us=9356.2 samples=[7322.846, 6184.609, 7446.81, 6311.178, 6923.322, 7589.199, 6576.137, 8349.452, 10027.359]
+  30000:JSON:JSON object-root validation size=30000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=453915 p50_us=0.401 p95_us=0.5936 samples=[0.521, 0.5, 0.431, 0.401, 0.401, 0.35, 0.391, 0.361, 0.642]
+  30000:JSON:JSON store load size=30000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=453915 p50_us=7546.37 p95_us=9287.19 samples=[8891.245, 7086.41, 9551.16, 6858.099, 7599.889, 7546.368, 7069.899, 7394.09, 7903.501]
+  30000:JSON:JSON store save size=30000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=453915 p50_us=72723.3 p95_us=77159.2 samples=[68335.728, 76712.372, 72127.342, 72863.921, 76017.781, 72723.306, 72142.5, 77457.137, 69158.981]

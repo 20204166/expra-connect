@@ -1,0 +1,28 @@
+Suite: cluster_state
+Version: 2.0.0.0
+Python/platform: 3.12.3 / Linux-7.0.0-34-generic-x86_64-with-glibc2.39
+Sampling: {'batch_count': 1, 'repetitions': 3, 'track_allocations': False, 'warmups': 1}
+Modules:
+  expra_connect.cluster.models: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/models.cpython-312-x86_64-linux-gnu.so
+  expra_connect.cluster.operations: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/operations.cpython-312-x86_64-linux-gnu.so
+  expra_connect.cluster.roles: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/roles.py
+  expra_connect.cluster.state: /tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/state.cpython-312-x86_64-linux-gnu.so
+Cases:
+  30000:role encode size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=6957032 p50_us=143791 p95_us=166137 samples=[168619.505, 72103.44, 143790.728]
+  30000:role decode size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=6957032 p50_us=472804 p95_us=534264 samples=[472803.98, 541093.014, 414782.103]
+  30000:cluster encode size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=6957032 p50_us=185434 p95_us=194015 samples=[194968.938, 185433.542, 177779.226]
+  30000:cluster decode size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=6957032 p50_us=482741 p95_us=494857 samples=[496203.384, 393926.056, 482741.34]
+  30000:cluster document round-trip size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=6957032 p50_us=613679 p95_us=712306 samples=[599129.15, 723264.292, 613679.319]
+  30000:cluster round-trip size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=6957032 p50_us=730474 p95_us=775458 samples=[686105.172, 780455.658, 730474.262]
+  30000:YAML encode size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=None status=unavailable reason=Exceeds configured YAML maximum size 1,000
+  30000:YAML parse size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=None status=unavailable reason=Exceeds configured YAML maximum size 1,000
+  30000:YAML cluster round-trip size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=None status=unavailable reason=Exceeds configured YAML maximum size 1,000
+  100000:role encode size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=23267032 p50_us=501691 p95_us=511465 samples=[512551.234, 496087.991, 501691.156]
+  100000:role decode size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=23267032 p50_us=1.5697e+06 p95_us=1.61726e+06 samples=[1553396.145, 1569700.571, 1622546.404]
+  100000:cluster encode size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=23267032 p50_us=666646 p95_us=670351 samples=[670762.165, 666645.729, 662127.498]
+  100000:cluster decode size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=23267032 p50_us=1.44907e+06 p95_us=1.5747e+06 samples=[1449073.446, 1588656.532, 1333597.722]
+  100000:cluster document round-trip size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=23267032 p50_us=2.64144e+06 p95_us=2.75783e+06 samples=[2770758.398, 2641440.109, 2175355.726]
+  100000:cluster round-trip size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=23267032 p50_us=2.35942e+06 p95_us=2.45361e+06 samples=[2359416.098, 2464077.497, 2149492.84]
+  100000:YAML encode size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=None status=unavailable reason=Exceeds configured YAML maximum size 1,000
+  100000:YAML parse size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=None status=unavailable reason=Exceeds configured YAML maximum size 1,000
+  100000:YAML cluster round-trip size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=None status=unavailable reason=Exceeds configured YAML maximum size 1,000

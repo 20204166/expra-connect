@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -74,6 +75,54 @@ class ConnectPerformanceBenchmarkTests(unittest.TestCase):
 
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("cannot be batched", completed.stderr)
+
+    def test_legacy_flat_package_layout_marks_missing_yaml_store_unsupported(
+        self,
+    ) -> None:
+        package_root = Path("/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0")
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(package_root)
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "connect-1.8.0.0.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "tools.connect_performance_benchmark",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=30,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result["metadata"]["package_version"], "1.8.0.0")
+        self.assertTrue(
+            all(
+                str(package_root) in module_path
+                for module_path in result["metadata"]["modules"].values()
+            )
+        )
+        yaml_outcomes = [
+            outcome
+            for outcome in result["outcomes"]
+            if outcome["operation"].startswith("yaml ")
+        ]
+        self.assertEqual(len(yaml_outcomes), 2)
+        self.assertTrue(
+            all(outcome["status"] == "unavailable" for outcome in yaml_outcomes)
+        )
 
 
 if __name__ == "__main__":

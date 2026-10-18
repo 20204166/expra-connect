@@ -1,0 +1,12 @@
+Suite: cluster_state
+Version: 1.9.0.1
+Python/platform: 3.12.3 / Linux-7.0.0-34-generic-x86_64-with-glibc2.39
+Sampling: {'batch_count': 1, 'repetitions': 3, 'track_allocations': False, 'warmups': 1}
+Modules:
+  expra_connect.cluster.models: /tmp/opencode/bench-comparison-2.2.0.1/1.9.0.1/expra_connect/cluster/models.py
+  expra_connect.cluster.operations: /tmp/opencode/bench-comparison-2.2.0.1/1.9.0.1/expra_connect/cluster/operations.py
+  expra_connect.cluster.roles: /tmp/opencode/bench-comparison-2.2.0.1/1.9.0.1/expra_connect/cluster/roles.py
+  expra_connect.cluster.state: /tmp/opencode/bench-comparison-2.2.0.1/1.9.0.1/expra_connect/cluster/state.py
+Cases:
+  30000:cluster round-trip size=30000 fixture={'assignments': 30000, 'grants': 30000, 'name': 'staged_role_cluster'} payload_bytes=7497059 p50_us=829468 p95_us=896087 samples=[723957.138, 903488.89, 829468.175]
+  100000:cluster round-trip size=100000 fixture={'assignments': 100000, 'grants': 100000, 'name': 'staged_role_cluster'} payload_bytes=25067059 p50_us=2.86785e+06 p95_us=3.15288e+06 samples=[3184550.466, 2832381.285, 2867848.19]

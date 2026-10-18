@@ -38,9 +38,49 @@ class MeasurementTests(unittest.TestCase):
 
         self.assertEqual(calls, 8)
         self.assertEqual(result.samples_us, (0.5, 1.0, 1.0))
-        self.assertEqual(result.p50, summarize_samples(result.samples_us)["p50"])
-        self.assertEqual(result.p95, summarize_samples(result.samples_us)["p95"])
+        summary = summarize_samples(result.samples_us)
+        for field in (
+            "minimum",
+            "p25",
+            "p50",
+            "p75",
+            "p95",
+            "p99",
+            "maximum",
+            "spread",
+            "outliers",
+        ):
+            self.assertEqual(getattr(result, field), summary[field])
         self.assertEqual(result.ops_per_second, 1_000_000 / result.mean_us)
+
+    def test_statistics_match_observability_for_even_and_skewed_samples(self) -> None:
+        for samples in ((1.0, 2.0, 3.0, 4.0), (1.0, 2.0, 3.0, 4.0, 100.0)):
+            with self.subTest(samples=samples):
+                ticks = iter(
+                    value for sample in samples for value in (0, int(sample * 1_000))
+                )
+                result = measure(
+                    lambda: None,
+                    MeasurementConfig(
+                        warmups=0,
+                        repetitions=len(samples),
+                        track_allocations=False,
+                    ),
+                    clock_ns=cast(Callable[[], int], lambda clock=ticks: next(clock)),
+                )
+                summary = summarize_samples(result.samples_us)
+                for field in (
+                    "minimum",
+                    "p25",
+                    "p50",
+                    "p75",
+                    "p95",
+                    "p99",
+                    "maximum",
+                    "spread",
+                    "outliers",
+                ):
+                    self.assertEqual(getattr(result, field), summary[field])
 
     def test_rejects_invalid_measurement_configuration(self) -> None:
         with self.assertRaises(ValueError):
@@ -85,6 +125,47 @@ class MeasurementTests(unittest.TestCase):
 
 
 class ResultSchemaTests(unittest.TestCase):
+    def test_outcome_rejects_sample_count_mismatched_with_config(self) -> None:
+        result = measure(
+            lambda: None,
+            MeasurementConfig(warmups=0, repetitions=1, track_allocations=False),
+            clock_ns=iter((0, 1_000)).__next__,
+        )
+
+        with self.assertRaisesRegex(ValueError, "sample count"):
+            BenchmarkOutcome(
+                case_id="case",
+                operation="op",
+                fixture={"shape": "small"},
+                size=1,
+                payload_bytes=1,
+                config=MeasurementConfig(
+                    warmups=0, repetitions=2, track_allocations=False
+                ),
+                result=result,
+            )
+
+    def test_outcome_rejects_allocation_setting_mismatched_with_result(self) -> None:
+        config = MeasurementConfig(warmups=0, repetitions=1, track_allocations=False)
+        result = measure(
+            lambda: None,
+            config,
+            clock_ns=iter((0, 1_000)).__next__,
+        )
+
+        with self.assertRaisesRegex(ValueError, "allocation"):
+            BenchmarkOutcome(
+                case_id="case",
+                operation="op",
+                fixture={"shape": "small"},
+                size=1,
+                payload_bytes=1,
+                config=MeasurementConfig(
+                    warmups=0, repetitions=1, track_allocations=True
+                ),
+                result=result,
+            )
+
     def test_round_trips_measured_and_unsupported_cases(self) -> None:
         metadata = RunMetadata(
             schema_version=1,
@@ -93,7 +174,7 @@ class ResultSchemaTests(unittest.TestCase):
             python_version="3.12.3",
             platform="test-platform",
             modules={"expra_connect.persistence": "/tmp/package/persistence.py"},
-            config=MeasurementConfig(warmups=0, repetitions=1),
+            config=MeasurementConfig(warmups=0, repetitions=1, track_allocations=False),
         )
         measured = measure(
             lambda: None,

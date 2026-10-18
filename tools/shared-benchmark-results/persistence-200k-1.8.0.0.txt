@@ -1,0 +1,17 @@
+Suite: persistence
+Version: 1.8.0.0
+Python/platform: 3.12.3 / Linux-7.0.0-34-generic-x86_64-with-glibc2.39
+Sampling: {'batch_count': 1, 'repetitions': 9, 'track_allocations': False, 'warmups': 2}
+Modules:
+  expra_connect.persistence: /tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/persistence.py
+  json: /usr/lib/python3.12/json/__init__.py
+  msgpack: /home/btn17/Downloads/expra-connect/.venv/lib/python3.12/site-packages/msgpack/__init__.py
+Cases:
+  200000:MessagePack:MessagePack store load size=200000 fixture={'shape': 'compact_pairs'} payload_bytes=None status=unavailable reason=Unsupported by payload and array limits; codec-only measurements are out of scope
+  200000:MessagePack:MessagePack store save size=200000 fixture={'shape': 'compact_pairs'} payload_bytes=None status=unavailable reason=Unsupported by payload and array limits; codec-only measurements are out of scope
+  200000:JSON:JSON encode size=200000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=3188915 p50_us=56042 p95_us=58856.2 samples=[56042.039, 56210.818, 60393.861, 52551.592, 52337.578, 53109.796, 53808.123, 56549.817, 56199.856]
+  200000:JSON:JSON file read size=200000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=3188915 p50_us=5460.67 p95_us=6011.9 samples=[5910.263, 5023.088, 5640.624, 5434.164, 5124.76, 5460.674, 5499.377, 5155.478, 6079.661]
+  200000:JSON:JSON decode size=200000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=3188915 p50_us=67481.9 p95_us=89602.6 samples=[66786.312, 65557.534, 66146.465, 70179.726, 102551.219, 68777.059, 67481.875, 67513.475, 66983.134]
+  200000:JSON:JSON object-root validation size=200000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=3188915 p50_us=0.331 p95_us=0.641 samples=[0.761, 0.461, 0.411, 0.371, 0.33, 0.331, 0.311, 0.311, 0.301]
+  200000:JSON:JSON store load size=200000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=3188915 p50_us=73017 p95_us=79730 samples=[72964.049, 73484.041, 74172.099, 70716.669, 73017.019, 73566.907, 83435.348, 70850.21, 72662.56]
+  200000:JSON:JSON store save size=200000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=3188915 p50_us=414208 p95_us=548385 samples=[404824.991, 569828.591, 407508.643, 408903.796, 412932.626, 414207.953, 483096.519, 480956.821, 516218.726]

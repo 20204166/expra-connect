@@ -1,0 +1,22 @@
+Suite: persistence
+Version: 1.8.0.0
+Python/platform: 3.12.3 / Linux-7.0.0-34-generic-x86_64-with-glibc2.39
+Sampling: {'batch_count': 1, 'repetitions': 9, 'track_allocations': False, 'warmups': 2}
+Modules:
+  expra_connect.persistence: /tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/persistence.py
+  json: /usr/lib/python3.12/json/__init__.py
+  msgpack: /home/btn17/Downloads/expra-connect/.venv/lib/python3.12/site-packages/msgpack/__init__.py
+Cases:
+  100000:MessagePack:MessagePack encode size=100000 fixture={'codec': 'msgpack', 'shape': 'compact_pairs'} payload_bytes=568565 p50_us=12785.3 p95_us=14036.4 samples=[14244.973, 13723.479, 12785.349, 12955.49, 12573.249, 13130.781, 12687.414, 12530.138, 12610.599]
+  100000:MessagePack:MessagePack file read size=100000 fixture={'codec': 'msgpack', 'shape': 'compact_pairs'} payload_bytes=568565 p50_us=51.758 p95_us=54.0446 samples=[54.233, 53.762, 52.499, 51.758, 51.517, 51.136, 50.305, 51.538, 52.218]
+  100000:MessagePack:MessagePack decode size=100000 fixture={'codec': 'msgpack', 'shape': 'compact_pairs'} payload_bytes=568565 p50_us=21544.8 p95_us=30053 samples=[22116.172, 29775.321, 21544.764, 21256.951, 20776.895, 21391.244, 21476.555, 30238.164, 26629.216]
+  100000:MessagePack:MessagePack root validation size=100000 fixture={'codec': 'msgpack', 'shape': 'compact_pairs'} payload_bytes=568565 p50_us=0.762 p95_us=1.088 samples=[1.132, 1.022, 0.911, 0.762, 0.742, 0.762, 0.722, 0.722, 0.742]
+  100000:MessagePack:MessagePack decode + root validation size=100000 fixture={'codec': 'msgpack', 'shape': 'compact_pairs'} payload_bytes=568565 p50_us=20914.9 p95_us=23800.1 samples=[21593.977, 21410.501, 22009.39, 24993.951, 20309.053, 20285.107, 20778.789, 20565.617, 20914.936]
+  100000:MessagePack:MessagePack store load size=100000 fixture={'codec': 'msgpack', 'shape': 'compact_pairs'} payload_bytes=568565 p50_us=21622.1 p95_us=22669.7 samples=[21622.1, 20783.578, 20993.424, 21684.988, 21433.183, 22108.237, 21069.567, 22493.875, 22786.878]
+  100000:MessagePack:MessagePack store save size=100000 fixture={'codec': 'msgpack', 'shape': 'compact_pairs'} payload_bytes=568565 p50_us=29715.5 p95_us=42734 samples=[26629.396, 29699.428, 30786.368, 29433.906, 45579.906, 38465.094, 35153.456, 27901.406, 29715.488]
+  100000:JSON:JSON encode size=100000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=1538915 p50_us=23063.4 p95_us=23504.7 samples=[23143.8, 22885.744, 23460.017, 23063.389, 23377.601, 23534.407, 22887.197, 22754.686, 22704.802]
+  100000:JSON:JSON file read size=100000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=1538915 p50_us=2443.63 p95_us=2615.95 samples=[2686.027, 2451.504, 2443.629, 2411.469, 2364.651, 2355.323, 2479.257, 2510.847, 2404.186]
+  100000:JSON:JSON decode size=100000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=1538915 p50_us=28798.6 p95_us=50094.3 samples=[28918.694, 27833.918, 28798.568, 28485.748, 27930.991, 28212.442, 37374.586, 56623.87, 40299.975]
+  100000:JSON:JSON object-root validation size=100000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=1538915 p50_us=0.731 p95_us=1.0846 samples=[1.193, 0.861, 0.622, 0.651, 0.731, 0.892, 0.44, 0.481, 0.922]
+  100000:JSON:JSON store load size=100000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=1538915 p50_us=32177.9 p95_us=37665.7 samples=[31403.031, 36398.615, 33251.328, 32700.86, 30785.456, 31505.745, 31161.405, 38510.489, 32177.913]
+  100000:JSON:JSON store save size=100000 fixture={'codec': 'json', 'shape': 'compact_pairs'} payload_bytes=1538915 p50_us=224119 p95_us=242061 samples=[206167.11, 242231.024, 241586.908, 240504.125, 241806.512, 220081.588, 224118.964, 208487.897, 220643.057]

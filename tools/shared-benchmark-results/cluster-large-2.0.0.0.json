@@ -1,0 +1,581 @@
+{
+  "metadata": {
+    "config": {
+      "batch_count": 1,
+      "repetitions": 3,
+      "track_allocations": false,
+      "warmups": 1
+    },
+    "modules": {
+      "expra_connect.cluster.models": "/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/models.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.operations": "/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/operations.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.roles": "/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/roles.py",
+      "expra_connect.cluster.state": "/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/state.cpython-312-x86_64-linux-gnu.so"
+    },
+    "package_version": "2.0.0.0",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "suite": "cluster_state"
+  },
+  "outcomes": [
+    {
+      "case_id": "30000:role encode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role encode",
+      "payload_bytes": 6957032,
+      "result": {
+        "maximum": 168619.505,
+        "mean_us": 128171.22433333333,
+        "minimum": 72103.44,
+        "ops_per_second": 7.8020632571887765,
+        "outliers": 0,
+        "p25": 107947.084,
+        "p50": 143790.728,
+        "p75": 156205.1165,
+        "p95": 166136.6273,
+        "p99": 168122.92946,
+        "peak_bytes": null,
+        "samples_us": [
+          168619.505,
+          72103.44,
+          143790.728
+        ],
+        "spread": 96516.065
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role decode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role decode",
+      "payload_bytes": 6957032,
+      "result": {
+        "maximum": 541093.014,
+        "mean_us": 476226.36566666665,
+        "minimum": 414782.103,
+        "ops_per_second": 2.0998417393377737,
+        "outliers": 0,
+        "p25": 443793.0415,
+        "p50": 472803.98,
+        "p75": 506948.497,
+        "p95": 534264.1106,
+        "p99": 539727.23332,
+        "peak_bytes": null,
+        "samples_us": [
+          472803.98,
+          541093.014,
+          414782.103
+        ],
+        "spread": 126310.91099999996
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:cluster encode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster encode",
+      "payload_bytes": 6957032,
+      "result": {
+        "maximum": 194968.938,
+        "mean_us": 186060.56866666666,
+        "minimum": 177779.226,
+        "ops_per_second": 5.3745939140470504,
+        "outliers": 0,
+        "p25": 181606.384,
+        "p50": 185433.542,
+        "p75": 190201.24,
+        "p95": 194015.3984,
+        "p99": 194778.23008,
+        "peak_bytes": null,
+        "samples_us": [
+          194968.938,
+          185433.542,
+          177779.226
+        ],
+        "spread": 17189.712
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:cluster decode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster decode",
+      "payload_bytes": 6957032,
+      "result": {
+        "maximum": 496203.384,
+        "mean_us": 457623.5933333333,
+        "minimum": 393926.056,
+        "ops_per_second": 2.1852020187945147,
+        "outliers": 0,
+        "p25": 438333.698,
+        "p50": 482741.34,
+        "p75": 489472.362,
+        "p95": 494857.17960000003,
+        "p99": 495934.14312,
+        "peak_bytes": null,
+        "samples_us": [
+          496203.384,
+          393926.056,
+          482741.34
+        ],
+        "spread": 102277.32800000004
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:cluster document round-trip",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster document round-trip",
+      "payload_bytes": 6957032,
+      "result": {
+        "maximum": 723264.292,
+        "mean_us": 645357.587,
+        "minimum": 599129.15,
+        "ops_per_second": 1.5495285406786423,
+        "outliers": 0,
+        "p25": 606404.2345,
+        "p50": 613679.319,
+        "p75": 668471.8055,
+        "p95": 712305.7947,
+        "p99": 721072.59254,
+        "peak_bytes": null,
+        "samples_us": [
+          599129.15,
+          723264.292,
+          613679.319
+        ],
+        "spread": 124135.14199999999
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:cluster round-trip",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster round-trip",
+      "payload_bytes": 6957032,
+      "result": {
+        "maximum": 780455.658,
+        "mean_us": 732345.0306666667,
+        "minimum": 686105.172,
+        "ops_per_second": 1.3654765965841023,
+        "outliers": 0,
+        "p25": 708289.717,
+        "p50": 730474.262,
+        "p75": 755464.96,
+        "p95": 775457.5184000001,
+        "p99": 779456.03008,
+        "peak_bytes": null,
+        "samples_us": [
+          686105.172,
+          780455.658,
+          730474.262
+        ],
+        "spread": 94350.48600000003
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:YAML encode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "YAML encode",
+      "payload_bytes": null,
+      "size": 30000,
+      "status": "unavailable",
+      "unavailable_reason": "Exceeds configured YAML maximum size 1,000"
+    },
+    {
+      "case_id": "30000:YAML parse",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "YAML parse",
+      "payload_bytes": null,
+      "size": 30000,
+      "status": "unavailable",
+      "unavailable_reason": "Exceeds configured YAML maximum size 1,000"
+    },
+    {
+      "case_id": "30000:YAML cluster round-trip",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "YAML cluster round-trip",
+      "payload_bytes": null,
+      "size": 30000,
+      "status": "unavailable",
+      "unavailable_reason": "Exceeds configured YAML maximum size 1,000"
+    },
+    {
+      "case_id": "100000:role encode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role encode",
+      "payload_bytes": 23267032,
+      "result": {
+        "maximum": 512551.234,
+        "mean_us": 503443.46033333335,
+        "minimum": 496087.991,
+        "ops_per_second": 1.986320369198744,
+        "outliers": 0,
+        "p25": 498889.5735,
+        "p50": 501691.156,
+        "p75": 507121.195,
+        "p95": 511465.2262,
+        "p99": 512334.03244,
+        "peak_bytes": null,
+        "samples_us": [
+          512551.234,
+          496087.991,
+          501691.156
+        ],
+        "spread": 16463.243000000017
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role decode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role decode",
+      "payload_bytes": 23267032,
+      "result": {
+        "maximum": 1622546.404,
+        "mean_us": 1581881.04,
+        "minimum": 1553396.145,
+        "ops_per_second": 0.6321587873636819,
+        "outliers": 0,
+        "p25": 1561548.358,
+        "p50": 1569700.571,
+        "p75": 1596123.4875,
+        "p95": 1617261.8207,
+        "p99": 1621489.48734,
+        "peak_bytes": null,
+        "samples_us": [
+          1553396.145,
+          1569700.571,
+          1622546.404
+        ],
+        "spread": 69150.25900000008
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:cluster encode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster encode",
+      "payload_bytes": 23267032,
+      "result": {
+        "maximum": 670762.165,
+        "mean_us": 666511.7973333334,
+        "minimum": 662127.498,
+        "ops_per_second": 1.5003485369665313,
+        "outliers": 0,
+        "p25": 664386.6135,
+        "p50": 666645.729,
+        "p75": 668703.947,
+        "p95": 670350.5214000001,
+        "p99": 670679.83628,
+        "peak_bytes": null,
+        "samples_us": [
+          670762.165,
+          666645.729,
+          662127.498
+        ],
+        "spread": 8634.667000000016
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:cluster decode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster decode",
+      "payload_bytes": 23267032,
+      "result": {
+        "maximum": 1588656.532,
+        "mean_us": 1457109.2333333334,
+        "minimum": 1333597.722,
+        "ops_per_second": 0.686290346065796,
+        "outliers": 0,
+        "p25": 1391335.584,
+        "p50": 1449073.446,
+        "p75": 1518864.989,
+        "p95": 1574698.2233999998,
+        "p99": 1585864.87028,
+        "peak_bytes": null,
+        "samples_us": [
+          1449073.446,
+          1588656.532,
+          1333597.722
+        ],
+        "spread": 255058.80999999982
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:cluster document round-trip",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster document round-trip",
+      "payload_bytes": 23267032,
+      "result": {
+        "maximum": 2770758.398,
+        "mean_us": 2529184.7443333333,
+        "minimum": 2175355.726,
+        "ops_per_second": 0.3953843238381503,
+        "outliers": 0,
+        "p25": 2408397.9175,
+        "p50": 2641440.109,
+        "p75": 2706099.2535,
+        "p95": 2757826.5691,
+        "p99": 2768172.03222,
+        "peak_bytes": null,
+        "samples_us": [
+          2770758.398,
+          2641440.109,
+          2175355.726
+        ],
+        "spread": 595402.6720000003
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:cluster round-trip",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster round-trip",
+      "payload_bytes": 23267032,
+      "result": {
+        "maximum": 2464077.497,
+        "mean_us": 2324328.8116666665,
+        "minimum": 2149492.84,
+        "ops_per_second": 0.4302317275338282,
+        "outliers": 0,
+        "p25": 2254454.469,
+        "p50": 2359416.098,
+        "p75": 2411746.7975000003,
+        "p95": 2453611.3571,
+        "p99": 2461984.26902,
+        "peak_bytes": null,
+        "samples_us": [
+          2359416.098,
+          2464077.497,
+          2149492.84
+        ],
+        "spread": 314584.6570000001
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:YAML encode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "YAML encode",
+      "payload_bytes": null,
+      "size": 100000,
+      "status": "unavailable",
+      "unavailable_reason": "Exceeds configured YAML maximum size 1,000"
+    },
+    {
+      "case_id": "100000:YAML parse",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "YAML parse",
+      "payload_bytes": null,
+      "size": 100000,
+      "status": "unavailable",
+      "unavailable_reason": "Exceeds configured YAML maximum size 1,000"
+    },
+    {
+      "case_id": "100000:YAML cluster round-trip",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "YAML cluster round-trip",
+      "payload_bytes": null,
+      "size": 100000,
+      "status": "unavailable",
+      "unavailable_reason": "Exceeds configured YAML maximum size 1,000"
+    }
+  ],
+  "schema_version": 1
+}

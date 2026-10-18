@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -114,6 +115,52 @@ class PersistenceBenchmarkTests(unittest.TestCase):
         self.assertEqual(outcome["fixture"]["shape"], "compact_pairs")
         self.assertEqual(outcome["size"], 30_000)
         self.assertIn("p50=", completed.stdout)
+
+    def test_100k_compact_fixture_keeps_messagepack_and_json_comparable(self) -> None:
+        package_root = Path("/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0")
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(package_root)
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "persistence-100k.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "scripts.benchmark_persistence",
+                    "--sizes",
+                    "100000",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=30,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+
+        messagepack = [
+            outcome
+            for outcome in result["outcomes"]
+            if outcome["operation"].startswith("MessagePack")
+        ]
+        json_store = [
+            outcome
+            for outcome in result["outcomes"]
+            if outcome["operation"] == "JSON store save"
+        ]
+        self.assertTrue(messagepack)
+        self.assertTrue(all(item["status"] == "measured" for item in messagepack))
+        self.assertEqual(len(json_store), 1)
+        self.assertEqual(json_store[0]["status"], "measured")
 
 
 if __name__ == "__main__":

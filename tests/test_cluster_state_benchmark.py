@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -99,7 +100,47 @@ class ClusterStateBenchmarkTests(unittest.TestCase):
         self.assertIn("expra_connect.cluster.state", result["metadata"]["modules"])
         self.assertTrue(result["outcomes"])
         self.assertTrue(all(outcome["size"] == 1 for outcome in result["outcomes"]))
+        self.assertTrue(
+            all(outcome["payload_bytes"] > 0 for outcome in result["outcomes"])
+        )
         self.assertIn("p50=", completed.stdout)
+
+    def test_legacy_cluster_package_layout_emits_shared_results(self) -> None:
+        package_root = Path("/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0")
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(package_root)
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "cluster-1.8.0.0.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "scripts.benchmark_cluster_state",
+                    "--sizes",
+                    "1",
+                    "--operation",
+                    "role encode",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--skip-allocation-tracking",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=15,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result["metadata"]["package_version"], "1.8.0.0")
+        self.assertEqual(len(result["outcomes"]), 1)
 
 
 if __name__ == "__main__":

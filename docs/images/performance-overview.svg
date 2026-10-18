@@ -2,7 +2,7 @@
 <title>All full-workload metrics</title>
 <rect width="1161" height="1566" fill="#ffffff"/>
 <text x="16.0" y="30.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">All full-workload metrics</text>
-<text x="16.0" y="51.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#454545" font-weight="normal">Cell labels are relative to the fastest measured p50 in that row; hover for p50 µs.</text>
+<text x="16.0" y="51.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#454545" font-weight="normal">Cell labels compare p50 with 1.8.0.0 for the same metric and size; below 1× is faster; hover for p50 µs.</text>
 <text x="16.0" y="72.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">30,000 entries</text>
 <text x="401.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -12,200 +12,200 @@
 <text x="961.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
 <text x="333.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Identity fingerprint</text>
-<rect x="345" y="114" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 1.8.0.0: 3.256 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="114" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 1.9.0.1: 3.537 µs; 1.09× row minimum</title></rect>
-<text x="512.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="114" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.0.0.0: 3.789 µs; 1.16× row minimum</title></rect>
-<text x="624.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="114" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.0.0.2: 4.211 µs; 1.29× row minimum</title></rect>
-<text x="736.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="793" y="114" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.0: 3.563 µs; 1.09× row minimum</title></rect>
-<text x="848.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="114" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.1: 3.300 µs; 1.01× row minimum</title></rect>
-<text x="960.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="114" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.3: 3.490 µs; 1.07× row minimum</title></rect>
-<text x="1072.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="114" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity fingerprint, 1.8.0.0: 3.256 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="114" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity fingerprint, 1.9.0.1: 3.537 µs; 1.0863× versus 1.8.0.0</title></rect>
+<text x="512.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
+<rect x="569" y="114" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity fingerprint, 2.0.0.0: 3.789 µs; 1.1637× versus 1.8.0.0</title></rect>
+<text x="624.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.16×</text>
+<rect x="681" y="114" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity fingerprint, 2.0.0.2: 4.211 µs; 1.2933× versus 1.8.0.0</title></rect>
+<text x="736.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.29×</text>
+<rect x="793" y="114" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity fingerprint, 2.2.0.0: 3.563 µs; 1.09429× versus 1.8.0.0</title></rect>
+<text x="848.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
+<rect x="905" y="114" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity fingerprint, 2.2.0.1: 3.300 µs; 1.01351× versus 1.8.0.0</title></rect>
+<text x="960.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
+<rect x="1017" y="114" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity fingerprint, 2.2.0.3: 3.490 µs; 1.07187× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
 <text x="333.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Identity create</text>
-<rect x="345" y="146" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 1.8.0.0: 83.133 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="146" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 1.9.0.1: 94.132 µs; 1.13× row minimum</title></rect>
-<text x="512.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="146" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.0.0.0: 99.336 µs; 1.19× row minimum</title></rect>
-<text x="624.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="146" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.0.0.2: 109.011 µs; 1.31× row minimum</title></rect>
-<text x="736.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="793" y="146" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.0: 92.157 µs; 1.11× row minimum</title></rect>
-<text x="848.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="146" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.1: 90.689 µs; 1.09× row minimum</title></rect>
-<text x="960.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="146" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.3: 84.880 µs; 1.02× row minimum</title></rect>
-<text x="1072.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="146" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity create, 1.8.0.0: 83.133 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="146" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 1.9.0.1: 94.132 µs; 1.13231× versus 1.8.0.0</title></rect>
+<text x="512.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.13×</text>
+<rect x="569" y="146" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 2.0.0.0: 99.336 µs; 1.1949× versus 1.8.0.0</title></rect>
+<text x="624.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.19×</text>
+<rect x="681" y="146" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 2.0.0.2: 109.011 µs; 1.31128× versus 1.8.0.0</title></rect>
+<text x="736.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.31×</text>
+<rect x="793" y="146" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 2.2.0.0: 92.157 µs; 1.10855× versus 1.8.0.0</title></rect>
+<text x="848.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.11×</text>
+<rect x="905" y="146" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 2.2.0.1: 90.689 µs; 1.09089× versus 1.8.0.0</title></rect>
+<text x="960.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
+<rect x="1017" y="146" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity create, 2.2.0.3: 84.880 µs; 1.02101× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
 <text x="333.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Role lookup</text>
-<rect x="345" y="178" width="110" height="30" rx="3" fill="#075e59"><title>Role lookup, 1.8.0.0: 2,430.987 µs; 2545.54× row minimum</title></rect>
-<text x="400.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">2545.5×</text>
-<rect x="457" y="178" width="110" height="30" rx="3" fill="#075e59"><title>Role lookup, 1.9.0.1: 2,808.370 µs; 2940.70× row minimum</title></rect>
-<text x="512.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">2940.7×</text>
-<rect x="569" y="178" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.0.0.0: 1.161 µs; 1.22× row minimum</title></rect>
-<text x="624.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="178" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.0.0.2: 1.161 µs; 1.22× row minimum</title></rect>
-<text x="736.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="793" y="178" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.0: 0.955 µs; 1.00× row minimum</title></rect>
-<text x="848.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="905" y="178" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.1: 1.186 µs; 1.24× row minimum</title></rect>
-<text x="960.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="1017" y="178" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.3: 1.059 µs; 1.11× row minimum</title></rect>
-<text x="1072.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="178" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role lookup, 1.8.0.0: 2,430.987 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="178" width="110" height="30" rx="3" fill="#fddbc7"><title>Role lookup, 1.9.0.1: 2,808.370 µs; 1.15524× versus 1.8.0.0</title></rect>
+<text x="512.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.16×</text>
+<rect x="569" y="178" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.0.0.0: 1.161 µs; 0.000477584× versus 1.8.0.0</title></rect>
+<text x="624.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000478×</text>
+<rect x="681" y="178" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.0.0.2: 1.161 µs; 0.000477584× versus 1.8.0.0</title></rect>
+<text x="736.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000478×</text>
+<rect x="793" y="178" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.0: 0.955 µs; 0.000392845× versus 1.8.0.0</title></rect>
+<text x="848.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000393×</text>
+<rect x="905" y="178" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.1: 1.186 µs; 0.000487868× versus 1.8.0.0</title></rect>
+<text x="960.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000488×</text>
+<rect x="1017" y="178" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.3: 1.059 µs; 0.000435626× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000436×</text>
 <text x="333.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Capability-grant lookup</text>
-<rect x="345" y="210" width="110" height="30" rx="3" fill="#075e59"><title>Capability-grant lookup, 1.8.0.0: 3,335.050 µs; 1139.02× row minimum</title></rect>
-<text x="400.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">1139.0×</text>
-<rect x="457" y="210" width="110" height="30" rx="3" fill="#075e59"><title>Capability-grant lookup, 1.9.0.1: 3,804.662 µs; 1299.41× row minimum</title></rect>
-<text x="512.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">1299.4×</text>
-<rect x="569" y="210" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.0.0.0: 3.074 µs; 1.05× row minimum</title></rect>
-<text x="624.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="210" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.0.0.2: 2.928 µs; 1.00× row minimum</title></rect>
-<text x="736.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="210" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.0: 3.422 µs; 1.17× row minimum</title></rect>
-<text x="848.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="210" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.1: 3.221 µs; 1.10× row minimum</title></rect>
-<text x="960.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="210" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.3: 2.942 µs; 1.00× row minimum</title></rect>
-<text x="1072.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="210" width="110" height="30" rx="3" fill="#f7f7f7"><title>Capability-grant lookup, 1.8.0.0: 3,335.050 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="210" width="110" height="30" rx="3" fill="#fddbc7"><title>Capability-grant lookup, 1.9.0.1: 3,804.662 µs; 1.14081× versus 1.8.0.0</title></rect>
+<text x="512.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
+<rect x="569" y="210" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.0.0.0: 3.074 µs; 0.000921725× versus 1.8.0.0</title></rect>
+<text x="624.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000922×</text>
+<rect x="681" y="210" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.0.0.2: 2.928 µs; 0.000877948× versus 1.8.0.0</title></rect>
+<text x="736.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000878×</text>
+<rect x="793" y="210" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.0: 3.422 µs; 0.00102607× versus 1.8.0.0</title></rect>
+<text x="848.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.00103×</text>
+<rect x="905" y="210" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.1: 3.221 µs; 0.000965803× versus 1.8.0.0</title></rect>
+<text x="960.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000966×</text>
+<rect x="1017" y="210" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.3: 2.942 µs; 0.000882146× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000882×</text>
 <text x="333.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Role-state decode</text>
-<rect x="345" y="242" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 1.8.0.0: 464,627.777 µs; 1.04× row minimum</title></rect>
-<text x="400.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="242" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 1.9.0.1: 540,068.771 µs; 1.21× row minimum</title></rect>
-<text x="512.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="242" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.0.0.0: 451,065.873 µs; 1.01× row minimum</title></rect>
-<text x="624.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="242" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.0.0.2: 481,705.967 µs; 1.08× row minimum</title></rect>
-<text x="736.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="242" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.0: 488,668.713 µs; 1.09× row minimum</title></rect>
-<text x="848.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="242" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.1: 480,475.087 µs; 1.07× row minimum</title></rect>
-<text x="960.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="242" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.3: 447,365.681 µs; 1.00× row minimum</title></rect>
-<text x="1072.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="242" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role-state decode, 1.8.0.0: 464,627.777 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="242" width="110" height="30" rx="3" fill="#fddbc7"><title>Role-state decode, 1.9.0.1: 540,068.771 µs; 1.16237× versus 1.8.0.0</title></rect>
+<text x="512.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.16×</text>
+<rect x="569" y="242" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role-state decode, 2.0.0.0: 451,065.873 µs; 0.970811× versus 1.8.0.0</title></rect>
+<text x="624.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.971×</text>
+<rect x="681" y="242" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role-state decode, 2.0.0.2: 481,705.967 µs; 1.03676× versus 1.8.0.0</title></rect>
+<text x="736.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
+<rect x="793" y="242" width="110" height="30" rx="3" fill="#fddbc7"><title>Role-state decode, 2.2.0.0: 488,668.713 µs; 1.05174× versus 1.8.0.0</title></rect>
+<text x="848.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.05×</text>
+<rect x="905" y="242" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role-state decode, 2.2.0.1: 480,475.087 µs; 1.03411× versus 1.8.0.0</title></rect>
+<text x="960.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
+<rect x="1017" y="242" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role-state decode, 2.2.0.3: 447,365.681 µs; 0.962847× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.963×</text>
 <text x="333.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Cluster-state round-trip</text>
-<rect x="345" y="274" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 1.8.0.0: 699,320.301 µs; 1.09× row minimum</title></rect>
-<text x="400.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="274" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 1.9.0.1: 818,616.883 µs; 1.27× row minimum</title></rect>
-<text x="512.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="569" y="274" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.0.0.0: 652,355.504 µs; 1.02× row minimum</title></rect>
-<text x="624.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="274" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.0.0.2: 714,902.643 µs; 1.11× row minimum</title></rect>
-<text x="736.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="274" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.0: 762,628.068 µs; 1.19× row minimum</title></rect>
-<text x="848.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="274" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.1: 802,603.921 µs; 1.25× row minimum</title></rect>
-<text x="960.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="1017" y="274" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.3: 642,052.580 µs; 1.00× row minimum</title></rect>
-<text x="1072.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="274" width="110" height="30" rx="3" fill="#f7f7f7"><title>Cluster-state round-trip, 1.8.0.0: 699,320.301 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="274" width="110" height="30" rx="3" fill="#fddbc7"><title>Cluster-state round-trip, 1.9.0.1: 818,616.883 µs; 1.17059× versus 1.8.0.0</title></rect>
+<text x="512.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.17×</text>
+<rect x="569" y="274" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.0.0.0: 652,355.504 µs; 0.932842× versus 1.8.0.0</title></rect>
+<text x="624.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.933×</text>
+<rect x="681" y="274" width="110" height="30" rx="3" fill="#f7f7f7"><title>Cluster-state round-trip, 2.0.0.2: 714,902.643 µs; 1.02228× versus 1.8.0.0</title></rect>
+<text x="736.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
+<rect x="793" y="274" width="110" height="30" rx="3" fill="#fddbc7"><title>Cluster-state round-trip, 2.2.0.0: 762,628.068 µs; 1.09053× versus 1.8.0.0</title></rect>
+<text x="848.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
+<rect x="905" y="274" width="110" height="30" rx="3" fill="#fddbc7"><title>Cluster-state round-trip, 2.2.0.1: 802,603.921 µs; 1.14769× versus 1.8.0.0</title></rect>
+<text x="960.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
+<rect x="1017" y="274" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.2.0.3: 642,052.580 µs; 0.918109× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.918×</text>
 <text x="333.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Session current-check</text>
-<rect x="345" y="306" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 1.8.0.0: 1.211 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="306" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 1.9.0.1: 1.302 µs; 1.08× row minimum</title></rect>
-<text x="512.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="306" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.0.0.0: 1.403 µs; 1.16× row minimum</title></rect>
-<text x="624.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="306" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.0.0.2: 1.614 µs; 1.33× row minimum</title></rect>
-<text x="736.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="793" y="306" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.0: 1.577 µs; 1.30× row minimum</title></rect>
+<rect x="345" y="306" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 1.8.0.0: 1.211 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="306" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 1.9.0.1: 1.302 µs; 1.07514× versus 1.8.0.0</title></rect>
+<text x="512.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.08×</text>
+<rect x="569" y="306" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 2.0.0.0: 1.403 µs; 1.15855× versus 1.8.0.0</title></rect>
+<text x="624.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.16×</text>
+<rect x="681" y="306" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 2.0.0.2: 1.614 µs; 1.33278× versus 1.8.0.0</title></rect>
+<text x="736.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.33×</text>
+<rect x="793" y="306" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 2.2.0.0: 1.577 µs; 1.30223× versus 1.8.0.0</title></rect>
 <text x="848.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="905" y="306" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.1: 1.751 µs; 1.45× row minimum</title></rect>
-<text x="960.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.4×</text>
-<rect x="1017" y="306" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.3: 1.244 µs; 1.03× row minimum</title></rect>
-<text x="1072.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="905" y="306" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 2.2.0.1: 1.751 µs; 1.44591× versus 1.8.0.0</title></rect>
+<text x="960.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.45×</text>
+<rect x="1017" y="306" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 2.2.0.3: 1.244 µs; 1.02725× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <text x="333.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Resume existing session</text>
-<rect x="345" y="338" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 1.8.0.0: 1.068 µs; 1.11× row minimum</title></rect>
-<text x="400.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="338" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 1.9.0.1: 0.960 µs; 1.00× row minimum</title></rect>
-<text x="512.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="569" y="338" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.0.0.0: 1.078 µs; 1.12× row minimum</title></rect>
-<text x="624.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="338" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.0.0.2: 0.993 µs; 1.03× row minimum</title></rect>
-<text x="736.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="338" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.0: 1.071 µs; 1.12× row minimum</title></rect>
-<text x="848.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="338" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.1: 1.148 µs; 1.20× row minimum</title></rect>
-<text x="960.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="1017" y="338" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.3: 1.046 µs; 1.09× row minimum</title></rect>
-<text x="1072.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="338" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 1.8.0.0: 1.068 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="338" width="110" height="30" rx="3" fill="#d1e5f0"><title>Resume existing session, 1.9.0.1: 0.960 µs; 0.898876× versus 1.8.0.0</title></rect>
+<text x="512.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.899×</text>
+<rect x="569" y="338" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 2.0.0.0: 1.078 µs; 1.00936× versus 1.8.0.0</title></rect>
+<text x="624.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
+<rect x="681" y="338" width="110" height="30" rx="3" fill="#d1e5f0"><title>Resume existing session, 2.0.0.2: 0.993 µs; 0.929775× versus 1.8.0.0</title></rect>
+<text x="736.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.93×</text>
+<rect x="793" y="338" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 2.2.0.0: 1.071 µs; 1.00281× versus 1.8.0.0</title></rect>
+<text x="848.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="905" y="338" width="110" height="30" rx="3" fill="#fddbc7"><title>Resume existing session, 2.2.0.1: 1.148 µs; 1.07491× versus 1.8.0.0</title></rect>
+<text x="960.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="1017" y="338" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 2.2.0.3: 1.046 µs; 0.979401× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.979×</text>
 <text x="333.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Request sign + verify + replay</text>
-<rect x="345" y="370" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 1.8.0.0: 44.436 µs; 1.01× row minimum</title></rect>
-<text x="400.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="370" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 1.9.0.1: 47.511 µs; 1.08× row minimum</title></rect>
-<text x="512.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="370" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.0.0.0: 56.454 µs; 1.28× row minimum</title></rect>
-<text x="624.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="681" y="370" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.0.0.2: 54.287 µs; 1.23× row minimum</title></rect>
-<text x="736.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="793" y="370" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.0: 52.310 µs; 1.18× row minimum</title></rect>
-<text x="848.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="370" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.1: 62.771 µs; 1.42× row minimum</title></rect>
-<text x="960.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.4×</text>
-<rect x="1017" y="370" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.3: 44.193 µs; 1.00× row minimum</title></rect>
-<text x="1072.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="370" width="110" height="30" rx="3" fill="#f7f7f7"><title>Request sign + verify + replay, 1.8.0.0: 44.436 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="370" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 1.9.0.1: 47.511 µs; 1.0692× versus 1.8.0.0</title></rect>
+<text x="512.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="569" y="370" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.0.0.0: 56.454 µs; 1.27046× versus 1.8.0.0</title></rect>
+<text x="624.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.27×</text>
+<rect x="681" y="370" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.0.0.2: 54.287 µs; 1.22169× versus 1.8.0.0</title></rect>
+<text x="736.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.22×</text>
+<rect x="793" y="370" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.2.0.0: 52.310 µs; 1.1772× versus 1.8.0.0</title></rect>
+<text x="848.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.18×</text>
+<rect x="905" y="370" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.2.0.1: 62.771 µs; 1.41262× versus 1.8.0.0</title></rect>
+<text x="960.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.41×</text>
+<rect x="1017" y="370" width="110" height="30" rx="3" fill="#f7f7f7"><title>Request sign + verify + replay, 2.2.0.3: 44.193 µs; 0.994531× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.995×</text>
 <text x="333.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store save</text>
-<rect x="345" y="402" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 1.8.0.0: 113,000.029 µs; 1.01× row minimum</title></rect>
-<text x="400.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="402" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 1.9.0.1: 129,407.163 µs; 1.15× row minimum</title></rect>
-<text x="512.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="402" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.0.0.0: 112,063.263 µs; 1.00× row minimum</title></rect>
-<text x="624.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="402" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.0.0.2: 112,563.589 µs; 1.00× row minimum</title></rect>
-<text x="736.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="402" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.0: 130,529.877 µs; 1.16× row minimum</title></rect>
-<text x="848.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="402" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.1: 135,322.533 µs; 1.21× row minimum</title></rect>
+<rect x="345" y="402" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 1.8.0.0: 113,000.029 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="402" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 1.9.0.1: 129,407.163 µs; 1.1452× versus 1.8.0.0</title></rect>
+<text x="512.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
+<rect x="569" y="402" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.0.0.0: 112,063.263 µs; 0.99171× versus 1.8.0.0</title></rect>
+<text x="624.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.992×</text>
+<rect x="681" y="402" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.0.0.2: 112,563.589 µs; 0.996138× versus 1.8.0.0</title></rect>
+<text x="736.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.996×</text>
+<rect x="793" y="402" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.2.0.0: 130,529.877 µs; 1.15513× versus 1.8.0.0</title></rect>
+<text x="848.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.16×</text>
+<rect x="905" y="402" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.2.0.1: 135,322.533 µs; 1.19754× versus 1.8.0.0</title></rect>
 <text x="960.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="1017" y="402" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.3: 131,900.272 µs; 1.18× row minimum</title></rect>
-<text x="1072.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="1017" y="402" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.2.0.3: 131,900.272 µs; 1.16726× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="424.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.17×</text>
 <text x="333.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store load</text>
-<rect x="345" y="434" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 1.8.0.0: 12,435.259 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="434" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 1.9.0.1: 13,272.046 µs; 1.07× row minimum</title></rect>
-<text x="512.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="434" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.0.0.0: 13,357.540 µs; 1.07× row minimum</title></rect>
-<text x="624.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="434" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.0.0.2: 13,327.416 µs; 1.07× row minimum</title></rect>
-<text x="736.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="434" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.0: 12,837.649 µs; 1.03× row minimum</title></rect>
-<text x="848.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="905" y="434" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.1: 23,758.722 µs; 1.91× row minimum</title></rect>
-<text x="960.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.9×</text>
-<rect x="1017" y="434" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.3: 12,653.623 µs; 1.02× row minimum</title></rect>
-<text x="1072.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="434" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 1.8.0.0: 12,435.259 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="434" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 1.9.0.1: 13,272.046 µs; 1.06729× versus 1.8.0.0</title></rect>
+<text x="512.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="569" y="434" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.0.0.0: 13,357.540 µs; 1.07417× versus 1.8.0.0</title></rect>
+<text x="624.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="681" y="434" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.0.0.2: 13,327.416 µs; 1.07174× versus 1.8.0.0</title></rect>
+<text x="736.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="793" y="434" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 2.2.0.0: 12,837.649 µs; 1.03236× versus 1.8.0.0</title></rect>
+<text x="848.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
+<rect x="905" y="434" width="110" height="30" rx="3" fill="#ef8a62"><title>JSON store load, 2.2.0.1: 23,758.722 µs; 1.91059× versus 1.8.0.0</title></rect>
+<text x="960.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.91×</text>
+<rect x="1017" y="434" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 2.2.0.3: 12,653.623 µs; 1.01756× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="456.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
 <text x="333.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store save</text>
-<rect x="345" y="466" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 1.8.0.0: 16,956.794 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="466" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 1.9.0.1: 19,012.447 µs; 1.12× row minimum</title></rect>
-<text x="512.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="466" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.0.0.0: 21,145.209 µs; 1.25× row minimum</title></rect>
-<text x="624.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="466" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.0.0.2: 18,802.714 µs; 1.11× row minimum</title></rect>
-<text x="736.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="466" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.2.0.0: 19,055.725 µs; 1.12× row minimum</title></rect>
-<text x="848.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="466" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.2.0.1: 19,314.700 µs; 1.14× row minimum</title></rect>
-<text x="960.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="466" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.2.0.3: 17,346.147 µs; 1.02× row minimum</title></rect>
-<text x="1072.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="466" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store save, 1.8.0.0: 16,956.794 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="466" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store save, 1.9.0.1: 19,012.447 µs; 1.12123× versus 1.8.0.0</title></rect>
+<text x="512.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.12×</text>
+<rect x="569" y="466" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store save, 2.0.0.0: 21,145.209 µs; 1.24701× versus 1.8.0.0</title></rect>
+<text x="624.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.25×</text>
+<rect x="681" y="466" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store save, 2.0.0.2: 18,802.714 µs; 1.10886× versus 1.8.0.0</title></rect>
+<text x="736.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.11×</text>
+<rect x="793" y="466" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store save, 2.2.0.0: 19,055.725 µs; 1.12378× versus 1.8.0.0</title></rect>
+<text x="848.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.12×</text>
+<rect x="905" y="466" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store save, 2.2.0.1: 19,314.700 µs; 1.13905× versus 1.8.0.0</title></rect>
+<text x="960.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
+<rect x="1017" y="466" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store save, 2.2.0.3: 17,346.147 µs; 1.02296× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="488.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
 <text x="333.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store load</text>
-<rect x="345" y="498" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 1.8.0.0: 11,852.171 µs; 1.11× row minimum</title></rect>
-<text x="400.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="498" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 1.9.0.1: 12,638.863 µs; 1.19× row minimum</title></rect>
-<text x="512.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="498" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.0.0.0: 12,960.181 µs; 1.22× row minimum</title></rect>
-<text x="624.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="498" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.0.0.2: 11,192.322 µs; 1.05× row minimum</title></rect>
-<text x="736.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="498" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.2.0.0: 13,136.111 µs; 1.24× row minimum</title></rect>
-<text x="848.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="498" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.2.0.1: 11,728.387 µs; 1.10× row minimum</title></rect>
-<text x="960.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="498" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.2.0.3: 10,635.092 µs; 1.00× row minimum</title></rect>
-<text x="1072.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="498" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 1.8.0.0: 11,852.171 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="498" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store load, 1.9.0.1: 12,638.863 µs; 1.06638× versus 1.8.0.0</title></rect>
+<text x="512.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="569" y="498" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store load, 2.0.0.0: 12,960.181 µs; 1.09349× versus 1.8.0.0</title></rect>
+<text x="624.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
+<rect x="681" y="498" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store load, 2.0.0.2: 11,192.322 µs; 0.944327× versus 1.8.0.0</title></rect>
+<text x="736.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.944×</text>
+<rect x="793" y="498" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store load, 2.2.0.0: 13,136.111 µs; 1.10833× versus 1.8.0.0</title></rect>
+<text x="848.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.11×</text>
+<rect x="905" y="498" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 2.2.0.1: 11,728.387 µs; 0.989556× versus 1.8.0.0</title></rect>
+<text x="960.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.99×</text>
+<rect x="1017" y="498" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store load, 2.2.0.3: 10,635.092 µs; 0.897312× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="520.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.897×</text>
 <text x="16.0" y="554.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">100,000 entries</text>
 <text x="401.0" y="585.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="585.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -215,200 +215,200 @@
 <text x="961.0" y="585.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="585.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
 <text x="333.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Identity fingerprint</text>
-<rect x="345" y="596" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 1.8.0.0: 3.616 µs; 1.07× row minimum</title></rect>
-<text x="400.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="596" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 1.9.0.1: 4.316 µs; 1.28× row minimum</title></rect>
-<text x="512.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="569" y="596" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.0.0.0: 3.754 µs; 1.11× row minimum</title></rect>
-<text x="624.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="596" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.0.0.2: 3.781 µs; 1.12× row minimum</title></rect>
-<text x="736.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="596" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.0: 4.115 µs; 1.22× row minimum</title></rect>
-<text x="848.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="596" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.1: 3.371 µs; 1.00× row minimum</title></rect>
-<text x="960.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="596" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.3: 3.659 µs; 1.09× row minimum</title></rect>
-<text x="1072.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="596" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity fingerprint, 1.8.0.0: 3.616 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="596" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity fingerprint, 1.9.0.1: 4.316 µs; 1.19358× versus 1.8.0.0</title></rect>
+<text x="512.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.19×</text>
+<rect x="569" y="596" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity fingerprint, 2.0.0.0: 3.754 µs; 1.03816× versus 1.8.0.0</title></rect>
+<text x="624.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
+<rect x="681" y="596" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity fingerprint, 2.0.0.2: 3.781 µs; 1.04563× versus 1.8.0.0</title></rect>
+<text x="736.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.05×</text>
+<rect x="793" y="596" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity fingerprint, 2.2.0.0: 4.115 µs; 1.138× versus 1.8.0.0</title></rect>
+<text x="848.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
+<rect x="905" y="596" width="110" height="30" rx="3" fill="#d1e5f0"><title>Identity fingerprint, 2.2.0.1: 3.371 µs; 0.932246× versus 1.8.0.0</title></rect>
+<text x="960.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.932×</text>
+<rect x="1017" y="596" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity fingerprint, 2.2.0.3: 3.659 µs; 1.01189× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
 <text x="333.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Identity create</text>
-<rect x="345" y="628" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 1.8.0.0: 86.892 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="628" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 1.9.0.1: 129.402 µs; 1.49× row minimum</title></rect>
-<text x="512.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.5×</text>
-<rect x="569" y="628" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.0.0.0: 91.097 µs; 1.05× row minimum</title></rect>
-<text x="624.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="628" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.0.0.2: 96.894 µs; 1.12× row minimum</title></rect>
-<text x="736.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="628" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.0: 112.585 µs; 1.30× row minimum</title></rect>
+<rect x="345" y="628" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity create, 1.8.0.0: 86.892 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="628" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 1.9.0.1: 129.402 µs; 1.48923× versus 1.8.0.0</title></rect>
+<text x="512.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.49×</text>
+<rect x="569" y="628" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity create, 2.0.0.0: 91.097 µs; 1.04839× versus 1.8.0.0</title></rect>
+<text x="624.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.05×</text>
+<rect x="681" y="628" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 2.0.0.2: 96.894 µs; 1.11511× versus 1.8.0.0</title></rect>
+<text x="736.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.12×</text>
+<rect x="793" y="628" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 2.2.0.0: 112.585 µs; 1.29569× versus 1.8.0.0</title></rect>
 <text x="848.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="905" y="628" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.1: 91.273 µs; 1.05× row minimum</title></rect>
-<text x="960.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="628" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.3: 98.909 µs; 1.14× row minimum</title></rect>
-<text x="1072.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="905" y="628" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 2.2.0.1: 91.273 µs; 1.05042× versus 1.8.0.0</title></rect>
+<text x="960.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.05×</text>
+<rect x="1017" y="628" width="110" height="30" rx="3" fill="#fddbc7"><title>Identity create, 2.2.0.3: 98.909 µs; 1.1383× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
 <text x="333.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Role lookup</text>
-<rect x="345" y="660" width="110" height="30" rx="3" fill="#075e59"><title>Role lookup, 1.8.0.0: 8,779.286 µs; 6661.07× row minimum</title></rect>
-<text x="400.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">6661.1×</text>
-<rect x="457" y="660" width="110" height="30" rx="3" fill="#075e59"><title>Role lookup, 1.9.0.1: 10,230.796 µs; 7762.36× row minimum</title></rect>
-<text x="512.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">7762.4×</text>
-<rect x="569" y="660" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.0.0.0: 1.318 µs; 1.00× row minimum</title></rect>
-<text x="624.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="660" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.0.0.2: 1.340 µs; 1.02× row minimum</title></rect>
-<text x="736.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="660" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.0: 1.806 µs; 1.37× row minimum</title></rect>
-<text x="848.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.4×</text>
-<rect x="905" y="660" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.1: 1.940 µs; 1.47× row minimum</title></rect>
-<text x="960.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.5×</text>
-<rect x="1017" y="660" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.3: 1.570 µs; 1.19× row minimum</title></rect>
-<text x="1072.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="345" y="660" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role lookup, 1.8.0.0: 8,779.286 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="660" width="110" height="30" rx="3" fill="#fddbc7"><title>Role lookup, 1.9.0.1: 10,230.796 µs; 1.16533× versus 1.8.0.0</title></rect>
+<text x="512.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.17×</text>
+<rect x="569" y="660" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.0.0.0: 1.318 µs; 0.000150126× versus 1.8.0.0</title></rect>
+<text x="624.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.00015×</text>
+<rect x="681" y="660" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.0.0.2: 1.340 µs; 0.000152632× versus 1.8.0.0</title></rect>
+<text x="736.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000153×</text>
+<rect x="793" y="660" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.0: 1.806 µs; 0.000205711× versus 1.8.0.0</title></rect>
+<text x="848.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000206×</text>
+<rect x="905" y="660" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.1: 1.940 µs; 0.000220975× versus 1.8.0.0</title></rect>
+<text x="960.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000221×</text>
+<rect x="1017" y="660" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.3: 1.570 µs; 0.00017883× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000179×</text>
 <text x="333.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Capability-grant lookup</text>
-<rect x="345" y="692" width="110" height="30" rx="3" fill="#075e59"><title>Capability-grant lookup, 1.8.0.0: 12,663.549 µs; 4314.67× row minimum</title></rect>
-<text x="400.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">4314.7×</text>
-<rect x="457" y="692" width="110" height="30" rx="3" fill="#075e59"><title>Capability-grant lookup, 1.9.0.1: 12,684.377 µs; 4321.76× row minimum</title></rect>
-<text x="512.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">4321.8×</text>
-<rect x="569" y="692" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.0.0.0: 2.997 µs; 1.02× row minimum</title></rect>
-<text x="624.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="692" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.0.0.2: 4.281 µs; 1.46× row minimum</title></rect>
-<text x="736.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.5×</text>
-<rect x="793" y="692" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.0: 3.743 µs; 1.28× row minimum</title></rect>
-<text x="848.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="905" y="692" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.1: 2.935 µs; 1.00× row minimum</title></rect>
-<text x="960.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="692" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.3: 3.453 µs; 1.18× row minimum</title></rect>
-<text x="1072.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="345" y="692" width="110" height="30" rx="3" fill="#f7f7f7"><title>Capability-grant lookup, 1.8.0.0: 12,663.549 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="692" width="110" height="30" rx="3" fill="#f7f7f7"><title>Capability-grant lookup, 1.9.0.1: 12,684.377 µs; 1.00164× versus 1.8.0.0</title></rect>
+<text x="512.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="569" y="692" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.0.0.0: 2.997 µs; 0.000236664× versus 1.8.0.0</title></rect>
+<text x="624.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000237×</text>
+<rect x="681" y="692" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.0.0.2: 4.281 µs; 0.000338057× versus 1.8.0.0</title></rect>
+<text x="736.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000338×</text>
+<rect x="793" y="692" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.0: 3.743 µs; 0.000295573× versus 1.8.0.0</title></rect>
+<text x="848.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000296×</text>
+<rect x="905" y="692" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.1: 2.935 µs; 0.000231768× versus 1.8.0.0</title></rect>
+<text x="960.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000232×</text>
+<rect x="1017" y="692" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.3: 3.453 µs; 0.000272672× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000273×</text>
 <text x="333.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Role-state decode</text>
-<rect x="345" y="724" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 1.8.0.0: 1,820,453.843 µs; 1.25× row minimum</title></rect>
-<text x="400.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="457" y="724" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 1.9.0.1: 1,785,313.437 µs; 1.23× row minimum</title></rect>
-<text x="512.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="724" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.0.0.0: 1,578,170.643 µs; 1.08× row minimum</title></rect>
-<text x="624.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="724" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.0.0.2: 1,456,092.223 µs; 1.00× row minimum</title></rect>
-<text x="736.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="724" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.0: 1,592,903.588 µs; 1.09× row minimum</title></rect>
-<text x="848.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="724" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.1: 1,476,089.990 µs; 1.01× row minimum</title></rect>
-<text x="960.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="724" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.3: 1,622,517.737 µs; 1.11× row minimum</title></rect>
-<text x="1072.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="724" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role-state decode, 1.8.0.0: 1,820,453.843 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="724" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role-state decode, 1.9.0.1: 1,785,313.437 µs; 0.980697× versus 1.8.0.0</title></rect>
+<text x="512.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.981×</text>
+<rect x="569" y="724" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.0.0.0: 1,578,170.643 µs; 0.866911× versus 1.8.0.0</title></rect>
+<text x="624.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.867×</text>
+<rect x="681" y="724" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.0.0.2: 1,456,092.223 µs; 0.799851× versus 1.8.0.0</title></rect>
+<text x="736.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.8×</text>
+<rect x="793" y="724" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.2.0.0: 1,592,903.588 µs; 0.875004× versus 1.8.0.0</title></rect>
+<text x="848.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.875×</text>
+<rect x="905" y="724" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.2.0.1: 1,476,089.990 µs; 0.810836× versus 1.8.0.0</title></rect>
+<text x="960.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.811×</text>
+<rect x="1017" y="724" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.2.0.3: 1,622,517.737 µs; 0.891271× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.891×</text>
 <text x="333.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Cluster-state round-trip</text>
-<rect x="345" y="756" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 1.8.0.0: 2,607,906.101 µs; 1.15× row minimum</title></rect>
-<text x="400.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="756" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 1.9.0.1: 2,667,692.423 µs; 1.18× row minimum</title></rect>
-<text x="512.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="756" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.0.0.0: 2,393,749.568 µs; 1.06× row minimum</title></rect>
-<text x="624.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="756" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.0.0.2: 2,316,625.685 µs; 1.02× row minimum</title></rect>
-<text x="736.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="756" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.0: 2,587,734.183 µs; 1.14× row minimum</title></rect>
-<text x="848.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="756" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.1: 2,267,784.899 µs; 1.00× row minimum</title></rect>
-<text x="960.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="756" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.3: 2,392,156.492 µs; 1.05× row minimum</title></rect>
-<text x="1072.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="756" width="110" height="30" rx="3" fill="#f7f7f7"><title>Cluster-state round-trip, 1.8.0.0: 2,607,906.101 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="756" width="110" height="30" rx="3" fill="#f7f7f7"><title>Cluster-state round-trip, 1.9.0.1: 2,667,692.423 µs; 1.02293× versus 1.8.0.0</title></rect>
+<text x="512.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
+<rect x="569" y="756" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.0.0.0: 2,393,749.568 µs; 0.917882× versus 1.8.0.0</title></rect>
+<text x="624.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.918×</text>
+<rect x="681" y="756" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.0.0.2: 2,316,625.685 µs; 0.888309× versus 1.8.0.0</title></rect>
+<text x="736.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.888×</text>
+<rect x="793" y="756" width="110" height="30" rx="3" fill="#f7f7f7"><title>Cluster-state round-trip, 2.2.0.0: 2,587,734.183 µs; 0.992265× versus 1.8.0.0</title></rect>
+<text x="848.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.992×</text>
+<rect x="905" y="756" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.2.0.1: 2,267,784.899 µs; 0.869581× versus 1.8.0.0</title></rect>
+<text x="960.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.87×</text>
+<rect x="1017" y="756" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.2.0.3: 2,392,156.492 µs; 0.917271× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.917×</text>
 <text x="333.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Session current-check</text>
-<rect x="345" y="788" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 1.8.0.0: 1.540 µs; 1.01× row minimum</title></rect>
-<text x="400.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="788" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 1.9.0.1: 1.722 µs; 1.13× row minimum</title></rect>
-<text x="512.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="788" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.0.0.0: 1.564 µs; 1.02× row minimum</title></rect>
-<text x="624.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="788" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.0.0.2: 1.688 µs; 1.11× row minimum</title></rect>
+<rect x="345" y="788" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 1.8.0.0: 1.540 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="788" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 1.9.0.1: 1.722 µs; 1.11818× versus 1.8.0.0</title></rect>
+<text x="512.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.12×</text>
+<rect x="569" y="788" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 2.0.0.0: 1.564 µs; 1.01558× versus 1.8.0.0</title></rect>
+<text x="624.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
+<rect x="681" y="788" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 2.0.0.2: 1.688 µs; 1.0961× versus 1.8.0.0</title></rect>
 <text x="736.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="788" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.0: 1.526 µs; 1.00× row minimum</title></rect>
-<text x="848.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="905" y="788" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.1: 1.572 µs; 1.03× row minimum</title></rect>
-<text x="960.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="788" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.3: 1.798 µs; 1.18× row minimum</title></rect>
-<text x="1072.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="793" y="788" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 2.2.0.0: 1.526 µs; 0.990909× versus 1.8.0.0</title></rect>
+<text x="848.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.991×</text>
+<rect x="905" y="788" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 2.2.0.1: 1.572 µs; 1.02078× versus 1.8.0.0</title></rect>
+<text x="960.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
+<rect x="1017" y="788" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 2.2.0.3: 1.798 µs; 1.16753× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.17×</text>
 <text x="333.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Resume existing session</text>
-<rect x="345" y="820" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 1.8.0.0: 1.025 µs; 1.07× row minimum</title></rect>
-<text x="400.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="820" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 1.9.0.1: 1.097 µs; 1.14× row minimum</title></rect>
-<text x="512.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="820" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.0.0.0: 0.959 µs; 1.00× row minimum</title></rect>
-<text x="624.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="820" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.0.0.2: 1.077 µs; 1.12× row minimum</title></rect>
-<text x="736.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="820" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.0: 1.003 µs; 1.05× row minimum</title></rect>
-<text x="848.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="905" y="820" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.1: 0.986 µs; 1.03× row minimum</title></rect>
-<text x="960.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="820" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.3: 1.171 µs; 1.22× row minimum</title></rect>
-<text x="1072.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="345" y="820" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 1.8.0.0: 1.025 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="820" width="110" height="30" rx="3" fill="#fddbc7"><title>Resume existing session, 1.9.0.1: 1.097 µs; 1.07024× versus 1.8.0.0</title></rect>
+<text x="512.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="569" y="820" width="110" height="30" rx="3" fill="#d1e5f0"><title>Resume existing session, 2.0.0.0: 0.959 µs; 0.93561× versus 1.8.0.0</title></rect>
+<text x="624.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.936×</text>
+<rect x="681" y="820" width="110" height="30" rx="3" fill="#fddbc7"><title>Resume existing session, 2.0.0.2: 1.077 µs; 1.05073× versus 1.8.0.0</title></rect>
+<text x="736.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.05×</text>
+<rect x="793" y="820" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 2.2.0.0: 1.003 µs; 0.978537× versus 1.8.0.0</title></rect>
+<text x="848.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.979×</text>
+<rect x="905" y="820" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 2.2.0.1: 0.986 µs; 0.961951× versus 1.8.0.0</title></rect>
+<text x="960.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.962×</text>
+<rect x="1017" y="820" width="110" height="30" rx="3" fill="#fddbc7"><title>Resume existing session, 2.2.0.3: 1.171 µs; 1.14244× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
 <text x="333.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Request sign + verify + replay</text>
-<rect x="345" y="852" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 1.8.0.0: 46.527 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="852" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 1.9.0.1: 53.227 µs; 1.14× row minimum</title></rect>
-<text x="512.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="852" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.0.0.0: 49.716 µs; 1.07× row minimum</title></rect>
-<text x="624.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="852" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.0.0.2: 57.394 µs; 1.23× row minimum</title></rect>
-<text x="736.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="793" y="852" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.0: 52.077 µs; 1.12× row minimum</title></rect>
-<text x="848.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="852" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.1: 54.185 µs; 1.16× row minimum</title></rect>
-<text x="960.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="1017" y="852" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.3: 53.024 µs; 1.14× row minimum</title></rect>
-<text x="1072.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="852" width="110" height="30" rx="3" fill="#f7f7f7"><title>Request sign + verify + replay, 1.8.0.0: 46.527 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="852" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 1.9.0.1: 53.227 µs; 1.144× versus 1.8.0.0</title></rect>
+<text x="512.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
+<rect x="569" y="852" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.0.0.0: 49.716 µs; 1.06854× versus 1.8.0.0</title></rect>
+<text x="624.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="681" y="852" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.0.0.2: 57.394 µs; 1.23356× versus 1.8.0.0</title></rect>
+<text x="736.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.23×</text>
+<rect x="793" y="852" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.2.0.0: 52.077 µs; 1.11929× versus 1.8.0.0</title></rect>
+<text x="848.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.12×</text>
+<rect x="905" y="852" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.2.0.1: 54.185 µs; 1.16459× versus 1.8.0.0</title></rect>
+<text x="960.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.16×</text>
+<rect x="1017" y="852" width="110" height="30" rx="3" fill="#fddbc7"><title>Request sign + verify + replay, 2.2.0.3: 53.024 µs; 1.13964× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
 <text x="333.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store save</text>
-<rect x="345" y="884" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 1.8.0.0: 239,636.592 µs; 1.20× row minimum</title></rect>
-<text x="400.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="457" y="884" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 1.9.0.1: 237,956.317 µs; 1.19× row minimum</title></rect>
-<text x="512.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="884" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.0.0.0: 199,241.227 µs; 1.00× row minimum</title></rect>
-<text x="624.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="884" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.0.0.2: 216,666.995 µs; 1.09× row minimum</title></rect>
-<text x="736.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="884" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.0: 240,493.675 µs; 1.21× row minimum</title></rect>
-<text x="848.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="884" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.1: 228,108.187 µs; 1.14× row minimum</title></rect>
-<text x="960.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="884" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.3: 236,323.555 µs; 1.19× row minimum</title></rect>
-<text x="1072.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="345" y="884" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 1.8.0.0: 239,636.592 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="884" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 1.9.0.1: 237,956.317 µs; 0.992988× versus 1.8.0.0</title></rect>
+<text x="512.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.993×</text>
+<rect x="569" y="884" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON store save, 2.0.0.0: 199,241.227 µs; 0.831431× versus 1.8.0.0</title></rect>
+<text x="624.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.831×</text>
+<rect x="681" y="884" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON store save, 2.0.0.2: 216,666.995 µs; 0.904148× versus 1.8.0.0</title></rect>
+<text x="736.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.904×</text>
+<rect x="793" y="884" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.2.0.0: 240,493.675 µs; 1.00358× versus 1.8.0.0</title></rect>
+<text x="848.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="905" y="884" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.2.0.1: 228,108.187 µs; 0.951892× versus 1.8.0.0</title></rect>
+<text x="960.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.952×</text>
+<rect x="1017" y="884" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.2.0.3: 236,323.555 µs; 0.986175× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.986×</text>
 <text x="333.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store load</text>
-<rect x="345" y="916" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 1.8.0.0: 29,950.597 µs; 1.08× row minimum</title></rect>
-<text x="400.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="916" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 1.9.0.1: 32,386.252 µs; 1.17× row minimum</title></rect>
-<text x="512.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="916" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.0.0.0: 28,859.619 µs; 1.04× row minimum</title></rect>
-<text x="624.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="916" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.0.0.2: 28,242.827 µs; 1.02× row minimum</title></rect>
-<text x="736.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="916" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.0: 40,613.558 µs; 1.46× row minimum</title></rect>
-<text x="848.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.5×</text>
-<rect x="905" y="916" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.1: 27,797.299 µs; 1.00× row minimum</title></rect>
-<text x="960.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="916" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.3: 33,198.291 µs; 1.19× row minimum</title></rect>
-<text x="1072.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="345" y="916" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 1.8.0.0: 29,950.597 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="916" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 1.9.0.1: 32,386.252 µs; 1.08132× versus 1.8.0.0</title></rect>
+<text x="512.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.08×</text>
+<rect x="569" y="916" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 2.0.0.0: 28,859.619 µs; 0.963574× versus 1.8.0.0</title></rect>
+<text x="624.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.964×</text>
+<rect x="681" y="916" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON store load, 2.0.0.2: 28,242.827 µs; 0.94298× versus 1.8.0.0</title></rect>
+<text x="736.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.943×</text>
+<rect x="793" y="916" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.2.0.0: 40,613.558 µs; 1.35602× versus 1.8.0.0</title></rect>
+<text x="848.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.36×</text>
+<rect x="905" y="916" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON store load, 2.2.0.1: 27,797.299 µs; 0.928105× versus 1.8.0.0</title></rect>
+<text x="960.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.928×</text>
+<rect x="1017" y="916" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.2.0.3: 33,198.291 µs; 1.10844× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.11×</text>
 <text x="333.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store save</text>
-<rect x="345" y="948" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 1.8.0.0: 27,371.941 µs; 1.09× row minimum</title></rect>
-<text x="400.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="948" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 1.9.0.1: 25,139.101 µs; 1.00× row minimum</title></rect>
-<text x="512.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="569" y="948" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.0.0.0: 26,265.950 µs; 1.04× row minimum</title></rect>
-<text x="624.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="948" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.0.0.2: 26,841.385 µs; 1.07× row minimum</title></rect>
-<text x="736.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="948" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.2.0.0: 31,538.610 µs; 1.25× row minimum</title></rect>
-<text x="848.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="905" y="948" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.2.0.1: 26,173.831 µs; 1.04× row minimum</title></rect>
-<text x="960.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="948" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store save, 2.2.0.3: 33,085.048 µs; 1.32× row minimum</title></rect>
-<text x="1072.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
+<rect x="345" y="948" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store save, 1.8.0.0: 27,371.941 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="948" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store save, 1.9.0.1: 25,139.101 µs; 0.918426× versus 1.8.0.0</title></rect>
+<text x="512.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.918×</text>
+<rect x="569" y="948" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store save, 2.0.0.0: 26,265.950 µs; 0.959594× versus 1.8.0.0</title></rect>
+<text x="624.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.96×</text>
+<rect x="681" y="948" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store save, 2.0.0.2: 26,841.385 µs; 0.980617× versus 1.8.0.0</title></rect>
+<text x="736.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.981×</text>
+<rect x="793" y="948" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store save, 2.2.0.0: 31,538.610 µs; 1.15222× versus 1.8.0.0</title></rect>
+<text x="848.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
+<rect x="905" y="948" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store save, 2.2.0.1: 26,173.831 µs; 0.956229× versus 1.8.0.0</title></rect>
+<text x="960.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.956×</text>
+<rect x="1017" y="948" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store save, 2.2.0.3: 33,085.048 µs; 1.20872× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.21×</text>
 <text x="333.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store load</text>
-<rect x="345" y="980" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 1.8.0.0: 19,669.004 µs; 1.17× row minimum</title></rect>
-<text x="400.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="457" y="980" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 1.9.0.1: 20,503.942 µs; 1.22× row minimum</title></rect>
-<text x="512.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="980" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.0.0.0: 17,541.989 µs; 1.04× row minimum</title></rect>
-<text x="624.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="980" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.0.0.2: 16,819.452 µs; 1.00× row minimum</title></rect>
-<text x="736.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="980" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.2.0.0: 19,427.443 µs; 1.16× row minimum</title></rect>
-<text x="848.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="980" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.2.0.1: 17,592.443 µs; 1.05× row minimum</title></rect>
-<text x="960.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="980" width="110" height="30" rx="3" fill="#f2f7f7"><title>MessagePack store load, 2.2.0.3: 28,005.346 µs; 1.67× row minimum</title></rect>
-<text x="1072.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.7×</text>
+<rect x="345" y="980" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 1.8.0.0: 19,669.004 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="980" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 1.9.0.1: 20,503.942 µs; 1.04245× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
+<rect x="569" y="980" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store load, 2.0.0.0: 17,541.989 µs; 0.89186× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.892×</text>
+<rect x="681" y="980" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store load, 2.0.0.2: 16,819.452 µs; 0.855125× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.855×</text>
+<rect x="793" y="980" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 2.2.0.0: 19,427.443 µs; 0.987719× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.988×</text>
+<rect x="905" y="980" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store load, 2.2.0.1: 17,592.443 µs; 0.894425× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.894×</text>
+<rect x="1017" y="980" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store load, 2.2.0.3: 28,005.346 µs; 1.42383× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.42×</text>
 <text x="16.0" y="1036.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">200,000 entries</text>
 <text x="401.0" y="1067.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="1067.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -418,213 +418,213 @@
 <text x="961.0" y="1067.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="1067.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
 <text x="333.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Identity fingerprint</text>
-<rect x="345" y="1078" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 1.8.0.0: 4.793 µs; 1.43× row minimum</title></rect>
-<text x="400.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.4×</text>
-<rect x="457" y="1078" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 1.9.0.1: 3.341 µs; 1.00× row minimum</title></rect>
-<text x="512.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="569" y="1078" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.0.0.0: 3.649 µs; 1.09× row minimum</title></rect>
-<text x="624.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="1078" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.0.0.2: 3.627 µs; 1.09× row minimum</title></rect>
-<text x="736.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="1078" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.0: 3.763 µs; 1.13× row minimum</title></rect>
-<text x="848.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="1078" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.1: 3.454 µs; 1.03× row minimum</title></rect>
-<text x="960.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="1078" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity fingerprint, 2.2.0.3: 3.532 µs; 1.06× row minimum</title></rect>
-<text x="1072.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="1078" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity fingerprint, 1.8.0.0: 4.793 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1078" width="110" height="30" rx="3" fill="#67a9cf"><title>Identity fingerprint, 1.9.0.1: 3.341 µs; 0.697058× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.697×</text>
+<rect x="569" y="1078" width="110" height="30" rx="3" fill="#d1e5f0"><title>Identity fingerprint, 2.0.0.0: 3.649 µs; 0.761319× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.761×</text>
+<rect x="681" y="1078" width="110" height="30" rx="3" fill="#d1e5f0"><title>Identity fingerprint, 2.0.0.2: 3.627 µs; 0.756729× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.757×</text>
+<rect x="793" y="1078" width="110" height="30" rx="3" fill="#d1e5f0"><title>Identity fingerprint, 2.2.0.0: 3.763 µs; 0.785103× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.785×</text>
+<rect x="905" y="1078" width="110" height="30" rx="3" fill="#67a9cf"><title>Identity fingerprint, 2.2.0.1: 3.454 µs; 0.720634× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.721×</text>
+<rect x="1017" y="1078" width="110" height="30" rx="3" fill="#67a9cf"><title>Identity fingerprint, 2.2.0.3: 3.532 µs; 0.736908× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1100.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.737×</text>
 <text x="333.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Identity create</text>
-<rect x="345" y="1110" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 1.8.0.0: 113.899 µs; 1.39× row minimum</title></rect>
-<text x="400.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.4×</text>
-<rect x="457" y="1110" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 1.9.0.1: 81.815 µs; 1.00× row minimum</title></rect>
-<text x="512.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="569" y="1110" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.0.0.0: 88.684 µs; 1.08× row minimum</title></rect>
-<text x="624.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="1110" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.0.0.2: 91.579 µs; 1.12× row minimum</title></rect>
-<text x="736.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="1110" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.0: 89.164 µs; 1.09× row minimum</title></rect>
-<text x="848.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="1110" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.1: 84.925 µs; 1.04× row minimum</title></rect>
-<text x="960.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="1110" width="110" height="30" rx="3" fill="#f2f7f7"><title>Identity create, 2.2.0.3: 87.482 µs; 1.07× row minimum</title></rect>
-<text x="1072.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="1110" width="110" height="30" rx="3" fill="#f7f7f7"><title>Identity create, 1.8.0.0: 113.899 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1110" width="110" height="30" rx="3" fill="#67a9cf"><title>Identity create, 1.9.0.1: 81.815 µs; 0.718312× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.718×</text>
+<rect x="569" y="1110" width="110" height="30" rx="3" fill="#d1e5f0"><title>Identity create, 2.0.0.0: 88.684 µs; 0.77862× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.779×</text>
+<rect x="681" y="1110" width="110" height="30" rx="3" fill="#d1e5f0"><title>Identity create, 2.0.0.2: 91.579 µs; 0.804037× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.804×</text>
+<rect x="793" y="1110" width="110" height="30" rx="3" fill="#d1e5f0"><title>Identity create, 2.2.0.0: 89.164 µs; 0.782834× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.783×</text>
+<rect x="905" y="1110" width="110" height="30" rx="3" fill="#67a9cf"><title>Identity create, 2.2.0.1: 84.925 µs; 0.745617× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.746×</text>
+<rect x="1017" y="1110" width="110" height="30" rx="3" fill="#d1e5f0"><title>Identity create, 2.2.0.3: 87.482 µs; 0.768066× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.768×</text>
 <text x="333.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Role lookup</text>
-<rect x="345" y="1142" width="110" height="30" rx="3" fill="#075e59"><title>Role lookup, 1.8.0.0: 19,615.792 µs; 16104.92× row minimum</title></rect>
-<text x="400.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">16104.9×</text>
-<rect x="457" y="1142" width="110" height="30" rx="3" fill="#075e59"><title>Role lookup, 1.9.0.1: 19,362.153 µs; 15896.68× row minimum</title></rect>
-<text x="512.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">15896.7×</text>
-<rect x="569" y="1142" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.0.0.0: 1.567 µs; 1.29× row minimum</title></rect>
-<text x="624.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="681" y="1142" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.0.0.2: 1.259 µs; 1.03× row minimum</title></rect>
-<text x="736.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="1142" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.0: 1.327 µs; 1.09× row minimum</title></rect>
-<text x="848.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="1142" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.1: 1.386 µs; 1.14× row minimum</title></rect>
-<text x="960.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="1142" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role lookup, 2.2.0.3: 1.218 µs; 1.00× row minimum</title></rect>
-<text x="1072.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="1142" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role lookup, 1.8.0.0: 19,615.792 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1142" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role lookup, 1.9.0.1: 19,362.153 µs; 0.98707× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.987×</text>
+<rect x="569" y="1142" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.0.0.0: 1.567 µs; 7.98846e-05× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">7.99e-05×</text>
+<rect x="681" y="1142" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.0.0.2: 1.259 µs; 6.4183e-05× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">6.42e-05×</text>
+<rect x="793" y="1142" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.0: 1.327 µs; 6.76496e-05× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">6.76e-05×</text>
+<rect x="905" y="1142" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.1: 1.386 µs; 7.06574e-05× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">7.07e-05×</text>
+<rect x="1017" y="1142" width="110" height="30" rx="3" fill="#2166ac"><title>Role lookup, 2.2.0.3: 1.218 µs; 6.20928e-05× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">6.21e-05×</text>
 <text x="333.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Capability-grant lookup</text>
-<rect x="345" y="1174" width="110" height="30" rx="3" fill="#075e59"><title>Capability-grant lookup, 1.8.0.0: 25,655.223 µs; 8923.56× row minimum</title></rect>
-<text x="400.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">8923.6×</text>
-<rect x="457" y="1174" width="110" height="30" rx="3" fill="#075e59"><title>Capability-grant lookup, 1.9.0.1: 23,894.701 µs; 8311.20× row minimum</title></rect>
-<text x="512.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">8311.2×</text>
-<rect x="569" y="1174" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.0.0.0: 3.195 µs; 1.11× row minimum</title></rect>
-<text x="624.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="1174" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.0.0.2: 2.875 µs; 1.00× row minimum</title></rect>
-<text x="736.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="1174" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.0: 3.513 µs; 1.22× row minimum</title></rect>
-<text x="848.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="1174" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.1: 3.145 µs; 1.09× row minimum</title></rect>
-<text x="960.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="1174" width="110" height="30" rx="3" fill="#f2f7f7"><title>Capability-grant lookup, 2.2.0.3: 3.219 µs; 1.12× row minimum</title></rect>
-<text x="1072.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="1174" width="110" height="30" rx="3" fill="#f7f7f7"><title>Capability-grant lookup, 1.8.0.0: 25,655.223 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1174" width="110" height="30" rx="3" fill="#d1e5f0"><title>Capability-grant lookup, 1.9.0.1: 23,894.701 µs; 0.931378× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.931×</text>
+<rect x="569" y="1174" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.0.0.0: 3.195 µs; 0.000124536× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000125×</text>
+<rect x="681" y="1174" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.0.0.2: 2.875 µs; 0.000112063× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000112×</text>
+<rect x="793" y="1174" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.0: 3.513 µs; 0.000136931× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000137×</text>
+<rect x="905" y="1174" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.1: 3.145 µs; 0.000122587× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000123×</text>
+<rect x="1017" y="1174" width="110" height="30" rx="3" fill="#2166ac"><title>Capability-grant lookup, 2.2.0.3: 3.219 µs; 0.000125472× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1196.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.000125×</text>
 <text x="333.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Role-state decode</text>
-<rect x="345" y="1206" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 1.8.0.0: 3,894,563.667 µs; 1.28× row minimum</title></rect>
-<text x="400.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="457" y="1206" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 1.9.0.1: 3,616,377.119 µs; 1.19× row minimum</title></rect>
-<text x="512.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="1206" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.0.0.0: 3,178,145.208 µs; 1.05× row minimum</title></rect>
-<text x="624.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="681" y="1206" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.0.0.2: 3,074,833.625 µs; 1.01× row minimum</title></rect>
-<text x="736.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="1206" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.0: 3,322,570.494 µs; 1.10× row minimum</title></rect>
-<text x="848.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="1206" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.1: 3,303,511.516 µs; 1.09× row minimum</title></rect>
-<text x="960.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="1206" width="110" height="30" rx="3" fill="#f2f7f7"><title>Role-state decode, 2.2.0.3: 3,031,532.174 µs; 1.00× row minimum</title></rect>
-<text x="1072.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
+<rect x="345" y="1206" width="110" height="30" rx="3" fill="#f7f7f7"><title>Role-state decode, 1.8.0.0: 3,894,563.667 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1206" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 1.9.0.1: 3,616,377.119 µs; 0.928571× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.929×</text>
+<rect x="569" y="1206" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.0.0.0: 3,178,145.208 µs; 0.816047× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.816×</text>
+<rect x="681" y="1206" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.0.0.2: 3,074,833.625 µs; 0.789519× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.79×</text>
+<rect x="793" y="1206" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.2.0.0: 3,322,570.494 µs; 0.85313× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.853×</text>
+<rect x="905" y="1206" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.2.0.1: 3,303,511.516 µs; 0.848237× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.848×</text>
+<rect x="1017" y="1206" width="110" height="30" rx="3" fill="#d1e5f0"><title>Role-state decode, 2.2.0.3: 3,031,532.174 µs; 0.778401× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1228.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.778×</text>
 <text x="333.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Cluster-state round-trip</text>
-<rect x="345" y="1238" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 1.8.0.0: 5,545,602.706 µs; 1.26× row minimum</title></rect>
-<text x="400.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
-<rect x="457" y="1238" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 1.9.0.1: 5,453,450.383 µs; 1.24× row minimum</title></rect>
-<text x="512.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="1238" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.0.0.0: 5,084,583.500 µs; 1.15× row minimum</title></rect>
-<text x="624.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="1238" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.0.0.2: 4,820,128.273 µs; 1.09× row minimum</title></rect>
-<text x="736.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="1238" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.0: 4,828,435.336 µs; 1.10× row minimum</title></rect>
-<text x="848.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="1238" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.1: 4,408,514.205 µs; 1.00× row minimum</title></rect>
-<text x="960.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="1238" width="110" height="30" rx="3" fill="#f2f7f7"><title>Cluster-state round-trip, 2.2.0.3: 4,709,398.529 µs; 1.07× row minimum</title></rect>
-<text x="1072.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="1238" width="110" height="30" rx="3" fill="#f7f7f7"><title>Cluster-state round-trip, 1.8.0.0: 5,545,602.706 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1238" width="110" height="30" rx="3" fill="#f7f7f7"><title>Cluster-state round-trip, 1.9.0.1: 5,453,450.383 µs; 0.983383× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.983×</text>
+<rect x="569" y="1238" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.0.0.0: 5,084,583.500 µs; 0.916868× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.917×</text>
+<rect x="681" y="1238" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.0.0.2: 4,820,128.273 µs; 0.86918× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.869×</text>
+<rect x="793" y="1238" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.2.0.0: 4,828,435.336 µs; 0.870678× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.871×</text>
+<rect x="905" y="1238" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.2.0.1: 4,408,514.205 µs; 0.794957× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.795×</text>
+<rect x="1017" y="1238" width="110" height="30" rx="3" fill="#d1e5f0"><title>Cluster-state round-trip, 2.2.0.3: 4,709,398.529 µs; 0.849213× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1260.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.849×</text>
 <text x="333.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Session current-check</text>
-<rect x="345" y="1270" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 1.8.0.0: 1.681 µs; 1.06× row minimum</title></rect>
-<text x="400.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="457" y="1270" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 1.9.0.1: 1.892 µs; 1.19× row minimum</title></rect>
-<text x="512.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="569" y="1270" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.0.0.0: 2.254 µs; 1.42× row minimum</title></rect>
-<text x="624.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.4×</text>
-<rect x="681" y="1270" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.0.0.2: 1.659 µs; 1.05× row minimum</title></rect>
-<text x="736.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="1270" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.0: 1.584 µs; 1.00× row minimum</title></rect>
-<text x="848.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="905" y="1270" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.1: 1.633 µs; 1.03× row minimum</title></rect>
-<text x="960.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="1270" width="110" height="30" rx="3" fill="#f2f7f7"><title>Session current-check, 2.2.0.3: 1.828 µs; 1.15× row minimum</title></rect>
-<text x="1072.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="345" y="1270" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 1.8.0.0: 1.681 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1270" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 1.9.0.1: 1.892 µs; 1.12552× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.13×</text>
+<rect x="569" y="1270" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 2.0.0.0: 2.254 µs; 1.34087× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.34×</text>
+<rect x="681" y="1270" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 2.0.0.2: 1.659 µs; 0.986913× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.987×</text>
+<rect x="793" y="1270" width="110" height="30" rx="3" fill="#d1e5f0"><title>Session current-check, 2.2.0.0: 1.584 µs; 0.942296× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.942×</text>
+<rect x="905" y="1270" width="110" height="30" rx="3" fill="#f7f7f7"><title>Session current-check, 2.2.0.1: 1.633 µs; 0.971446× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.971×</text>
+<rect x="1017" y="1270" width="110" height="30" rx="3" fill="#fddbc7"><title>Session current-check, 2.2.0.3: 1.828 µs; 1.08745× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1292.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
 <text x="333.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Resume existing session</text>
-<rect x="345" y="1302" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 1.8.0.0: 1.014 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="1302" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 1.9.0.1: 1.160 µs; 1.14× row minimum</title></rect>
-<text x="512.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="1302" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.0.0.0: 1.236 µs; 1.22× row minimum</title></rect>
-<text x="624.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="1302" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.0.0.2: 1.093 µs; 1.08× row minimum</title></rect>
-<text x="736.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="1302" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.0: 1.024 µs; 1.01× row minimum</title></rect>
-<text x="848.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="905" y="1302" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.1: 1.040 µs; 1.03× row minimum</title></rect>
-<text x="960.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="1302" width="110" height="30" rx="3" fill="#f2f7f7"><title>Resume existing session, 2.2.0.3: 1.142 µs; 1.13× row minimum</title></rect>
-<text x="1072.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="1302" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 1.8.0.0: 1.014 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1302" width="110" height="30" rx="3" fill="#fddbc7"><title>Resume existing session, 1.9.0.1: 1.160 µs; 1.14398× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
+<rect x="569" y="1302" width="110" height="30" rx="3" fill="#fddbc7"><title>Resume existing session, 2.0.0.0: 1.236 µs; 1.21893× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.22×</text>
+<rect x="681" y="1302" width="110" height="30" rx="3" fill="#fddbc7"><title>Resume existing session, 2.0.0.2: 1.093 µs; 1.07791× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.08×</text>
+<rect x="793" y="1302" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 2.2.0.0: 1.024 µs; 1.00986× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
+<rect x="905" y="1302" width="110" height="30" rx="3" fill="#f7f7f7"><title>Resume existing session, 2.2.0.1: 1.040 µs; 1.02564× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
+<rect x="1017" y="1302" width="110" height="30" rx="3" fill="#fddbc7"><title>Resume existing session, 2.2.0.3: 1.142 µs; 1.12623× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1324.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.13×</text>
 <text x="333.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">Request sign + verify + replay</text>
-<rect x="345" y="1334" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 1.8.0.0: 69.510 µs; 1.44× row minimum</title></rect>
-<text x="400.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.4×</text>
-<rect x="457" y="1334" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 1.9.0.1: 48.225 µs; 1.00× row minimum</title></rect>
-<text x="512.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="569" y="1334" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.0.0.0: 52.541 µs; 1.09× row minimum</title></rect>
-<text x="624.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="1334" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.0.0.2: 49.554 µs; 1.03× row minimum</title></rect>
-<text x="736.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="1334" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.0: 56.669 µs; 1.18× row minimum</title></rect>
-<text x="848.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="905" y="1334" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.1: 54.887 µs; 1.14× row minimum</title></rect>
-<text x="960.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="1334" width="110" height="30" rx="3" fill="#f2f7f7"><title>Request sign + verify + replay, 2.2.0.3: 54.237 µs; 1.12× row minimum</title></rect>
-<text x="1072.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
+<rect x="345" y="1334" width="110" height="30" rx="3" fill="#f7f7f7"><title>Request sign + verify + replay, 1.8.0.0: 69.510 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1334" width="110" height="30" rx="3" fill="#67a9cf"><title>Request sign + verify + replay, 1.9.0.1: 48.225 µs; 0.693785× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.694×</text>
+<rect x="569" y="1334" width="110" height="30" rx="3" fill="#d1e5f0"><title>Request sign + verify + replay, 2.0.0.0: 52.541 µs; 0.755877× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.756×</text>
+<rect x="681" y="1334" width="110" height="30" rx="3" fill="#67a9cf"><title>Request sign + verify + replay, 2.0.0.2: 49.554 µs; 0.712905× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.713×</text>
+<rect x="793" y="1334" width="110" height="30" rx="3" fill="#d1e5f0"><title>Request sign + verify + replay, 2.2.0.0: 56.669 µs; 0.815264× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.815×</text>
+<rect x="905" y="1334" width="110" height="30" rx="3" fill="#d1e5f0"><title>Request sign + verify + replay, 2.2.0.1: 54.887 µs; 0.789627× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.79×</text>
+<rect x="1017" y="1334" width="110" height="30" rx="3" fill="#d1e5f0"><title>Request sign + verify + replay, 2.2.0.3: 54.237 µs; 0.780276× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1356.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.78×</text>
 <text x="333.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store save</text>
-<rect x="345" y="1366" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 1.8.0.0: 400,716.077 µs; 1.00× row minimum</title></rect>
-<text x="400.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="1366" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 1.9.0.1: 428,401.015 µs; 1.07× row minimum</title></rect>
-<text x="512.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="1366" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.0.0.0: 500,435.547 µs; 1.25× row minimum</title></rect>
-<text x="624.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
-<rect x="681" y="1366" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.0.0.2: 416,189.677 µs; 1.04× row minimum</title></rect>
-<text x="736.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="793" y="1366" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.0: 418,109.572 µs; 1.04× row minimum</title></rect>
-<text x="848.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="905" y="1366" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.1: 458,685.482 µs; 1.14× row minimum</title></rect>
-<text x="960.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="1017" y="1366" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store save, 2.2.0.3: 489,527.222 µs; 1.22× row minimum</title></rect>
-<text x="1072.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="345" y="1366" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 1.8.0.0: 400,716.077 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1366" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 1.9.0.1: 428,401.015 µs; 1.06909× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="569" y="1366" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.0.0.0: 500,435.547 µs; 1.24885× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.25×</text>
+<rect x="681" y="1366" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.0.0.2: 416,189.677 µs; 1.03861× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
+<rect x="793" y="1366" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.2.0.0: 418,109.572 µs; 1.04341× versus 1.8.0.0</title></rect>
+<text x="848.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
+<rect x="905" y="1366" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.2.0.1: 458,685.482 µs; 1.14466× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
+<rect x="1017" y="1366" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.2.0.3: 489,527.222 µs; 1.22163× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1388.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.22×</text>
 <text x="333.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store load</text>
-<rect x="345" y="1398" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 1.8.0.0: 69,189.278 µs; 1.03× row minimum</title></rect>
-<text x="400.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="457" y="1398" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 1.9.0.1: 70,866.561 µs; 1.05× row minimum</title></rect>
-<text x="512.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="569" y="1398" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.0.0.0: 73,041.556 µs; 1.08× row minimum</title></rect>
-<text x="624.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="681" y="1398" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.0.0.2: 77,517.759 µs; 1.15× row minimum</title></rect>
-<text x="736.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="793" y="1398" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.0: 76,233.884 µs; 1.13× row minimum</title></rect>
+<rect x="345" y="1398" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 1.8.0.0: 69,189.278 µs; 1× versus 1.8.0.0</title></rect>
+<text x="400.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="457" y="1398" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 1.9.0.1: 70,866.561 µs; 1.02424× versus 1.8.0.0</title></rect>
+<text x="512.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
+<rect x="569" y="1398" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.0.0.0: 73,041.556 µs; 1.05568× versus 1.8.0.0</title></rect>
+<text x="624.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.06×</text>
+<rect x="681" y="1398" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.0.0.2: 77,517.759 µs; 1.12037× versus 1.8.0.0</title></rect>
+<text x="736.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.12×</text>
+<rect x="793" y="1398" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.2.0.0: 76,233.884 µs; 1.10182× versus 1.8.0.0</title></rect>
 <text x="848.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
-<rect x="905" y="1398" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.1: 67,479.408 µs; 1.00× row minimum</title></rect>
-<text x="960.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.0×</text>
-<rect x="1017" y="1398" width="110" height="30" rx="3" fill="#f2f7f7"><title>JSON store load, 2.2.0.3: 82,423.185 µs; 1.22× row minimum</title></rect>
-<text x="1072.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="905" y="1398" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 2.2.0.1: 67,479.408 µs; 0.975287× versus 1.8.0.0</title></rect>
+<text x="960.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.975×</text>
+<rect x="1017" y="1398" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.2.0.3: 82,423.185 µs; 1.19127× versus 1.8.0.0</title></rect>
+<text x="1072.0" y="1420.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.19×</text>
 <text x="333.0" y="1452.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store save</text>
-<rect x="345" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 1.8.0.0: Not available</title></rect>
+<rect x="345" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 1.8.0.0: Unsupported by payload and array limits</title></rect>
 <text x="400.0" y="1452.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="457" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 1.9.0.1: Not available</title></rect>
+<rect x="457" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 1.9.0.1: Unsupported by payload and array limits</title></rect>
 <text x="512.0" y="1452.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="569" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.0.0.0: Not available</title></rect>
+<rect x="569" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.0.0.0: Unsupported by payload and array limits</title></rect>
 <text x="624.0" y="1452.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="681" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.0.0.2: Not available</title></rect>
+<rect x="681" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.0.0.2: Unsupported by payload and array limits</title></rect>
 <text x="736.0" y="1452.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="793" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.0: Not available</title></rect>
+<rect x="793" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.0: Unsupported by payload and array limits</title></rect>
 <text x="848.0" y="1452.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="905" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.1: Not available</title></rect>
+<rect x="905" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.1: Unsupported by payload and array limits</title></rect>
 <text x="960.0" y="1452.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="1017" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.3: Not available</title></rect>
+<rect x="1017" y="1430" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.3: Unsupported by payload and array limits</title></rect>
 <text x="1072.0" y="1452.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="1484.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store load</text>
-<rect x="345" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 1.8.0.0: Not available</title></rect>
+<rect x="345" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 1.8.0.0: Unsupported by payload and array limits</title></rect>
 <text x="400.0" y="1484.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="457" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 1.9.0.1: Not available</title></rect>
+<rect x="457" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 1.9.0.1: Unsupported by payload and array limits</title></rect>
 <text x="512.0" y="1484.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="569" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.0.0.0: Not available</title></rect>
+<rect x="569" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.0.0.0: Unsupported by payload and array limits</title></rect>
 <text x="624.0" y="1484.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="681" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.0.0.2: Not available</title></rect>
+<rect x="681" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.0.0.2: Unsupported by payload and array limits</title></rect>
 <text x="736.0" y="1484.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="793" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.0: Not available</title></rect>
+<rect x="793" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.0: Unsupported by payload and array limits</title></rect>
 <text x="848.0" y="1484.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="905" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.1: Not available</title></rect>
+<rect x="905" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.1: Unsupported by payload and array limits</title></rect>
 <text x="960.0" y="1484.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<rect x="1017" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.3: Not available</title></rect>
+<rect x="1017" y="1462" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.3: Unsupported by payload and array limits</title></rect>
 <text x="1072.0" y="1484.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
-<text x="16.0" y="1543.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Relative p50:</text>
-<rect x="112" y="1528" width="22" height="18" fill="#f2f7f7"/>
-<text x="140.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">fastest</text>
-<rect x="210" y="1528" width="22" height="18" fill="#d8ebe9"/>
-<text x="238.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">2×</text>
-<rect x="308" y="1528" width="22" height="18" fill="#b5dbd6"/>
-<text x="336.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">4×</text>
-<rect x="406" y="1528" width="22" height="18" fill="#86c5be"/>
-<text x="434.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">8×</text>
-<rect x="504" y="1528" width="22" height="18" fill="#55a99f"/>
-<text x="532.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">16×</text>
-<rect x="602" y="1528" width="22" height="18" fill="#25877f"/>
-<text x="630.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">32×</text>
-<rect x="700" y="1528" width="22" height="18" fill="#075e59"/>
-<text x="728.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">≥64×</text>
+<text x="16.0" y="1543.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Ratio vs 1.8.0.0:</text>
+<rect x="112" y="1528" width="22" height="18" fill="#2166ac"/>
+<text x="140.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">≤0.5×</text>
+<rect x="210" y="1528" width="22" height="18" fill="#67a9cf"/>
+<text x="238.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">0.5–0.75×</text>
+<rect x="308" y="1528" width="22" height="18" fill="#d1e5f0"/>
+<text x="336.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">0.75–0.95×</text>
+<rect x="406" y="1528" width="22" height="18" fill="#f7f7f7"/>
+<text x="434.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">≈1.0×</text>
+<rect x="504" y="1528" width="22" height="18" fill="#fddbc7"/>
+<text x="532.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">1.05–1.5×</text>
+<rect x="602" y="1528" width="22" height="18" fill="#ef8a62"/>
+<text x="630.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">1.5–2×</text>
+<rect x="700" y="1528" width="22" height="18" fill="#b2182b"/>
+<text x="728.0" y="1542.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">&gt;2×</text>
 </svg>

@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "config": {
+      "batch_count": 1,
+      "repetitions": 3,
+      "track_allocations": false,
+      "warmups": 1
+    },
+    "modules": {
+      "expra_connect.cluster.models": "/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.2/expra_connect/cluster/models.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.operations": "/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.2/expra_connect/cluster/operations.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.roles": "/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.2/expra_connect/cluster/roles.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.state": "/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.2/expra_connect/cluster/state.cpython-312-x86_64-linux-gnu.so"
+    },
+    "package_version": "2.0.0.2",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "suite": "cluster_state"
+  },
+  "outcomes": [
+    {
+      "case_id": "30000:cluster round-trip",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster round-trip",
+      "payload_bytes": 7497059,
+      "result": {
+        "maximum": 787730.812,
+        "mean_us": 709118.541,
+        "minimum": 648293.799,
+        "ops_per_second": 1.4102014574175405,
+        "outliers": 0,
+        "p25": 669812.4055,
+        "p50": 691331.012,
+        "p75": 739530.912,
+        "p95": 778090.832,
+        "p99": 785802.816,
+        "peak_bytes": null,
+        "samples_us": [
+          691331.012,
+          787730.812,
+          648293.799
+        ],
+        "spread": 139437.01300000004
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:cluster round-trip",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "cluster round-trip",
+      "payload_bytes": 25067059,
+      "result": {
+        "maximum": 2676679.605,
+        "mean_us": 2625058.2016666667,
+        "minimum": 2555636.358,
+        "ops_per_second": 0.38094393463927523,
+        "outliers": 0,
+        "p25": 2599247.5,
+        "p50": 2642858.642,
+        "p75": 2659769.1234999998,
+        "p95": 2673297.5087,
+        "p99": 2676003.18574,
+        "peak_bytes": null,
+        "samples_us": [
+          2676679.605,
+          2642858.642,
+          2555636.358
+        ],
+        "spread": 121043.24699999997
+      },
+      "size": 100000,
+      "status": "measured"
+    }
+  ],
+  "schema_version": 1
+}

@@ -129,6 +129,16 @@ class BenchmarkOutcome:
         )
         if measured == unavailable:
             raise ValueError("provide exactly one result or unavailable_reason")
+        if (
+            self.result is not None
+            and len(self.result.samples_us) != self.config.repetitions
+        ):
+            raise ValueError("result sample count must match config repetitions")
+        if (
+            self.result is not None
+            and (self.result.peak_bytes is not None) != self.config.track_allocations
+        ):
+            raise ValueError("result allocation data must match config")
 
 
 @dataclass(frozen=True)

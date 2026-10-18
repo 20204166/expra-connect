@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import platform
 import sys
@@ -24,7 +25,6 @@ from expra_connect.cluster import (
     role_state_from_dict,
     role_state_to_dict,
 )
-from expra_connect.data.permissions import NodePermission
 from expra_connect.identity import NodeId
 from scripts.benchmark_support import (
     BenchmarkOutcome,
@@ -35,6 +35,15 @@ from scripts.benchmark_support import (
     measure,
     write_results,
 )
+
+try:
+    NodePermission = importlib.import_module(
+        "expra_connect.data.permissions"
+    ).NodePermission
+except ModuleNotFoundError as error:
+    if error.name != "expra_connect.data":
+        raise
+    NodePermission = importlib.import_module("expra_connect.models").NodePermission
 
 
 def _records(
@@ -67,7 +76,7 @@ def _records(
 
 
 def _cluster_document(state: RoleState) -> dict[str, Any]:
-    document = role_state_to_dict(state)
+    document: dict[str, Any] = role_state_to_dict(state)
     document.update(
         {
             "schema_version": 2,
@@ -80,11 +89,12 @@ def _cluster_document(state: RoleState) -> dict[str, Any]:
             "used_invites": [],
         }
     )
-    return cast(dict[str, Any], document)
+    return document
 
 
 def _cluster_document_round_trip(document: dict[str, Any]) -> dict[str, Any]:
-    return cast(dict[str, Any], ClusterState.from_dict(document).to_dict())
+    round_tripped: dict[str, Any] = ClusterState.from_dict(document).to_dict()
+    return round_tripped
 
 
 def _cluster_state_round_trip(state: ClusterState) -> ClusterState:
@@ -237,11 +247,13 @@ def main() -> None:
             )
             else None
         )
-        payload_document = (
+        payload_document: dict[str, Any] | None = (
             role_document
             if args.operation is not None and args.operation.startswith("role ")
             else cluster_document
         )
+        if payload_document is None and cluster_state is not None:
+            payload_document = cluster_state.to_dict()
         payload_bytes = (
             0
             if payload_document is None

@@ -2,7 +2,7 @@
 <title>Role and cluster state scaling</title>
 <rect width="1420" height="650" fill="#ffffff"/>
 <text x="16.0" y="30.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">Role and cluster state scaling</text>
-<text x="16.0" y="51.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#454545" font-weight="normal">Cell labels are relative to the fastest measured p50 in that row; hover for p50 µs.</text>
+<text x="16.0" y="51.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#454545" font-weight="normal">Cell labels compare p50 with 1.8.0.0 for the same metric and size; below 1× is faster; hover for p50 µs.</text>
 <text x="18.0" y="74.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">p50 latency in microseconds; logarithmic vertical scale</text>
 <text x="120.0" y="105.0" font-family="Arial, sans-serif" font-size="17px" text-anchor="start" fill="#17252a" font-weight="bold">Role-state decode</text>
 <text x="18.0" y="216.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="normal">p50 µs</text>

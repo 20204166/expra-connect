@@ -24,10 +24,14 @@ domain-specific options and stage sets. Invoke them with Python module mode
 `python -m tools.connect_performance_benchmark`) so the shared module has one
 stable import path without `sys.path` bootstrapping.
 
-The shared core owns deterministic timing and result reporting:
+The shared core owns deterministic timing and result reporting. Each measured
+outcome carries its fixture shape, size, payload size, operation, and support
+status, because a suite run can contain heterogeneous cases. Run-level metadata
+contains suite-wide environment, package, module, and sampling configuration.
 
-- warmups and repeated samples, reporting raw samples and p50/p95/min/max/mean,
-  plus throughput where it is meaningful;
+- warmups and repeated samples, reporting raw samples and the canonical
+  interpolated distribution (min/p25/p50/p75/p95/p99/max/spread/outliers),
+  plus mean and throughput where meaningful;
 - use the same linear-interpolation percentile contract as
   `expra_connect.observability.summarize_samples`, covered by a cross-contract
   test, while keeping the offline benchmark helper independent of historical
@@ -36,7 +40,7 @@ The shared core owns deterministic timing and result reporting:
 - optional peak traced allocation in an independent pass, never inside the
   timed samples;
 - run metadata (benchmark/schema version, Python/platform, package version,
-  operation, fixture metadata, warmups/repetitions/batch count);
+  module paths, warmups/repetitions/batch count);
 - imported module paths as provenance;
 - readable text output plus a versioned JSON result format, with unsupported
   operations represented explicitly and accompanied by reasons.
@@ -48,6 +52,12 @@ statistics and output schema as the full suite. Preserve domain-specific CLI
 options where they have meaning, such as the YAML size cap, persistence codec
 limits, and slower identity-lifecycle sample counts. Reject invalid sample
 counts, batch counts, and fixture sizes before timing.
+
+Batching is allowed only when repeated calls preserve the benchmark's intended
+operation semantics. Stateful workloads such as replay-cache insertion and
+session creation must use batch count 1 unless the benchmark explicitly
+rebuilds/resets equivalent state outside each timed sample; do not let a larger
+batch change cache pressure, retention, or success behavior.
 
 The MCP `performance_worker.py` loopback probe is also inventoried but is not a
 standalone microbenchmark: it measures subprocess discovery/connect/reconnect

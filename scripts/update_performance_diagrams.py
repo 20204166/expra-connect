@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
-import re
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
+
+from scripts.benchmark_support import BenchmarkRun, load_results
 
 FULL_VERSIONS = (
     "1.8.0.0",
@@ -20,6 +22,7 @@ FULL_VERSIONS = (
     "2.2.0.1",
     "2.2.0.3",
 )
+REFERENCE_VERSION = "1.8.0.0"
 FOCUSED_VERSIONS = FULL_VERSIONS[:-1]
 FULL_METRICS = (
     "Identity fingerprint",
@@ -58,6 +61,231 @@ class WorkloadTable:
 class BaselineData:
     full_workloads: dict[int, WorkloadTable]
     focused_persistence: dict[int, WorkloadTable]
+    unavailable_reasons: dict[tuple[str, int, str, str], str]
+
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _object(value: object, description: str) -> dict[str, object]:
+    if not isinstance(value, dict) or any(not isinstance(key, str) for key in value):
+        raise ValueError(f"{description} must be a JSON object with string keys")
+    return value
+
+
+def _string_list(value: object, description: str) -> tuple[str, ...]:
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        raise ValueError(f"{description} must be a list of strings")
+    items = tuple(value)
+    if not items or len(items) != len(set(items)):
+        raise ValueError(f"{description} must be non-empty and unique")
+    return items
+
+
+def _load_section(
+    root: dict[str, object],
+    section_name: str,
+    sizes: tuple[int, ...],
+    versions: tuple[str, ...],
+    metrics: tuple[str, ...],
+) -> dict[int, WorkloadTable]:
+    section = _object(root.get(section_name), section_name)
+    expected_sizes = {str(size) for size in sizes}
+    if set(section) != expected_sizes:
+        raise ValueError(f"{section_name}: expected size keys {sorted(expected_sizes)}")
+    tables: dict[int, WorkloadTable] = {}
+    for size in sizes:
+        size_data = _object(section[str(size)], f"{section_name}.{size}")
+        metric_data = _object(
+            size_data.get("metrics"), f"{section_name}.{size}.metrics"
+        )
+        if set(metric_data) != set(metrics):
+            raise ValueError(f"{section_name}.{size}: metric rows do not match schema")
+        rows: dict[str, tuple[float | None, ...]] = {}
+        for metric in metrics:
+            cells = metric_data[metric]
+            if not isinstance(cells, list) or len(cells) != len(versions):
+                raise ValueError(
+                    f"{section_name}.{size}.{metric}: expected {len(versions)} cells"
+                )
+            parsed: list[float | None] = []
+            for cell in cells:
+                if cell is None:
+                    parsed.append(None)
+                elif isinstance(cell, (int, float)) and not isinstance(cell, bool):
+                    numeric = float(cell)
+                    if not math.isfinite(numeric) or numeric < 0:
+                        raise ValueError(
+                            f"{section_name}.{size}.{metric}: value must be finite and non-negative"
+                        )
+                    parsed.append(numeric)
+                else:
+                    raise ValueError(
+                        f"{section_name}.{size}.{metric}: invalid numeric cell {cell!r}"
+                    )
+            rows[metric] = tuple(parsed)
+        tables[size] = WorkloadTable(versions=versions, rows=rows)
+    return tables
+
+
+def _load_unavailable_reasons(
+    value: object,
+    full_tables: dict[int, WorkloadTable],
+    focused_tables: dict[int, WorkloadTable],
+) -> dict[tuple[str, int, str, str], str]:
+    if not isinstance(value, list):
+        raise TypeError("unavailable_reasons must be a list")
+    sections = {"full_workloads": full_tables, "focused_persistence": focused_tables}
+    reasons: dict[tuple[str, int, str, str], str] = {}
+    for item in value:
+        record = _object(item, "unavailable reason")
+        if set(record) != {"section", "size", "metric", "version", "reason"}:
+            raise ValueError("unavailable reason has unexpected or missing fields")
+        section = record["section"]
+        size = record["size"]
+        metric = record["metric"]
+        version = record["version"]
+        reason = record["reason"]
+        if (
+            not isinstance(section, str)
+            or section not in sections
+            or not isinstance(size, int)
+            or isinstance(size, bool)
+        ):
+            raise ValueError("unavailable reason has an invalid section or size")
+        table = sections[section].get(size)
+        if table is None or not isinstance(metric, str) or metric not in table.rows:
+            raise ValueError("unavailable reason refers to an unknown metric")
+        allowed_versions = table.versions
+        if section == "focused_persistence":
+            allowed_versions += (FULL_VERSIONS[-1],)
+        if not isinstance(version, str) or version not in allowed_versions:
+            raise ValueError("unavailable reason refers to an unknown version")
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError("unavailable reason must be a non-empty string")
+        key = (section, size, metric, version)
+        if key in reasons:
+            raise ValueError(f"duplicate unavailable reason: {key!r}")
+        if (
+            version in table.versions
+            and table.rows[metric][table.versions.index(version)] is not None
+        ):
+            raise ValueError(f"unavailable reason points to a measured cell: {key!r}")
+        reasons[key] = reason
+    return reasons
+
+
+def load_measurements(path: Path) -> BaselineData:
+    """Load and validate the canonical performance-measurement JSON file."""
+
+    try:
+        root = _object(
+            json.loads(
+                path.read_text(encoding="utf-8"),
+                object_pairs_hook=_reject_duplicate_json_keys,
+            ),
+            str(path),
+        )
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(
+            f"cannot read measurement data from {path}: {error}"
+        ) from error
+    if set(root) != {
+        "schema_version",
+        "metadata",
+        "full_workloads",
+        "focused_persistence",
+        "unavailable_reasons",
+    }:
+        raise ValueError("measurement data has unexpected or missing root fields")
+    schema_version = root.get("schema_version")
+    if (
+        not isinstance(schema_version, int)
+        or isinstance(schema_version, bool)
+        or schema_version != 1
+    ):
+        raise ValueError("measurement data schema_version must be 1")
+    metadata = _object(root.get("metadata"), "metadata")
+    expected_metadata_fields = {
+        "measured",
+        "runtime",
+        "platform",
+        "full_versions",
+        "focused_versions",
+        "fixture_notes",
+    }
+    if set(metadata) != expected_metadata_fields:
+        raise ValueError("metadata has unexpected or missing fields")
+    for field_name in ("measured", "runtime", "platform"):
+        field_value = metadata[field_name]
+        if not isinstance(field_value, str) or not field_value.strip():
+            raise ValueError(f"metadata.{field_name} must be a non-empty string")
+    full_versions = _string_list(
+        metadata.get("full_versions"), "metadata.full_versions"
+    )
+    focused_versions = _string_list(
+        metadata.get("focused_versions"), "metadata.focused_versions"
+    )
+    if full_versions != FULL_VERSIONS or focused_versions != FOCUSED_VERSIONS:
+        raise ValueError(
+            "measurement data version lists do not match the supported baseline"
+        )
+    fixture_notes = _object(metadata["fixture_notes"], "metadata.fixture_notes")
+    if set(fixture_notes) != {"full_workloads", "focused_persistence"}:
+        raise ValueError("metadata.fixture_notes has unexpected or missing sections")
+    note_sizes = {
+        "full_workloads": (30_000, 100_000, 200_000),
+        "focused_persistence": (30_000, 100_000),
+    }
+    for section_name, sizes in note_sizes.items():
+        notes = _object(
+            fixture_notes[section_name], f"metadata.fixture_notes.{section_name}"
+        )
+        if set(notes) != {str(size) for size in sizes}:
+            raise ValueError(
+                f"metadata.fixture_notes.{section_name} has incomplete sizes"
+            )
+        if any(
+            not isinstance(note, str) or not note.strip() for note in notes.values()
+        ):
+            raise ValueError(
+                f"metadata.fixture_notes.{section_name} values must be non-empty strings"
+            )
+
+    full_tables = _load_section(
+        root, "full_workloads", (30_000, 100_000, 200_000), full_versions, FULL_METRICS
+    )
+    focused_tables = _load_section(
+        root,
+        "focused_persistence",
+        (30_000, 100_000),
+        focused_versions,
+        FOCUSED_METRICS,
+    )
+    reasons = _load_unavailable_reasons(
+        root.get("unavailable_reasons"), full_tables, focused_tables
+    )
+    for section_name, tables in (
+        ("full_workloads", full_tables),
+        ("focused_persistence", focused_tables),
+    ):
+        for size, table in tables.items():
+            for metric, values in table.rows.items():
+                for version, cell in zip(table.versions, values, strict=True):
+                    if (
+                        cell is None
+                        and (section_name, size, metric, version) not in reasons
+                    ):
+                        raise ValueError(
+                            f"{section_name}.{size}.{metric}.{version} is missing an unavailable reason"
+                        )
+    return BaselineData(full_tables, focused_tables, reasons)
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,14 +295,83 @@ class HeatmapRow:
     missing_reasons: tuple[str | None, ...]
 
 
+def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun, ...]]:
+    """Load comparable shared-harness groups and reject provenance drift."""
+
+    groups = {
+        "cluster-1k": FULL_VERSIONS,
+        "cluster-large": FULL_VERSIONS,
+        "cluster-scaling": FULL_VERSIONS,
+        "connect": FULL_VERSIONS,
+        "persistence-30k": FOCUSED_VERSIONS,
+        "persistence-100k": FOCUSED_VERSIONS,
+        "persistence-200k": FULL_VERSIONS,
+    }
+    loaded: dict[str, tuple[BenchmarkRun, ...]] = {}
+    for group, versions in groups.items():
+        runs = tuple(
+            load_results(results_dir / f"{group}-{version}.json")
+            for version in versions
+        )
+        reference = runs[0]
+        expected_suite = (
+            "cluster_state" if group.startswith("cluster-") else group.split("-")[0]
+        )
+        for version, run in zip(versions, runs, strict=True):
+            if run.metadata.package_version != version:
+                raise ValueError(
+                    f"{group}: expected package {version}, got {run.metadata.package_version}"
+                )
+            if run.metadata.suite != expected_suite:
+                raise ValueError(f"{group}: expected suite {expected_suite}")
+            if (
+                run.metadata.suite != reference.metadata.suite
+                or run.metadata.python_version != reference.metadata.python_version
+                or run.metadata.platform != reference.metadata.platform
+                or run.metadata.config != reference.metadata.config
+            ):
+                raise ValueError(
+                    f"{group}: run metadata is not comparable for {version}"
+                )
+        reference_cases = {outcome.case_id: outcome for outcome in reference.outcomes}
+        for version, run in zip(versions, runs, strict=True):
+            cases = {outcome.case_id: outcome for outcome in run.outcomes}
+            if cases.keys() != reference_cases.keys():
+                raise ValueError(f"{group}: operation coverage differs for {version}")
+            for case_id, outcome in cases.items():
+                reference_outcome = reference_cases[case_id]
+                payload_size_mismatch = (
+                    outcome.payload_bytes != reference_outcome.payload_bytes
+                    and (
+                        group != "connect"
+                        or (
+                            outcome.result is not None
+                            and reference_outcome.result is not None
+                        )
+                    )
+                )
+                if (
+                    outcome.operation != reference_outcome.operation
+                    or outcome.fixture != reference_outcome.fixture
+                    or outcome.size != reference_outcome.size
+                    or payload_size_mismatch
+                    or outcome.config != reference_outcome.config
+                ):
+                    raise ValueError(
+                        f"{group}: fixture or config differs for {version}/{case_id}"
+                    )
+        loaded[group] = runs
+    return loaded
+
+
 PALETTE = (
-    "#f2f7f7",
-    "#d8ebe9",
-    "#b5dbd6",
-    "#86c5be",
-    "#55a99f",
-    "#25877f",
-    "#075e59",
+    "#2166ac",
+    "#67a9cf",
+    "#d1e5f0",
+    "#f7f7f7",
+    "#fddbc7",
+    "#ef8a62",
+    "#b2182b",
 )
 VERSION_COLORS = (
     "#0072b2",
@@ -88,13 +385,19 @@ VERSION_COLORS = (
 
 
 def render_diagrams(baseline: BaselineData) -> dict[str, str]:
-    """Render the all-workload overview and three distinct metric views."""
+    """Render historical diagrams and an isolated shared-harness comparison."""
 
     versions = baseline.full_workloads[30_000].versions
     overview = [
         (
             f"{size:,} entries",
-            _rows_from_table(baseline.full_workloads[size], FULL_METRICS),
+            _rows_from_table(
+                baseline,
+                "full_workloads",
+                size,
+                baseline.full_workloads[size],
+                FULL_METRICS,
+            ),
         )
         for size in (30_000, 100_000, 200_000)
     ]
@@ -102,6 +405,9 @@ def render_diagrams(baseline: BaselineData) -> dict[str, str]:
         (
             f"{size:,} entries",
             _rows_from_table(
+                baseline,
+                "full_workloads",
+                size,
                 baseline.full_workloads[size],
                 FULL_METRICS[:4] + FULL_METRICS[6:9],
             ),
@@ -109,6 +415,10 @@ def render_diagrams(baseline: BaselineData) -> dict[str, str]:
         for size in (30_000, 100_000, 200_000)
     ]
     persistence = _persistence_panels(baseline)
+    shared_results = (
+        Path(__file__).resolve().parents[1] / "tools" / "shared-benchmark-results"
+    )
+    shared_runs = load_shared_harness_runs(shared_results)
     return {
         "performance-overview.svg": _render_heatmap_svg(
             "All full-workload metrics", versions, overview
@@ -118,16 +428,69 @@ def render_diagrams(baseline: BaselineData) -> dict[str, str]:
             "Identity, lookup, session, and request latency", versions, operations
         ),
         "performance-persistence.svg": _render_heatmap_svg(
-            "Persistence operations by codec and harness", versions, persistence
+            "Full-run sections and focused persistence", versions, persistence
+        ),
+        "performance-shared-harness.svg": _render_heatmap_svg(
+            "Shared-harness results · separate from historical baseline",
+            versions,
+            _shared_harness_panels(shared_runs),
         ),
     }
 
 
+def _shared_harness_panels(
+    groups: dict[str, tuple[BenchmarkRun, ...]],
+) -> list[tuple[str, list[HeatmapRow]]]:
+    titles = {
+        "cluster-1k": "Shared harness · cluster state · 1k entries",
+        "cluster-large": "Shared harness · cluster state · 30k / 100k",
+        "cluster-scaling": "Shared harness · cluster round-trip scaling · 30k / 100k",
+        "connect": "Shared harness · connect · matched operations",
+        "persistence-30k": "Shared harness · persistence · 30k dictionary records",
+        "persistence-100k": "Shared harness · persistence · 100k compact pairs",
+        "persistence-200k": "Shared harness · persistence · 200k compact pairs",
+    }
+    panels: list[tuple[str, list[HeatmapRow]]] = []
+    for group, runs in groups.items():
+        first_cases = {outcome.case_id: outcome for outcome in runs[0].outcomes}
+        rows: list[HeatmapRow] = []
+        for case_id in sorted(first_cases):
+            values: list[float | None] = []
+            reasons: list[str | None] = []
+            outcome = first_cases[case_id]
+            for run in runs:
+                current = next(item for item in run.outcomes if item.case_id == case_id)
+                values.append(None if current.result is None else current.result.p50)
+                reasons.append(current.unavailable_reason)
+            if len(runs) < len(FULL_VERSIONS):
+                values.extend([None] * (len(FULL_VERSIONS) - len(runs)))
+                reasons.extend(
+                    ["Not measured for 2.2.0.3"] * (len(FULL_VERSIONS) - len(runs))
+                )
+            label = outcome.operation
+            if group == "cluster-scaling":
+                label = f"{outcome.size // 1000}k {label}"
+            rows.append(HeatmapRow(label, tuple(values), tuple(reasons)))
+        panels.append((titles[group], rows))
+    return panels
+
+
 def _rows_from_table(
-    table: WorkloadTable, metrics: tuple[str, ...]
+    baseline: BaselineData,
+    section: str,
+    size: int,
+    table: WorkloadTable,
+    metrics: tuple[str, ...],
 ) -> list[HeatmapRow]:
     return [
-        HeatmapRow(metric, table.rows[metric], (None,) * len(table.versions))
+        HeatmapRow(
+            metric,
+            table.rows[metric],
+            tuple(
+                baseline.unavailable_reasons.get((section, size, metric, version))
+                for version in table.versions
+            ),
+        )
         for metric in metrics
     ]
 
@@ -135,33 +498,70 @@ def _rows_from_table(
 def _persistence_panels(
     baseline: BaselineData,
 ) -> list[tuple[str, list[HeatmapRow]]]:
-    versions = baseline.full_workloads[30_000].versions
-    full_rows: list[HeatmapRow] = []
-    for size, table in baseline.full_workloads.items():
-        for metric in FULL_METRICS[9:]:
-            reasons: tuple[str | None, ...] = (None,) * len(versions)
-            if size == 200_000 and metric.startswith("MessagePack"):
-                reasons = ("Unsupported by payload and array limits",) * len(versions)
-            full_rows.append(
-                HeatmapRow(
-                    f"{size // 1000}k full · {metric}", table.rows[metric], reasons
-                )
+    metric_groups = (
+        ("Identity", FULL_METRICS[:2]),
+        ("Lookups", FULL_METRICS[2:4]),
+        ("State", FULL_METRICS[4:6]),
+        ("Sessions", FULL_METRICS[6:8]),
+        ("Requests", FULL_METRICS[8:9]),
+        ("Persistence", FULL_METRICS[9:]),
+    )
+    panels: list[tuple[str, list[HeatmapRow]]] = []
+    for group_name, metrics in metric_groups:
+        full_rows = [
+            HeatmapRow(
+                f"{size // 1000}k full · {metric}",
+                table.rows[metric],
+                tuple(
+                    baseline.unavailable_reasons.get(
+                        ("full_workloads", size, metric, version)
+                    )
+                    for version in table.versions
+                ),
             )
+            for size, table in baseline.full_workloads.items()
+            for metric in metrics
+        ]
+        panels.append((f"Full-workload · {group_name}", full_rows))
 
     focused_rows: list[HeatmapRow] = []
     for size, table in baseline.focused_persistence.items():
         for metric, values in table.rows.items():
+            reasons = tuple(
+                baseline.unavailable_reasons.get(
+                    ("focused_persistence", size, metric, version)
+                )
+                for version in table.versions
+            ) + (
+                baseline.unavailable_reasons.get(
+                    ("focused_persistence", size, metric, FULL_VERSIONS[-1])
+                ),
+            )
             focused_rows.append(
                 HeatmapRow(
                     f"{size // 1000}k focused · {metric}",
                     values + (None,),
-                    (None,) * len(table.versions) + ("Not measured for 2.2.0.3",),
+                    reasons,
                 )
             )
-    return [
-        ("Full-workload store operations", full_rows),
-        ("Focused persistence operations", focused_rows),
-    ]
+    panels.append(("Focused persistence operations", focused_rows))
+    return panels
+
+
+def _ratio_bucket(ratio: float) -> int:
+    if ratio < 0.5:
+        return 0
+    if ratio < 0.75:
+        return 1
+    if ratio < 0.95:
+        return 2
+    if ratio <= 1.05:
+        return 3
+    if ratio < 1.5:
+        return 4
+    if ratio < 2.0:
+        return 5
+    return 6
 
 
 def _render_heatmap_svg(
@@ -173,6 +573,7 @@ def _render_heatmap_svg(
     width = left + cell_width * len(versions) + 32
     height = 88 + sum(42 + row_height * len(rows) for _, rows in panels) + 104
     parts = _svg_header(width, height, title)
+    reference_index = versions.index(REFERENCE_VERSION)
     y = 72
     for panel_title, rows in panels:
         parts.append(_text(16, y, panel_title, size=18, weight="bold"))
@@ -184,8 +585,7 @@ def _render_heatmap_svg(
         for row in rows:
             y += row_height
             parts.append(_text(left - 12, y - 9, row.label, size=12, anchor="end"))
-            measured = [value for value in row.values if value is not None]
-            fastest = min(measured) if measured else None
+            reference_value = row.values[reference_index]
             for index, value in enumerate(row.values):
                 x = left + index * cell_width
                 cell_y = y - row_height + 1
@@ -196,12 +596,26 @@ def _render_heatmap_svg(
                     detail = f"{row.label}, {versions[index]}: {reason}"
                     text_color = "#333333"
                 else:
-                    ratio = value / fastest if fastest not in (None, 0.0) else 1.0
-                    bucket = min(len(PALETTE) - 1, int(math.log2(max(ratio, 1.0))))
-                    color = PALETTE[bucket]
-                    label = f"{ratio:.1f}×"
-                    detail = f"{row.label}, {versions[index]}: {value:,.3f} µs; {ratio:.2f}× row minimum"
-                    text_color = "#ffffff" if bucket == len(PALETTE) - 1 else "#142323"
+                    if reference_value is None or reference_value <= 0:
+                        color = "#e6e6e6"
+                        label = "N/A"
+                        detail = (
+                            f"{row.label}, {versions[index]}: {value:,.3f} µs; "
+                            f"{REFERENCE_VERSION} reference unavailable"
+                        )
+                        text_color = "#333333"
+                    else:
+                        ratio = value / reference_value
+                        bucket = _ratio_bucket(ratio)
+                        color = PALETTE[bucket]
+                        label = f"{ratio:.3g}×"
+                        detail = (
+                            f"{row.label}, {versions[index]}: {value:,.3f} µs; "
+                            f"{ratio:.6g}× versus {REFERENCE_VERSION}"
+                        )
+                        text_color = (
+                            "#ffffff" if bucket in (0, len(PALETTE) - 1) else "#142323"
+                        )
                 parts.append(
                     f'<rect x="{x}" y="{cell_y}" width="{cell_width - 2}" '
                     f'height="{row_height - 2}" rx="3" fill="{color}">'
@@ -219,17 +633,21 @@ def _render_heatmap_svg(
                 )
         y += 25
     legend_y = height - 38
-    parts.append(_text(16, legend_y + 15, "Relative p50:", size=12, weight="bold"))
+    parts.append(_text(16, legend_y + 15, "Ratio vs 1.8.0.0:", size=12, weight="bold"))
     for index, color in enumerate(PALETTE):
         x = 112 + index * 98
         parts.append(
             f'<rect x="{x}" y="{legend_y}" width="22" height="18" fill="{color}"/>'
         )
         label = (
-            "fastest"
-            if index == 0
-            else ("≥64×" if index == len(PALETTE) - 1 else f"{2**index}×")
-        )
+            "≤0.5×",
+            "0.5–0.75×",
+            "0.75–0.95×",
+            "≈1.0×",
+            "1.05–1.5×",
+            "1.5–2×",
+            ">2×",
+        )[index]
         parts.append(_text(x + 28, legend_y + 14, label, size=11))
     parts.append("</svg>")
     return "\n".join(parts)
@@ -245,7 +663,7 @@ def _svg_header(width: int, height: int, title: str) -> list[str]:
         _text(
             16,
             51,
-            "Cell labels are relative to the fastest measured p50 in that row; hover for p50 µs.",
+            "Cell labels compare p50 with 1.8.0.0 for the same metric and size; below 1× is faster; hover for p50 µs.",
             size=12,
             color="#454545",
         ),
@@ -393,17 +811,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="check whether generated SVG files match the current Markdown tables",
+        help="check whether generated SVG files match the canonical measurement JSON",
     )
     args = parser.parse_args(argv)
     repository_root = Path(__file__).resolve().parents[1]
-    baseline_path = repository_root / "docs" / "native-wheel-performance-baseline.md"
+    data_path = repository_root / "docs" / "performance-baseline-data.json"
     output_dir = repository_root / "docs" / "images"
     try:
-        baseline = parse_baseline(baseline_path.read_text(encoding="utf-8"))
+        baseline = load_measurements(data_path)
         diagrams = render_diagrams(baseline)
         stale = sync_diagrams(diagrams, output_dir, check=args.check)
-    except (OSError, ValueError) as error:
+    except (OSError, TypeError, ValueError) as error:
         print(f"performance diagram update failed: {error}", file=sys.stderr)
         return 2
 
@@ -422,132 +840,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"Updated {len(diagrams)} diagrams in {output_dir.relative_to(repository_root)}."
     )
     return 0
-
-
-def parse_markdown_table(table_text: str) -> WorkloadTable:
-    """Parse one Markdown p50 table, retaining unsupported cells as None."""
-
-    lines = [line.strip() for line in table_text.splitlines() if line.strip()]
-    if len(lines) < 3:
-        raise ValueError("table must contain a header, separator, and data row")
-
-    header = _split_table_row(lines[0])
-    separator = _split_table_row(lines[1])
-    if len(header) < 2 or len(separator) != len(header):
-        raise ValueError("table header and separator have inconsistent columns")
-    if any(not re.fullmatch(r":?-{3,}:?", cell) for cell in separator):
-        raise ValueError("table separator row is malformed")
-
-    versions = tuple(header[1:])
-    if not all(versions) or len(set(versions)) != len(versions):
-        raise ValueError("table version headers must be non-empty and unique")
-
-    rows: dict[str, tuple[float | None, ...]] = {}
-    for line in lines[2:]:
-        cells = _split_table_row(line)
-        if len(cells) != len(header):
-            raise ValueError("table data row has inconsistent columns")
-        label = cells[0]
-        if not label:
-            raise ValueError("table data row has an empty metric label")
-        if label in rows:
-            raise ValueError(f"duplicate metric row: {label}")
-        rows[label] = tuple(_parse_p50(label, cell) for cell in cells[1:])
-    if not rows:
-        raise ValueError("table must contain at least one metric row")
-    return WorkloadTable(versions=versions, rows=rows)
-
-
-def _split_table_row(line: str) -> list[str]:
-    if not line.startswith("|") or not line.endswith("|"):
-        raise ValueError("table row must start and end with a pipe")
-    return [cell.strip() for cell in line[1:-1].split("|")]
-
-
-def _parse_p50(label: str, cell: str) -> float | None:
-    if cell.upper() == "N/A":
-        return None
-    try:
-        value = float(cell.replace(",", ""))
-    except ValueError as error:
-        raise ValueError(f"{label}: invalid p50 value {cell!r}") from error
-    if not math.isfinite(value) or value < 0:
-        raise ValueError(f"{label}: p50 value must be finite and non-negative")
-    return value
-
-
-def parse_baseline(markdown: str) -> BaselineData:
-    """Parse and validate the workload and focused-persistence tables."""
-
-    full_workloads = {
-        size: _parse_validated_section(markdown, heading, FULL_VERSIONS, FULL_METRICS)
-        for size, heading in (
-            (30_000, "## Full representative workload, 30,000 entries"),
-            (100_000, "## Full representative workload, 100,000 entries"),
-            (200_000, "## Full representative workload, 200,000 entries"),
-        )
-    }
-    focused_persistence = {
-        size: _parse_validated_section(
-            markdown, heading, FOCUSED_VERSIONS, FOCUSED_METRICS
-        )
-        for size, heading in (
-            (30_000, "### 30,000 dictionary records"),
-            (100_000, "### 100,000 compact-pair records"),
-        )
-    }
-    return BaselineData(
-        full_workloads=full_workloads,
-        focused_persistence=focused_persistence,
-    )
-
-
-def _parse_validated_section(
-    markdown: str,
-    heading: str,
-    versions: tuple[str, ...],
-    required_metrics: tuple[str, ...],
-) -> WorkloadTable:
-    table = parse_markdown_table(_table_after_heading(markdown, heading))
-    if table.versions != versions:
-        raise ValueError(
-            f"{heading}: expected versions {versions!r}, got {table.versions!r}"
-        )
-    missing = [metric for metric in required_metrics if metric not in table.rows]
-    if missing:
-        raise ValueError(f"{heading}: missing required metric row: {missing[0]}")
-    return table
-
-
-def _table_after_heading(markdown: str, heading: str) -> str:
-    lines = markdown.splitlines()
-    matches = [index for index, line in enumerate(lines) if line.strip() == heading]
-    if len(matches) != 1:
-        raise ValueError(
-            f"expected one section headed {heading!r}, found {len(matches)}"
-        )
-
-    heading_level = len(heading) - len(heading.lstrip("#"))
-    start = matches[0] + 1
-    end = len(lines)
-    for index in range(start, len(lines)):
-        stripped = lines[index].lstrip()
-        if stripped.startswith("#"):
-            level = len(stripped) - len(stripped.lstrip("#"))
-            if level <= heading_level:
-                end = index
-                break
-
-    table_start = next(
-        (index for index in range(start, end) if lines[index].strip().startswith("|")),
-        None,
-    )
-    if table_start is None:
-        raise ValueError(f"{heading}: no Markdown table found")
-    table_end = table_start
-    while table_end < end and lines[table_end].strip().startswith("|"):
-        table_end += 1
-    return "\n".join(lines[table_start:table_end])
 
 
 if __name__ == "__main__":
