@@ -48,31 +48,64 @@ exact p50s and ratios, not raw distributions; sample distributions remain in
 the local benchmark files. The 2.2.0.3 30k/100k persistence cases remain
 intentionally unmeasured, so no such comparison is inferred.
 
-The cluster round-trip row comes from the `cluster-large` run, which measured
-the full cluster operation set. A separate run measuring only cluster
-round-trip produced different p50s: at 30k, 862,397.939 µs for 2.2.0.3 versus
-709,260.875 µs for 2.2.0.1 (1.22×); at 100k, 2,560,372.569 µs versus
-2,668,379.242 µs (0.960×). Keep those isolated-run numbers separate from the
-table because the run contexts differ. Their disagreement, and the overlapping
-sample ranges in the full-run 100k cluster round-trip results, make repeat
-measurement of cluster round-trip the first follow-up, before profiling or
-attributing a cross-version change.
+Earlier isolated cluster-scaling runs produced different p50s: at 30k,
+862,397.939 µs for 2.2.0.3 versus 709,260.875 µs for 2.2.0.1 (1.22×); at 100k,
+2,560,372.569 µs versus 2,668,379.242 µs (0.960×). Keep those historical
+results separate because their run context differs from both the full cluster
+run above and the controlled repeat below.
+
+## Controlled follow-up run (2026-10-18)
+
+The cluster round-trip was rerun with the same isolated operation, fixture,
+interpreter, warmups, repetitions, and batch size for both native wheels. Both
+imported the expected Cython modules. Values are p50 microseconds; ranges show
+the seven measured samples, with allocation tracking disabled.
+
+| Fixture | Payload | 2.2.0.1 p50 (range) | 2.2.0.3 p50 (range) | p50 ratio |
+|---|---:|---:|---:|---:|
+| 30k assignments + grants | 7,497,059 B | 725,882.566 (629,769.583–862,258.502) µs | 644,566.340 (557,020.454–720,983.099) µs | 0.888× |
+| 100k assignments + grants | 25,067,059 B | 2,822,026.417 (2,219,431.874–3,189,748.713) µs | 2,246,649.959 (1,959,623.114–2,367,111.153) µs | 0.796× |
+
+Command for each wheel: `scripts/benchmark_cluster_state.py --sizes 30000
+100000 --warmups 2 --repetitions 7 --batch-count 1
+--skip-allocation-tracking --operation 'cluster round-trip'`. Python was 3.12.3
+on Linux x86_64/glibc 2.39. The 2.2.0.3 wheel SHA-256 was
+`13fa79d5d2f8eb4ec60f7331e69ec8964be2d574bd0ec841e53ecd356697faab`.
+The sample ranges overlap at both sizes and are broad at 100k; treat the lower
+2.2.0.3 medians as a directional repeat, not a causal speedup or proof that the
+earlier run discrepancy is fully resolved.
+
+A one-sample `cProfile` diagnostic on the source checkout at 30k attributed
+most measured operation time to `ClusterState.from_dict` / `role_state_from_dict`
+and `to_dict` / `role_state_to_dict`. Profiling increased the timed operation
+from subsecond wheel measurements to about 2.1 seconds, and includes Python
+instrumentation; it identifies the broad serialization/validation stages only,
+not a reliable native-wheel hotspot or safe optimization. No code change is
+justified by this profile alone.
 
 ### Updated follow-up order
 
-1. **Repeat the cluster round-trip comparison in one controlled run context.**
-   The full-operation run and isolated run disagree on absolute p50s and the
-   30k direction. Use the same command, fixture, warmup, and sample count for
-   both wheels; only then profile the 100k encode/decode work if the result
-   remains a meaningful cost.
-2. **Keep 200k JSON persistence as a diagnostic target.** Load is about 76 ms
-   and save about 434 ms in this run. Attribute file read, JSON decode, and
-   store validation separately; save includes durability operations and must
-   not be optimized by weakening them.
-3. **Monitor request verification, but do not prioritize its small delta yet.**
-   The combined ping path is about 48 µs, around 5% above 2.2.0.1 in this set.
-   Repeat on the exact current wheel and inspect component stages before
-   treating that cross-version difference as actionable.
+1. **Keep cluster serialization under observation; do not optimize speculatively.**
+   The controlled repeat has lower 2.2.0.3 medians, but overlapping sample
+   ranges and the source-only profile do not isolate an avoidable cost. If this
+   path matters in production, repeat under a quiet host and profile the exact
+   native wheel with a profiler that can see its compiled code.
+2. **Keep 200k JSON load as a decode-focused diagnostic.** In the current-wheel
+   run, p50s were 6.695 ms for file read, 80.649 ms for JSON decode, 0.371 µs
+   for root validation, and 78.587 ms for full store load. These independent
+   stage medians are not additive. Parsing is the dominant measured stage, but
+   do not alter input validation or output semantics without a targeted profile
+   and correctness proof.
+3. **Repeat request verification before prioritizing it.** On 2.2.0.3, one
+   50-sample diagnostic measured 33.714 µs for sign-only, 69.155 µs for the
+   existing combined sign + verify + replay operation, and 9.523 µs for replay
+   cache alone. This combined-path result differs from the earlier 48.001 µs
+   p50 and has a wide range (40.657–101.101 µs); it is not a pure verify-only
+   measurement and does not establish a regression. Repeat in a quiet run and
+   separate authentication from replay only with a semantics-preserving harness.
+4. **Do not tune JSON save as part of this follow-up.** The current-wheel 200k
+   p50 was 438.013 ms, but the operation includes required durability work.
+   Preserve flush, file sync, atomic replacement, and directory sync.
 
 ## Other areas to monitor
 
