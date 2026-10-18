@@ -55,7 +55,8 @@ and resource-retention assertions. Keep its integration lifecycle and pass/fail
 contract intact; continue using the canonical
 `expra_connect.observability.summarize_samples` for its latency summaries,
 rather than replacing it with the offline microbenchmark runner. Keep a
-contract test to prevent summary drift.
+cross-contract test in the shared benchmark tests to prevent summary drift; do
+not modify the MCP worker or its execution scope.
 
 ## Measurements and compatibility
 
@@ -66,12 +67,14 @@ established sizes (1k, 30k, 100k),
 including role and cluster encode/decode, cluster round trips, persisted
 cluster-document round trips, and YAML stages only through the configured safe
 size. Its fixture must continue to model one role assignment and one capability
-grant per node. Run focused persistence at 30k, 100k, and 200k where each
-operation is supported, preserving the documented fixture shape for each size.
-Include matched encode/decode, file-read, root-validation, StateStore load, and
-StateStore save stages for JSON and MessagePack when the store accepts the
-fixture. At 200k, measure JSON encode/decode and StateStore load/save, and mark
-MessagePack StateStore operations unsupported by their payload/array limits.
+grant per node. Run focused persistence at 30k and 100k for the six earlier
+versions only, and at 200k for all seven versions, preserving each documented
+fixture shape. Explicitly leave focused 2.2.0.3 results at 30k/100k unmeasured;
+do not rerun them. Include matched encode/decode, file-read, root-validation,
+StateStore load, and StateStore save stages for JSON and MessagePack when the
+store accepts the fixture. At 200k, measure JSON encode/decode and StateStore
+load/save, and mark MessagePack StateStore operations unsupported by their
+payload/array limits.
 
 Before comparing any operation across versions, verify the imported package
 version and module path, characterize API/fixture compatibility, and ensure the
