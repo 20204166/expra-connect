@@ -25,7 +25,10 @@ class RoleAssignment:
     has_active_job: bool = False
 
     def __post_init__(self) -> None:
-        roles = frozenset(ClusterRole(role) for role in self.roles)
+        roles = frozenset(
+            role if isinstance(role, ClusterRole) else ClusterRole(role)
+            for role in self.roles
+        )
         if ClusterRole.COORDINATOR in roles:
             roles |= {ClusterRole.WORKER}
         if not roles:
