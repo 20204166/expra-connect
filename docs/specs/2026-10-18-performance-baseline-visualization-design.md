@@ -17,8 +17,9 @@ updateable.
   relative `×` labels as the primary cell labels, but normalize each value to
   the matching 1.8.0.0 p50 for the same metric and fixture size. A ratio below
   `1×` means faster than 1.8.0.0; a ratio above `1×` means slower. Improve label
-  readability and legend clarity; do not add `µs` values to cells. Preserve
-  exact p50 microseconds in hover tooltips.
+  readability and legend clarity; calculate ratios from source measurements,
+  display three significant figures, and do not add `µs` values to cells.
+  Preserve exact p50 microseconds in hover tooltips.
 - The all-workload overview and persistence view must expose the full-run
   sections—not just JSON and MessagePack. Group the full-run metrics under
   identity, lookups, state, sessions, requests, and persistence. Keep focused
@@ -60,10 +61,10 @@ removed (or use a checked-in expected digest/value inventory in the test).
 
 Keep four deterministic standalone SVG outputs. Keep multiplier labels in the
 cells, calculated as candidate p50 / 1.8.0.0 p50 for the same metric and size.
-Use consistent legible number formatting and state clearly that below `1×` is
-faster. Exact p50 microseconds remain available in tooltips. Relative colors are
-supplemental, not the sole carrier of meaning. Show explicit unavailable
-markers with explanatory reasons.
+Use three significant figures, ensure very small ratios do not round to zero,
+and state clearly that below `1×` is faster. Exact p50 microseconds remain
+available in tooltips. Relative colors are supplemental, not the sole carrier
+of meaning. Show explicit unavailable markers with explanatory reasons.
 
 The persistence view will have distinct panels for full-workload categories
 (identity, lookups, state, sessions, requests, JSON/MessagePack persistence)
