@@ -8,8 +8,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, cast
 
+from ..data.permissions import NodeCapability
 from ..identity import NodeId
-from ..models import NodeCapability, ProcessActionKind
 
 
 class ClusterDataError(ValueError):
@@ -20,6 +20,13 @@ class NodeStatus(str, Enum):
     ONLINE = "online"
     OFFLINE = "offline"
     UNKNOWN = "unknown"
+
+
+class ProcessActionKind(str, Enum):
+    REQUEST = "request"
+    FORCE = "force"
+    REQUEST_QUIT = "request_quit"
+    FORCE_QUIT = "force_quit"
 
 
 @dataclass(frozen=True, slots=True)

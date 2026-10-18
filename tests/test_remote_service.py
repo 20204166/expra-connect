@@ -8,8 +8,12 @@ from typing import Any, cast
 from unittest.mock import patch
 
 from expra_connect.cluster.models import CapabilityGrant
+from expra_connect.data.permissions import (
+    READ_CAPABILITIES,
+    NodeCapability,
+    NodePermission,
+)
 from expra_connect.identity import NodeId
-from expra_connect.models import READ_CAPABILITIES, NodeCapability, NodePermission
 from expra_connect.observability import ObservabilityWatcher
 from expra_connect.remote.models import (
     DashboardSnapshot,

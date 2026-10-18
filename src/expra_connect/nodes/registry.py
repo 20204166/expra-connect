@@ -7,8 +7,8 @@ from enum import Enum
 
 from ..cluster import ClusterRole
 from ..connections.state import ConnectionState
+from ..data.permissions import NodeCapability
 from ..identity import NodeId
-from ..models import NodeCapability
 
 
 class TrustState(str, Enum):

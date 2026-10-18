@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any
 
 from ._version import __version__
+from .data.permissions import READ_CAPABILITIES
 from .identity import NodeId, node_identity_fingerprint
-from .models import READ_CAPABILITIES
 from .remote.models import NodeStatus
 from .remote.provider import AuthenticatedNodeProvider
 from .remote.service import RemoteService

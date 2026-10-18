@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ..data.permissions import READ_PERMISSIONS, NodePermission
 from ..identity import NodeId
-from ..models import READ_PERMISSIONS, NodePermission
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from expra_connect.models import NodeCapability, NodePermission
+from expra_connect.data.permissions import NodeCapability, NodePermission
 from expra_connect.remote.wire_protocol import (
     OP_REQUIRED_CAPABILITY,
     OP_REQUIRED_PERMISSION,

@@ -13,10 +13,10 @@ from unittest.mock import patch
 from expra_connect import __version__
 from expra_connect.cluster import Cluster, ClusterRole
 from expra_connect.cluster import ClusterRole as RegistryClusterRole
+from expra_connect.data.permissions import NodeCapability, NodePermission
 from expra_connect.discovery.models import DiscoveredNodeCandidate
 from expra_connect.discovery.network import DiscoveryAdvertisement
 from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerprint
-from expra_connect.models import NodeCapability, NodePermission
 from expra_connect.nodes.registry import TrustState
 from expra_connect.observability import ObservabilityWatcher
 from expra_connect.pairing.manager import PeerGrant, TrustedPeer

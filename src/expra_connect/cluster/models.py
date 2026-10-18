@@ -6,8 +6,8 @@ import math
 from dataclasses import dataclass
 from enum import Enum
 
+from ..data.permissions import NodePermission
 from ..identity import NodeId
-from ..models import NodePermission
 
 
 class ClusterRole(str, Enum):

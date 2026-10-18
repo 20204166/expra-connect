@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 
 from expra_connect.cluster.models import CapabilityGrant
+from expra_connect.data.permissions import READ_CAPABILITIES, NodePermission
 from expra_connect.identity import NodeId
-from expra_connect.models import READ_CAPABILITIES, NodePermission
 from expra_connect.remote.models import NodeStatus
 from expra_connect.remote.provider import AuthenticatedNodeProvider
 from expra_connect.remote.service import (

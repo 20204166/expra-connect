@@ -1,4 +1,4 @@
-"""Neutral wire-domain values adapted from the peer core's public model."""
+"""Canonical node capability and permission vocabulary."""
 
 from __future__ import annotations
 
@@ -16,13 +16,6 @@ class NodePermission(str, Enum):
     PROCESS_TERMINATION = "process_termination"
     PROCESS_FORCE_TERMINATION = "process_force_termination"
     CLEANUP = "cleanup"
-
-
-class ProcessActionKind(str, Enum):
-    REQUEST = "request"
-    FORCE = "force"
-    REQUEST_QUIT = "request_quit"
-    FORCE_QUIT = "force_quit"
 
 
 READ_CAPABILITIES = frozenset({NodeCapability.READ_STATE})

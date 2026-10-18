@@ -10,13 +10,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from ..identity import NodeId
-from ..models import (
+from ..data.permissions import (
     READ_PERMISSIONS,
     NodeCapability,
     NodePermission,
-    ProcessActionKind,
 )
+from ..identity import NodeId
 from ..sharing.capabilities import _is_valid_capability_id
 from ..surfaces.protocol import (
     SURFACE_OPERATION_SAFETY,
@@ -24,6 +23,7 @@ from ..surfaces.protocol import (
     SURFACE_REQUIRED_CAPABILITY,
     validate_surface_operation_params,
 )
+from .models import ProcessActionKind
 
 REMOTE_PROTOCOL_VERSION = "1"
 PAIRING_MODE_TRANSACTIONAL = "transactional"

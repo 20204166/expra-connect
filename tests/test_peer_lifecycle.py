@@ -11,9 +11,9 @@ from typing import cast
 from unittest.mock import patch
 
 from expra_connect import __version__
+from expra_connect.data.permissions import NodePermission
 from expra_connect.discovery.models import DiscoveredNodeCandidate
 from expra_connect.identity import NodeId, NodeIdentity, node_identity_fingerprint
-from expra_connect.models import NodePermission
 from expra_connect.nodes.registry import TrustState
 from expra_connect.pairing.manager import (
     IdentityConflict,

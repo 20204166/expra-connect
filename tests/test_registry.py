@@ -2,8 +2,8 @@ import unittest
 
 from expra_connect.cluster import ClusterRole
 from expra_connect.connections.state import ConnectionState, ConnectionStatus
+from expra_connect.data.permissions import NodeCapability
 from expra_connect.identity import NodeId
-from expra_connect.models import NodeCapability
 from expra_connect.nodes.registry import (
     MembershipState,
     NodeRegistry,

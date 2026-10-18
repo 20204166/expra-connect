@@ -3,6 +3,10 @@
 from ._version import __version__
 from .cluster import Cluster, ClusterRole, FailoverCoordinator, RoleState
 from .connections.state import ConnectionState, RetryState
+from .data.permissions import (
+    NodeCapability,
+    NodePermission,
+)
 from .discovery.models import (
     DiscoveredNodeCandidate,
     EndpointCandidate,
@@ -25,10 +29,6 @@ from .identity.transport_generation import (
     TransportGeneration,
     TransportGenerationManager,
     TransportStateError,
-)
-from .models import (
-    NodeCapability,
-    NodePermission,
 )
 from .nodes.registry import NodeRegistry
 from .pairing.manager import (

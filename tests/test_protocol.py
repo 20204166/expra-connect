@@ -4,8 +4,8 @@ import threading
 import unittest
 from pathlib import Path
 
+from expra_connect.data.permissions import NodePermission
 from expra_connect.identity import NodeId
-from expra_connect.models import NodePermission
 from expra_connect.persistence import YamlStateStore
 from expra_connect.remote.wire_protocol import (
     OPERATION_SAFETY,

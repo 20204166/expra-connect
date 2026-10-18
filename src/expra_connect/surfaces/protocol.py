@@ -4,7 +4,7 @@ import json
 import math
 from typing import Any
 
-from ..models import NodeCapability
+from ..data.permissions import NodeCapability
 
 SURFACE_READ = "surface_read"
 SURFACE_REVIEW = "surface_review"
