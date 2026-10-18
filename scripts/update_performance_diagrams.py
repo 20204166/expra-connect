@@ -301,9 +301,8 @@ class HeatmapRow:
 
 
 @dataclass(frozen=True, slots=True)
-class SizeIndexPanel:
-    size: int
-    suite: str
+class MatchedIndexPanel:
+    label: str
     case_count: int
     indices: tuple[float, ...]
 
@@ -600,6 +599,7 @@ def render_diagrams() -> dict[str, str]:
         Path(__file__).resolve().parents[1] / "tools" / "shared-benchmark-results"
     )
     shared_runs = load_shared_harness_runs(shared_results)
+    full_workload_index = _full_workload_index_panel(shared_runs)
     panels = _shared_harness_panels(shared_runs)
     panels.insert(
         0,
@@ -607,7 +607,7 @@ def render_diagrams() -> dict[str, str]:
             "Composite",
             [
                 _composite_performance_row(shared_runs),
-                _full_workload_index_row(shared_runs),
+                _full_workload_index_row(full_workload_index),
             ],
         ),
     )
@@ -616,6 +616,7 @@ def render_diagrams() -> dict[str, str]:
             "Across-release performance comparison",
             SHARED_HARNESS_LABELS,
             panels,
+            full_workload_index=full_workload_index,
             size_indices=size_specific_indices(shared_runs),
         ),
     }
@@ -623,10 +624,10 @@ def render_diagrams() -> dict[str, str]:
 
 def size_specific_indices(
     groups: dict[str, tuple[BenchmarkRun, ...]],
-) -> tuple[SizeIndexPanel, ...]:
+) -> tuple[MatchedIndexPanel, ...]:
     """Summarize matched positive p50 ratios separately for each fixture size."""
 
-    panels: list[SizeIndexPanel] = []
+    panels: list[MatchedIndexPanel] = []
     for size, group_name, suite in SIZE_INDEX_GROUPS:
         runs = groups[group_name]
         case_maps = [
@@ -660,7 +661,9 @@ def size_specific_indices(
             )
             for index in range(len(SHARED_HARNESS_LABELS))
         )
-        panels.append(SizeIndexPanel(size, suite, len(vectors), indices))
+        panels.append(
+            MatchedIndexPanel(f"{size // 1000}k · {suite}", len(vectors), indices)
+        )
     return tuple(panels)
 
 
@@ -709,10 +712,10 @@ def _composite_performance_row(
     )
 
 
-def _full_workload_index_row(
+def _full_workload_index_panel(
     groups: dict[str, tuple[BenchmarkRun, ...]],
-) -> HeatmapRow:
-    """Combine every common measured full-workload case with equal case weight."""
+) -> MatchedIndexPanel:
+    """Summarize every common measured full-workload case with equal case weight."""
 
     group_names = ("cluster-1k", "cluster-large", "connect", "persistence-200k")
     vectors = _common_measured_case_vectors(groups, group_names)
@@ -725,10 +728,14 @@ def _full_workload_index_row(
         )
         for index in range(len(SHARED_HARNESS_LABELS))
     )
+    return MatchedIndexPanel("All included suites and sizes", len(vectors), values)
+
+
+def _full_workload_index_row(panel: MatchedIndexPanel) -> HeatmapRow:
     return HeatmapRow(
-        f"Full-workload index · equal-case · {len(vectors)} cases",
-        values,
-        (None,) * len(values),
+        f"Full-workload index · equal-case · {panel.case_count} cases",
+        panel.indices,
+        (None,) * len(panel.indices),
         value_unit="index",
     )
 
@@ -896,12 +903,16 @@ def _render_heatmap_svg(
     versions: tuple[str, ...],
     panels: list[tuple[str, list[HeatmapRow]]],
     *,
-    size_indices: tuple[SizeIndexPanel, ...] = (),
+    full_workload_index: MatchedIndexPanel | None = None,
+    size_indices: tuple[MatchedIndexPanel, ...] = (),
 ) -> str:
     left, cell_width, row_height = 345, 112, 32
     width = left + cell_width * len(versions) + 32
     heatmap_height = 142 + sum(66 + row_height * len(rows) for _, rows in panels)
-    height = heatmap_height + (70 + 220 * len(size_indices) if size_indices else 0)
+    index_panel_count = len(size_indices) + (
+        1 if full_workload_index is not None else 0
+    )
+    height = heatmap_height + (70 + 220 * index_panel_count if index_panel_count else 0)
     parts = _svg_header(width, height, title)
     reference_index = versions.index(REFERENCE_VERSION)
     y = 72
@@ -979,7 +990,15 @@ def _render_heatmap_svg(
             ">2×",
         )[index]
         parts.append(_text(x + 28, legend_y + 14, label, size=11))
-    if size_indices:
+    if full_workload_index is not None:
+        index_top = heatmap_height + 18
+        _render_full_workload_index_plot(
+            parts, full_workload_index, versions, index_top
+        )
+        index_top += 250
+        if size_indices:
+            _render_size_index_panels(parts, size_indices, versions, index_top)
+    elif size_indices:
         _render_size_index_panels(parts, size_indices, versions, heatmap_height + 18)
     parts.append("</svg>")
     return "\n".join(parts)
@@ -987,7 +1006,7 @@ def _render_heatmap_svg(
 
 def _render_size_index_panels(
     parts: list[str],
-    panels: tuple[SizeIndexPanel, ...],
+    panels: tuple[MatchedIndexPanel, ...],
     versions: tuple[str, ...],
     top: int,
 ) -> None:
@@ -1005,58 +1024,85 @@ def _render_size_index_panels(
             color="#454545",
         )
     )
-    plot_left, plot_right = 490, 1070
-    axis_min, axis_max = 0.70, 1.15
     for panel_index, panel in enumerate(panels):
         panel_top = top + 48 + panel_index * 220
-        panel_title = (
-            f"{panel.size // 1000}k · {panel.suite} · {panel.case_count} matched cases"
+        _render_index_panel(parts, panel, versions, panel_top)
+
+
+def _render_full_workload_index_plot(
+    parts: list[str], panel: MatchedIndexPanel, versions: tuple[str, ...], top: int
+) -> None:
+    parts.append(_text(16, top, "Full-workload index plot", size=18, weight="bold"))
+    parts.append(
+        _text(
+            16,
+            top + 21,
+            "Geometric mean of all common positive-p50 cases across included suites and sizes; lower is faster.",
+            size=11,
+            color="#454545",
         )
-        parts.append(_text(16, panel_top + 15, panel_title, size=14, weight="bold"))
-        best = min(panel.indices)
-        best_versions = [
-            version
-            for version, value in zip(versions, panel.indices, strict=True)
-            if math.isclose(value, best, rel_tol=1e-12)
-        ]
+    )
+    _render_index_panel(parts, panel, versions, top + 48)
+
+
+def _render_index_panel(
+    parts: list[str], panel: MatchedIndexPanel, versions: tuple[str, ...], top: int
+) -> None:
+    plot_left, plot_right = 490, 1070
+    axis_min, axis_max = 0.70, 1.15
+    parts.append(
+        _text(
+            16,
+            top + 15,
+            f"{panel.label} · {panel.case_count} matched cases",
+            size=14,
+            weight="bold",
+        )
+    )
+    best = min(panel.indices)
+    best_versions = [
+        version
+        for version, value in zip(versions, panel.indices, strict=True)
+        if math.isclose(value, best, rel_tol=1e-12)
+    ]
+    parts.append(
+        _text(
+            1085,
+            top + 15,
+            f"lowest observed index: {', '.join(best_versions)} ({best:.3f})",
+            size=10,
+            color="#454545",
+        )
+    )
+    rows_top = top + 35
+    rows_bottom = rows_top + len(versions) * 17
+    for tick in (0.7, 0.8, 0.9, 1.0, 1.1):
+        x = plot_left + (tick - axis_min) / (axis_max - axis_min) * (
+            plot_right - plot_left
+        )
+        stroke = "#aab2b5" if tick == 1.0 else "#e5e7e8"
+        dash = "4 3" if tick == 1.0 else "none"
         parts.append(
-            _text(
-                1085,
-                panel_top + 15,
-                f"lowest observed index: {', '.join(best_versions)} ({best:.3f})",
-                size=10,
-                color="#454545",
-            )
+            f'<path d="M {x:.1f} {rows_top} V {rows_bottom}" '
+            f'stroke="{stroke}" stroke-dasharray="{dash}"/>'
         )
-        rows_top = panel_top + 35
-        rows_bottom = rows_top + len(versions) * 17
-        for tick in (0.7, 0.8, 0.9, 1.0, 1.1):
-            x = plot_left + (tick - axis_min) / (axis_max - axis_min) * (
-                plot_right - plot_left
-            )
-            stroke = "#aab2b5" if tick == 1.0 else "#e5e7e8"
-            dash = "4 3" if tick == 1.0 else "none"
-            parts.append(
-                f'<path d="M {x:.1f} {rows_top} V {rows_bottom}" '
-                f'stroke="{stroke}" stroke-dasharray="{dash}"/>'
-            )
-            parts.append(_text(x, rows_top - 3, f"{tick:.1f}", size=9, anchor="middle"))
-        for version_index, (version, value) in enumerate(
-            zip(versions, panel.indices, strict=True)
-        ):
-            y = rows_top + 10 + version_index * 17
-            x = plot_left + (value - axis_min) / (axis_max - axis_min) * (
-                plot_right - plot_left
-            )
-            color = VERSION_COLORS[version_index]
-            point_radius = 5 if math.isclose(value, best, rel_tol=1e-12) else 4
-            parts.append(_text(475, y + 4, version, size=10, anchor="end"))
-            parts.append(
-                f'<circle cx="{x:.1f}" cy="{y}" r="{point_radius}" fill="{color}">'
-                f"<title>{escape(version)} · {panel.size:,} entries · "
-                f"index {value:.6f}; {panel.case_count} matched cases</title></circle>"
-            )
-            parts.append(_text(1085, y + 4, f"{value:.3f}", size=10))
+        parts.append(_text(x, rows_top - 3, f"{tick:.1f}", size=9, anchor="middle"))
+    for version_index, (version, value) in enumerate(
+        zip(versions, panel.indices, strict=True)
+    ):
+        y = rows_top + 10 + version_index * 17
+        x = plot_left + (value - axis_min) / (axis_max - axis_min) * (
+            plot_right - plot_left
+        )
+        color = VERSION_COLORS[version_index]
+        point_radius = 5 if math.isclose(value, best, rel_tol=1e-12) else 4
+        parts.append(_text(475, y + 4, version, size=10, anchor="end"))
+        parts.append(
+            f'<circle cx="{x:.1f}" cy="{y}" r="{point_radius}" fill="{color}">'
+            f"<title>{escape(version)} · {escape(panel.label)} · "
+            f"index {value:.6f}; {panel.case_count} matched cases</title></circle>"
+        )
+        parts.append(_text(1085, y + 4, f"{value:.3f}", size=10))
 
 
 def _svg_header(width: int, height: int, title: str) -> list[str]:

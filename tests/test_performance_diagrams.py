@@ -16,6 +16,7 @@ from scripts.benchmark_support import (
 )
 from scripts.update_performance_diagrams import (
     SHARED_HARNESS_LABELS,
+    _full_workload_index_panel,
     _full_workload_index_row,
     load_measurements,
     load_shared_harness_runs,
@@ -391,6 +392,8 @@ class DiagramTests(unittest.TestCase):
         )
 
         for label in (
+            "Full-workload index plot",
+            "All included suites and sizes · 37 matched cases",
             "Size-specific matched-workload index",
             "1k · cluster state · 9 matched cases",
             "30k · cluster state · 6 matched cases",
@@ -407,6 +410,16 @@ class DiagramTests(unittest.TestCase):
         appended = svg[svg.index("Size-specific matched-workload index") :]
         self.assertEqual(appended.count("<circle "), 4 * len(SHARED_HARNESS_LABELS))
         self.assertNotIn(" L ", appended)
+        self.assertLess(
+            svg.index("Full-workload index plot"),
+            svg.index("Size-specific matched-workload index"),
+        )
+        full_plot = svg[
+            svg.index("Full-workload index plot") : svg.index(
+                "Size-specific matched-workload index"
+            )
+        ]
+        self.assertEqual(full_plot.count("<circle "), len(SHARED_HARNESS_LABELS))
 
     def test_size_indices_intersect_only_positive_measured_cases(self) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
@@ -414,8 +427,13 @@ class DiagramTests(unittest.TestCase):
         panels = size_specific_indices(groups)
 
         self.assertEqual(
-            tuple((panel.size, panel.case_count) for panel in panels),
-            ((1_000, 9), (30_000, 6), (100_000, 6), (200_000, 6)),
+            tuple((panel.label, panel.case_count) for panel in panels),
+            (
+                ("1k · cluster state", 9),
+                ("30k · cluster state", 6),
+                ("100k · cluster state", 6),
+                ("200k · JSON persistence", 6),
+            ),
         )
         self.assertAlmostEqual(min(panels[0].indices), 0.7638, places=4)
         self.assertAlmostEqual(min(panels[1].indices), 0.7831, places=4)
@@ -428,8 +446,11 @@ class DiagramTests(unittest.TestCase):
     def test_full_workload_index_weights_every_common_case_equally(self) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
 
-        row = _full_workload_index_row(groups)
+        panel = _full_workload_index_panel(groups)
+        row = _full_workload_index_row(panel)
 
+        self.assertEqual(panel.case_count, 37)
+        self.assertEqual(panel.label, "All included suites and sizes")
         self.assertEqual(row.label, "Full-workload index · equal-case · 37 cases")
         self.assertEqual(row.values[0], 1.0)
         native_index = row.values[7]

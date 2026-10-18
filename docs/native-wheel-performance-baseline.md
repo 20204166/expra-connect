@@ -22,6 +22,8 @@ then weights the three suites equally. The full-workload index is still specific
 to this benchmark mix and does not imply a universal winner. Focused 30k/100k
 persistence cases are excluded because 2.2.0.3 was not measured there; YAML and
 unsupported 200k MessagePack cases have no common positive-p50 result to score.
+The full-workload index also has its own point-plot section below, using the
+same release/build series and index values as the summary row above.
 
 Only cases with measured results for every compared column contribute to the
 composite. It uses cluster 1k and 30k/100k cases, connect cases, and 200k JSON
