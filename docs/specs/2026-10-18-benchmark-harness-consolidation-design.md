@@ -3,22 +3,27 @@
 ## Goal
 
 Improve benchmark comparability and usefulness without duplicating measurement
-logic or replacing the existing historical baseline. Reuse the strongest
-features already present in the cluster-state and persistence benchmark scripts
-and produce machine-readable evidence that can be reviewed and selectively
-consumed by the performance baseline.
+logic or replacing the existing historical baseline. Inventory and unify the
+standalone benchmark harnesses in the repository, reusing the strongest
+features already present in the cluster-state, persistence, and connect
+performance scripts. Produce machine-readable evidence that can be reviewed
+and selectively consumed by the performance baseline.
 
 ## Approved approach
 
-Add a small shared measurement core used by the existing domain-specific
-scripts. Keep fixture construction, operation definitions, domain limits, and
-compatibility decisions in `benchmark_cluster_state.py` and
-`benchmark_persistence.py`; do not make a monolithic registry of unrelated
-operations and do not add benchmark dependencies.
+Add a small shared measurement core used by all standalone benchmark scripts.
+Keep fixture construction, operation definitions, domain limits, and
+compatibility decisions in `benchmark_cluster_state.py`,
+`benchmark_persistence.py`, and `tools/connect_performance_benchmark.py`; do not
+make a monolithic registry of unrelated operations and do not add benchmark
+dependencies. All three scripts use the same sampling, percentile, validation,
+provenance, and result-serialization implementation while retaining
+domain-specific options and stage sets.
 
 The shared core owns deterministic timing and result reporting:
 
-- warmups and repeated samples, reporting raw samples and p50/min/max;
+- warmups and repeated samples, reporting raw samples and p50/p95/min/max/mean,
+  plus throughput where it is meaningful;
 - optional batching with per-operation normalized timings;
 - optional peak traced allocation in an independent pass, never inside the
   timed samples;
@@ -28,16 +33,28 @@ The shared core owns deterministic timing and result reporting:
 - readable text output plus a versioned JSON result format, with unsupported
   operations represented explicitly and accompanied by reasons.
 
-Use the same validated measurement configuration and result structure in both
-scripts. Preserve domain-specific CLI options where they have meaning, such as
-the YAML size cap and persistence codec limits. Reject invalid sample counts,
-batch counts, and fixture sizes before timing.
+Use the same validated measurement configuration and result structure in all
+three scripts. Add operation selection and targeted fixture/size execution
+where applicable so a developer can run one stage with the same shared
+statistics and output schema as the full suite. Preserve domain-specific CLI
+options where they have meaning, such as the YAML size cap, persistence codec
+limits, and slower identity-lifecycle sample counts. Reject invalid sample
+counts, batch counts, and fixture sizes before timing.
+
+The MCP `performance_worker.py` loopback probe is also inventoried but is not a
+standalone microbenchmark: it measures subprocess discovery/connect/reconnect
+and resource-retention assertions. Keep its integration lifecycle and pass/fail
+contract intact; continue using the canonical
+`expra_connect.observability.summarize_samples` for its latency summaries,
+rather than replacing it with the offline microbenchmark runner. Keep a
+contract test to prevent summary drift.
 
 ## Measurements and compatibility
 
 Use the seven available extracted versions (1.8.0.0, 1.9.0.1, 2.0.0.0,
-2.0.0.2, 2.2.0.0, 2.2.0.1, and 2.2.0.3) for new comparable runs. Run the
-staged role/cluster-state benchmark on its established sizes (1k, 30k, 100k),
+2.0.0.2, 2.2.0.0, 2.2.0.1, and 2.2.0.3) for new comparable runs of all three
+standalone suites. Run the staged role/cluster-state benchmark on its
+established sizes (1k, 30k, 100k),
 including role and cluster encode/decode, cluster round trips, persisted
 cluster-document round trips, and YAML stages only through the configured safe
 size. Its fixture must continue to model one role assignment and one capability
@@ -68,14 +85,21 @@ reasons before adding values; diagrams continue to show p50 ratios and exact
 latency values in tooltips. Current-checkout-only diagnostics, if any, remain
 separate from seven-version comparisons.
 
+Keep the existing historical diagrams and ratios unchanged. Add a distinct
+shared-harness comparison view for newly collected cross-version series only;
+do not merge measurements with different fixture or sampling contracts into a
+single ratio row.
+
 ## Validation
 
 - Unit-test shared timing (sample count, batch normalization, allocation pass,
   and invalid configuration) with deterministic fake operations or a clock seam.
 - Test JSON serialization and strict result-schema validation, including
   unsupported reasons and provenance.
-- Test both benchmark scripts retain their domain-specific operations, fixture
-  semantics, limits, and operation selection after adopting the shared core.
+- Test all three standalone scripts retain their domain-specific operations,
+  fixture semantics, limits, and operation selection after adopting the shared
+  core. Test that the MCP loopback probe retains its lifecycle/resource contract
+  and canonical sample summarizer.
 - Run at least one small cross-version smoke measurement before full runs;
   verify all seven versions and module paths, then run complete requested suites
   sequentially and retain raw output.
