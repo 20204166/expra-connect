@@ -9,7 +9,7 @@ import statistics
 import time
 import tracemalloc
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -102,6 +102,7 @@ class BenchmarkOutcome:
     fixture: Mapping[str, Any]
     size: int
     payload_bytes: int | None
+    config: MeasurementConfig = field(default_factory=MeasurementConfig)
     result: MeasurementResult | None = None
     unavailable_reason: str | None = None
 
@@ -120,6 +121,8 @@ class BenchmarkOutcome:
             or self.payload_bytes < 0
         ):
             raise ValueError("payload_bytes must be a non-negative integer or None")
+        if not isinstance(self.config, MeasurementConfig):
+            raise TypeError("config must be a MeasurementConfig")
         measured = self.result is not None
         unavailable = isinstance(self.unavailable_reason, str) and bool(
             self.unavailable_reason.strip()
@@ -179,6 +182,25 @@ def _summarize(samples: tuple[float, ...]) -> dict[str, float | int]:
         "spread": ordered[-1] - ordered[0],
         "outliers": sum(value > p75 + 1.5 * (p75 - p25) for value in ordered),
     }
+
+
+def _config_to_dict(config: MeasurementConfig) -> dict[str, int | bool]:
+    return {
+        "warmups": config.warmups,
+        "repetitions": config.repetitions,
+        "batch_count": config.batch_count,
+        "track_allocations": config.track_allocations,
+    }
+
+
+def _config_from_dict(value: object, label: str) -> MeasurementConfig:
+    data = _mapping(value, label)
+    _exact_keys(
+        data,
+        {"warmups", "repetitions", "batch_count", "track_allocations"},
+        label,
+    )
+    return MeasurementConfig(**data)
 
 
 def measure(
@@ -269,12 +291,7 @@ def write_results(
             "python_version": metadata.python_version,
             "platform": metadata.platform,
             "modules": dict(metadata.modules),
-            "config": {
-                "warmups": metadata.config.warmups,
-                "repetitions": metadata.config.repetitions,
-                "batch_count": metadata.config.batch_count,
-                "track_allocations": metadata.config.track_allocations,
-            },
+            "config": _config_to_dict(metadata.config),
         },
         "outcomes": [_outcome_to_dict(outcome) for outcome in outcomes],
     }
@@ -291,6 +308,7 @@ def _outcome_to_dict(outcome: BenchmarkOutcome) -> dict[str, Any]:
         "fixture": dict(outcome.fixture),
         "size": outcome.size,
         "payload_bytes": outcome.payload_bytes,
+        "config": _config_to_dict(outcome.config),
     }
     if outcome.result is None:
         document.update(
@@ -340,13 +358,7 @@ def load_results(path: Path) -> BenchmarkRun:
         },
         "metadata",
     )
-    config_data = _mapping(metadata_data["config"], "metadata.config")
-    _exact_keys(
-        config_data,
-        {"warmups", "repetitions", "batch_count", "track_allocations"},
-        "metadata.config",
-    )
-    config = MeasurementConfig(**config_data)
+    config = _config_from_dict(metadata_data["config"], "metadata.config")
     modules_data = _mapping(metadata_data["modules"], "metadata.modules")
     modules = {
         _string(name, "module name"): _string(module_path, "module path")
@@ -413,7 +425,15 @@ def _nonnegative_number(value: object, label: str) -> float:
 def _outcome_from_dict(value: object) -> BenchmarkOutcome:
     data = _mapping(value, "outcome")
     status = data.get("status")
-    common = {"case_id", "operation", "fixture", "size", "payload_bytes", "status"}
+    common = {
+        "case_id",
+        "operation",
+        "fixture",
+        "size",
+        "payload_bytes",
+        "config",
+        "status",
+    }
     if status == "unavailable":
         _exact_keys(data, common | {"unavailable_reason"}, "unavailable outcome")
         return BenchmarkOutcome(
@@ -424,6 +444,7 @@ def _outcome_from_dict(value: object) -> BenchmarkOutcome:
             payload_bytes=_optional_nonnegative_int(
                 data["payload_bytes"], "outcome.payload_bytes"
             ),
+            config=_config_from_dict(data["config"], "outcome.config"),
             unavailable_reason=_string(
                 data["unavailable_reason"], "outcome.unavailable_reason"
             ),
@@ -488,6 +509,7 @@ def _outcome_from_dict(value: object) -> BenchmarkOutcome:
         payload_bytes=_optional_nonnegative_int(
             data["payload_bytes"], "outcome.payload_bytes"
         ),
+        config=_config_from_dict(data["config"], "outcome.config"),
         result=result,
     )
 

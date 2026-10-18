@@ -1,7 +1,15 @@
+import json
+import subprocess
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 from expra_connect.cluster import ClusterRole, RoleState
 from scripts import benchmark_cluster_state
+from scripts.benchmark_support import MeasurementConfig, measure
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class ClusterStateBenchmarkTests(unittest.TestCase):
@@ -37,12 +45,11 @@ class ClusterStateBenchmarkTests(unittest.TestCase):
             nonlocal calls
             calls += 1
 
-        benchmark_cluster_state._measure(
+        measure(
             operation,
-            warmups=1,
-            repetitions=2,
-            batch_count=3,
-            track_allocations=False,
+            MeasurementConfig(
+                warmups=1, repetitions=2, batch_count=3, track_allocations=False
+            ),
         )
 
         self.assertEqual(calls, 9)
@@ -60,6 +67,39 @@ class ClusterStateBenchmarkTests(unittest.TestCase):
         self.assertNotIn("role", document["assignments"][0])
         self.assertEqual(document["capability_grants"][0]["target"], "target-0")
         self.assertEqual(document["join_admissions"], [])
+
+    def test_module_cli_emits_shared_structured_results(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "cluster.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "scripts.benchmark_cluster_state",
+                    "--sizes",
+                    "1",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--skip-allocation-tracking",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result["metadata"]["suite"], "cluster_state")
+        self.assertIn("expra_connect.cluster.state", result["metadata"]["modules"])
+        self.assertTrue(result["outcomes"])
+        self.assertTrue(all(outcome["size"] == 1 for outcome in result["outcomes"]))
+        self.assertIn("p50=", completed.stdout)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +9,8 @@ import msgpack
 
 from expra_connect.persistence import JsonStateStore
 from scripts import benchmark_persistence
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class PersistenceBenchmarkTests(unittest.TestCase):
@@ -74,6 +78,42 @@ class PersistenceBenchmarkTests(unittest.TestCase):
         self.assertFalse(
             benchmark_persistence._has_string_keyed_root(["not", "a", "map"])
         )
+
+    def test_module_cli_selects_json_store_save_and_emits_shared_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "persistence.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "scripts.benchmark_persistence",
+                    "--sizes",
+                    "30000",
+                    "--operation",
+                    "JSON store save",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result["metadata"]["suite"], "persistence")
+        self.assertEqual(len(result["outcomes"]), 1)
+        outcome = result["outcomes"][0]
+        self.assertEqual(outcome["operation"], "JSON store save")
+        self.assertEqual(outcome["fixture"]["shape"], "compact_pairs")
+        self.assertEqual(outcome["size"], 30_000)
+        self.assertIn("p50=", completed.stdout)
 
 
 if __name__ == "__main__":

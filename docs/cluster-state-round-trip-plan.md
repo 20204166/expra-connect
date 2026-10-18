@@ -63,7 +63,7 @@ Measure latency and allocation in separate passes so tracing overhead does not c
 
 - [ ] **Step 4: Run the baseline on the current checkout.**
 
-Run: `.venv/bin/python scripts/benchmark_cluster_state.py`
+Run: `.venv/bin/python -m scripts.benchmark_cluster_state`
 Expected: output for each configured size and each applicable operation, including sample median/range, peak traced bytes, and JSON/YAML payload bytes. YAML operations run through 30,000 entries; dict operations include 100,000. Record Python version and platform. Do not compare these measurements directly to historical wheel data because source versions and benchmark dimensions differ.
 
 ## Task 3: Profile and make one evidence-backed local change
@@ -94,7 +94,7 @@ Expected: `OK`.
 
 - [ ] **Step 6: Re-run identical benchmark and compare.**
 
-Run: `.venv/bin/python scripts/benchmark_cluster_state.py`
+Run: `.venv/bin/python -m scripts.benchmark_cluster_state`
 Expected: same workload and environment as baseline. Retain the change only if repeated results show a useful latency/allocation improvement and no material regression at another measured size; otherwise simplify/revert only the agent-authored optimization.
 
 ## Task 4: Full verification and diff review

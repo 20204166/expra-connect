@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import argparse
-import importlib
 import json
 import platform
-import statistics
 import sys
-import time
-import tracemalloc
 from collections.abc import Callable
 from functools import partial
+from pathlib import Path
 from typing import Any, cast
 
 import yaml
@@ -29,6 +26,15 @@ from expra_connect.cluster import (
 )
 from expra_connect.data.permissions import NodePermission
 from expra_connect.identity import NodeId
+from scripts.benchmark_support import (
+    BenchmarkOutcome,
+    MeasurementConfig,
+    RunMetadata,
+    collect_modules,
+    format_result,
+    measure,
+    write_results,
+)
 
 
 def _records(
@@ -74,11 +80,11 @@ def _cluster_document(state: RoleState) -> dict[str, Any]:
             "used_invites": [],
         }
     )
-    return document
+    return cast(dict[str, Any], document)
 
 
 def _cluster_document_round_trip(document: dict[str, Any]) -> dict[str, Any]:
-    return ClusterState.from_dict(document).to_dict()
+    return cast(dict[str, Any], ClusterState.from_dict(document).to_dict())
 
 
 def _cluster_state_round_trip(state: ClusterState) -> ClusterState:
@@ -103,45 +109,6 @@ def _select_operations(
         if name == selected:
             return [(name, operation)]
     raise ValueError(f"unknown benchmark operation: {selected}")
-
-
-def _measure(
-    operation: Callable[[], Any],
-    *,
-    warmups: int,
-    repetitions: int,
-    batch_count: int = 1,
-    track_allocations: bool = True,
-) -> tuple[float, float, float, int]:
-    if batch_count < 1:
-        raise ValueError("batch_count must be positive")
-    for _ in range(warmups):
-        for _ in range(batch_count):
-            operation()
-    samples: list[float] = []
-    for _ in range(repetitions):
-        started = time.perf_counter_ns()
-        for _ in range(batch_count):
-            operation()
-        elapsed_ns = time.perf_counter_ns() - started
-        samples.append(elapsed_ns / batch_count / 1_000)
-
-    if not track_allocations:
-        return statistics.median(samples), min(samples), max(samples), -1
-
-    tracemalloc.start()
-    try:
-        tracemalloc.reset_peak()
-        operation()
-        _, peak_bytes = tracemalloc.get_traced_memory()
-    finally:
-        tracemalloc.stop()
-    return (
-        statistics.median(samples),
-        min(samples),
-        max(samples),
-        peak_bytes,
-    )
 
 
 def main() -> None:
@@ -172,6 +139,7 @@ def main() -> None:
         ),
     )
     parser.add_argument("--yaml-max-size", type=int, default=30_000)
+    parser.add_argument("--json-output", type=Path)
     args = parser.parse_args()
     if (
         args.warmups < 0
@@ -197,14 +165,22 @@ def main() -> None:
         f"warmups={args.warmups} repetitions={args.repetitions} "
         f"batch_count={args.batch_count} yaml_max_size={args.yaml_max_size:,}"
     )
-    for module_name in (
+    module_names = (
         "expra_connect.cluster.models",
         "expra_connect.cluster.operations",
         "expra_connect.cluster.roles",
         "expra_connect.cluster.state",
-    ):
-        module = importlib.import_module(module_name)
-        print(f"module={module_name} path={module.__file__}")
+    )
+    modules = collect_modules(module_names)
+    for module_name, module_path in modules.items():
+        print(f"module={module_name} path={module_path}")
+    config = MeasurementConfig(
+        warmups=args.warmups,
+        repetitions=args.repetitions,
+        batch_count=args.batch_count,
+        track_allocations=not args.skip_allocation_tracking,
+    )
+    outcomes: list[BenchmarkOutcome] = []
     for size in args.sizes:
         assignments, grants, epoch = _records(size)
         needs_role_state = (
@@ -342,18 +318,62 @@ def main() -> None:
         )
         selected_operations = _select_operations(operations, args.operation)
         for label, operation in selected_operations:
-            median, low, high, peak = _measure(
-                operation,
-                warmups=args.warmups,
-                repetitions=args.repetitions,
-                batch_count=args.batch_count,
-                track_allocations=not args.skip_allocation_tracking,
+            result = measure(operation, config)
+            operation_payload_bytes = (
+                yaml_payload_bytes if label.startswith("YAML ") else payload_bytes
             )
-            peak_label = f"{peak:,} bytes" if peak >= 0 else "not measured"
-            print(
-                f"{label}: median={median:,.1f} us "
-                f"range={low:,.1f}..{high:,.1f} us peak={peak_label}"
+            fixture = {
+                "name": "staged_role_cluster",
+                "assignments": len(assignments),
+                "grants": len(grants),
+            }
+            outcomes.append(
+                BenchmarkOutcome(
+                    case_id=f"{size}:{label}",
+                    operation=label,
+                    fixture=fixture,
+                    size=size,
+                    payload_bytes=operation_payload_bytes,
+                    config=config,
+                    result=result,
+                )
             )
+            print(f"{label}: {format_result(result)}")
+        if args.operation is None and size > args.yaml_max_size:
+            reason = f"Exceeds configured YAML maximum size {args.yaml_max_size:,}"
+            fixture = {
+                "name": "staged_role_cluster",
+                "assignments": len(assignments),
+                "grants": len(grants),
+            }
+            for label in ("YAML encode", "YAML parse", "YAML cluster round-trip"):
+                outcomes.append(
+                    BenchmarkOutcome(
+                        case_id=f"{size}:{label}",
+                        operation=label,
+                        fixture=fixture,
+                        size=size,
+                        payload_bytes=None,
+                        config=config,
+                        unavailable_reason=reason,
+                    )
+                )
+                print(f"{label}: unavailable ({reason})")
+
+    if args.json_output is not None:
+        write_results(
+            args.json_output,
+            RunMetadata(
+                schema_version=1,
+                suite="cluster_state",
+                package_version=__version__,
+                python_version=sys.version.split()[0],
+                platform=platform.platform(),
+                modules=modules,
+                config=config,
+            ),
+            outcomes,
+        )
 
 
 if __name__ == "__main__":

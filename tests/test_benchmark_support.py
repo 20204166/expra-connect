@@ -100,6 +100,9 @@ class ResultSchemaTests(unittest.TestCase):
             metadata.config,
             clock_ns=iter((0, 1_000)).__next__,
         )
+        operation_config = MeasurementConfig(
+            warmups=0, repetitions=1, track_allocations=False
+        )
         outcomes = (
             BenchmarkOutcome(
                 case_id="json-200k-load",
@@ -107,6 +110,7 @@ class ResultSchemaTests(unittest.TestCase):
                 fixture={"shape": "compact_pairs"},
                 size=200_000,
                 payload_bytes=3_188_915,
+                config=operation_config,
                 result=measured,
             ),
             BenchmarkOutcome(
@@ -115,6 +119,7 @@ class ResultSchemaTests(unittest.TestCase):
                 fixture={"shape": "compact_pairs"},
                 size=200_000,
                 payload_bytes=None,
+                config=operation_config,
                 unavailable_reason="Unsupported by payload and array limits",
             ),
         )
@@ -126,6 +131,7 @@ class ResultSchemaTests(unittest.TestCase):
 
         self.assertEqual(loaded.metadata, metadata)
         self.assertEqual(loaded.outcomes, outcomes)
+        self.assertEqual(loaded.outcomes[0].config, operation_config)
 
 
 if __name__ == "__main__":

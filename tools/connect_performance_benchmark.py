@@ -2,8 +2,8 @@
 
 Run with the installed (editable) package:
 
-    .venv/bin/python tools/connect_performance_benchmark.py
-    .venv-pypy/bin/python tools/connect_performance_benchmark.py [if PyPy venv exists]
+    .venv/bin/python -m tools.connect_performance_benchmark
+    .venv-pypy/bin/python -m tools.connect_performance_benchmark [if PyPy venv exists]
 
 Workloads:
     A. Local CPU — identity fingerprint, canonical JSON, sign/verify envelope,
@@ -18,14 +18,14 @@ Statistics: min, p50, p95, mean (all in microseconds), and throughput (ops/s).
 
 from __future__ import annotations
 
-import math
+import argparse
 import platform
 import secrets
-import statistics
 import sys
 import tempfile
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +43,15 @@ from expra_connect.remote.wire_protocol import (
     verify_request,
     verify_response,
 )
+from scripts.benchmark_support import (
+    BenchmarkOutcome,
+    MeasurementConfig,
+    RunMetadata,
+    collect_modules,
+    format_result,
+    measure,
+    write_results,
+)
 
 # ---------------------------------------------------------------------------
 # Harness parameters
@@ -51,48 +60,20 @@ WARMUP = 500
 MEASURE = 5_000
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Workload descriptors
 # ---------------------------------------------------------------------------
 
 
-def _percentile(sorted_data: list[float], pct: float) -> float:
-    if not sorted_data:
-        return float("nan")
-    idx = (len(sorted_data) - 1) * pct / 100
-    lo, hi = int(idx), min(int(idx) + 1, len(sorted_data) - 1)
-    return sorted_data[lo] + (sorted_data[hi] - sorted_data[lo]) * (idx - lo)
-
-
-def bench(
-    label: str,
-    fn: Callable[[], Any],
-    *,
-    warmup: int = WARMUP,
-    n: int = MEASURE,
-) -> dict[str, float]:
-    for _ in range(warmup):
-        fn()
-    samples: list[float] = []
-    for _ in range(n):
-        t0 = time.perf_counter()
-        fn()
-        samples.append((time.perf_counter() - t0) * 1_000_000)
-    samples.sort()
-    mean = statistics.mean(samples)
-    result = {
-        "min_us": samples[0],
-        "p50_us": _percentile(samples, 50),
-        "p95_us": _percentile(samples, 95),
-        "mean_us": mean,
-        "ops_per_s": 1_000_000 / mean if mean > 0 else math.inf,
-    }
-    print(
-        f"  {label:<46}  "
-        f"p50={result['p50_us']:7.2f}µs  "
-        f"p95={result['p95_us']:7.2f}µs  "
-        f"ops/s={result['ops_per_s']:>10,.0f}"
-    )
-    return result
+@dataclass(frozen=True)
+class OperationSpec:
+    name: str
+    operation: Callable[[], Any]
+    fixture: dict[str, Any]
+    size: int
+    stateful: bool = False
+    payload_bytes: int | None = None
+    warmups: int = WARMUP
+    repetitions: int = MEASURE
 
 
 # ---------------------------------------------------------------------------
@@ -291,55 +272,188 @@ def _bench_identity_create() -> None:
 
 
 def main() -> None:
-    print()
-    print("=" * 75)
-    print("  Expra Connect — Performance Benchmark")
-    print(f"  Python {sys.version}")
-    print(f"  Platform: {platform.platform()}")
-    print("=" * 75)
-    print()
-
-    print("A. Local CPU — signing and verification")
-    bench("identity fingerprint", _bench_fingerprint)
-    bench("sign_request (ping)", _bench_sign_request)
-    bench("sign_response", _bench_sign_response)
-    bench("verify_response", _bench_verify_response)
-    bench("verify_request (full: sign+verify+replay)", _bench_verify_request)
-    print()
-
-    print("B. Persistence — YAML and msgpack round-trips")
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yaml_store = YamlStateStore(Path(tmpdir) / "state.yaml")
-        yaml_store.save(_YAML_PAYLOAD)  # pre-create
-        msgpack_store = MessagePackStateStore(Path(tmpdir) / "state.msgpack")
-        msgpack_store.save(_MSGPACK_PAYLOAD)  # pre-create
-
-        bench("yaml save (5-peer payload)", _bench_yaml_save(yaml_store))
-        bench("yaml load", _bench_yaml_load(yaml_store))
-        bench("msgpack save (5-peer payload)", _bench_msgpack_save(msgpack_store))
-        bench("msgpack load", _bench_msgpack_load(msgpack_store))
-    print()
-
-    print("C. Replay cache — check-and-record")
-    bench("replay cache check_and_record", _bench_replay_cache)
-    print()
-
-    print("D. Session registry")
-    bench("open_or_resume + assert_current", _bench_session_open_assert)
-    print()
-
-    print("E. Identity lifecycle (n=200, warmup=10)")
-    bench(
+    parser = argparse.ArgumentParser(description=__doc__)
+    operation_names = (
+        "identity fingerprint",
+        "sign_request (ping)",
+        "sign_response",
+        "verify_response",
+        "verify_request (full: sign+verify+replay)",
+        "yaml save (5-peer payload)",
+        "yaml load",
+        "msgpack save (5-peer payload)",
+        "msgpack load",
+        "replay cache check_and_record",
+        "open_or_resume + assert_current",
         "NodeIdentity.create() [Ed25519 keygen]",
-        _bench_identity_create,
-        warmup=10,
-        n=200,
     )
-    print()
+    parser.add_argument("--operation", choices=operation_names)
+    parser.add_argument("--warmups", type=int)
+    parser.add_argument("--repetitions", type=int)
+    parser.add_argument("--batch-count", type=int, default=1)
+    parser.add_argument("--track-allocations", action="store_true")
+    parser.add_argument("--json-output", type=Path)
+    args = parser.parse_args()
+    try:
+        base_config = MeasurementConfig(
+            warmups=WARMUP if args.warmups is None else args.warmups,
+            repetitions=MEASURE if args.repetitions is None else args.repetitions,
+            batch_count=args.batch_count,
+            track_allocations=args.track_allocations,
+        )
+    except (TypeError, ValueError) as error:
+        parser.error(str(error))
 
-    print("=" * 75)
-    print("Done.")
-    print()
+    stateful_operations = {
+        "verify_request (full: sign+verify+replay)",
+        "replay cache check_and_record",
+        "open_or_resume + assert_current",
+    }
+    selected_names = (
+        {args.operation} if args.operation is not None else set(operation_names)
+    )
+    if args.batch_count > 1 and selected_names & stateful_operations:
+        parser.error("stateful operation cannot be batched")
+
+    from expra_connect import __version__
+
+    modules = collect_modules(
+        (
+            "expra_connect.identity",
+            "expra_connect.persistence",
+            "expra_connect.remote.session",
+            "expra_connect.remote.wire_protocol",
+        )
+    )
+    print(
+        f"version={__version__} python={sys.version.split()[0]} "
+        f"platform={platform.platform()} operation={args.operation or 'all'}"
+    )
+    for module_name, module_path in modules.items():
+        print(f"module={module_name} path={module_path}")
+
+    outcomes: list[BenchmarkOutcome] = []
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yaml_path = Path(tmpdir) / "state.yaml"
+        msgpack_path = Path(tmpdir) / "state.msgpack"
+        yaml_store = YamlStateStore(yaml_path)
+        yaml_store.save(_YAML_PAYLOAD)
+        msgpack_store = MessagePackStateStore(msgpack_path)
+        msgpack_store.save(_MSGPACK_PAYLOAD)
+        state_fixture = {"shape": "five_peer_state", "peers": 5}
+        operations = (
+            OperationSpec(
+                "identity fingerprint", _bench_fingerprint, {"shape": "node_id"}, 1
+            ),
+            OperationSpec(
+                "sign_request (ping)", _bench_sign_request, {"shape": "ping_request"}, 1
+            ),
+            OperationSpec(
+                "sign_response", _bench_sign_response, {"shape": "small_response"}, 1
+            ),
+            OperationSpec(
+                "verify_response",
+                _bench_verify_response,
+                {"shape": "small_response"},
+                1,
+            ),
+            OperationSpec(
+                "verify_request (full: sign+verify+replay)",
+                _bench_verify_request,
+                {"shape": "ping_request"},
+                1,
+                stateful=True,
+            ),
+            OperationSpec(
+                "yaml save (5-peer payload)",
+                _bench_yaml_save(yaml_store),
+                state_fixture,
+                5,
+                payload_bytes=yaml_path.stat().st_size,
+            ),
+            OperationSpec(
+                "yaml load",
+                _bench_yaml_load(yaml_store),
+                state_fixture,
+                5,
+                payload_bytes=yaml_path.stat().st_size,
+            ),
+            OperationSpec(
+                "msgpack save (5-peer payload)",
+                _bench_msgpack_save(msgpack_store),
+                state_fixture,
+                5,
+                payload_bytes=msgpack_path.stat().st_size,
+            ),
+            OperationSpec(
+                "msgpack load",
+                _bench_msgpack_load(msgpack_store),
+                state_fixture,
+                5,
+                payload_bytes=msgpack_path.stat().st_size,
+            ),
+            OperationSpec(
+                "replay cache check_and_record",
+                _bench_replay_cache,
+                {"shape": "unique_replay_record"},
+                1,
+                stateful=True,
+            ),
+            OperationSpec(
+                "open_or_resume + assert_current",
+                _bench_session_open_assert,
+                {"shape": "anonymous_session"},
+                1,
+                stateful=True,
+            ),
+            OperationSpec(
+                "NodeIdentity.create() [Ed25519 keygen]",
+                _bench_identity_create,
+                {"shape": "generated_ed25519_identity"},
+                1,
+                warmups=10,
+                repetitions=200,
+            ),
+        )
+        for spec in operations:
+            if args.operation is not None and spec.name != args.operation:
+                continue
+            config = MeasurementConfig(
+                warmups=(spec.warmups if args.warmups is None else args.warmups),
+                repetitions=(
+                    spec.repetitions if args.repetitions is None else args.repetitions
+                ),
+                batch_count=args.batch_count,
+                track_allocations=args.track_allocations,
+            )
+            result = measure(spec.operation, config)
+            outcomes.append(
+                BenchmarkOutcome(
+                    case_id=spec.name,
+                    operation=spec.name,
+                    fixture=spec.fixture,
+                    size=spec.size,
+                    payload_bytes=spec.payload_bytes,
+                    config=config,
+                    result=result,
+                )
+            )
+            print(f"{spec.name}: {format_result(result)}")
+
+    if args.json_output is not None:
+        write_results(
+            args.json_output,
+            RunMetadata(
+                schema_version=1,
+                suite="connect",
+                package_version=__version__,
+                python_version=sys.version.split()[0],
+                platform=platform.platform(),
+                modules=modules,
+                config=base_config,
+            ),
+            outcomes,
+        )
 
 
 if __name__ == "__main__":
