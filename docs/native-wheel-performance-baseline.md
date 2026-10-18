@@ -9,7 +9,9 @@ summarize the earlier standalone harnesses and retain their original recorded
 values in the committed diagrams. Raw measurement source files are kept in the
 local working tree for regeneration and are intentionally not published.
 The shared-harness diagram summarizes new measurements made with one common
-timing and reporting core. The two sets are not combined in any ratio series.
+timing and reporting core, including separate 2.2.0.4 native and universal
+columns alongside the earlier releases. The historical standalone diagrams and
+the shared-harness diagram are not combined in a ratio series.
 
 ## Historical baseline
 
@@ -69,6 +71,17 @@ stages are unavailable because that API is not present. These new results are
 not historical baseline measurements and make no source-attribution claim.
 
 ![Shared-harness results, shown separately from the historical baseline.](images/performance-shared-harness.svg)
+
+## 2.2.0.4 across-version and build comparisons
+
+The shared-harness diagram above now includes both 2.2.0.4 builds next to all
+earlier measured releases. Earlier releases have one recorded version column;
+the 2.2.0.4 native Cython and universal Python builds are separate columns.
+This uses the existing result files only; no historical wheel was rerun. Some
+older cluster-state workloads used fewer warmups and repetitions than the
+2.2.0.4 runs, so cross-version ratios are descriptive rather than a controlled
+causal comparison. The historical standalone diagrams remain unchanged because
+their harness and fixture definitions are not interchangeable with these runs.
 
 ## Same-version native vs universal build
 

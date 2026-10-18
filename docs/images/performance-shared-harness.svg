@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1161" height="2886" viewBox="0 0 1161 2886" role="img" aria-label="Shared-harness results · separate from historical baseline">
+<svg xmlns="http://www.w3.org/2000/svg" width="1385" height="2886" viewBox="0 0 1385 2886" role="img" aria-label="Shared-harness results · separate from historical baseline">
 <title>Shared-harness results · separate from historical baseline</title>
-<rect width="1161" height="2886" fill="#ffffff"/>
+<rect width="1385" height="2886" fill="#ffffff"/>
 <text x="16.0" y="30.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">Shared-harness results · separate from historical baseline</text>
 <text x="16.0" y="51.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#454545" font-weight="normal">Cell labels compare p50 with 1.8.0.0 for the same metric and size; below 1× is faster; hover for p50 µs.</text>
 <text x="16.0" y="72.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Shared harness · cluster state · 1k entries</text>
@@ -11,6 +11,8 @@
 <text x="849.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.0</text>
 <text x="961.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
+<text x="1185.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 native</text>
+<text x="1297.0" y="103.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 universal</text>
 <text x="333.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML cluster round-trip</text>
 <rect x="345" y="114" width="110" height="30" rx="3" fill="#f7f7f7"><title>YAML cluster round-trip, 1.8.0.0: 1,536,812.587 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -26,6 +28,10 @@
 <text x="960.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.986×</text>
 <rect x="1017" y="114" width="110" height="30" rx="3" fill="#f7f7f7"><title>YAML cluster round-trip, 2.2.0.3: 1,510,586.375 µs; 0.982935× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.983×</text>
+<rect x="1129" y="114" width="110" height="30" rx="3" fill="#d1e5f0"><title>YAML cluster round-trip, 2.2.0.4 native: 1,447,934.870 µs; 0.942167× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.942×</text>
+<rect x="1241" y="114" width="110" height="30" rx="3" fill="#f7f7f7"><title>YAML cluster round-trip, 2.2.0.4 universal: 1,581,202.778 µs; 1.02888× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="136.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <text x="333.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML encode</text>
 <rect x="345" y="146" width="110" height="30" rx="3" fill="#f7f7f7"><title>YAML encode, 1.8.0.0: 440,439.276 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -41,6 +47,10 @@
 <text x="960.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <rect x="1017" y="146" width="110" height="30" rx="3" fill="#fddbc7"><title>YAML encode, 2.2.0.3: 486,689.389 µs; 1.10501× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.11×</text>
+<rect x="1129" y="146" width="110" height="30" rx="3" fill="#fddbc7"><title>YAML encode, 2.2.0.4 native: 462,855.715 µs; 1.0509× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.05×</text>
+<rect x="1241" y="146" width="110" height="30" rx="3" fill="#ef8a62"><title>YAML encode, 2.2.0.4 universal: 678,400.131 µs; 1.54028× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="168.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.54×</text>
 <text x="333.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML parse</text>
 <rect x="345" y="178" width="110" height="30" rx="3" fill="#f7f7f7"><title>YAML parse, 1.8.0.0: 899,514.658 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -56,6 +66,10 @@
 <text x="960.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
 <rect x="1017" y="178" width="110" height="30" rx="3" fill="#f7f7f7"><title>YAML parse, 2.2.0.3: 926,453.141 µs; 1.02995× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
+<rect x="1129" y="178" width="110" height="30" rx="3" fill="#f7f7f7"><title>YAML parse, 2.2.0.4 native: 885,546.409 µs; 0.984471× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.984×</text>
+<rect x="1241" y="178" width="110" height="30" rx="3" fill="#fddbc7"><title>YAML parse, 2.2.0.4 universal: 1,036,803.692 µs; 1.15263× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="200.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
 <text x="333.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster decode</text>
 <rect x="345" y="210" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster decode, 1.8.0.0: 13,073.481 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -71,6 +85,10 @@
 <text x="960.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.884×</text>
 <rect x="1017" y="210" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster decode, 2.2.0.3: 12,128.562 µs; 0.927722× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.928×</text>
+<rect x="1129" y="210" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster decode, 2.2.0.4 native: 9,664.405 µs; 0.739237× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.739×</text>
+<rect x="1241" y="210" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster decode, 2.2.0.4 universal: 12,665.021 µs; 0.968757× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="232.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.969×</text>
 <text x="333.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster document round-trip</text>
 <rect x="345" y="242" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster document round-trip, 1.8.0.0: 16,525.623 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -86,6 +104,10 @@
 <text x="960.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.921×</text>
 <rect x="1017" y="242" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster document round-trip, 2.2.0.3: 13,044.971 µs; 0.789378× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.789×</text>
+<rect x="1129" y="242" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster document round-trip, 2.2.0.4 native: 11,976.080 µs; 0.724698× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.725×</text>
+<rect x="1241" y="242" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster document round-trip, 2.2.0.4 universal: 15,421.783 µs; 0.933204× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="264.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.933×</text>
 <text x="333.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster encode</text>
 <rect x="345" y="274" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster encode, 1.8.0.0: 3,511.644 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -101,6 +123,10 @@
 <text x="960.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.88×</text>
 <rect x="1017" y="274" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster encode, 2.2.0.3: 2,628.217 µs; 0.748429× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.748×</text>
+<rect x="1129" y="274" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster encode, 2.2.0.4 native: 2,300.603 µs; 0.655136× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.655×</text>
+<rect x="1241" y="274" width="110" height="30" rx="3" fill="#fddbc7"><title>cluster encode, 2.2.0.4 universal: 4,492.143 µs; 1.27921× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="296.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.28×</text>
 <text x="333.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster round-trip</text>
 <rect x="345" y="306" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster round-trip, 1.8.0.0: 14,897.872 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -116,6 +142,10 @@
 <text x="960.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
 <rect x="1017" y="306" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster round-trip, 2.2.0.3: 13,246.240 µs; 0.889136× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.889×</text>
+<rect x="1129" y="306" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster round-trip, 2.2.0.4 native: 11,311.648 µs; 0.759279× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.759×</text>
+<rect x="1241" y="306" width="110" height="30" rx="3" fill="#fddbc7"><title>cluster round-trip, 2.2.0.4 universal: 16,085.284 µs; 1.0797× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="328.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.08×</text>
 <text x="333.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">role decode</text>
 <rect x="345" y="338" width="110" height="30" rx="3" fill="#f7f7f7"><title>role decode, 1.8.0.0: 13,329.364 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -131,6 +161,10 @@
 <text x="960.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.862×</text>
 <rect x="1017" y="338" width="110" height="30" rx="3" fill="#67a9cf"><title>role decode, 2.2.0.3: 9,953.030 µs; 0.7467× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.747×</text>
+<rect x="1129" y="338" width="110" height="30" rx="3" fill="#67a9cf"><title>role decode, 2.2.0.4 native: 9,374.549 µs; 0.703301× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.703×</text>
+<rect x="1241" y="338" width="110" height="30" rx="3" fill="#f7f7f7"><title>role decode, 2.2.0.4 universal: 13,612.104 µs; 1.02121× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="360.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
 <text x="333.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">role encode</text>
 <rect x="345" y="370" width="110" height="30" rx="3" fill="#f7f7f7"><title>role encode, 1.8.0.0: 2,239.695 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -146,6 +180,10 @@
 <text x="960.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.727×</text>
 <rect x="1017" y="370" width="110" height="30" rx="3" fill="#67a9cf"><title>role encode, 2.2.0.3: 1,237.975 µs; 0.552743× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.553×</text>
+<rect x="1129" y="370" width="110" height="30" rx="3" fill="#2166ac"><title>role encode, 2.2.0.4 native: 1,084.673 µs; 0.484295× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.484×</text>
+<rect x="1241" y="370" width="110" height="30" rx="3" fill="#67a9cf"><title>role encode, 2.2.0.4 universal: 1,341.507 µs; 0.598969× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="392.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.599×</text>
 <text x="16.0" y="426.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Shared harness · cluster state · 30k / 100k</text>
 <text x="401.0" y="457.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="457.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -154,6 +192,8 @@
 <text x="849.0" y="457.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.0</text>
 <text x="961.0" y="457.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="457.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
+<text x="1185.0" y="457.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 native</text>
+<text x="1297.0" y="457.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 universal</text>
 <text x="333.0" y="490.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML cluster round-trip</text>
 <rect x="345" y="468" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML cluster round-trip, 1.8.0.0: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="400.0" y="490.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -169,6 +209,10 @@
 <text x="960.0" y="490.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="468" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML cluster round-trip, 2.2.0.3: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="1072.0" y="490.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="468" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML cluster round-trip, 2.2.0.4 native: Exceeds configured YAML maximum size 30,000</title></rect>
+<text x="1184.0" y="490.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="468" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML cluster round-trip, 2.2.0.4 universal: Exceeds configured YAML maximum size 30,000</title></rect>
+<text x="1296.0" y="490.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="522.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML encode</text>
 <rect x="345" y="500" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML encode, 1.8.0.0: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="400.0" y="522.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -184,6 +228,10 @@
 <text x="960.0" y="522.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="500" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML encode, 2.2.0.3: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="1072.0" y="522.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="500" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML encode, 2.2.0.4 native: Exceeds configured YAML maximum size 30,000</title></rect>
+<text x="1184.0" y="522.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="500" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML encode, 2.2.0.4 universal: Exceeds configured YAML maximum size 30,000</title></rect>
+<text x="1296.0" y="522.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="554.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML parse</text>
 <rect x="345" y="532" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML parse, 1.8.0.0: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="400.0" y="554.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -199,6 +247,10 @@
 <text x="960.0" y="554.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="532" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML parse, 2.2.0.3: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="1072.0" y="554.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="532" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML parse, 2.2.0.4 native: Exceeds configured YAML maximum size 30,000</title></rect>
+<text x="1184.0" y="554.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="532" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML parse, 2.2.0.4 universal: Exceeds configured YAML maximum size 30,000</title></rect>
+<text x="1296.0" y="554.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="586.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster decode</text>
 <rect x="345" y="564" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster decode, 1.8.0.0: 1,823,684.922 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="586.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -214,6 +266,10 @@
 <text x="960.0" y="586.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.885×</text>
 <rect x="1017" y="564" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster decode, 2.2.0.3: 1,537,242.853 µs; 0.842932× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="586.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.843×</text>
+<rect x="1129" y="564" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster decode, 2.2.0.4 native: 1,449,492.804 µs; 0.794815× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="586.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.795×</text>
+<rect x="1241" y="564" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster decode, 2.2.0.4 universal: 1,808,839.281 µs; 0.99186× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="586.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.992×</text>
 <text x="333.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster document round-trip</text>
 <rect x="345" y="596" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster document round-trip, 1.8.0.0: 2,686,745.025 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -229,6 +285,10 @@
 <text x="960.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.801×</text>
 <rect x="1017" y="596" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster document round-trip, 2.2.0.3: 2,046,444.644 µs; 0.761682× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.762×</text>
+<rect x="1129" y="596" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster document round-trip, 2.2.0.4 native: 2,000,725.004 µs; 0.744665× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.745×</text>
+<rect x="1241" y="596" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster document round-trip, 2.2.0.4 universal: 2,554,782.545 µs; 0.950884× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="618.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.951×</text>
 <text x="333.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster encode</text>
 <rect x="345" y="628" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster encode, 1.8.0.0: 937,385.898 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -244,6 +304,10 @@
 <text x="960.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.675×</text>
 <rect x="1017" y="628" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster encode, 2.2.0.3: 648,875.038 µs; 0.692218× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.692×</text>
+<rect x="1129" y="628" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster encode, 2.2.0.4 native: 658,061.392 µs; 0.702018× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.702×</text>
+<rect x="1241" y="628" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster encode, 2.2.0.4 universal: 770,213.294 µs; 0.821661× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="650.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.822×</text>
 <text x="333.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster round-trip</text>
 <rect x="345" y="660" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster round-trip, 1.8.0.0: 2,578,257.316 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -259,6 +323,10 @@
 <text x="960.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.825×</text>
 <rect x="1017" y="660" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster round-trip, 2.2.0.3: 2,032,573.385 µs; 0.788352× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.788×</text>
+<rect x="1129" y="660" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster round-trip, 2.2.0.4 native: 2,169,730.277 µs; 0.841549× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.842×</text>
+<rect x="1241" y="660" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster round-trip, 2.2.0.4 universal: 2,519,218.902 µs; 0.977101× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="682.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.977×</text>
 <text x="333.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">role decode</text>
 <rect x="345" y="692" width="110" height="30" rx="3" fill="#f7f7f7"><title>role decode, 1.8.0.0: 1,881,652.747 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -274,6 +342,10 @@
 <text x="960.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.853×</text>
 <rect x="1017" y="692" width="110" height="30" rx="3" fill="#d1e5f0"><title>role decode, 2.2.0.3: 1,555,487.998 µs; 0.82666× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.827×</text>
+<rect x="1129" y="692" width="110" height="30" rx="3" fill="#d1e5f0"><title>role decode, 2.2.0.4 native: 1,578,335.169 µs; 0.838803× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.839×</text>
+<rect x="1241" y="692" width="110" height="30" rx="3" fill="#f7f7f7"><title>role decode, 2.2.0.4 universal: 1,872,519.075 µs; 0.995146× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="714.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.995×</text>
 <text x="333.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">role encode</text>
 <rect x="345" y="724" width="110" height="30" rx="3" fill="#f7f7f7"><title>role encode, 1.8.0.0: 529,765.487 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -289,6 +361,10 @@
 <text x="960.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.932×</text>
 <rect x="1017" y="724" width="110" height="30" rx="3" fill="#d1e5f0"><title>role encode, 2.2.0.3: 424,703.441 µs; 0.801682× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.802×</text>
+<rect x="1129" y="724" width="110" height="30" rx="3" fill="#d1e5f0"><title>role encode, 2.2.0.4 native: 397,836.628 µs; 0.750967× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.751×</text>
+<rect x="1241" y="724" width="110" height="30" rx="3" fill="#d1e5f0"><title>role encode, 2.2.0.4 universal: 453,906.121 µs; 0.856806× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="746.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.857×</text>
 <text x="333.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML cluster round-trip</text>
 <rect x="345" y="756" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML cluster round-trip, 1.8.0.0: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="400.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -304,6 +380,10 @@
 <text x="960.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="756" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML cluster round-trip, 2.2.0.3: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="1072.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="756" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML cluster round-trip, 2.2.0.4 native: 51,887,571.723 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1184.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="756" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML cluster round-trip, 2.2.0.4 universal: 53,642,182.273 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1296.0" y="778.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML encode</text>
 <rect x="345" y="788" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML encode, 1.8.0.0: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="400.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -319,6 +399,10 @@
 <text x="960.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="788" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML encode, 2.2.0.3: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="1072.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="788" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML encode, 2.2.0.4 native: 15,567,475.889 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1184.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="788" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML encode, 2.2.0.4 universal: 16,789,929.754 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1296.0" y="810.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">YAML parse</text>
 <rect x="345" y="820" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML parse, 1.8.0.0: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="400.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -334,6 +418,10 @@
 <text x="960.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="820" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML parse, 2.2.0.3: Exceeds configured YAML maximum size 1,000</title></rect>
 <text x="1072.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="820" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML parse, 2.2.0.4 native: 30,011,707.086 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1184.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="820" width="110" height="30" rx="3" fill="#e6e6e6"><title>YAML parse, 2.2.0.4 universal: 32,102,763.494 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1296.0" y="842.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster decode</text>
 <rect x="345" y="852" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster decode, 1.8.0.0: 486,076.791 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -349,6 +437,10 @@
 <text x="960.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
 <rect x="1017" y="852" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster decode, 2.2.0.3: 437,930.062 µs; 0.900948× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.901×</text>
+<rect x="1129" y="852" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster decode, 2.2.0.4 native: 415,377.560 µs; 0.854551× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.855×</text>
+<rect x="1241" y="852" width="110" height="30" rx="3" fill="#fddbc7"><title>cluster decode, 2.2.0.4 universal: 613,757.626 µs; 1.26268× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="874.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.26×</text>
 <text x="333.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster document round-trip</text>
 <rect x="345" y="884" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster document round-trip, 1.8.0.0: 856,162.266 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -364,6 +456,10 @@
 <text x="960.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.719×</text>
 <rect x="1017" y="884" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster document round-trip, 2.2.0.3: 619,923.267 µs; 0.724072× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.724×</text>
+<rect x="1129" y="884" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster document round-trip, 2.2.0.4 native: 646,610.975 µs; 0.755243× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.755×</text>
+<rect x="1241" y="884" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster document round-trip, 2.2.0.4 universal: 837,249.137 µs; 0.977909× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="906.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.978×</text>
 <text x="333.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster encode</text>
 <rect x="345" y="916" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster encode, 1.8.0.0: 216,530.117 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -379,6 +475,10 @@
 <text x="960.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.959×</text>
 <rect x="1017" y="916" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster encode, 2.2.0.3: 189,076.276 µs; 0.87321× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.873×</text>
+<rect x="1129" y="916" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster encode, 2.2.0.4 native: 199,220.093 µs; 0.920057× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.92×</text>
+<rect x="1241" y="916" width="110" height="30" rx="3" fill="#fddbc7"><title>cluster encode, 2.2.0.4 universal: 309,983.789 µs; 1.4316× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="938.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.43×</text>
 <text x="333.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">cluster round-trip</text>
 <rect x="345" y="948" width="110" height="30" rx="3" fill="#f7f7f7"><title>cluster round-trip, 1.8.0.0: 935,945.535 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -394,6 +494,10 @@
 <text x="960.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.698×</text>
 <rect x="1017" y="948" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster round-trip, 2.2.0.3: 657,137.709 µs; 0.702111× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.702×</text>
+<rect x="1129" y="948" width="110" height="30" rx="3" fill="#67a9cf"><title>cluster round-trip, 2.2.0.4 native: 646,379.466 µs; 0.690617× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.691×</text>
+<rect x="1241" y="948" width="110" height="30" rx="3" fill="#d1e5f0"><title>cluster round-trip, 2.2.0.4 universal: 828,112.109 µs; 0.884787× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="970.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.885×</text>
 <text x="333.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">role decode</text>
 <rect x="345" y="980" width="110" height="30" rx="3" fill="#f7f7f7"><title>role decode, 1.8.0.0: 569,190.208 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -409,6 +513,10 @@
 <text x="960.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.865×</text>
 <rect x="1017" y="980" width="110" height="30" rx="3" fill="#d1e5f0"><title>role decode, 2.2.0.3: 474,196.179 µs; 0.833107× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.833×</text>
+<rect x="1129" y="980" width="110" height="30" rx="3" fill="#67a9cf"><title>role decode, 2.2.0.4 native: 394,866.564 µs; 0.693734× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.694×</text>
+<rect x="1241" y="980" width="110" height="30" rx="3" fill="#fddbc7"><title>role decode, 2.2.0.4 universal: 627,108.722 µs; 1.10176× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1002.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
 <text x="333.0" y="1034.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">role encode</text>
 <rect x="345" y="1012" width="110" height="30" rx="3" fill="#f7f7f7"><title>role encode, 1.8.0.0: 168,532.699 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1034.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -424,6 +532,10 @@
 <text x="960.0" y="1034.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.921×</text>
 <rect x="1017" y="1012" width="110" height="30" rx="3" fill="#d1e5f0"><title>role encode, 2.2.0.3: 138,585.824 µs; 0.822308× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1034.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.822×</text>
+<rect x="1129" y="1012" width="110" height="30" rx="3" fill="#d1e5f0"><title>role encode, 2.2.0.4 native: 136,612.489 µs; 0.810599× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1034.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.811×</text>
+<rect x="1241" y="1012" width="110" height="30" rx="3" fill="#d1e5f0"><title>role encode, 2.2.0.4 universal: 153,039.822 µs; 0.908072× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1034.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.908×</text>
 <text x="16.0" y="1068.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Shared harness · cluster round-trip scaling · 30k / 100k</text>
 <text x="401.0" y="1099.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="1099.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -432,6 +544,8 @@
 <text x="849.0" y="1099.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.0</text>
 <text x="961.0" y="1099.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="1099.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
+<text x="1185.0" y="1099.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 native</text>
+<text x="1297.0" y="1099.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 universal</text>
 <text x="333.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">100k cluster round-trip</text>
 <rect x="345" y="1110" width="110" height="30" rx="3" fill="#f7f7f7"><title>100k cluster round-trip, 1.8.0.0: 2,830,301.791 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -447,6 +561,10 @@
 <text x="960.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.943×</text>
 <rect x="1017" y="1110" width="110" height="30" rx="3" fill="#d1e5f0"><title>100k cluster round-trip, 2.2.0.3: 2,560,372.569 µs; 0.904629× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.905×</text>
+<rect x="1129" y="1110" width="110" height="30" rx="3" fill="#d1e5f0"><title>100k cluster round-trip, 2.2.0.4 native: 2,169,730.277 µs; 0.766607× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.767×</text>
+<rect x="1241" y="1110" width="110" height="30" rx="3" fill="#d1e5f0"><title>100k cluster round-trip, 2.2.0.4 universal: 2,519,218.902 µs; 0.890088× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1132.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.89×</text>
 <text x="333.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">30k cluster round-trip</text>
 <rect x="345" y="1142" width="110" height="30" rx="3" fill="#f7f7f7"><title>30k cluster round-trip, 1.8.0.0: 862,827.387 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -462,6 +580,10 @@
 <text x="960.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.822×</text>
 <rect x="1017" y="1142" width="110" height="30" rx="3" fill="#f7f7f7"><title>30k cluster round-trip, 2.2.0.3: 862,397.939 µs; 0.999502× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
+<rect x="1129" y="1142" width="110" height="30" rx="3" fill="#67a9cf"><title>30k cluster round-trip, 2.2.0.4 native: 646,379.466 µs; 0.749141× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.749×</text>
+<rect x="1241" y="1142" width="110" height="30" rx="3" fill="#f7f7f7"><title>30k cluster round-trip, 2.2.0.4 universal: 828,112.109 µs; 0.959766× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1164.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.96×</text>
 <text x="16.0" y="1198.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Shared harness · connect · matched operations</text>
 <text x="401.0" y="1229.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="1229.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -470,6 +592,8 @@
 <text x="849.0" y="1229.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.0</text>
 <text x="961.0" y="1229.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="1229.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
+<text x="1185.0" y="1229.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 native</text>
+<text x="1297.0" y="1229.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 universal</text>
 <text x="333.0" y="1262.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">NodeIdentity.create() [Ed25519 keygen]</text>
 <rect x="345" y="1240" width="110" height="30" rx="3" fill="#f7f7f7"><title>NodeIdentity.create() [Ed25519 keygen], 1.8.0.0: 90.886 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1262.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -485,6 +609,10 @@
 <text x="960.0" y="1262.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
 <rect x="1017" y="1240" width="110" height="30" rx="3" fill="#fddbc7"><title>NodeIdentity.create() [Ed25519 keygen], 2.2.0.3: 107.753 µs; 1.18558× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1262.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.19×</text>
+<rect x="1129" y="1240" width="110" height="30" rx="3" fill="#ef8a62"><title>NodeIdentity.create() [Ed25519 keygen], 2.2.0.4 native: 152.322 µs; 1.67595× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1262.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.68×</text>
+<rect x="1241" y="1240" width="110" height="30" rx="3" fill="#f7f7f7"><title>NodeIdentity.create() [Ed25519 keygen], 2.2.0.4 universal: 93.716 µs; 1.03114× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1262.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <text x="333.0" y="1294.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">identity fingerprint</text>
 <rect x="345" y="1272" width="110" height="30" rx="3" fill="#f7f7f7"><title>identity fingerprint, 1.8.0.0: 5.290 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1294.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -500,6 +628,10 @@
 <text x="960.0" y="1294.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.888×</text>
 <rect x="1017" y="1272" width="110" height="30" rx="3" fill="#d1e5f0"><title>identity fingerprint, 2.2.0.3: 4.619 µs; 0.873157× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1294.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.873×</text>
+<rect x="1129" y="1272" width="110" height="30" rx="3" fill="#fddbc7"><title>identity fingerprint, 2.2.0.4 native: 6.257 µs; 1.1828× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1294.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.18×</text>
+<rect x="1241" y="1272" width="110" height="30" rx="3" fill="#fddbc7"><title>identity fingerprint, 2.2.0.4 universal: 6.282 µs; 1.18752× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1294.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.19×</text>
 <text x="333.0" y="1326.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">msgpack load</text>
 <rect x="345" y="1304" width="110" height="30" rx="3" fill="#f7f7f7"><title>msgpack load, 1.8.0.0: 49.649 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1326.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -515,6 +647,10 @@
 <text x="960.0" y="1326.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.886×</text>
 <rect x="1017" y="1304" width="110" height="30" rx="3" fill="#67a9cf"><title>msgpack load, 2.2.0.3: 24.892 µs; 0.50136× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1326.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.501×</text>
+<rect x="1129" y="1304" width="110" height="30" rx="3" fill="#67a9cf"><title>msgpack load, 2.2.0.4 native: 30.602 µs; 0.616367× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1326.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.616×</text>
+<rect x="1241" y="1304" width="110" height="30" rx="3" fill="#2166ac"><title>msgpack load, 2.2.0.4 universal: 18.901 µs; 0.380692× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1326.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.381×</text>
 <text x="333.0" y="1358.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">msgpack save (5-peer payload)</text>
 <rect x="345" y="1336" width="110" height="30" rx="3" fill="#f7f7f7"><title>msgpack save (5-peer payload), 1.8.0.0: 10,874.261 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1358.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -530,6 +666,10 @@
 <text x="960.0" y="1358.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.999×</text>
 <rect x="1017" y="1336" width="110" height="30" rx="3" fill="#d1e5f0"><title>msgpack save (5-peer payload), 2.2.0.3: 10,147.755 µs; 0.93319× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1358.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.933×</text>
+<rect x="1129" y="1336" width="110" height="30" rx="3" fill="#f7f7f7"><title>msgpack save (5-peer payload), 2.2.0.4 native: 10,400.620 µs; 0.956444× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1358.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.956×</text>
+<rect x="1241" y="1336" width="110" height="30" rx="3" fill="#d1e5f0"><title>msgpack save (5-peer payload), 2.2.0.4 universal: 9,515.273 µs; 0.875027× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1358.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.875×</text>
 <text x="333.0" y="1390.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">open_or_resume + assert_current</text>
 <rect x="345" y="1368" width="110" height="30" rx="3" fill="#f7f7f7"><title>open_or_resume + assert_current, 1.8.0.0: 12.489 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1390.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -545,6 +685,10 @@
 <text x="960.0" y="1390.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.11×</text>
 <rect x="1017" y="1368" width="110" height="30" rx="3" fill="#fddbc7"><title>open_or_resume + assert_current, 2.2.0.3: 13.951 µs; 1.11715× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1390.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.12×</text>
+<rect x="1129" y="1368" width="110" height="30" rx="3" fill="#ef8a62"><title>open_or_resume + assert_current, 2.2.0.4 native: 19.778 µs; 1.5837× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1390.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.58×</text>
+<rect x="1241" y="1368" width="110" height="30" rx="3" fill="#f7f7f7"><title>open_or_resume + assert_current, 2.2.0.4 universal: 11.872 µs; 0.950675× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1390.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.951×</text>
 <text x="333.0" y="1422.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">replay cache check_and_record</text>
 <rect x="345" y="1400" width="110" height="30" rx="3" fill="#f7f7f7"><title>replay cache check_and_record, 1.8.0.0: 3.802 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1422.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -560,6 +704,10 @@
 <text x="960.0" y="1422.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
 <rect x="1017" y="1400" width="110" height="30" rx="3" fill="#fddbc7"><title>replay cache check_and_record, 2.2.0.3: 4.338 µs; 1.14098× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1422.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
+<rect x="1129" y="1400" width="110" height="30" rx="3" fill="#fddbc7"><title>replay cache check_and_record, 2.2.0.4 native: 5.586 µs; 1.46923× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1422.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.47×</text>
+<rect x="1241" y="1400" width="110" height="30" rx="3" fill="#f7f7f7"><title>replay cache check_and_record, 2.2.0.4 universal: 3.922 µs; 1.03156× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1422.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <text x="333.0" y="1454.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">sign_request (ping)</text>
 <rect x="345" y="1432" width="110" height="30" rx="3" fill="#f7f7f7"><title>sign_request (ping), 1.8.0.0: 19.106 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1454.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -575,6 +723,10 @@
 <text x="960.0" y="1454.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.853×</text>
 <rect x="1017" y="1432" width="110" height="30" rx="3" fill="#d1e5f0"><title>sign_request (ping), 2.2.0.3: 17.027 µs; 0.891186× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1454.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.891×</text>
+<rect x="1129" y="1432" width="110" height="30" rx="3" fill="#fddbc7"><title>sign_request (ping), 2.2.0.4 native: 23.845 µs; 1.24804× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1454.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.25×</text>
+<rect x="1241" y="1432" width="110" height="30" rx="3" fill="#fddbc7"><title>sign_request (ping), 2.2.0.4 universal: 24.721 µs; 1.29391× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1454.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.29×</text>
 <text x="333.0" y="1486.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">sign_response</text>
 <rect x="345" y="1464" width="110" height="30" rx="3" fill="#f7f7f7"><title>sign_response, 1.8.0.0: 11.762 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1486.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -590,6 +742,10 @@
 <text x="960.0" y="1486.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.34×</text>
 <rect x="1017" y="1464" width="110" height="30" rx="3" fill="#fddbc7"><title>sign_response, 2.2.0.3: 16.291 µs; 1.38505× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1486.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.39×</text>
+<rect x="1129" y="1464" width="110" height="30" rx="3" fill="#ef8a62"><title>sign_response, 2.2.0.4 native: 23.479 µs; 1.99617× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1486.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">2×</text>
+<rect x="1241" y="1464" width="110" height="30" rx="3" fill="#ef8a62"><title>sign_response, 2.2.0.4 universal: 19.823 µs; 1.6853× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1486.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.69×</text>
 <text x="333.0" y="1518.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">verify_request (full: sign+verify+replay)</text>
 <rect x="345" y="1496" width="110" height="30" rx="3" fill="#f7f7f7"><title>verify_request (full: sign+verify+replay), 1.8.0.0: 57.583 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1518.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -605,6 +761,10 @@
 <text x="960.0" y="1518.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.793×</text>
 <rect x="1017" y="1496" width="110" height="30" rx="3" fill="#d1e5f0"><title>verify_request (full: sign+verify+replay), 2.2.0.3: 48.001 µs; 0.833588× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1518.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.834×</text>
+<rect x="1129" y="1496" width="110" height="30" rx="3" fill="#fddbc7"><title>verify_request (full: sign+verify+replay), 2.2.0.4 native: 63.841 µs; 1.10868× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1518.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.11×</text>
+<rect x="1241" y="1496" width="110" height="30" rx="3" fill="#d1e5f0"><title>verify_request (full: sign+verify+replay), 2.2.0.4 universal: 43.973 µs; 0.763646× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1518.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.764×</text>
 <text x="333.0" y="1550.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">verify_response</text>
 <rect x="345" y="1528" width="110" height="30" rx="3" fill="#f7f7f7"><title>verify_response, 1.8.0.0: 29.646 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1550.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -620,6 +780,10 @@
 <text x="960.0" y="1550.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.27×</text>
 <rect x="1017" y="1528" width="110" height="30" rx="3" fill="#fddbc7"><title>verify_response, 2.2.0.3: 38.683 µs; 1.30483× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="1550.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
+<rect x="1129" y="1528" width="110" height="30" rx="3" fill="#ef8a62"><title>verify_response, 2.2.0.4 native: 54.788 µs; 1.84807× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1550.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.85×</text>
+<rect x="1241" y="1528" width="110" height="30" rx="3" fill="#fddbc7"><title>verify_response, 2.2.0.4 universal: 33.763 µs; 1.13887× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1550.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
 <text x="333.0" y="1582.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">yaml load</text>
 <rect x="345" y="1560" width="110" height="30" rx="3" fill="#e6e6e6"><title>yaml load, 1.8.0.0: YamlStateStore is not available in package 1.8.0.0</title></rect>
 <text x="400.0" y="1582.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -635,6 +799,10 @@
 <text x="960.0" y="1582.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="1560" width="110" height="30" rx="3" fill="#e6e6e6"><title>yaml load, 2.2.0.3: 1,355.351 µs; 1.8.0.0 reference unavailable</title></rect>
 <text x="1072.0" y="1582.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1560" width="110" height="30" rx="3" fill="#e6e6e6"><title>yaml load, 2.2.0.4 native: 1,818.160 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1184.0" y="1582.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="1560" width="110" height="30" rx="3" fill="#e6e6e6"><title>yaml load, 2.2.0.4 universal: 1,297.434 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1296.0" y="1582.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="1614.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">yaml save (5-peer payload)</text>
 <rect x="345" y="1592" width="110" height="30" rx="3" fill="#e6e6e6"><title>yaml save (5-peer payload), 1.8.0.0: YamlStateStore is not available in package 1.8.0.0</title></rect>
 <text x="400.0" y="1614.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -650,6 +818,10 @@
 <text x="960.0" y="1614.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="1592" width="110" height="30" rx="3" fill="#e6e6e6"><title>yaml save (5-peer payload), 2.2.0.3: 12,411.900 µs; 1.8.0.0 reference unavailable</title></rect>
 <text x="1072.0" y="1614.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1592" width="110" height="30" rx="3" fill="#e6e6e6"><title>yaml save (5-peer payload), 2.2.0.4 native: 12,158.766 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1184.0" y="1614.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="1592" width="110" height="30" rx="3" fill="#e6e6e6"><title>yaml save (5-peer payload), 2.2.0.4 universal: 11,420.588 µs; 1.8.0.0 reference unavailable</title></rect>
+<text x="1296.0" y="1614.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="16.0" y="1648.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Shared harness · persistence · 30k dictionary records</text>
 <text x="401.0" y="1679.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="1679.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -658,6 +830,8 @@
 <text x="849.0" y="1679.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.0</text>
 <text x="961.0" y="1679.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="1679.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
+<text x="1185.0" y="1679.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 native</text>
+<text x="1297.0" y="1679.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 universal</text>
 <text x="333.0" y="1712.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON decode</text>
 <rect x="345" y="1690" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON decode, 1.8.0.0: 7,724.443 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1712.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -673,6 +847,10 @@
 <text x="960.0" y="1712.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.919×</text>
 <rect x="1017" y="1690" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON decode, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1712.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1690" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON decode, 2.2.0.4 native: 7,195.886 µs; 0.931573× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1712.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.932×</text>
+<rect x="1241" y="1690" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON decode, 2.2.0.4 universal: 6,570.166 µs; 0.850568× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1712.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.851×</text>
 <text x="333.0" y="1744.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON encode</text>
 <rect x="345" y="1722" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON encode, 1.8.0.0: 8,992.526 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1744.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -688,6 +866,10 @@
 <text x="960.0" y="1744.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.901×</text>
 <rect x="1017" y="1722" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON encode, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1744.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1722" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON encode, 2.2.0.4 native: 7,935.911 µs; 0.882501× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1744.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.883×</text>
+<rect x="1241" y="1722" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON encode, 2.2.0.4 universal: 8,113.042 µs; 0.902198× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1744.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.902×</text>
 <text x="333.0" y="1776.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON file read</text>
 <rect x="345" y="1754" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON file read, 1.8.0.0: 110.448 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1776.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -703,6 +885,10 @@
 <text x="960.0" y="1776.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
 <rect x="1017" y="1754" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON file read, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1776.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1754" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON file read, 2.2.0.4 native: 134.022 µs; 1.21344× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1776.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.21×</text>
+<rect x="1241" y="1754" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON file read, 2.2.0.4 universal: 97.714 µs; 0.884706× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1776.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.885×</text>
 <text x="333.0" y="1808.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON object-root validation</text>
 <rect x="345" y="1786" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON object-root validation, 1.8.0.0: 0.471 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1808.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -718,6 +904,10 @@
 <text x="960.0" y="1808.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.06×</text>
 <rect x="1017" y="1786" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON object-root validation, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1808.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1786" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON object-root validation, 2.2.0.4 native: 0.451 µs; 0.957537× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1808.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.958×</text>
+<rect x="1241" y="1786" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON object-root validation, 2.2.0.4 universal: 0.401 µs; 0.85138× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1808.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.851×</text>
 <text x="333.0" y="1840.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store load</text>
 <rect x="345" y="1818" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 1.8.0.0: 8,223.185 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1840.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -733,6 +923,10 @@
 <text x="960.0" y="1840.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.809×</text>
 <rect x="1017" y="1818" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON store load, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1840.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1818" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON store load, 2.2.0.4 native: 7,009.276 µs; 0.85238× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1840.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.852×</text>
+<rect x="1241" y="1818" width="110" height="30" rx="3" fill="#67a9cf"><title>JSON store load, 2.2.0.4 universal: 6,160.183 µs; 0.749124× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1840.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.749×</text>
 <text x="333.0" y="1872.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store save</text>
 <rect x="345" y="1850" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 1.8.0.0: 85,544.147 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1872.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -748,6 +942,10 @@
 <text x="960.0" y="1872.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.795×</text>
 <rect x="1017" y="1850" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON store save, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1872.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1850" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON store save, 2.2.0.4 native: 78,491.153 µs; 0.917551× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1872.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.918×</text>
+<rect x="1241" y="1850" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON store save, 2.2.0.4 universal: 68,539.514 µs; 0.801218× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1872.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.801×</text>
 <text x="333.0" y="1904.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack decode</text>
 <rect x="345" y="1882" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack decode, 1.8.0.0: 15,339.040 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1904.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -763,6 +961,10 @@
 <text x="960.0" y="1904.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.947×</text>
 <rect x="1017" y="1882" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack decode, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1904.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1882" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack decode, 2.2.0.4 native: 15,490.013 µs; 1.00984× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1904.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
+<rect x="1241" y="1882" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack decode, 2.2.0.4 universal: 13,516.069 µs; 0.881155× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1904.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.881×</text>
 <text x="333.0" y="1936.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack decode + root validation</text>
 <rect x="345" y="1914" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack decode + root validation, 1.8.0.0: 15,297.131 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1936.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -778,6 +980,10 @@
 <text x="960.0" y="1936.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.932×</text>
 <rect x="1017" y="1914" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack decode + root validation, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1936.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1914" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack decode + root validation, 2.2.0.4 native: 13,737.070 µs; 0.898016× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1936.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.898×</text>
+<rect x="1241" y="1914" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack decode + root validation, 2.2.0.4 universal: 13,497.484 µs; 0.882354× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1936.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.882×</text>
 <text x="333.0" y="1968.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack encode</text>
 <rect x="345" y="1946" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack encode, 1.8.0.0: 6,199.106 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="1968.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -793,6 +999,10 @@
 <text x="960.0" y="1968.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.966×</text>
 <rect x="1017" y="1946" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack encode, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="1968.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1946" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack encode, 2.2.0.4 native: 6,545.742 µs; 1.05592× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="1968.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.06×</text>
+<rect x="1241" y="1946" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack encode, 2.2.0.4 universal: 6,121.871 µs; 0.987541× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="1968.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.988×</text>
 <text x="333.0" y="2000.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack file read</text>
 <rect x="345" y="1978" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack file read, 1.8.0.0: 73.409 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2000.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -808,6 +1018,10 @@
 <text x="960.0" y="2000.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.972×</text>
 <rect x="1017" y="1978" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack file read, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2000.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="1978" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack file read, 2.2.0.4 native: 71.425 µs; 0.972973× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2000.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.973×</text>
+<rect x="1241" y="1978" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack file read, 2.2.0.4 universal: 60.454 µs; 0.823523× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2000.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.824×</text>
 <text x="333.0" y="2032.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack root validation</text>
 <rect x="345" y="2010" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack root validation, 1.8.0.0: 0.912 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2032.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -823,6 +1037,10 @@
 <text x="960.0" y="2032.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.977×</text>
 <rect x="1017" y="2010" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack root validation, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2032.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2010" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack root validation, 2.2.0.4 native: 1.183 µs; 1.29715× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2032.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.3×</text>
+<rect x="1241" y="2010" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack root validation, 2.2.0.4 universal: 0.751 µs; 0.823465× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2032.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.823×</text>
 <text x="333.0" y="2064.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store load</text>
 <rect x="345" y="2042" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 1.8.0.0: 16,421.803 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2064.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -838,6 +1056,10 @@
 <text x="960.0" y="2064.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.908×</text>
 <rect x="1017" y="2042" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2064.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2042" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 2.2.0.4 native: 15,957.052 µs; 0.971699× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2064.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.972×</text>
+<rect x="1241" y="2042" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store load, 2.2.0.4 universal: 14,598.548 µs; 0.888974× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2064.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.889×</text>
 <text x="333.0" y="2096.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store save</text>
 <rect x="345" y="2074" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store save, 1.8.0.0: 19,147.075 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2096.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -853,6 +1075,10 @@
 <text x="960.0" y="2096.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.975×</text>
 <rect x="1017" y="2074" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2096.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2074" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store save, 2.2.0.4 native: 20,460.627 µs; 1.0686× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2096.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="1241" y="2074" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store save, 2.2.0.4 universal: 18,168.563 µs; 0.948895× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2096.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.949×</text>
 <text x="16.0" y="2130.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Shared harness · persistence · 100k compact pairs</text>
 <text x="401.0" y="2161.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="2161.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -861,6 +1087,8 @@
 <text x="849.0" y="2161.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.0</text>
 <text x="961.0" y="2161.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="2161.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
+<text x="1185.0" y="2161.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 native</text>
+<text x="1297.0" y="2161.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 universal</text>
 <text x="333.0" y="2194.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON decode</text>
 <rect x="345" y="2172" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON decode, 1.8.0.0: 28,798.568 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2194.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -876,6 +1104,10 @@
 <text x="960.0" y="2194.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.06×</text>
 <rect x="1017" y="2172" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON decode, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2194.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2172" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON decode, 2.2.0.4 native: 33,754.001 µs; 1.17207× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2194.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.17×</text>
+<rect x="1241" y="2172" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON decode, 2.2.0.4 universal: 33,054.202 µs; 1.14777× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2194.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
 <text x="333.0" y="2226.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON encode</text>
 <rect x="345" y="2204" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON encode, 1.8.0.0: 23,063.389 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2226.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -891,6 +1123,10 @@
 <text x="960.0" y="2226.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
 <rect x="1017" y="2204" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON encode, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2226.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2204" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON encode, 2.2.0.4 native: 30,506.492 µs; 1.32272× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2226.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.32×</text>
+<rect x="1241" y="2204" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON encode, 2.2.0.4 universal: 26,120.893 µs; 1.13257× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2226.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.13×</text>
 <text x="333.0" y="2258.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON file read</text>
 <rect x="345" y="2236" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON file read, 1.8.0.0: 2,443.629 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2258.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -906,6 +1142,10 @@
 <text x="960.0" y="2258.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.96×</text>
 <rect x="1017" y="2236" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON file read, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2258.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2236" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON file read, 2.2.0.4 native: 2,939.198 µs; 1.2028× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2258.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="1241" y="2236" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON file read, 2.2.0.4 universal: 2,528.614 µs; 1.03478× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2258.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <text x="333.0" y="2290.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON object-root validation</text>
 <rect x="345" y="2268" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON object-root validation, 1.8.0.0: 0.731 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2290.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -921,6 +1161,10 @@
 <text x="960.0" y="2290.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.494×</text>
 <rect x="1017" y="2268" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON object-root validation, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2290.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2268" width="110" height="30" rx="3" fill="#2166ac"><title>JSON object-root validation, 2.2.0.4 native: 0.351 µs; 0.480164× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2290.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#ffffff" font-weight="normal">0.48×</text>
+<rect x="1241" y="2268" width="110" height="30" rx="3" fill="#67a9cf"><title>JSON object-root validation, 2.2.0.4 universal: 0.390 µs; 0.533516× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2290.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.534×</text>
 <text x="333.0" y="2322.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store load</text>
 <rect x="345" y="2300" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 1.8.0.0: 32,177.913 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2322.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -936,6 +1180,10 @@
 <text x="960.0" y="2322.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.08×</text>
 <rect x="1017" y="2300" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON store load, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2322.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2300" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.2.0.4 native: 37,528.812 µs; 1.16629× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2322.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.17×</text>
+<rect x="1241" y="2300" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 2.2.0.4 universal: 32,739.620 µs; 1.01746× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2322.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
 <text x="333.0" y="2354.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store save</text>
 <rect x="345" y="2332" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 1.8.0.0: 224,118.964 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2354.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -951,6 +1199,10 @@
 <text x="960.0" y="2354.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.94×</text>
 <rect x="1017" y="2332" width="110" height="30" rx="3" fill="#e6e6e6"><title>JSON store save, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2354.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2332" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.2.0.4 native: 244,108.777 µs; 1.08919× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2354.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
+<rect x="1241" y="2332" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.2.0.4 universal: 217,412.339 µs; 0.970076× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2354.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.97×</text>
 <text x="333.0" y="2386.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack decode</text>
 <rect x="345" y="2364" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack decode, 1.8.0.0: 21,544.764 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2386.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -966,6 +1218,10 @@
 <text x="960.0" y="2386.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
 <rect x="1017" y="2364" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack decode, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2386.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2364" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack decode, 2.2.0.4 native: 23,943.128 µs; 1.11132× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2386.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.11×</text>
+<rect x="1241" y="2364" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack decode, 2.2.0.4 universal: 22,762.126 µs; 1.0565× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2386.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.06×</text>
 <text x="333.0" y="2418.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack decode + root validation</text>
 <rect x="345" y="2396" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack decode + root validation, 1.8.0.0: 20,914.936 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2418.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -981,6 +1237,10 @@
 <text x="960.0" y="2418.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
 <rect x="1017" y="2396" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack decode + root validation, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2418.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2396" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack decode + root validation, 2.2.0.4 native: 25,328.398 µs; 1.21102× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2418.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.21×</text>
+<rect x="1241" y="2396" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack decode + root validation, 2.2.0.4 universal: 21,764.637 µs; 1.04063× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2418.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
 <text x="333.0" y="2450.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack encode</text>
 <rect x="345" y="2428" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack encode, 1.8.0.0: 12,785.349 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2450.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -996,6 +1256,10 @@
 <text x="960.0" y="2450.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <rect x="1017" y="2428" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack encode, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2450.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2428" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack encode, 2.2.0.4 native: 14,494.176 µs; 1.13366× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2450.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.13×</text>
+<rect x="1241" y="2428" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack encode, 2.2.0.4 universal: 13,914.410 µs; 1.08831× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2450.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.09×</text>
 <text x="333.0" y="2482.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack file read</text>
 <rect x="345" y="2460" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack file read, 1.8.0.0: 51.758 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2482.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1011,6 +1275,10 @@
 <text x="960.0" y="2482.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.14×</text>
 <rect x="1017" y="2460" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack file read, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2482.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2460" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack file read, 2.2.0.4 native: 51.126 µs; 0.987789× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2482.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.988×</text>
+<rect x="1241" y="2460" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack file read, 2.2.0.4 universal: 56.746 µs; 1.09637× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2482.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
 <text x="333.0" y="2514.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack root validation</text>
 <rect x="345" y="2492" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack root validation, 1.8.0.0: 0.762 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2514.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1026,6 +1294,10 @@
 <text x="960.0" y="2514.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
 <rect x="1017" y="2492" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack root validation, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2514.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2492" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack root validation, 2.2.0.4 native: 0.771 µs; 1.01181× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2514.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
+<rect x="1241" y="2492" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack root validation, 2.2.0.4 universal: 0.822 µs; 1.07874× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2514.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.08×</text>
 <text x="333.0" y="2546.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store load</text>
 <rect x="345" y="2524" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 1.8.0.0: 21,622.100 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2546.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1041,6 +1313,10 @@
 <text x="960.0" y="2546.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
 <rect x="1017" y="2524" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2546.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2524" width="110" height="30" rx="3" fill="#fddbc7"><title>MessagePack store load, 2.2.0.4 native: 25,982.961 µs; 1.20169× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2546.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
+<rect x="1241" y="2524" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store load, 2.2.0.4 universal: 22,288.133 µs; 1.0308× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2546.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <text x="333.0" y="2578.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store save</text>
 <rect x="345" y="2556" width="110" height="30" rx="3" fill="#f7f7f7"><title>MessagePack store save, 1.8.0.0: 29,715.488 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2578.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1056,6 +1332,10 @@
 <text x="960.0" y="2578.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.862×</text>
 <rect x="1017" y="2556" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.3: Not measured for 2.2.0.3</title></rect>
 <text x="1072.0" y="2578.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2556" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store save, 2.2.0.4 native: 27,046.154 µs; 0.91017× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2578.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.91×</text>
+<rect x="1241" y="2556" width="110" height="30" rx="3" fill="#d1e5f0"><title>MessagePack store save, 2.2.0.4 universal: 26,007.458 µs; 0.875216× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2578.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.875×</text>
 <text x="16.0" y="2612.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Shared harness · persistence · 200k compact pairs</text>
 <text x="401.0" y="2643.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.8.0.0</text>
 <text x="513.0" y="2643.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">1.9.0.1</text>
@@ -1064,6 +1344,8 @@
 <text x="849.0" y="2643.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.0</text>
 <text x="961.0" y="2643.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.1</text>
 <text x="1073.0" y="2643.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.3</text>
+<text x="1185.0" y="2643.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 native</text>
+<text x="1297.0" y="2643.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">2.2.0.4 universal</text>
 <text x="333.0" y="2676.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON decode</text>
 <rect x="345" y="2654" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON decode, 1.8.0.0: 67,481.875 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2676.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1079,6 +1361,10 @@
 <text x="960.0" y="2676.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.03×</text>
 <rect x="1017" y="2654" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON decode, 2.2.0.3: 69,912.859 µs; 1.03602× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="2676.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
+<rect x="1129" y="2654" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON decode, 2.2.0.4 native: 71,160.853 µs; 1.05452× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2676.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.05×</text>
+<rect x="1241" y="2654" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON decode, 2.2.0.4 universal: 63,272.714 µs; 0.937625× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2676.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.938×</text>
 <text x="333.0" y="2708.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON encode</text>
 <rect x="345" y="2686" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON encode, 1.8.0.0: 56,042.039 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2708.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1094,6 +1380,10 @@
 <text x="960.0" y="2708.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
 <rect x="1017" y="2686" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON encode, 2.2.0.3: 60,013.200 µs; 1.07086× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="2708.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.07×</text>
+<rect x="1129" y="2686" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON encode, 2.2.0.4 native: 54,875.983 µs; 0.979193× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2708.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.979×</text>
+<rect x="1241" y="2686" width="110" height="30" rx="3" fill="#d1e5f0"><title>JSON encode, 2.2.0.4 universal: 49,360.608 µs; 0.880778× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2708.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.881×</text>
 <text x="333.0" y="2740.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON file read</text>
 <rect x="345" y="2718" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON file read, 1.8.0.0: 5,460.674 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2740.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1109,6 +1399,10 @@
 <text x="960.0" y="2740.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
 <rect x="1017" y="2718" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON file read, 2.2.0.3: 5,565.251 µs; 1.01915× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="2740.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.02×</text>
+<rect x="1129" y="2718" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON file read, 2.2.0.4 native: 6,281.504 µs; 1.15032× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2740.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
+<rect x="1241" y="2718" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON file read, 2.2.0.4 universal: 5,229.290 µs; 0.957627× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2740.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.958×</text>
 <text x="333.0" y="2772.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON object-root validation</text>
 <rect x="345" y="2750" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON object-root validation, 1.8.0.0: 0.331 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2772.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1124,6 +1418,10 @@
 <text x="960.0" y="2772.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.18×</text>
 <rect x="1017" y="2750" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON object-root validation, 2.2.0.3: 0.381 µs; 1.15106× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="2772.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.15×</text>
+<rect x="1129" y="2750" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON object-root validation, 2.2.0.4 native: 0.410 µs; 1.23867× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2772.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.24×</text>
+<rect x="1241" y="2750" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON object-root validation, 2.2.0.4 universal: 0.400 µs; 1.20846× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2772.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.21×</text>
 <text x="333.0" y="2804.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store load</text>
 <rect x="345" y="2782" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 1.8.0.0: 73,017.019 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2804.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1139,6 +1437,10 @@
 <text x="960.0" y="2804.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.01×</text>
 <rect x="1017" y="2782" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 2.2.0.3: 75,766.272 µs; 1.03765× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="2804.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.04×</text>
+<rect x="1129" y="2782" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store load, 2.2.0.4 native: 77,149.776 µs; 1.0566× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2804.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.06×</text>
+<rect x="1241" y="2782" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store load, 2.2.0.4 universal: 72,450.842 µs; 0.992246× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2804.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">0.992×</text>
 <text x="333.0" y="2836.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">JSON store save</text>
 <rect x="345" y="2814" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 1.8.0.0: 414,207.953 µs; 1× versus 1.8.0.0</title></rect>
 <text x="400.0" y="2836.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1×</text>
@@ -1154,6 +1456,10 @@
 <text x="960.0" y="2836.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.2×</text>
 <rect x="1017" y="2814" width="110" height="30" rx="3" fill="#f7f7f7"><title>JSON store save, 2.2.0.3: 433,646.930 µs; 1.04693× versus 1.8.0.0</title></rect>
 <text x="1072.0" y="2836.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.05×</text>
+<rect x="1129" y="2814" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.2.0.4 native: 482,182.863 µs; 1.16411× versus 1.8.0.0</title></rect>
+<text x="1184.0" y="2836.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.16×</text>
+<rect x="1241" y="2814" width="110" height="30" rx="3" fill="#fddbc7"><title>JSON store save, 2.2.0.4 universal: 456,838.843 µs; 1.10292× versus 1.8.0.0</title></rect>
+<text x="1296.0" y="2836.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#142323" font-weight="normal">1.1×</text>
 <text x="333.0" y="2868.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store load</text>
 <rect x="345" y="2846" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 1.8.0.0: Unsupported by payload and array limits; codec-only measurements are out of scope</title></rect>
 <text x="400.0" y="2868.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -1169,6 +1475,10 @@
 <text x="960.0" y="2868.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="2846" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.3: Unsupported by payload and array limits; codec-only measurements are out of scope</title></rect>
 <text x="1072.0" y="2868.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2846" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.4 native: Unsupported by payload and array limits; codec-only measurements are out of scope</title></rect>
+<text x="1184.0" y="2868.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="2846" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store load, 2.2.0.4 universal: Unsupported by payload and array limits; codec-only measurements are out of scope</title></rect>
+<text x="1296.0" y="2868.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="333.0" y="2900.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="end" fill="#17252a" font-weight="normal">MessagePack store save</text>
 <rect x="345" y="2878" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 1.8.0.0: Unsupported by payload and array limits; codec-only measurements are out of scope</title></rect>
 <text x="400.0" y="2900.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
@@ -1184,6 +1494,10 @@
 <text x="960.0" y="2900.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <rect x="1017" y="2878" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.3: Unsupported by payload and array limits; codec-only measurements are out of scope</title></rect>
 <text x="1072.0" y="2900.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1129" y="2878" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.4 native: Unsupported by payload and array limits; codec-only measurements are out of scope</title></rect>
+<text x="1184.0" y="2900.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
+<rect x="1241" y="2878" width="110" height="30" rx="3" fill="#e6e6e6"><title>MessagePack store save, 2.2.0.4 universal: Unsupported by payload and array limits; codec-only measurements are out of scope</title></rect>
+<text x="1296.0" y="2900.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#333333" font-weight="normal">N/A</text>
 <text x="16.0" y="2863.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Ratio vs 1.8.0.0:</text>
 <rect x="112" y="2848" width="22" height="18" fill="#2166ac"/>
 <text x="140.0" y="2862.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">≤0.5×</text>

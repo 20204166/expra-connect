@@ -12,9 +12,11 @@ be repeatable after the tables change, without hand-copying chart values.
 
 - Existing Markdown tables remain the canonical data for the historical
   diagrams. Do not move or rewrite their values into a second data file.
-- Same-version native/universal build comparisons are a separate addition: the
-  validated raw shared-harness JSON runs in
-  `docs/performance-build-comparison-results/` are their source of truth.
+- Same-version native/universal build comparisons use the validated raw JSON
+  runs in `docs/performance-build-comparison-results/` as their source of truth.
+- The shared-harness cross-version diagram includes both 2.2.0.4 builds as
+  distinct columns beside earlier releases. It is descriptive where warmup or
+  repetition configs differ; the standalone historical diagrams remain separate.
 - A small standard-library Python updater parses those tables, validates the
   expected version columns and workload rows, and generates the four historical
   SVG files in `docs/images/`.

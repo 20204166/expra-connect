@@ -30,6 +30,13 @@ DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 
 class BuildComparisonTests(unittest.TestCase):
+    def test_shared_harness_chart_includes_both_2204_builds(self) -> None:
+        diagrams = render_diagrams(load_measurements(DATA_PATH))
+        svg = diagrams["performance-shared-harness.svg"]
+
+        self.assertIn("2.2.0.4 native", svg)
+        self.assertIn("2.2.0.4 universal", svg)
+
     def test_baseline_embeds_paired_build_diagrams_and_refresh_command(self) -> None:
         source = BASELINE_PATH.read_text(encoding="utf-8")
 
@@ -267,6 +274,8 @@ class BaselineTests(unittest.TestCase):
                 "2.2.0.0",
                 "2.2.0.1",
                 "2.2.0.3",
+                "2.2.0.4",
+                "2.2.0.4",
             ),
         )
         for run in runs["cluster-scaling"]:
@@ -274,7 +283,7 @@ class BaselineTests(unittest.TestCase):
                 tuple((item.size, item.operation) for item in run.outcomes),
                 ((30_000, "cluster round-trip"), (100_000, "cluster round-trip")),
             )
-        for run in runs["cluster-large"]:
+        for run in runs["cluster-large"][:7]:
             operations = {item.operation for item in run.outcomes}
             self.assertEqual(
                 operations,

@@ -24,6 +24,10 @@ FULL_VERSIONS = (
 )
 REFERENCE_VERSION = "1.8.0.0"
 FOCUSED_VERSIONS = FULL_VERSIONS[:-1]
+SHARED_HARNESS_LABELS = FULL_VERSIONS + (
+    "2.2.0.4 native",
+    "2.2.0.4 universal",
+)
 FULL_METRICS = (
     "Identity fingerprint",
     "Identity create",
@@ -361,6 +365,24 @@ def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun,
                         f"{group}: fixture or config differs for {version}/{case_id}"
                     )
         loaded[group] = runs
+
+    build_pairs = load_build_comparison_runs(
+        results_dir.parents[1] / "docs" / "performance-build-comparison-results"
+    )
+    for group, runs in tuple(loaded.items()):
+        suite = "cluster_state" if group.startswith("cluster-") else group.split("-")[0]
+        native, universal = build_pairs[suite]
+        case_ids = {outcome.case_id for outcome in runs[0].outcomes}
+        build_runs = tuple(
+            BenchmarkRun(
+                run.metadata,
+                tuple(
+                    outcome for outcome in run.outcomes if outcome.case_id in case_ids
+                ),
+            )
+            for run in (native, universal)
+        )
+        loaded[group] = runs + build_runs
     return loaded
 
 
@@ -600,7 +622,7 @@ def render_diagrams(baseline: BaselineData) -> dict[str, str]:
         ),
         "performance-shared-harness.svg": _render_heatmap_svg(
             "Shared-harness results · separate from historical baseline",
-            versions,
+            SHARED_HARNESS_LABELS,
             _shared_harness_panels(shared_runs),
         ),
     }
@@ -630,10 +652,16 @@ def _shared_harness_panels(
                 current = next(item for item in run.outcomes if item.case_id == case_id)
                 values.append(None if current.result is None else current.result.p50)
                 reasons.append(current.unavailable_reason)
-            if len(runs) < len(FULL_VERSIONS):
-                values.extend([None] * (len(FULL_VERSIONS) - len(runs)))
+            if len(runs) == len(FOCUSED_VERSIONS) + 2:
+                values.insert(len(FOCUSED_VERSIONS), None)
+                reasons.insert(len(FOCUSED_VERSIONS), "Not measured for 2.2.0.3")
+            if (
+                len(runs) < len(SHARED_HARNESS_LABELS)
+                and len(runs) != len(FOCUSED_VERSIONS) + 2
+            ):
+                values.extend([None] * (len(SHARED_HARNESS_LABELS) - len(runs)))
                 reasons.extend(
-                    ["Not measured for 2.2.0.3"] * (len(FULL_VERSIONS) - len(runs))
+                    ["Not measured"] * (len(SHARED_HARNESS_LABELS) - len(runs))
                 )
             label = outcome.operation
             if group == "cluster-scaling":
