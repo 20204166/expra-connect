@@ -1,0 +1,13 @@
+RUN version=2.2.0.1 group=identity_wire
+version=2.2.0.1 python=3.12.3 platform=Linux-7.0.0-34-generic-x86_64-with-glibc2.39 nodes=200000 group=identity_wire
+module=expra_connect.cluster.models path=/tmp/opencode/bench-comparison-2.2.0.1/2.2.0.1/expra_connect/cluster/models.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.cluster.operations path=/tmp/opencode/bench-comparison-2.2.0.1/2.2.0.1/expra_connect/cluster/operations.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.cluster.roles path=/tmp/opencode/bench-comparison-2.2.0.1/2.2.0.1/expra_connect/cluster/roles.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.cluster.state path=/tmp/opencode/bench-comparison-2.2.0.1/2.2.0.1/expra_connect/cluster/state.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.persistence path=/tmp/opencode/bench-comparison-2.2.0.1/2.2.0.1/expra_connect/persistence.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.remote.wire_protocol path=/tmp/opencode/bench-comparison-2.2.0.1/2.2.0.1/expra_connect/remote/wire_protocol.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.remote.session path=/tmp/opencode/bench-comparison-2.2.0.1/2.2.0.1/expra_connect/remote/session.cpython-312-x86_64-linux-gnu.so
+workload=identity_fingerprint p50_us=3.454 p95_us=3.475 ops_s=289504
+workload=identity_create p50_us=84.925 p95_us=86.130 ops_s=11775
+workload=request_sign_verify_replay p50_us=54.887 p95_us=58.654 ops_s=18219
+exit_code=0

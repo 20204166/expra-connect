@@ -1,0 +1,14 @@
+RUN version=1.8.0.0 group=role_state
+version=1.8.0.0 python=3.12.3 platform=Linux-7.0.0-34-generic-x86_64-with-glibc2.39 nodes=200000 group=role_state
+module=expra_connect.cluster.models path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/models.py
+module=expra_connect.cluster.operations path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/operations.py
+module=expra_connect.cluster.roles path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/roles.py
+module=expra_connect.cluster.state path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/state.py
+module=expra_connect.persistence path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/persistence.py
+module=expra_connect.wire_protocol path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/wire_protocol.py
+module=expra_connect.session path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/session.py
+role_fixture_ready assignments=200000 grants=200000
+workload=role_lookup_200000 p50_us=19615.792 p95_us=21771.570 ops_s=51
+workload=capability_grant_lookup_200000 p50_us=25655.223 p95_us=26038.367 ops_s=39
+workload=role_state_decode_200000 p50_us=3894563.667 p95_us=4024460.784 ops_s=0
+exit_code=0

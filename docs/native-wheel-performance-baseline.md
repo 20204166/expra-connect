@@ -46,6 +46,92 @@ The same workload is scaled to 100,000 role assignments, capability grants, clus
 | MessagePack store save | 27,371.941 | 25,139.101 | 26,265.950 | 26,841.385 | 31,538.610 | 26,173.831 | 33,085.048 |
 | MessagePack store load | 19,669.004 | 20,503.942 | 17,541.989 | 16,819.452 | 19,427.443 | 17,592.443 | 28,005.346 |
 
+## Full representative workload, 200,000 entries
+
+The same representative operations were measured with 200,000 role assignments,
+capability grants, cluster records, and logical sessions. Persistence uses
+compact `[integer, boolean]` peer pairs (JSON: 3,188,915 bytes; MessagePack:
+1,268,565 bytes). MessagePack save/load are not applicable: the payload exceeds
+the 1 MiB byte limit and the fixture exceeds the 100,000-element array limit.
+The session registry was seeded directly with 200,000 equivalent active
+session records so the benchmark measures `assert_current` and resume rather
+than the registry's quadratic insertion/pruning setup. Session creation time
+is not measured in this table.
+
+| Workload (p50 µs; 200,000 entries) | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 | 2.2.0.1 | 2.2.0.3 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Identity fingerprint | 4.793 | 3.341 | 3.649 | 3.627 | 3.763 | 3.454 | 3.532 |
+| Identity create | 113.899 | 81.815 | 88.684 | 91.579 | 89.164 | 84.925 | 87.482 |
+| Role lookup | 19,615.792 | 19,362.153 | 1.567 | 1.259 | 1.327 | 1.386 | 1.218 |
+| Capability-grant lookup | 25,655.223 | 23,894.701 | 3.195 | 2.875 | 3.513 | 3.145 | 3.219 |
+| Role-state decode | 3,894,563.667 | 3,616,377.119 | 3,178,145.208 | 3,074,833.625 | 3,322,570.494 | 3,303,511.516 | 3,031,532.174 |
+| Cluster-state round-trip | 5,545,602.706 | 5,453,450.383 | 5,084,583.500 | 4,820,128.273 | 4,828,435.336 | 4,408,514.205 | 4,709,398.529 |
+| Session current-check | 1.681 | 1.892 | 2.254 | 1.659 | 1.584 | 1.633 | 1.828 |
+| Resume existing session | 1.014 | 1.160 | 1.236 | 1.093 | 1.024 | 1.040 | 1.142 |
+| Request sign + verify + replay | 69.510 | 48.225 | 52.541 | 49.554 | 56.669 | 54.887 | 54.237 |
+| JSON store save | 400,716.077 | 428,401.015 | 500,435.547 | 416,189.677 | 418,109.572 | 458,685.482 | 489,527.222 |
+| JSON store load | 69,189.278 | 70,866.561 | 73,041.556 | 77,517.759 | 76,233.884 | 67,479.408 | 82,423.185 |
+| MessagePack store save | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| MessagePack store load | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+
+## Cross-version comparison diagram
+
+The chart summarizes pairwise p50 wins across all measured full-workload rows
+for each fixture size. Each wheel is compared with the other six; each metric
+row has equal weight, and ties count as half a win. The series order is 30k,
+100k, then 200k. The 200k denominator is 11 because MessagePack operations are
+not supported at that fixture size.
+
+```mermaid
+xychart-beta
+    title "Pairwise workload win rate by fixture size"
+    x-axis ["1.8.0.0", "1.9.0.1", "2.0.0.0", "2.0.0.2", "2.2.0.0", "2.2.0.1", "2.2.0.3"]
+    y-axis "Win rate (%)" 0 --> 100
+    line [70.5, 38.5, 41.7, 49.4, 39.7, 29.5, 80.8]
+    line [46.2, 20.5, 76.9, 59.0, 39.7, 73.1, 34.6]
+    line [30.3, 47.0, 36.4, 63.6, 48.5, 69.7, 54.5]
+```
+
+Pairwise matrix cells show how many measured rows in the row wheel were faster
+than the column wheel; denominators are the available full-workload metrics
+for that size.
+
+### 30,000 entries (wins out of 13)
+
+| Faster wheel \\ compared with | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 | 2.2.0.1 | 2.2.0.3 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1.8.0.0 | — | 12 | 8 | 8 | 11 | 10 | 6 |
+| 1.9.0.1 | 1 | — | 8 | 6 | 7 | 6 | 2 |
+| 2.0.0.0 | 5 | 5 | — | 6 | 6 | 9 | 1 |
+| 2.0.0.2 | 5 | 7 | 6 | — | 7 | 10 | 3 |
+| 2.2.0.0 | 2 | 6 | 7 | 6 | — | 8 | 2 |
+| 2.2.0.1 | 3 | 7 | 4 | 3 | 5 | — | 1 |
+| 2.2.0.3 | 7 | 11 | 12 | 10 | 11 | 12 | — |
+
+### 100,000 entries (wins out of 13)
+
+| Faster wheel \\ compared with | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 | 2.2.0.1 | 2.2.0.3 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1.8.0.0 | — | 10 | 4 | 5 | 6 | 3 | 8 |
+| 1.9.0.1 | 3 | — | 1 | 2 | 3 | 2 | 5 |
+| 2.0.0.0 | 9 | 12 | — | 9 | 12 | 7 | 11 |
+| 2.0.0.2 | 8 | 11 | 4 | — | 9 | 4 | 10 |
+| 2.2.0.0 | 7 | 10 | 1 | 4 | — | 3 | 6 |
+| 2.2.0.1 | 10 | 11 | 6 | 9 | 10 | — | 11 |
+| 2.2.0.3 | 5 | 8 | 2 | 3 | 7 | 2 | — |
+
+### 200,000 entries (wins out of 11)
+
+| Faster wheel \\ compared with | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 | 2.2.0.1 | 2.2.0.3 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1.8.0.0 | — | 4 | 4 | 3 | 3 | 2 | 4 |
+| 1.9.0.1 | 7 | — | 7 | 4 | 4 | 4 | 5 |
+| 2.0.0.0 | 7 | 4 | — | 2 | 6 | 2 | 3 |
+| 2.0.0.2 | 8 | 7 | 9 | — | 7 | 5 | 6 |
+| 2.2.0.0 | 8 | 7 | 5 | 4 | — | 4 | 4 |
+| 2.2.0.1 | 9 | 7 | 9 | 6 | 7 | — | 8 |
+| 2.2.0.3 | 7 | 6 | 8 | 5 | 7 | 3 | — |
+
 ## 2.2.0.3 comparison notes
 
 Only the 2.2.0.3 wheel was run for this update; all earlier columns are the
@@ -91,7 +177,7 @@ Focused persistence workloads cover all operations, not just load/decode. At 30k
 | MessagePack store load | 21,552.181 | 22,304.657 | 22,345.191 | 25,357.790 | 25,308.263 | 24,148.464 |
 | MessagePack store save | 23,962.951 | 25,839.671 | 26,691.241 | 28,029.595 | 31,498.214 | 27,673.055 |
 
-Focused measurements used two warmups and nine timed operations per cell; the table reports the median. Raw logs also retain minimum/maximum samples. Full-workload timings use the harness's per-workload warmups and repeated batches; exact batch counts are in the saved harness script. The six historical wheel results were run sequentially; 2.2.0.3 was measured separately using the same harness and fixture shapes. Save timings remain sensitive to filesystem/device state.
+Focused measurements used two warmups and nine timed operations per cell; the table reports the median. Raw logs also retain minimum/maximum samples. Full-workload timings use the harness's per-workload warmups and repeated batches; exact batch counts are in the saved harness script. The six historical wheel results were run sequentially; 2.2.0.3 at 30k/100k was measured separately. The 200k wheel results were run sequentially in separate fixture groups. Save timings remain sensitive to filesystem/device state.
 
 ## Interpretation and limitations
 
@@ -99,10 +185,12 @@ Focused measurements used two warmups and nine timed operations per cell; the ta
 - The 2.2.0.0-to-2.2.0.1 comparison is not a source-identical Cython A/B test: source changed, and the new release adds persistence to the compiled module set. Do not attribute timing differences solely to Cython.
 - The 2.2.0.1 results are mixed: for example, some 100k full-workload state operations were faster than 2.2.0.0, while role lookup and request signing were slower. Focused 100k JSON store-load results also differ materially from the full-workload load results, despite using the same compact fixture; treat filesystem/cache variation and per-harness sampling as significant limitations.
 - The 2.2.0.3 full-workload results are also mixed against 2.2.0.1: role-state decode and cluster round-trip improved at 30k, but were slower at 100k. The 100k session-population stage was slower as well, so the single current-wheel run cannot establish that the larger-input changes are regressions or attribute differences to one code change.
+- The 200k comparison includes all seven wheels. Its session registry is directly seeded with the same active-record shape rather than built through repeated `authenticate` calls; this isolates the measured lookup/resume operations from `_create`'s full-registry expiry scan. Do not use the 200k session rows to compare session-creation cost with the 30k/100k harness setup.
+- At 200k, 2.2.0.3 is faster than 2.2.0.1 on 3 of 11 applicable full-workload rows, and wins 5–8 rows against the older wheels. Its 54.5% chart win rate is the share of all pairwise metric comparisons it wins, not the share of rows where it is the single fastest wheel. These are p50 comparisons from one run per wheel; interpret small differences cautiously.
 - The focused measurements show mixed persistence results by codec, operation, and fixture size. Save timings include filesystem sync noise, and differences among release sources mean the results do not establish a stable general speedup.
 - The MessagePack payloads are much smaller than corresponding JSON payloads for these fixtures. Their store-save timings include durability syncs and are not codec-only costs.
 - These representative workloads do not measure live network discovery, socket transport, TLS, concurrent load, or every public API.
 
 ## Raw run logs
 
-The six historical full and focused logs are retained outside the repository in `/tmp/opencode/bench-comparison-2.2.0.1/` (`full_30k_<version>.txt`, `full_100k_<version>.txt`, and `persistence_<version>.txt`). The 2.2.0.3 full logs are in `/tmp/opencode/bench-comparison-2.2.0.3/` (`full_30k_2.2.0.3.txt` and `full_100k_2.2.0.3.txt`). The temporary harness copies are also in the historical log directory; they are not part of the package or wheel.
+The six historical full and focused logs are retained outside the repository in `/tmp/opencode/bench-comparison-2.2.0.1/` (`full_30k_<version>.txt`, `full_100k_<version>.txt`, and `persistence_<version>.txt`). The 2.2.0.3 30k/100k full logs are in `/tmp/opencode/bench-comparison-2.2.0.3/`. The all-wheel 200k logs are retained in [`tools/bench-comparison-200k-all-wheels/`](../tools/bench-comparison-200k-all-wheels/) (`<group>_<version>.txt`). The benchmark harness itself remains temporary and is not part of the package or wheel.

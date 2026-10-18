@@ -1,0 +1,12 @@
+RUN version=2.0.0.0 group=cluster_state
+version=2.0.0.0 python=3.12.3 platform=Linux-7.0.0-34-generic-x86_64-with-glibc2.39 nodes=200000 group=cluster_state
+module=expra_connect.cluster.models path=/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/models.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.cluster.operations path=/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/operations.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.cluster.roles path=/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/roles.py
+module=expra_connect.cluster.state path=/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/cluster/state.cpython-312-x86_64-linux-gnu.so
+module=expra_connect.persistence path=/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/persistence.py
+module=expra_connect.remote.wire_protocol path=/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/remote/wire_protocol.py
+module=expra_connect.remote.session path=/tmp/opencode/bench-comparison-2.2.0.1/2.0.0.0/expra_connect/remote/session.py
+cluster_fixture_ready assignments=200000 grants=200000
+workload=cluster_state_roundtrip_200000 p50_us=5084583.500 p95_us=5102062.159 ops_s=0
+exit_code=0

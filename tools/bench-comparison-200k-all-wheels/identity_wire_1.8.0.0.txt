@@ -1,0 +1,13 @@
+RUN version=1.8.0.0 group=identity_wire
+version=1.8.0.0 python=3.12.3 platform=Linux-7.0.0-34-generic-x86_64-with-glibc2.39 nodes=200000 group=identity_wire
+module=expra_connect.cluster.models path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/models.py
+module=expra_connect.cluster.operations path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/operations.py
+module=expra_connect.cluster.roles path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/roles.py
+module=expra_connect.cluster.state path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/state.py
+module=expra_connect.persistence path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/persistence.py
+module=expra_connect.wire_protocol path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/wire_protocol.py
+module=expra_connect.session path=/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/session.py
+workload=identity_fingerprint p50_us=4.793 p95_us=4.908 ops_s=208624
+workload=identity_create p50_us=113.899 p95_us=116.970 ops_s=8780
+workload=request_sign_verify_replay p50_us=69.510 p95_us=80.449 ops_s=14386
+exit_code=0
