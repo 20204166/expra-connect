@@ -25,6 +25,18 @@ unsupported 200k MessagePack cases have no common positive-p50 result to score.
 The full-workload index also has its own point-plot section below, using the
 same release/build series and index values as the summary row above.
 
+The **Workload support / coverage** section reports measured cases over cases
+in scope for each release/build, separately from the latency score. In this
+scope, all builds have 9/9 measured 1k cluster cases and 6/8 measured 200k JSON
+persistence cases; the two 200k MessagePack StateStore cases are unsupported by
+payload/array limits. Cluster-state 30k/100k coverage is 12/18 for earlier runs
+and 15/18 for both 2.2.0.4 builds because YAML limits differ. Connect coverage
+is 10/12 for 1.8.0.0 (YamlStateStore unavailable) and 12/12 for the others.
+Thus 2.2.0.4 native and universal have the most measurements in scope (42/47),
+while 2.2.0.3 has the lowest matched-case latency index (0.895). These are
+separate performance and coverage results; missing cases are not assigned an
+invented latency penalty or combined into a single universal winner.
+
 Only cases with measured results for every compared column contribute to the
 composite. It uses cluster 1k and 30k/100k cases, connect cases, and 200k JSON
 persistence cases; 200k MessagePack StateStore is unsupported by payload/array

@@ -16,6 +16,7 @@ from scripts.benchmark_support import (
 )
 from scripts.update_performance_diagrams import (
     SHARED_HARNESS_LABELS,
+    _full_workload_coverage_rows,
     _full_workload_index_panel,
     _full_workload_index_row,
     load_measurements,
@@ -459,6 +460,32 @@ class DiagramTests(unittest.TestCase):
             self.fail("full-workload index is unavailable for a 2.2.0.4 build")
         self.assertAlmostEqual(native_index, 0.942746, places=6)
         self.assertAlmostEqual(universal_index, 1.003027, places=6)
+
+    def test_full_workload_coverage_shows_support_outside_scored_cases(self) -> None:
+        groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+
+        rows = _full_workload_coverage_rows(groups)
+        svg = render_diagrams()["performance-comparison.svg"]
+
+        self.assertEqual(
+            tuple(row.label for row in rows),
+            (
+                "Cluster state · 1k",
+                "Cluster state · 30k / 100k",
+                "Connect operations",
+                "JSON persistence · 200k",
+                "Total in full-workload scope",
+            ),
+        )
+        self.assertEqual((rows[1].cells[6].measured, rows[1].cells[6].total), (12, 18))
+        self.assertEqual((rows[1].cells[7].measured, rows[1].cells[7].total), (15, 18))
+        self.assertEqual((rows[2].cells[0].measured, rows[2].cells[0].total), (10, 12))
+        self.assertEqual(
+            (rows[-1].cells[7].measured, rows[-1].cells[7].total), (42, 47)
+        )
+        self.assertIn("Workload support / coverage", svg)
+        self.assertIn("15/18", svg)
+        self.assertIn("Exceeds configured YAML maximum size 30,000", svg)
 
     def test_sync_writes_and_detects_stale_svg_files(self) -> None:
         diagrams = render_diagrams()

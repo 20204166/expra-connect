@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import sys
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 from html import escape
@@ -305,6 +306,19 @@ class MatchedIndexPanel:
     label: str
     case_count: int
     indices: tuple[float, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CoverageCell:
+    measured: int
+    total: int
+    unavailable_reasons: tuple[tuple[str, int], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CoverageRow:
+    label: str
+    cells: tuple[CoverageCell, ...]
 
 
 SIZE_INDEX_GROUPS = (
@@ -617,6 +631,7 @@ def render_diagrams() -> dict[str, str]:
             SHARED_HARNESS_LABELS,
             panels,
             full_workload_index=full_workload_index,
+            support_coverage=_full_workload_coverage_rows(shared_runs),
             size_indices=size_specific_indices(shared_runs),
         ),
     }
@@ -738,6 +753,57 @@ def _full_workload_index_row(panel: MatchedIndexPanel) -> HeatmapRow:
         (None,) * len(panel.indices),
         value_unit="index",
     )
+
+
+def _full_workload_coverage_rows(
+    groups: dict[str, tuple[BenchmarkRun, ...]],
+) -> tuple[CoverageRow, ...]:
+    """Summarize measured and unavailable cases for the scored workload scope."""
+
+    group_labels = (
+        ("cluster-1k", "Cluster state · 1k"),
+        ("cluster-large", "Cluster state · 30k / 100k"),
+        ("connect", "Connect operations"),
+        ("persistence-200k", "JSON persistence · 200k"),
+    )
+    rows: list[CoverageRow] = []
+    for group_name, label in group_labels:
+        runs = groups[group_name]
+        cells: list[CoverageCell] = []
+        for run in runs:
+            measured = sum(
+                outcome.result is not None and outcome.result.p50 > 0
+                for outcome in run.outcomes
+            )
+            unavailable = Counter(
+                outcome.unavailable_reason or "Unavailable reason not recorded"
+                for outcome in run.outcomes
+                if outcome.result is None or outcome.result.p50 <= 0
+            )
+            cells.append(
+                CoverageCell(
+                    measured,
+                    len(run.outcomes),
+                    tuple(sorted(unavailable.items())),
+                )
+            )
+        rows.append(CoverageRow(label, tuple(cells)))
+
+    total_cells: list[CoverageCell] = []
+    for version_index in range(len(SHARED_HARNESS_LABELS)):
+        cells = [row.cells[version_index] for row in rows]
+        reasons: Counter[str] = Counter()
+        for cell in cells:
+            reasons.update(dict(cell.unavailable_reasons))
+        total_cells.append(
+            CoverageCell(
+                sum(cell.measured for cell in cells),
+                sum(cell.total for cell in cells),
+                tuple(sorted(reasons.items())),
+            )
+        )
+    rows.append(CoverageRow("Total in full-workload scope", tuple(total_cells)))
+    return tuple(rows)
 
 
 def _common_measured_case_vectors(
@@ -904,6 +970,7 @@ def _render_heatmap_svg(
     panels: list[tuple[str, list[HeatmapRow]]],
     *,
     full_workload_index: MatchedIndexPanel | None = None,
+    support_coverage: tuple[CoverageRow, ...] = (),
     size_indices: tuple[MatchedIndexPanel, ...] = (),
 ) -> str:
     left, cell_width, row_height = 345, 112, 32
@@ -912,7 +979,9 @@ def _render_heatmap_svg(
     index_panel_count = len(size_indices) + (
         1 if full_workload_index is not None else 0
     )
-    height = heatmap_height + (70 + 220 * index_panel_count if index_panel_count else 0)
+    index_height = 70 + 220 * index_panel_count if index_panel_count else 0
+    coverage_height = 210 if support_coverage else 0
+    height = heatmap_height + index_height + coverage_height
     parts = _svg_header(width, height, title)
     reference_index = versions.index(REFERENCE_VERSION)
     y = 72
@@ -996,6 +1065,9 @@ def _render_heatmap_svg(
             parts, full_workload_index, versions, index_top
         )
         index_top += 250
+        if support_coverage:
+            _render_support_coverage(parts, support_coverage, versions, index_top)
+            index_top += coverage_height
         if size_indices:
             _render_size_index_panels(parts, size_indices, versions, index_top)
     elif size_indices:
@@ -1043,6 +1115,84 @@ def _render_full_workload_index_plot(
         )
     )
     _render_index_panel(parts, panel, versions, top + 48)
+
+
+def _render_support_coverage(
+    parts: list[str],
+    rows: tuple[CoverageRow, ...],
+    versions: tuple[str, ...],
+    top: int,
+) -> None:
+    parts.append(_text(16, top, "Workload support / coverage", size=18, weight="bold"))
+    parts.append(
+        _text(
+            16,
+            top + 21,
+            "Measured cases / cases in scope. Unavailable cases are shown here, not assigned invented latency scores.",
+            size=11,
+            color="#454545",
+        )
+    )
+    parts.append(
+        _text(
+            16,
+            top + 39,
+            "Blue: all cases measured · amber: partial coverage · gray: no cases measured",
+            size=10,
+            color="#454545",
+        )
+    )
+    left, cell_width = 345, 112
+    header_y = top + 58
+    for index, version in enumerate(versions):
+        x = left + index * cell_width + cell_width // 2
+        parts.append(
+            _text(x, header_y, version, size=10, anchor="middle", weight="bold")
+        )
+    for row_index, row in enumerate(rows):
+        y = top + 68 + row_index * 26
+        is_total = row_index == len(rows) - 1
+        parts.append(
+            _text(
+                left - 12,
+                y + 15,
+                row.label,
+                size=11,
+                anchor="end",
+                weight="bold" if is_total else "normal",
+            )
+        )
+        for version_index, cell in enumerate(row.cells):
+            x = left + version_index * cell_width
+            if cell.measured == 0:
+                color = "#e6e6e6"
+            elif cell.measured == cell.total:
+                color = "#d1e5f0"
+            else:
+                color = "#fddbc7"
+            reasons = "; ".join(
+                f"{count} unavailable: {reason}"
+                for reason, count in cell.unavailable_reasons
+            )
+            detail = (
+                f"{row.label}, {versions[version_index]}: "
+                f"{cell.measured} of {cell.total} cases measured. "
+                f"{reasons or 'All cases measured.'}"
+            )
+            parts.append(
+                f'<rect x="{x}" y="{y}" width="{cell_width - 2}" height="22" '
+                f'rx="3" fill="{color}"><title>{escape(detail)}</title></rect>'
+            )
+            parts.append(
+                _text(
+                    x + cell_width / 2 - 1,
+                    y + 15,
+                    f"{cell.measured}/{cell.total}",
+                    size=10,
+                    anchor="middle",
+                    weight="bold" if is_total else "normal",
+                )
+            )
 
 
 def _render_index_panel(
