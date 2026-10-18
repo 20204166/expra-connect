@@ -2,134 +2,93 @@
 
 **Measured:** 18 October 2026<br>
 **Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39<br>
-**Wheels:** 1.8.0.0 universal, 1.9.0.1 universal, 2.0.0.0 native,
-2.0.0.2 native, and 2.2.0.0 native.
+**Wheels:** 1.8.0.0 and 1.9.0.1 universal; 2.0.0.0, 2.0.0.2, 2.2.0.0, and 2.2.0.1 native CPython 3.12 wheels.
 
-This is a local microbenchmark baseline for deciding which areas merit a
-separate investigation. It is not an end-to-end or concurrent-load benchmark.
-Times below are median p50 microseconds per operation; lower is faster.
+This is a local sequential microbenchmark baseline, not an end-to-end or concurrent-load benchmark. The full-workload tables report p50 microseconds per operation. Focused persistence tables report p50 microseconds per operation; lower is faster.
 
 ## Full representative workload, 30,000 entries
 
-The workload covered identity fingerprint/create, role and capability lookup,
-role-state decode, cluster-state round-trip, a registry populated with 30,000
-logical sessions, session check/resume, request sign/verify/replay, and JSON/
-MessagePack persistence. The role/capability and cluster fixtures each contain
-30,000 assignments/grants. Session checks cycle through the populated registry.
+The workload covers identity fingerprint/create, role and capability lookup, role-state decode, cluster-state round-trip, a registry populated with 30,000 logical sessions, session check/resume, request sign/verify/replay, and JSON/MessagePack store save/load. Role, capability, cluster, and session fixtures are sized to 30,000 entries.
 
-| Workload (p50 µs) | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 |
-|---|---:|---:|---:|---:|---:|
-| Identity fingerprint | 3.488 | 3.493 | 3.637 | 3.526 | 3.468 |
-| Identity create | 85.945 | 85.619 | 89.312 | 88.753 | 95.112 |
-| Role lookup, 30k | 2,583.840 | 2,996.315 | 0.878 | 1.099 | 1.100 |
-| Capability-grant lookup, 30k | 3,436.184 | 4,517.772 | 3.429 | 2.951 | 2.833 |
-| Role-state decode, 30k | 548,989.626 | 529,225.886 | 476,690.313 | 453,534.355 | 466,598.152 |
-| Cluster-state round-trip, 30k | 793,627.243 | 811,085.022 | 666,801.551 | 726,923.119 | 704,112.025 |
-| Session current-check, 30k registry | 1.588 | 1.614 | 1.407 | 1.480 | 1.366 |
-| Resume existing session, 30k registry | 1.113 | 1.139 | 1.033 | 1.070 | 0.961 |
-| Request sign + verify + replay | 51.417 | 55.526 | 50.430 | 49.628 | 53.855 |
-| JSON save, 30k | 118,370.601 | 111,097.027 | 118,505.228 | 120,661.689 | 121,545.071 |
-| JSON load, 30k | 14,739.032 | 15,358.149 | 13,613.861 | 13,257.649 | 15,649.717 |
-| MessagePack save, 30k | 17,621.295 | 18,164.789 | 17,058.112 | 17,614.781 | 18,597.323 |
-| MessagePack load, 30k | 13,337.801 | 14,000.981 | 11,176.847 | 12,802.411 | 15,137.381 |
+| Workload (p50 µs; 30,000 entries) | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 | 2.2.0.1 |
+|---|---:|---:|---:|---:|---:|---:|
+| Identity fingerprint | 3.256 | 3.537 | 3.789 | 4.211 | 3.563 | 3.300 |
+| Identity create | 83.133 | 94.132 | 99.336 | 109.011 | 92.157 | 90.689 |
+| Role lookup | 2,430.987 | 2,808.370 | 1.161 | 1.161 | 0.955 | 1.186 |
+| Capability-grant lookup | 3,335.050 | 3,804.662 | 3.074 | 2.928 | 3.422 | 3.221 |
+| Role-state decode | 464,627.777 | 540,068.771 | 451,065.873 | 481,705.967 | 488,668.713 | 480,475.087 |
+| Cluster-state round-trip | 699,320.301 | 818,616.883 | 652,355.504 | 714,902.643 | 762,628.068 | 802,603.921 |
+| Session current-check | 1.211 | 1.302 | 1.403 | 1.614 | 1.577 | 1.751 |
+| Resume existing session | 1.068 | 0.960 | 1.078 | 0.993 | 1.071 | 1.148 |
+| Request sign + verify + replay | 44.436 | 47.511 | 56.454 | 54.287 | 52.310 | 62.771 |
+| JSON store save | 113,000.029 | 129,407.163 | 112,063.263 | 112,563.589 | 130,529.877 | 135,322.533 |
+| JSON store load | 12,435.259 | 13,272.046 | 13,357.540 | 13,327.416 | 12,837.649 | 23,758.722 |
+| MessagePack store save | 16,956.794 | 19,012.447 | 21,145.209 | 18,802.714 | 19,055.725 | 19,314.700 |
+| MessagePack store load | 11,852.171 | 12,638.863 | 12,960.181 | 11,192.322 | 13,136.111 | 11,728.387 |
 
-### Full-workload observations
+## Full representative workload, 100,000 entries
 
-- Role lookup is dramatically faster in the 2.x wheels than in 1.8/1.9. This
-  primarily reflects the newer indexed lookup implementation, not Cython alone.
-- Role-state decode and cluster-state round-trip are faster in the 2.x builds
-  than in 1.8/1.9, with 2.0.0.2 the fastest decode result in this run.
-- The 2.2.0.0 wheel is fastest for session current-check and resume in this
-  run. These are tiny timings and should be rechecked before acting on small
-  differences.
-- Relative to 1.8.0.0, 2.2.0.0 was slower for request sign/verify/replay and
-  for the measured JSON and MessagePack loads/saves. The absolute persistence
-  differences are small relative to filesystem timing variation and are not
-  stable optimization evidence yet.
-- Identity fingerprint timings are effectively tied. Identity creation was
-  slower in 2.2.0.0 than 1.8.0.0 in this run.
+The same workload is scaled to 100,000 role assignments, capability grants, cluster entries, and logical sessions. To stay within MessagePackStateStore's 1 MiB payload limit, the persistence portion uses compact `[integer, boolean]` peer pairs at 100k rather than the 30k dictionary records. Thus, this is a 100k full workload, but persistence fixture shape differs from the 30k run.
 
-## Focused persistence measurements
+| Workload (p50 µs; 100,000 entries) | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 | 2.2.0.1 |
+|---|---:|---:|---:|---:|---:|---:|
+| Identity fingerprint | 3.616 | 4.316 | 3.754 | 3.781 | 4.115 | 3.371 |
+| Identity create | 86.892 | 129.402 | 91.097 | 96.894 | 112.585 | 91.273 |
+| Role lookup | 8,779.286 | 10,230.796 | 1.318 | 1.340 | 1.806 | 1.940 |
+| Capability-grant lookup | 12,663.549 | 12,684.377 | 2.997 | 4.281 | 3.743 | 2.935 |
+| Role-state decode | 1,820,453.843 | 1,785,313.437 | 1,578,170.643 | 1,456,092.223 | 1,592,903.588 | 1,476,089.990 |
+| Cluster-state round-trip | 2,607,906.101 | 2,667,692.423 | 2,393,749.568 | 2,316,625.685 | 2,587,734.183 | 2,267,784.899 |
+| Session current-check | 1.540 | 1.722 | 1.564 | 1.688 | 1.526 | 1.572 |
+| Resume existing session | 1.025 | 1.097 | 0.959 | 1.077 | 1.003 | 0.986 |
+| Request sign + verify + replay | 46.527 | 53.227 | 49.716 | 57.394 | 52.077 | 54.185 |
+| JSON store save | 239,636.592 | 237,956.317 | 199,241.227 | 216,666.995 | 240,493.675 | 228,108.187 |
+| JSON store load | 29,950.597 | 32,386.252 | 28,859.619 | 28,242.827 | 40,613.558 | 27,797.299 |
+| MessagePack store save | 27,371.941 | 25,139.101 | 26,265.950 | 26,841.385 | 31,538.610 | 26,173.831 |
+| MessagePack store load | 19,669.004 | 20,503.942 | 17,541.989 | 16,819.452 | 19,427.443 | 17,592.443 |
 
-For the 30k case, the payload is a dictionary containing 30,000
-`{"id": "node-N", "online": bool}` records (JSON: 1,143,915 bytes;
-MessagePack: 678,909 bytes). This matches the data shape used by the full
-workload. For 100k, the MessagePack store's 1 MiB payload limit prevents using
-100,000 such dictionaries. The 100k case therefore uses compact `[integer,
-boolean]` pairs (JSON: 1,538,915 bytes; MessagePack: 568,565 bytes). The 100k
-figures are valid store operations, but their record shape differs from the
-30k case and should not be treated as a direct same-shape scaling curve.
+## Full persistence operation baseline
 
-“Encode only” is in-memory `json.dumps` / `msgpack.packb`; “decode only” is
-in-memory `json.loads` / bounded `msgpack.unpackb`. Store load includes reading
-the file and the store's validation; store save includes the atomic write,
-flush, `fsync`, replace, and directory sync. These are p50 microseconds.
+Focused persistence workloads cover all operations, not just load/decode. At 30k, the payload is a map containing 30,000 `{"id": "node-N", "online": bool}` records (JSON: 1,143,915 bytes; MessagePack: 678,909 bytes). At 100k, the MessagePack limit requires a map containing 100,000 compact `[integer, boolean]` pairs (JSON: 1,538,915 bytes; MessagePack: 568,565 bytes). The 100k figures are valid store operations but are not a same-shape scaling curve from 30k.
 
-| Records | Codec / operation (p50 µs) | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 |
-|---:|---|---:|---:|---:|---:|---:|
-| 30k | JSON encode only | 22,153.805 | 17,240.886 | 18,161.170 | 19,481.879 | 19,195.559 |
-| 30k | JSON decode only | 16,348.053 | 17,950.683 | 16,247.453 | 15,267.566 | 15,441.194 |
-| 30k | JSON store load | 20,439.023 | 19,405.515 | 17,792.806 | 20,600.808 | 17,483.783 |
-| 30k | JSON store save | 133,082.986 | 141,038.569 | 147,078.061 | 135,221.323 | 129,821.966 |
-| 30k | MessagePack encode only | 5,779.663 | 6,380.697 | 7,701.716 | 6,768.858 | 5,944.233 |
-| 30k | MessagePack decode only | 13,766.898 | 14,641.075 | 15,931.067 | 14,842.876 | 15,541.341 |
-| 30k | MessagePack store load | 15,295.279 | 15,083.399 | 17,397.220 | 17,668.862 | 15,562.592 |
-| 30k | MessagePack store save | 17,604.350 | 17,569.024 | 19,231.017 | 19,404.363 | 18,163.534 |
-| 100k | JSON encode only | 28,044.418 | 27,062.007 | 25,647.330 | 31,254.809 | 31,635.446 |
-| 100k | JSON decode only | 33,821.527 | 36,022.806 | 33,107.190 | 42,717.563 | 39,422.062 |
-| 100k | JSON store load | 35,864.478 | 42,373.465 | 34,532.366 | 44,580.455 | 42,282.433 |
-| 100k | JSON store save | 227,287.983 | 237,015.486 | 234,750.836 | 240,928.117 | 266,137.800 |
-| 100k | MessagePack encode only | 16,243.576 | 16,134.760 | 14,512.012 | 14,491.974 | 18,018.681 |
-| 100k | MessagePack decode only | 27,431.663 | 27,280.298 | 24,953.672 | 25,184.297 | 26,322.112 |
-| 100k | MessagePack store load | 26,863.742 | 27,133.261 | 23,834.453 | 25,578.500 | 25,172.544 |
-| 100k | MessagePack store save | 29,494.712 | 27,511.623 | 66,451.977 | 28,922.913 | 27,576.416 |
+“Encode only” is in-memory `json.dumps` / `msgpack.packb`; “decode only” is in-memory `json.loads` / bounded `msgpack.unpackb`. Store load includes file read and validation. Store save includes atomic write, flush, file `fsync`, replace, and directory sync.
 
-Focused timings use two warmups and the median of nine individual measurements.
-The 2.0.0.0 100k MessagePack save result is an outlier: its nine samples ranged
-from 29,264.607 to 127,773.796 µs, indicating filesystem noise rather than a
-credible codec regression. JSON saves also vary substantially because the
-store performs durability syncs.
+### 30,000 dictionary records
 
-### Persistence interpretation
+| Codec / operation (30k; p50 µs) | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 | 2.2.0.1 |
+|---|---:|---:|---:|---:|---:|---:|
+| JSON encode only | 15,690.631 | 16,160.734 | 15,950.240 | 17,312.031 | 24,016.649 | 19,382.736 |
+| JSON decode only | 13,551.643 | 14,617.806 | 14,069.144 | 15,297.424 | 18,701.765 | 17,880.416 |
+| JSON store load | 15,775.211 | 16,576.208 | 16,035.951 | 17,854.743 | 22,016.851 | 21,762.911 |
+| JSON store save | 105,583.542 | 111,448.343 | 108,063.985 | 113,479.724 | 147,894.132 | 137,569.686 |
+| MessagePack encode only | 5,796.296 | 6,854.832 | 5,589.193 | 6,801.396 | 7,091.781 | 7,795.617 |
+| MessagePack decode only | 12,561.879 | 12,376.712 | 11,667.799 | 12,506.506 | 15,329.703 | 15,366.140 |
+| MessagePack store load | 14,522.070 | 14,254.501 | 12,873.271 | 14,353.956 | 17,650.244 | 16,235.186 |
+| MessagePack store save | 17,772.051 | 18,519.361 | 18,250.645 | 19,606.303 | 22,319.932 | 20,015.609 |
 
-- Cythonizing the package persistence wrapper would not compile or accelerate
-  the `json`, `msgpack`, or operating-system implementations used for the heavy
-  work. Persistence remains Python in all five wheels; the 2.x native wheels
-  compile cluster and remote modules, not `expra_connect.persistence`.
-- MessagePack encode is consistently much faster than JSON encode for these
-  fixtures. MessagePack save is much faster than JSON save because the payload
-  is smaller and writes less data, although `fsync` makes absolute save times
-  noisy.
-- Decode-only and store-load numbers are close enough across versions that
-  there is no convincing evidence of a wheel-version or Cython advantage for
-  persistence. The 2.2.0.0 full-workload JSON and MessagePack loads were slower
-  than 1.8.0.0, but the focused measurements show substantial run-to-run
-  variation; repeat under a controlled disk/CPU environment before selecting
-  an optimization target.
+### 100,000 compact-pair records
 
-## Method and limitations
+| Codec / operation (100k; p50 µs) | 1.8.0.0 | 1.9.0.1 | 2.0.0.0 | 2.0.0.2 | 2.2.0.0 | 2.2.0.1 |
+|---|---:|---:|---:|---:|---:|---:|
+| JSON encode only | 23,696.880 | 26,203.316 | 28,836.204 | 30,637.709 | 31,730.282 | 29,643.477 |
+| JSON decode only | 30,044.354 | 34,136.732 | 34,602.200 | 36,410.807 | 32,609.809 | 35,046.396 |
+| JSON store load | 36,096.924 | 35,333.567 | 37,272.994 | 39,372.257 | 35,150.676 | 39,976.003 |
+| JSON store save | 232,074.701 | 232,111.345 | 231,738.618 | 266,629.545 | 252,297.804 | 233,810.730 |
+| MessagePack encode only | 14,783.072 | 13,266.308 | 14,164.053 | 15,119.409 | 13,300.168 | 14,168.914 |
+| MessagePack decode only | 22,735.279 | 22,789.210 | 22,105.349 | 21,868.756 | 25,467.753 | 24,268.310 |
+| MessagePack store load | 21,552.181 | 22,304.657 | 22,345.191 | 25,357.790 | 25,308.263 | 24,148.464 |
+| MessagePack store save | 23,962.951 | 25,839.671 | 26,691.241 | 28,029.595 | 31,498.214 | 27,673.055 |
 
-- Full workload: one process per wheel, warmup followed by repeated batches;
-  table entries are the median p50 per-call batch result. Small identity and
-  wire workloads use fewer calls per batch than the large state workloads.
-- Focused persistence: same CPython interpreter, shared dependency
-  environment, isolated temporary files, two warmups, nine timed calls; table
-  reports the median. Save measurements include storage sync and are therefore
-  sensitive to filesystem/device state.
-- 1.8.0.0 and 1.9.0.1 are universal wheels; 2.0.0.0, 2.0.0.2, and 2.2.0.0
-  are CPython 3.12 Linux native wheels. Compiled module selection differs by
-  version; imported module paths were checked during each run.
-- These are different releases with code changes, so comparisons do not
-  isolate Cython's effect. Only a source-identical Python/native pair can
-  isolate compilation, and persistence is not among the compiled modules in
-  these wheels.
-- The full suite is representative, not exhaustive: it does not measure live
-  network discovery, socket transport, TLS, concurrency/load behavior, or
-  every public API.
+Focused measurements used two warmups and nine timed operations per cell; the table reports the median. Raw logs also retain minimum/maximum samples. Full-workload timings use the harness's per-workload warmups and repeated batches; exact batch counts are in the saved harness script. The six wheel workloads ran sequentially in one environment. Save timings remain sensitive to filesystem/device state.
+
+## Interpretation and limitations
+
+- The 2.2.0.1 wheel is the first wheel in this comparison that includes `expra_connect.persistence` as a compiled Cython extension. Cythonizing the wrapper does not compile `json`, `msgpack`, or operating-system filesystem operations.
+- The 2.2.0.0-to-2.2.0.1 comparison is not a source-identical Cython A/B test: source changed, and the new release adds persistence to the compiled module set. Do not attribute timing differences solely to Cython.
+- The 2.2.0.1 results are mixed: for example, some 100k full-workload state operations were faster than 2.2.0.0, while role lookup and request signing were slower. Focused 100k JSON store-load results also differ materially from the full-workload load results, despite using the same compact fixture; treat filesystem/cache variation and per-harness sampling as significant limitations.
+- The focused measurements show mixed persistence results by codec, operation, and fixture size. Save timings include filesystem sync noise, and differences among release sources mean the results do not establish a stable general speedup.
+- The MessagePack payloads are much smaller than corresponding JSON payloads for these fixtures. Their store-save timings include durability syncs and are not codec-only costs.
+- These representative workloads do not measure live network discovery, socket transport, TLS, concurrent load, or every public API.
 
 ## Raw run logs
 
-The command outputs used for this report are retained in `/tmp/opencode/` for
-this workspace session (`bench_full_30k_<version>.txt` and
-`bench_persistence_<version>.txt`). They are temporary and are not part of the
-repository.
+The full and focused logs for all six wheels are retained outside the repository in `/tmp/opencode/bench-comparison-2.2.0.1/` (`full_30k_<version>.txt`, `full_100k_<version>.txt`, and `persistence_<version>.txt`). The temporary harness copies are also in that directory; they are not part of the package or wheel.
