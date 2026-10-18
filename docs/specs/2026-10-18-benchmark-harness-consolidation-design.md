@@ -18,12 +18,20 @@ compatibility decisions in `benchmark_cluster_state.py`,
 make a monolithic registry of unrelated operations and do not add benchmark
 dependencies. All three scripts use the same sampling, percentile, validation,
 provenance, and result-serialization implementation while retaining
-domain-specific options and stage sets.
+domain-specific options and stage sets. Invoke them with Python module mode
+(`python -m scripts.benchmark_cluster_state`,
+`python -m scripts.benchmark_persistence`, and
+`python -m tools.connect_performance_benchmark`) so the shared module has one
+stable import path without `sys.path` bootstrapping.
 
 The shared core owns deterministic timing and result reporting:
 
 - warmups and repeated samples, reporting raw samples and p50/p95/min/max/mean,
   plus throughput where it is meaningful;
+- use the same linear-interpolation percentile contract as
+  `expra_connect.observability.summarize_samples`, covered by a cross-contract
+  test, while keeping the offline benchmark helper independent of historical
+  package versions;
 - optional batching with per-operation normalized timings;
 - optional peak traced allocation in an independent pass, never inside the
   timed samples;
@@ -77,18 +85,19 @@ baseline JSON and diagrams.
 ## Results and documentation
 
 Store one raw structured result per version and benchmark suite alongside the
-existing raw logs. Preserve readable logs as useful review artifacts, but do
-not parse human-formatted output as the canonical source. Record fixture shape,
-payload bytes, size, and any measurement caveats. The baseline importer must
+existing raw logs, named `shared_<suite>_<version>.json` with a matching `.txt`
+review log. Preserve readable logs as useful artifacts, but do not parse
+human-formatted output as the canonical source. Record fixture shape, payload
+bytes, size, and any measurement caveats. The baseline importer must
 validate schema, version, operation coverage, provenance, and unavailable
 reasons before adding values; diagrams continue to show p50 ratios and exact
 latency values in tooltips. Current-checkout-only diagnostics, if any, remain
 separate from seven-version comparisons.
 
 Keep the existing historical diagrams and ratios unchanged. Add a distinct
-shared-harness comparison view for newly collected cross-version series only;
-do not merge measurements with different fixture or sampling contracts into a
-single ratio row.
+`performance-shared-harness.svg` comparison view for newly collected
+cross-version series only; do not merge measurements with different fixture or
+sampling contracts into a single ratio row.
 
 ## Validation
 
