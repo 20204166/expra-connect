@@ -6,7 +6,8 @@
 
 This page presents two distinct measurement sets. The historical diagrams
 summarize the earlier standalone harnesses and retain their original recorded
-values in [`performance-baseline-data.json`](performance-baseline-data.json).
+values in the committed diagrams. Raw measurement source files are kept in the
+local working tree for regeneration and are intentionally not published.
 The shared-harness diagram summarizes new measurements made with one common
 timing and reporting core. The two sets are not combined in any ratio series.
 
@@ -17,8 +18,8 @@ persistence fixture uses dictionary records; 100k and 200k persistence use
 compact integer/boolean pairs. The 200k session registry was seeded directly
 with equivalent active records, so those session rows measure lookup/resume,
 not session creation. Historical focused persistence runs cover 30k/100k for
-the six earlier versions. Their exact saved measurements and unavailable
-reasons remain unchanged in the canonical JSON dataset.
+the six earlier versions. Their measurements and unavailable cases are shown
+in the committed diagrams; the detailed source dataset remains local.
 
 ### Cross-version comparison
 
@@ -53,8 +54,9 @@ two warmups and nine samples. Connect workloads use ten warmups and fifty
 samples; stateful operations remain unbatched. Persistence uses two warmups and
 nine samples at 30k/100k for the six earlier versions and 200k JSON persistence
 for all seven versions. Per-outcome fixture shapes, exact samples, imported
-module paths, package versions, and support reasons are recorded in
-[`tools/shared-benchmark-results/`](../tools/shared-benchmark-results/).
+module paths, package versions, and support reasons are recorded in local raw
+benchmark files used to regenerate the comparison diagram; those files are not
+part of the published baseline.
 
 Allocation tracking was disabled for these comparison runs, so `peak_bytes` is
 null. The shared core's separate allocation pass is optional and is tested
@@ -86,8 +88,9 @@ not historical baseline measurements and make no source-attribution claim.
 
 ## Refresh
 
-Regenerate the historical diagrams from the canonical historical JSON and the
-separate shared-run JSON artifacts with:
+The committed SVGs are embedded above. To rebuild them, the local historical
+baseline dataset and shared-run JSON artifacts must be present in the working
+tree; they are intentionally not tracked in Git:
 
 ```sh
 .venv/bin/python -m scripts.update_performance_diagrams

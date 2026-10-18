@@ -1,8 +1,0 @@
-version=1.9.0.1 python=3.12.3 platform=Linux-7.0.0-34-generic-x86_64-with-glibc2.39
-module=expra_connect.persistence path=/tmp/opencode/bench-comparison-2.2.0.1/1.9.0.1/expra_connect/persistence.py
-fixture=compact_pairs records=200000 json_bytes=3188915 warmups=2 samples=9
-msgpack=NOT_MEASURED unsupported_by_store_payload_and_array_limits max_bytes=1048576 max_array_len=100000
-workload=json_encode_only p50_us=60077.708 min_us=55137.461 max_us=74951.929
-workload=json_decode_only p50_us=84324.217 min_us=76998.620 max_us=86946.762
-workload=json_store_load p50_us=85815.253 min_us=81871.080 max_us=100355.035
-workload=json_store_save p50_us=566229.133 min_us=510325.480 max_us=704737.338

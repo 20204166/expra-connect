@@ -29,6 +29,11 @@ docs/plans/
 docs/specs/
 docs/compliance/
 
+# Local benchmark source data; publish the curated Markdown page and SVGs only.
+/docs/performance-baseline-data.json
+/tools/shared-benchmark-results/
+/tools/bench-comparison-200k-all-wheels/focused_persistence_200k_*.txt
+
 # Local MCP client configuration and generated endpoint state
 .expra-connect-mcp.toml
 .mcp.json

@@ -21,6 +21,10 @@ BASELINE_PATH = ROOT / "docs" / "native-wheel-performance-baseline.md"
 DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 
+@unittest.skipUnless(
+    DATA_PATH.is_file() and (ROOT / "tools/shared-benchmark-results").is_dir(),
+    "local benchmark source artifacts are not present in this checkout",
+)
 class BaselineTests(unittest.TestCase):
     def test_json_dataset_preserves_historical_values_and_gaps(self) -> None:
         json_baseline = load_measurements(DATA_PATH)
@@ -107,15 +111,16 @@ class BaselineTests(unittest.TestCase):
             "performance-state-scaling.svg",
             "performance-operation-latency.svg",
             "performance-persistence.svg",
+            "performance-shared-harness.svg",
         ):
             with self.subTest(filename=filename):
                 self.assertIn(f"images/{filename}", source)
         self.assertIn(".venv/bin/python -m scripts.update_performance_diagrams", source)
 
-    def test_baseline_uses_json_source_and_explains_baseline_ratios(self) -> None:
+    def test_baseline_explains_local_sources_and_ratios(self) -> None:
         source = BASELINE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("performance-baseline-data.json", source)
+        self.assertIn("local raw", source)
         self.assertIn("candidate p50 divided by the matching 1.8.0.0 p50", source)
         self.assertIn("0.7× means 30% lower", source)
         self.assertFalse(
@@ -190,6 +195,29 @@ class BaselineTests(unittest.TestCase):
         )
 
 
+class PublishedBaselineTests(unittest.TestCase):
+    def test_markdown_embeds_committed_diagrams_without_linking_local_data(
+        self,
+    ) -> None:
+        source = BASELINE_PATH.read_text(encoding="utf-8")
+        for filename in (
+            "performance-overview.svg",
+            "performance-state-scaling.svg",
+            "performance-operation-latency.svg",
+            "performance-persistence.svg",
+            "performance-shared-harness.svg",
+        ):
+            with self.subTest(filename=filename):
+                self.assertTrue((ROOT / "docs/images" / filename).is_file())
+                self.assertIn(f"images/{filename}", source)
+        self.assertNotIn("performance-baseline-data.json](", source)
+        self.assertNotIn("shared-benchmark-results/](", source)
+
+
+@unittest.skipUnless(
+    DATA_PATH.is_file() and (ROOT / "tools/shared-benchmark-results").is_dir(),
+    "local benchmark source artifacts are not present in this checkout",
+)
 class DiagramTests(unittest.TestCase):
     def test_renders_five_complete_deterministic_svg_diagrams(self) -> None:
         baseline = load_measurements(DATA_PATH)
