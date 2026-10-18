@@ -16,10 +16,12 @@ from scripts.benchmark_support import (
 )
 from scripts.update_performance_diagrams import (
     SHARED_HARNESS_LABELS,
+    _full_workload_index_row,
     load_measurements,
     load_shared_harness_runs,
     render_build_comparison_diagrams,
     render_diagrams,
+    size_specific_indices,
     sync_diagrams,
 )
 
@@ -37,6 +39,7 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertIn("2.2.0.4 native", svg)
         self.assertIn("2.2.0.4 universal", svg)
         self.assertIn("Composite index · equal-suite geometric mean", svg)
+        self.assertIn("Full-workload index · equal-case · 37 cases", svg)
         self.assertIn("cluster state", svg)
         self.assertIn("persistence", svg)
         self.assertIn("connect", svg)
@@ -379,6 +382,62 @@ class DiagramTests(unittest.TestCase):
             f"{last_role.result.p50 / first_role.result.p50:.3g}×", shared_svg
         )
         self.assertIn(f"{last_role.result.p50:,.3f} µs", shared_svg)
+
+    def test_size_index_panels_use_matched_cases_without_connecting_sizes(self) -> None:
+        svg = render_diagrams()["performance-comparison.svg"]
+        root = ElementTree.fromstring(svg)
+        text = " ".join(
+            node.text or "" for node in root.iter() if node.tag.endswith("text")
+        )
+
+        for label in (
+            "Size-specific matched-workload index",
+            "1k · cluster state · 9 matched cases",
+            "30k · cluster state · 6 matched cases",
+            "100k · cluster state · 6 matched cases",
+            "200k · JSON persistence · 6 matched cases",
+            "lowest observed index",
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, text)
+        self.assertIn("0.764", svg)
+        self.assertIn("0.783", svg)
+        self.assertIn("0.777", svg)
+        self.assertIn("1.000", svg)
+        appended = svg[svg.index("Size-specific matched-workload index") :]
+        self.assertEqual(appended.count("<circle "), 4 * len(SHARED_HARNESS_LABELS))
+        self.assertNotIn(" L ", appended)
+
+    def test_size_indices_intersect_only_positive_measured_cases(self) -> None:
+        groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+
+        panels = size_specific_indices(groups)
+
+        self.assertEqual(
+            tuple((panel.size, panel.case_count) for panel in panels),
+            ((1_000, 9), (30_000, 6), (100_000, 6), (200_000, 6)),
+        )
+        self.assertAlmostEqual(min(panels[0].indices), 0.7638, places=4)
+        self.assertAlmostEqual(min(panels[1].indices), 0.7831, places=4)
+        self.assertAlmostEqual(min(panels[2].indices), 0.7771, places=4)
+        self.assertAlmostEqual(min(panels[3].indices), 1.0, places=4)
+        for panel in panels:
+            self.assertEqual(panel.indices[0], 1.0)
+            self.assertEqual(len(panel.indices), len(SHARED_HARNESS_LABELS))
+
+    def test_full_workload_index_weights_every_common_case_equally(self) -> None:
+        groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+
+        row = _full_workload_index_row(groups)
+
+        self.assertEqual(row.label, "Full-workload index · equal-case · 37 cases")
+        self.assertEqual(row.values[0], 1.0)
+        native_index = row.values[7]
+        universal_index = row.values[8]
+        if native_index is None or universal_index is None:
+            self.fail("full-workload index is unavailable for a 2.2.0.4 build")
+        self.assertAlmostEqual(native_index, 0.942746, places=6)
+        self.assertAlmostEqual(universal_index, 1.003027, places=6)
 
     def test_sync_writes_and_detects_stale_svg_files(self) -> None:
         diagrams = render_diagrams()

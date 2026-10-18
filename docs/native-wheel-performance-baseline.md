@@ -13,6 +13,16 @@ persistence, and connect weighted equally. Within each suite, cases receive
 equal weight. The index is unitless and lower is better; it is a summary of this
 specific benchmark mix, not a prediction for every deployment workload.
 
+The Composite section also reports a **full-workload index**: one geometric
+mean across all 37 positive-p50 cases shared by every displayed release/build,
+with each case weighted equally. It includes cluster-state cases at 1k, 30k,
+and 100k, matched connect cases, and 200k JSON-persistence cases. This differs
+from the adjacent composite, which first combines results within suites and
+then weights the three suites equally. The full-workload index is still specific
+to this benchmark mix and does not imply a universal winner. Focused 30k/100k
+persistence cases are excluded because 2.2.0.3 was not measured there; YAML and
+unsupported 200k MessagePack cases have no common positive-p50 result to score.
+
 Only cases with measured results for every compared column contribute to the
 composite. It uses cluster 1k and 30k/100k cases, connect cases, and 200k JSON
 persistence cases; 200k MessagePack StateStore is unsupported by payload/array
