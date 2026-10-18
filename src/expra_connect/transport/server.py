@@ -12,8 +12,8 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
+from ..data.permissions import NodePermission
 from ..identity import NodeId
-from ..models import NodePermission
 from ..remote.wire_protocol import (
     DEFAULT_MAX_ACTIVE_HANDLERS,
     MAX_ENVELOPE_BYTES,

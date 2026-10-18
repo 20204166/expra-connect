@@ -4,8 +4,8 @@ import unittest
 from typing import Any, cast
 from unittest.mock import patch
 
+from expra_connect.data.permissions import NodePermission
 from expra_connect.identity import NodeId
-from expra_connect.models import NodePermission
 from expra_connect.pairing.models import PairingTransaction
 from expra_connect.remote.provider import AuthenticatedNodeProvider
 from expra_connect.remote.wire_protocol import MAX_ENVELOPE_BYTES

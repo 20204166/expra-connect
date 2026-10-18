@@ -31,8 +31,8 @@ from expra_connect.cluster import (
     role_state_from_dict,
     role_state_to_dict,
 )
+from expra_connect.data.permissions import NodePermission
 from expra_connect.identity import NodeId
-from expra_connect.models import NodePermission
 
 PERMISSION = NodePermission.READ_STATE
 

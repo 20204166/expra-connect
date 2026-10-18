@@ -12,8 +12,8 @@ from threading import Lock
 from types import MappingProxyType
 from typing import TypeGuard
 
+from ..data.permissions import NodePermission
 from ..identity import NodeId
-from ..models import NodePermission
 from .models import (
     CapabilityGrant,
     ClusterRole,

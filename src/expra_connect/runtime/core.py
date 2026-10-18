@@ -19,6 +19,11 @@ from ..cluster import (
 )
 from ..cluster import ClusterRole as RegistryClusterRole
 from ..connections.manager import ConnectionManager
+from ..data.permissions import (
+    READ_PERMISSIONS,
+    NodeCapability,
+    NodePermission,
+)
 from ..discovery.models import DiscoveredNodeCandidate
 from ..discovery.network import (
     REAP_TICK_SECONDS,
@@ -35,11 +40,6 @@ from ..identity.profile_state import ProfileLock, load_profile_identity
 from ..identity.transport_generation import (
     TransportGenerationManager,
     TransportStateError,
-)
-from ..models import (
-    READ_PERMISSIONS,
-    NodeCapability,
-    NodePermission,
 )
 from ..nodes.registry import NodeRegistry, TrustState
 from ..observability import ObservabilityWatcher, observation_scope

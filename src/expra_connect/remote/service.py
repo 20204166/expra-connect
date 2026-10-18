@@ -14,13 +14,12 @@ from collections.abc import Callable
 from typing import Any
 
 from ..cluster.roles import RoleAuthorizationError
-from ..identity import NodeId, node_identity_fingerprint
-from ..models import (
+from ..data.permissions import (
     READ_CAPABILITIES,
     NodeCapability,
     NodePermission,
-    ProcessActionKind,
 )
+from ..identity import NodeId, node_identity_fingerprint
 from ..observability import ObservabilityWatcher, observation_scope
 from ..surfaces.protocol import SURFACE_ACCESS_BY_OPERATION, SURFACE_OPERATIONS
 from ..surfaces.provider import dispatch_surface_request
@@ -37,6 +36,7 @@ from ..transport.socket_transport import (
 from .models import (
     NodeSnapshot,
     NodeStatus,
+    ProcessActionKind,
     ProcessActionResult,
     ProcessRef,
     ProcessTerminationRequest,

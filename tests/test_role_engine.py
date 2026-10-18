@@ -14,8 +14,8 @@ from expra_connect.cluster import (
     role_state_to_dict,
 )
 from expra_connect.cluster.state import role_state_to_dict as encode_role_state
+from expra_connect.data.permissions import NodePermission
 from expra_connect.identity import NodeId
-from expra_connect.models import NodePermission
 
 
 class RoleEngineTests(unittest.TestCase):

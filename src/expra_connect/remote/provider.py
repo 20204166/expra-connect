@@ -8,8 +8,8 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from ..data.permissions import NodePermission
 from ..identity import NodeId
-from ..models import NodePermission, ProcessActionKind
 from ..observability import ObservabilityWatcher, observation_scope
 from ..pairing.models import PairingTransaction
 from ..surfaces.provider import SurfaceProviderMixin
@@ -17,6 +17,7 @@ from ..transport.socket_transport import _invoke_with_optional_cancel
 from .models import (
     ClusterDataError,
     NodeSnapshot,
+    ProcessActionKind,
     ProcessActionResult,
     ProcessCandidate,
     ProcessRef,

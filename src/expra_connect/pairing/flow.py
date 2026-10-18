@@ -8,13 +8,13 @@ import threading
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from ..discovery.candidates import endpoint_rank
-from ..discovery.models import DiscoveredNodeCandidate, EndpointCandidate
-from ..identity import NodeId, NodeIdentity, node_identity_fingerprint
-from ..models import (
+from ..data.permissions import (
     READ_PERMISSIONS,
     NodePermission,
 )
+from ..discovery.candidates import endpoint_rank
+from ..discovery.models import DiscoveredNodeCandidate, EndpointCandidate
+from ..identity import NodeId, NodeIdentity, node_identity_fingerprint
 from ..remote.provider import AuthenticatedNodeProvider
 from ..remote.wire_protocol import RemoteTransportError
 from ..transport.socket_transport import TLSRemoteTransport

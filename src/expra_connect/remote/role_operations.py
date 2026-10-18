@@ -9,8 +9,8 @@ from typing import Any, cast
 from ..cluster import ClusterRole
 from ..cluster.models import InviteRecord, RoleAssignment
 from ..cluster.roles import RoleState, renew_lease
+from ..data.permissions import NodePermission
 from ..identity import NodeId
-from ..models import NodePermission
 
 
 class RuntimeClusterOperations:

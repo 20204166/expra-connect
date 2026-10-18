@@ -5,8 +5,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from ..data.permissions import NodePermission
 from ..identity import NodeId
-from ..models import NodePermission
 from ..pairing.manager import PeerGrant, PendingPairing, TrustedPeer
 
 

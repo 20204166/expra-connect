@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Any
 
 from .._version import __version__
+from ..data.permissions import READ_CAPABILITIES, NodeCapability
 from ..discovery.network import SERVICE_TYPE, DiscoveryBackend
 from ..identity.device_hardware import DeviceHardwareProvider
-from ..models import READ_CAPABILITIES, NodeCapability
 from ..remote.wire_protocol import CapabilityElevationRequest, PairingRequest
 from ..transport.server import PEER_SERVICE_DEFAULT_PORT
 

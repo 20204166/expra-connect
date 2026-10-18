@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ..models import NodePermission
+from ..data.permissions import NodePermission
 
 
 @dataclass(frozen=True, slots=True)
