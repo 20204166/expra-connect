@@ -18,6 +18,7 @@ _NATIVE_MODULE_SECTIONS = {
         "expra_connect.remote.session",
         "expra_connect.remote.wire_protocol",
     ),
+    "persistence": ("expra_connect.persistence",),
 }
 
 
