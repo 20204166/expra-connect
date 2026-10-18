@@ -1,23 +1,27 @@
 # Next Performance Targets
 
-Use this note to focus the next performance investigation. The full six-wheel
-history is in [native-wheel-performance-baseline.md](native-wheel-performance-baseline.md).
+Use this note to focus the next performance investigation. The full wheel
+history, including the 2.2.0.3 run, is in
+[native-wheel-performance-baseline.md](native-wheel-performance-baseline.md).
 For routine follow-up, measure the current wheel only and compare against that
 wheel's recorded baseline; do not rerun every historical wheel unless a
 regression or compatibility question specifically needs that comparison.
 
 ## Priority targets
 
-| Target | 2.2.0.1 measured p50 | Why investigate |
+| Target | 2.2.0.3 measured p50 | Comparison / why investigate |
 |---|---:|---|
-| Cluster-state round-trip, 30k | 802,603.921 µs | About 5% slower than 2.2.0.0 (762,628.068 µs); this serializes and reconstructs the large cluster state. |
-| Role-state decode, 30k | 480,475.087 µs | Large workload at roughly 0.48 seconds; decode is nearly flat versus 2.2.0.0 (488,668.713 µs), so profile before changing it. |
-| Request sign + verify + replay | 62.771 µs at 30k; 54.185 µs at 100k | The 30k result is about 20% slower than 2.2.0.0 (52.310 µs). The benchmark combines three stages, so separate them before optimizing. This request's `peer_count` parameter is only a scalar; the operation does not process all 30k/100k entries. |
-| JSON store load, focused | 21,762.911 µs at 30k; 39,976.003 µs at 100k | The 30k result is close to 2.2.0.0 (22,016.851 µs), while 100k is about 14% slower (35,150.676 µs). Full-workload load timings conflict with the focused result, so isolate read, JSON parse, and validation costs before drawing conclusions. |
+| Cluster-state round-trip | 642,052.580 µs at 30k; 2,392,156.492 µs at 100k | Versus saved 2.2.0.1 results: 20.0% faster at 30k, 5.5% slower at 100k. The size-dependent result still warrants profiling before changing serialization. |
+| Role-state decode | 447,365.681 µs at 30k; 1,622,517.737 µs at 100k | Versus saved 2.2.0.1 results: 6.9% faster at 30k, 9.9% slower at 100k. The 100k result does not confirm an improvement; profile the large fixture before further edits. |
+| Request sign + verify + replay | 44.193 µs at 30k; 53.024 µs at 100k | Versus saved 2.2.0.1 results: 29.6% faster at 30k and 2.1% faster at 100k. This combines three stages; the `peer_count` parameter is scalar and does not process all 30k/100k entries. |
+| JSON store load, full workload | 12,653.623 µs at 30k; 33,198.291 µs at 100k | Versus saved 2.2.0.1 full-workload results: 46.7% faster at 30k, 19.4% slower at 100k. Earlier focused-load measurements use a different harness context; do not conflate them. |
 
 These are investigation priorities, not proven bottlenecks or guaranteed
 optimization opportunities. The 100k persistence fixture uses compact
-`[integer, boolean]` pairs, unlike the 30k dictionary-record fixture.
+`[integer, boolean]` pairs, unlike the 30k dictionary-record fixture. Only the
+2.2.0.3 wheel was run for this update; prior results were not rerun. The 100k
+session-population stage was slower in this run than in the saved 2.2.0.1 run,
+so treat cross-version differences as noisy signals, not controlled attribution.
 
 ## Other areas to monitor
 
