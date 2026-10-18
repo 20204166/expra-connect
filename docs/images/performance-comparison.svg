@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1385" height="3102" viewBox="0 0 1385 3102" role="img" aria-label="Across-release performance comparison">
+<svg xmlns="http://www.w3.org/2000/svg" width="1385" height="4052" viewBox="0 0 1385 4052" role="img" aria-label="Across-release performance comparison">
 <title>Across-release performance comparison</title>
-<rect width="1385" height="3102" fill="#ffffff"/>
+<rect width="1385" height="4052" fill="#ffffff"/>
 <text x="16.0" y="30.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">Across-release performance comparison</text>
 <text x="16.0" y="51.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#454545" font-weight="normal">Cells compare matched workloads with 1.8.0.0; below 1× is faster. Composite weights cluster, persistence, and connect equally.</text>
 <text x="16.0" y="72.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Composite</text>
@@ -1542,4 +1542,162 @@
 <text x="630.0" y="3078.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">1.5–2×</text>
 <rect x="700" y="3064" width="22" height="18" fill="#b2182b"/>
 <text x="728.0" y="3078.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">&gt;2×</text>
+<text x="16.0" y="3120.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Size-specific matched-workload index</text>
+<text x="16.0" y="3141.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#454545" font-weight="normal">Geometric mean of matched p50 ratios vs 1.8.0.0; lower is faster. Points are not connected across sizes.</text>
+<text x="16.0" y="3183.0" font-family="Arial, sans-serif" font-size="14px" text-anchor="start" fill="#17252a" font-weight="bold">1k · cluster state · 9 matched cases</text>
+<text x="1085.0" y="3183.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#454545" font-weight="normal">lowest observed index: 2.2.0.4 native (0.764)</text>
+<path d="M 490.0 3203 V 3356" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="490.0" y="3200.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.7</text>
+<path d="M 618.9 3203 V 3356" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="618.9" y="3200.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.8</text>
+<path d="M 747.8 3203 V 3356" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="747.8" y="3200.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.9</text>
+<path d="M 876.7 3203 V 3356" stroke="#aab2b5" stroke-dasharray="4 3"/>
+<text x="876.7" y="3200.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">1.0</text>
+<path d="M 1005.6 3203 V 3356" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="1005.6" y="3200.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">1.1</text>
+<text x="475.0" y="3217.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">1.8.0.0</text>
+<circle cx="876.7" cy="3213" r="4" fill="#0072b2"><title>1.8.0.0 · 1,000 entries · index 1.000000; 9 matched cases</title></circle>
+<text x="1085.0" y="3217.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.000</text>
+<text x="475.0" y="3234.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">1.9.0.1</text>
+<circle cx="938.0" cy="3230" r="4" fill="#e69f00"><title>1.9.0.1 · 1,000 entries · index 1.047583; 9 matched cases</title></circle>
+<text x="1085.0" y="3234.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.048</text>
+<text x="475.0" y="3251.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.0.0.0</text>
+<circle cx="749.9" cy="3247" r="4" fill="#009e73"><title>2.0.0.0 · 1,000 entries · index 0.901647; 9 matched cases</title></circle>
+<text x="1085.0" y="3251.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.902</text>
+<text x="475.0" y="3268.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.0.0.2</text>
+<circle cx="695.4" cy="3264" r="4" fill="#cc79a7"><title>2.0.0.2 · 1,000 entries · index 0.859373; 9 matched cases</title></circle>
+<text x="1085.0" y="3268.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.859</text>
+<text x="475.0" y="3285.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.0</text>
+<circle cx="788.1" cy="3281" r="4" fill="#56b4e9"><title>2.2.0.0 · 1,000 entries · index 0.931302; 9 matched cases</title></circle>
+<text x="1085.0" y="3285.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.931</text>
+<text x="475.0" y="3302.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.1</text>
+<circle cx="773.4" cy="3298" r="4" fill="#d55e00"><title>2.2.0.1 · 1,000 entries · index 0.919885; 9 matched cases</title></circle>
+<text x="1085.0" y="3302.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.920</text>
+<text x="475.0" y="3319.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.3</text>
+<circle cx="679.8" cy="3315" r="4" fill="#6a51a3"><title>2.2.0.3 · 1,000 entries · index 0.847270; 9 matched cases</title></circle>
+<text x="1085.0" y="3319.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.847</text>
+<text x="475.0" y="3336.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.4 native</text>
+<circle cx="572.2" cy="3332" r="5" fill="#a6761d"><title>2.2.0.4 native · 1,000 entries · index 0.763800; 9 matched cases</title></circle>
+<text x="1085.0" y="3336.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.764</text>
+<text x="475.0" y="3353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.4 universal</text>
+<circle cx="925.2" cy="3349" r="4" fill="#1b9e77"><title>2.2.0.4 universal · 1,000 entries · index 1.037691; 9 matched cases</title></circle>
+<text x="1085.0" y="3353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.038</text>
+<text x="16.0" y="3403.0" font-family="Arial, sans-serif" font-size="14px" text-anchor="start" fill="#17252a" font-weight="bold">30k · cluster state · 6 matched cases</text>
+<text x="1085.0" y="3403.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#454545" font-weight="normal">lowest observed index: 2.2.0.4 native (0.783)</text>
+<path d="M 490.0 3423 V 3576" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="490.0" y="3420.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.7</text>
+<path d="M 618.9 3423 V 3576" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="618.9" y="3420.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.8</text>
+<path d="M 747.8 3423 V 3576" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="747.8" y="3420.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.9</text>
+<path d="M 876.7 3423 V 3576" stroke="#aab2b5" stroke-dasharray="4 3"/>
+<text x="876.7" y="3420.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">1.0</text>
+<path d="M 1005.6 3423 V 3576" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="1005.6" y="3420.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">1.1</text>
+<text x="475.0" y="3437.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">1.8.0.0</text>
+<circle cx="876.7" cy="3433" r="4" fill="#0072b2"><title>1.8.0.0 · 30,000 entries · index 1.000000; 6 matched cases</title></circle>
+<text x="1085.0" y="3437.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.000</text>
+<text x="475.0" y="3454.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">1.9.0.1</text>
+<circle cx="835.0" cy="3450" r="4" fill="#e69f00"><title>1.9.0.1 · 30,000 entries · index 0.967679; 6 matched cases</title></circle>
+<text x="1085.0" y="3454.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.968</text>
+<text x="475.0" y="3471.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.0.0.0</text>
+<circle cx="663.1" cy="3467" r="4" fill="#009e73"><title>2.0.0.0 · 30,000 entries · index 0.834286; 6 matched cases</title></circle>
+<text x="1085.0" y="3471.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.834</text>
+<text x="475.0" y="3488.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.0.0.2</text>
+<circle cx="627.6" cy="3484" r="4" fill="#cc79a7"><title>2.0.0.2 · 30,000 entries · index 0.806762; 6 matched cases</title></circle>
+<text x="1085.0" y="3488.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.807</text>
+<text x="475.0" y="3505.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.0</text>
+<circle cx="641.3" cy="3501" r="4" fill="#56b4e9"><title>2.2.0.0 · 30,000 entries · index 0.817389; 6 matched cases</title></circle>
+<text x="1085.0" y="3505.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.817</text>
+<text x="475.0" y="3522.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.1</text>
+<circle cx="686.9" cy="3518" r="4" fill="#d55e00"><title>2.2.0.1 · 30,000 entries · index 0.852777; 6 matched cases</title></circle>
+<text x="1085.0" y="3522.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.853</text>
+<text x="475.0" y="3539.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.3</text>
+<circle cx="626.5" cy="3535" r="4" fill="#6a51a3"><title>2.2.0.3 · 30,000 entries · index 0.805917; 6 matched cases</title></circle>
+<text x="1085.0" y="3539.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.806</text>
+<text x="475.0" y="3556.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.4 native</text>
+<circle cx="597.1" cy="3552" r="5" fill="#a6761d"><title>2.2.0.4 native · 30,000 entries · index 0.783092; 6 matched cases</title></circle>
+<text x="1085.0" y="3556.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.783</text>
+<text x="475.0" y="3573.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.4 universal</text>
+<circle cx="976.5" cy="3569" r="4" fill="#1b9e77"><title>2.2.0.4 universal · 30,000 entries · index 1.077480; 6 matched cases</title></circle>
+<text x="1085.0" y="3573.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.077</text>
+<text x="16.0" y="3623.0" font-family="Arial, sans-serif" font-size="14px" text-anchor="start" fill="#17252a" font-weight="bold">100k · cluster state · 6 matched cases</text>
+<text x="1085.0" y="3623.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#454545" font-weight="normal">lowest observed index: 2.2.0.4 native (0.777)</text>
+<path d="M 490.0 3643 V 3796" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="490.0" y="3640.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.7</text>
+<path d="M 618.9 3643 V 3796" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="618.9" y="3640.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.8</text>
+<path d="M 747.8 3643 V 3796" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="747.8" y="3640.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.9</text>
+<path d="M 876.7 3643 V 3796" stroke="#aab2b5" stroke-dasharray="4 3"/>
+<text x="876.7" y="3640.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">1.0</text>
+<path d="M 1005.6 3643 V 3796" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="1005.6" y="3640.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">1.1</text>
+<text x="475.0" y="3657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">1.8.0.0</text>
+<circle cx="876.7" cy="3653" r="4" fill="#0072b2"><title>1.8.0.0 · 100,000 entries · index 1.000000; 6 matched cases</title></circle>
+<text x="1085.0" y="3657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.000</text>
+<text x="475.0" y="3674.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">1.9.0.1</text>
+<circle cx="869.1" cy="3670" r="4" fill="#e69f00"><title>1.9.0.1 · 100,000 entries · index 0.994120; 6 matched cases</title></circle>
+<text x="1085.0" y="3674.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.994</text>
+<text x="475.0" y="3691.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.0.0.0</text>
+<circle cx="694.9" cy="3687" r="4" fill="#009e73"><title>2.0.0.0 · 100,000 entries · index 0.858961; 6 matched cases</title></circle>
+<text x="1085.0" y="3691.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.859</text>
+<text x="475.0" y="3708.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.0.0.2</text>
+<circle cx="668.6" cy="3704" r="4" fill="#cc79a7"><title>2.0.0.2 · 100,000 entries · index 0.838582; 6 matched cases</title></circle>
+<text x="1085.0" y="3708.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.839</text>
+<text x="475.0" y="3725.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.0</text>
+<circle cx="644.5" cy="3721" r="4" fill="#56b4e9"><title>2.2.0.0 · 100,000 entries · index 0.819882; 6 matched cases</title></circle>
+<text x="1085.0" y="3725.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.820</text>
+<text x="475.0" y="3742.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.1</text>
+<circle cx="650.1" cy="3738" r="4" fill="#d55e00"><title>2.2.0.1 · 100,000 entries · index 0.824217; 6 matched cases</title></circle>
+<text x="1085.0" y="3742.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.824</text>
+<text x="475.0" y="3759.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.3</text>
+<circle cx="598.3" cy="3755" r="4" fill="#6a51a3"><title>2.2.0.3 · 100,000 entries · index 0.783989; 6 matched cases</title></circle>
+<text x="1085.0" y="3759.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.784</text>
+<text x="475.0" y="3776.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.4 native</text>
+<circle cx="589.4" cy="3772" r="5" fill="#a6761d"><title>2.2.0.4 native · 100,000 entries · index 0.777122; 6 matched cases</title></circle>
+<text x="1085.0" y="3776.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.777</text>
+<text x="475.0" y="3793.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.4 universal</text>
+<circle cx="786.0" cy="3789" r="4" fill="#1b9e77"><title>2.2.0.4 universal · 100,000 entries · index 0.929672; 6 matched cases</title></circle>
+<text x="1085.0" y="3793.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">0.930</text>
+<text x="16.0" y="3843.0" font-family="Arial, sans-serif" font-size="14px" text-anchor="start" fill="#17252a" font-weight="bold">200k · JSON persistence · 6 matched cases</text>
+<text x="1085.0" y="3843.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#454545" font-weight="normal">lowest observed index: 1.8.0.0 (1.000)</text>
+<path d="M 490.0 3863 V 4016" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="490.0" y="3860.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.7</text>
+<path d="M 618.9 3863 V 4016" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="618.9" y="3860.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.8</text>
+<path d="M 747.8 3863 V 4016" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="747.8" y="3860.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">0.9</text>
+<path d="M 876.7 3863 V 4016" stroke="#aab2b5" stroke-dasharray="4 3"/>
+<text x="876.7" y="3860.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">1.0</text>
+<path d="M 1005.6 3863 V 4016" stroke="#e5e7e8" stroke-dasharray="none"/>
+<text x="1005.6" y="3860.0" font-family="Arial, sans-serif" font-size="9px" text-anchor="middle" fill="#17252a" font-weight="normal">1.1</text>
+<text x="475.0" y="3877.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">1.8.0.0</text>
+<circle cx="876.7" cy="3873" r="5" fill="#0072b2"><title>1.8.0.0 · 200,000 entries · index 1.000000; 6 matched cases</title></circle>
+<text x="1085.0" y="3877.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.000</text>
+<text x="475.0" y="3894.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">1.9.0.1</text>
+<circle cx="977.5" cy="3890" r="4" fill="#e69f00"><title>1.9.0.1 · 200,000 entries · index 1.078246; 6 matched cases</title></circle>
+<text x="1085.0" y="3894.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.078</text>
+<text x="475.0" y="3911.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.0.0.0</text>
+<circle cx="933.0" cy="3907" r="4" fill="#009e73"><title>2.0.0.0 · 200,000 entries · index 1.043728; 6 matched cases</title></circle>
+<text x="1085.0" y="3911.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.044</text>
+<text x="475.0" y="3928.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.0.0.2</text>
+<circle cx="949.5" cy="3924" r="4" fill="#cc79a7"><title>2.0.0.2 · 200,000 entries · index 1.056489; 6 matched cases</title></circle>
+<text x="1085.0" y="3928.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.056</text>
+<text x="475.0" y="3945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.0</text>
+<circle cx="938.7" cy="3941" r="4" fill="#56b4e9"><title>2.2.0.0 · 200,000 entries · index 1.048133; 6 matched cases</title></circle>
+<text x="1085.0" y="3945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.048</text>
+<text x="475.0" y="3962.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.1</text>
+<circle cx="996.5" cy="3958" r="4" fill="#d55e00"><title>2.2.0.1 · 200,000 entries · index 1.092972; 6 matched cases</title></circle>
+<text x="1085.0" y="3962.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.093</text>
+<text x="475.0" y="3979.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.3</text>
+<circle cx="953.3" cy="3975" r="4" fill="#6a51a3"><title>2.2.0.3 · 200,000 entries · index 1.059420; 6 matched cases</title></circle>
+<text x="1085.0" y="3979.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.059</text>
+<text x="475.0" y="3996.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.4 native</text>
+<circle cx="1010.6" cy="3992" r="4" fill="#a6761d"><title>2.2.0.4 native · 200,000 entries · index 1.103909; 6 matched cases</title></circle>
+<text x="1085.0" y="3996.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.104</text>
+<text x="475.0" y="4013.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="end" fill="#17252a" font-weight="normal">2.2.0.4 universal</text>
+<circle cx="886.3" cy="4009" r="4" fill="#1b9e77"><title>2.2.0.4 universal · 200,000 entries · index 1.007507; 6 matched cases</title></circle>
+<text x="1085.0" y="4013.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1.008</text>
 </svg>

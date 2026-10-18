@@ -5,7 +5,8 @@
 **Packages:** 1.8.0.0, 1.9.0.1, 2.0.0.0, 2.0.0.2, 2.2.0.0, 2.2.0.1, and 2.2.0.3.
 
 One consolidated diagram compares the earlier releases and both 2.2.0.4 builds.
-It contains the composite index and cluster, persistence, and connect panels.
+It contains the composite index, cluster, persistence, and connect panels, plus
+four size-specific matched-workload index panels.
 Cells compare matching p50 measurements with 1.8.0.0; below 1× is faster. The
 composite uses the geometric mean of matched case ratios, with cluster state,
 persistence, and connect weighted equally. Within each suite, cases receive
@@ -21,6 +22,17 @@ persistence panels where available. Earlier versions have one version column;
 2.2.0.4 native and universal are separate columns.
 
 ![Unified across-release, native/universal, and composite performance comparison.](images/performance-comparison.svg)
+
+The appended size panels normalize each workload's p50 against its matching
+1.8.0.0 result, then take the geometric mean across cases measured for every
+displayed release/build. They show 9 cluster-state cases at 1k, 6 cluster-state
+cases at each of 30k and 100k, and 6 JSON-persistence cases at 200k. Persistence
+results at 30k/100k are not included because 2.2.0.3 was not measured there;
+unsupported 200k MessagePack cases are also excluded. Each panel marks
+its **lowest observed index** (lower is faster). These are per-panel descriptive
+summaries, not a universal release ranking. Workload mix changes across sizes,
+so the points are intentionally unconnected and do not describe one scaling
+curve.
 
 The shared harness records p50, fixture shape, module provenance, package
 version, and support reasons. Older cluster-state runs used fewer warmups and
