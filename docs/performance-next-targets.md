@@ -106,3 +106,52 @@ to improve a timing. Make a change only after profiling identifies its cost,
 add regression tests for preserved behavior, and rerun the same focused suite
 against the resulting wheel. Avoid claiming a speedup from a single noisy
 sample or from comparisons across different release source code.
+
+## Recommended order
+
+1. **Establish a repeatable current-wheel baseline.** Record the exact wheel
+   filename and checksum, Python/runtime and platform, benchmark command,
+   fixture dimensions and shapes, warmups, sample count, median, and range.
+   Confirm the benchmark imports the installed wheel rather than the checkout.
+2. **Attribute the cluster and role-state costs.** Measure serialization and
+   deserialization separately at both sizes, alongside the end-to-end
+   round-trip. Keep the same fixture shape between versions and sizes where
+   the format permits it; call out any unavoidable shape difference.
+3. **Split request work into its component stages.** Measure signing,
+   verification, and replay-cache lookup independently, then retain the
+   combined operation as a cross-check. Use representative request sizes and
+   preserve the existing signature, freshness, replay, cache-bound, and
+   concurrency behavior.
+4. **Attribute JSON load.** Measure file read, JSON parsing, store-level
+   validation/migration, and the full load with identical input bytes. Keep
+   corruption and invalid-root cases in correctness validation, not in the
+   timing samples.
+5. **Profile before proposing an optimization.** Explain the measured work
+   responsible for a repeatable cost and estimate whether it matters to a real
+   workload. If no avoidable cost is identified, retain the current behavior
+   and record the result instead of optimizing for a target number alone.
+
+For each candidate change, compare the same focused benchmark before and
+after on the same machine/runtime, and run its owning tests plus the relevant
+broader suite. Report absolute timings and sample spread as well as relative
+change. Reject a speedup if it depends on changing serialized output, weakening
+integrity/durability checks, or omitting work performed by the public API.
+
+## Measurement record
+
+Append a dated result to
+[`native-wheel-performance-baseline.md`](native-wheel-performance-baseline.md)
+when a new wheel baseline is established. Include enough metadata to reproduce
+the run and compare like-for-like:
+
+- wheel filename, SHA-256, Python version, platform, and benchmark revision;
+- command, import path, warmup count, measured sample count, median, and range;
+- operation boundaries, fixture sizes and shapes, and serialized byte counts;
+- whether the run is native-wheel or source-checkout, kept in separate
+  comparison groups;
+- correctness checks run and any deviations, noise, or environment limits.
+
+Do not replace prior measurements: preserve historical rows and label new
+results with their exact wheel and harness context. A result from a different
+fixture, interpreter, import path, or operation boundary is diagnostic only,
+not evidence of a regression or improvement.

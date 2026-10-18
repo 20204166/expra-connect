@@ -74,23 +74,32 @@ is not measured in this table.
 | MessagePack store save | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | MessagePack store load | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 
+### State scaling diagram
+
+Role-state decode and cluster-state round-trip p50s across the three fixture
+sizes. The two panels use logarithmic vertical scales; values are microseconds.
+
+![Role-state decode and cluster-state round-trip p50 scaling by version and fixture size.](images/performance-state-scaling.svg)
+
+### Operation latency diagram
+
+Identity, role/grant lookup, session check/resume, and request-signature p50s
+are shown separately by size and version. The 200k session registry was seeded
+directly, so these session timings cover check/resume—not session creation.
+
+![Identity, lookup, session, and request p50 values across versions and fixture sizes.](images/performance-operation-latency.svg)
+
 ## Cross-version comparison diagram
 
-The chart summarizes pairwise p50 wins across all measured full-workload rows
-for each fixture size. Each wheel is compared with the other six; each metric
-row has equal weight, and ties count as half a win. The series order is 30k,
-100k, then 200k. The 200k denominator is 11 because MessagePack operations are
-not supported at that fixture size.
+The all-workload heatmap below includes every full-workload metric and version
+at 30k, 100k, and 200k. Cells show the p50 ratio to the fastest wheel for that
+metric and size; hover for the exact microsecond value. The overview is generated
+from the tables below and the other diagrams are placed with their metric
+sections. Refresh all four with `.venv/bin/python scripts/update_performance_diagrams.py`;
+verify them with `.venv/bin/python scripts/update_performance_diagrams.py --check`.
+The tables remain the source of truth.
 
-```mermaid
-xychart-beta
-    title "Pairwise workload win rate by fixture size"
-    x-axis ["1.8.0.0", "1.9.0.1", "2.0.0.0", "2.0.0.2", "2.2.0.0", "2.2.0.1", "2.2.0.3"]
-    y-axis "Win rate (%)" 0 --> 100
-    line [70.5, 38.5, 41.7, 49.4, 39.7, 29.5, 80.8]
-    line [46.2, 20.5, 76.9, 59.0, 39.7, 73.1, 34.6]
-    line [30.3, 47.0, 36.4, 63.6, 48.5, 69.7, 54.5]
-```
+![All full-workload metrics by version and fixture size. Cells show relative p50 ratios; gray cells are unavailable.](images/performance-overview.svg)
 
 Pairwise matrix cells show how many measured rows in the row wheel were faster
 than the column wheel; denominators are the available full-workload metrics
@@ -176,6 +185,15 @@ Focused persistence workloads cover all operations, not just load/decode. At 30k
 | MessagePack decode only | 22,735.279 | 22,789.210 | 22,105.349 | 21,868.756 | 25,467.753 | 24,268.310 |
 | MessagePack store load | 21,552.181 | 22,304.657 | 22,345.191 | 25,357.790 | 25,308.263 | 24,148.464 |
 | MessagePack store save | 23,962.951 | 25,839.671 | 26,691.241 | 28,029.595 | 31,498.214 | 27,673.055 |
+
+### Persistence diagram
+
+Full-workload and focused persistence results are split into separate panels.
+`N/A` marks MessagePack operations unsupported at 200k; the 2.2.0.3 focused
+cells are marked unmeasured because that wheel was not run with the focused
+persistence harness.
+
+![JSON and MessagePack persistence metrics, with full-workload and focused results kept in separate panels.](images/performance-persistence.svg)
 
 Focused measurements used two warmups and nine timed operations per cell; the table reports the median. Raw logs also retain minimum/maximum samples. Full-workload timings use the harness's per-workload warmups and repeated batches; exact batch counts are in the saved harness script. The six historical wheel results were run sequentially; 2.2.0.3 at 30k/100k was measured separately. The 200k wheel results were run sequentially in separate fixture groups. Save timings remain sensitive to filesystem/device state.
 

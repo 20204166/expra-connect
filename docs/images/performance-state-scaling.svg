@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1420" height="650" viewBox="0 0 1420 650" role="img" aria-label="Role and cluster state scaling">
+<title>Role and cluster state scaling</title>
+<rect width="1420" height="650" fill="#ffffff"/>
+<text x="16.0" y="30.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">Role and cluster state scaling</text>
+<text x="16.0" y="51.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#454545" font-weight="normal">Cell labels are relative to the fastest measured p50 in that row; hover for p50 µs.</text>
+<text x="18.0" y="74.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">p50 latency in microseconds; logarithmic vertical scale</text>
+<text x="120.0" y="105.0" font-family="Arial, sans-serif" font-size="17px" text-anchor="start" fill="#17252a" font-weight="bold">Role-state decode</text>
+<text x="18.0" y="216.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="normal">p50 µs</text>
+<path d="M 120 303.0 H 1050" stroke="#dddddd"/>
+<text x="112.0" y="307.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="end" fill="#555555" font-weight="normal">10^5</text>
+<path d="M 120 216.0 H 1050" stroke="#dddddd"/>
+<text x="112.0" y="220.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="end" fill="#555555" font-weight="normal">10^6</text>
+<path d="M 120 129.0 H 1050" stroke="#dddddd"/>
+<text x="112.0" y="133.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="end" fill="#555555" font-weight="normal">10^7</text>
+<path d="M 120.0 129 V 303" stroke="#eeeeee"/>
+<text x="120.0" y="325.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">30k</text>
+<path d="M 585.0 129 V 303" stroke="#eeeeee"/>
+<text x="585.0" y="325.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100k</text>
+<path d="M 1050.0 129 V 303" stroke="#eeeeee"/>
+<text x="1050.0" y="325.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">200k</text>
+<path d="M 120.0 245.0 L 585.0 193.4 L 1050.0 164.6" fill="none" stroke="#0072b2" stroke-width="2.5"/>
+<circle cx="120.0" cy="245.0" r="4" fill="#0072b2"><title>1.8.0.0 · 30,000 entries · Role-state decode: 464,627.777 µs</title></circle>
+<circle cx="585.0" cy="193.4" r="4" fill="#0072b2"><title>1.8.0.0 · 100,000 entries · Role-state decode: 1,820,453.843 µs</title></circle>
+<circle cx="1050.0" cy="164.6" r="4" fill="#0072b2"><title>1.8.0.0 · 200,000 entries · Role-state decode: 3,894,563.667 µs</title></circle>
+<path d="M 120.0 239.3 L 585.0 194.1 L 1050.0 167.4" fill="none" stroke="#e69f00" stroke-width="2.5"/>
+<circle cx="120.0" cy="239.3" r="4" fill="#e69f00"><title>1.9.0.1 · 30,000 entries · Role-state decode: 540,068.771 µs</title></circle>
+<circle cx="585.0" cy="194.1" r="4" fill="#e69f00"><title>1.9.0.1 · 100,000 entries · Role-state decode: 1,785,313.437 µs</title></circle>
+<circle cx="1050.0" cy="167.4" r="4" fill="#e69f00"><title>1.9.0.1 · 200,000 entries · Role-state decode: 3,616,377.119 µs</title></circle>
+<path d="M 120.0 246.1 L 585.0 198.8 L 1050.0 172.3" fill="none" stroke="#009e73" stroke-width="2.5"/>
+<circle cx="120.0" cy="246.1" r="4" fill="#009e73"><title>2.0.0.0 · 30,000 entries · Role-state decode: 451,065.873 µs</title></circle>
+<circle cx="585.0" cy="198.8" r="4" fill="#009e73"><title>2.0.0.0 · 100,000 entries · Role-state decode: 1,578,170.643 µs</title></circle>
+<circle cx="1050.0" cy="172.3" r="4" fill="#009e73"><title>2.0.0.0 · 200,000 entries · Role-state decode: 3,178,145.208 µs</title></circle>
+<path d="M 120.0 243.6 L 585.0 201.8 L 1050.0 173.6" fill="none" stroke="#cc79a7" stroke-width="2.5"/>
+<circle cx="120.0" cy="243.6" r="4" fill="#cc79a7"><title>2.0.0.2 · 30,000 entries · Role-state decode: 481,705.967 µs</title></circle>
+<circle cx="585.0" cy="201.8" r="4" fill="#cc79a7"><title>2.0.0.2 · 100,000 entries · Role-state decode: 1,456,092.223 µs</title></circle>
+<circle cx="1050.0" cy="173.6" r="4" fill="#cc79a7"><title>2.0.0.2 · 200,000 entries · Role-state decode: 3,074,833.625 µs</title></circle>
+<path d="M 120.0 243.1 L 585.0 198.4 L 1050.0 170.6" fill="none" stroke="#56b4e9" stroke-width="2.5"/>
+<circle cx="120.0" cy="243.1" r="4" fill="#56b4e9"><title>2.2.0.0 · 30,000 entries · Role-state decode: 488,668.713 µs</title></circle>
+<circle cx="585.0" cy="198.4" r="4" fill="#56b4e9"><title>2.2.0.0 · 100,000 entries · Role-state decode: 1,592,903.588 µs</title></circle>
+<circle cx="1050.0" cy="170.6" r="4" fill="#56b4e9"><title>2.2.0.0 · 200,000 entries · Role-state decode: 3,322,570.494 µs</title></circle>
+<path d="M 120.0 243.7 L 585.0 201.3 L 1050.0 170.8" fill="none" stroke="#d55e00" stroke-width="2.5"/>
+<circle cx="120.0" cy="243.7" r="4" fill="#d55e00"><title>2.2.0.1 · 30,000 entries · Role-state decode: 480,475.087 µs</title></circle>
+<circle cx="585.0" cy="201.3" r="4" fill="#d55e00"><title>2.2.0.1 · 100,000 entries · Role-state decode: 1,476,089.990 µs</title></circle>
+<circle cx="1050.0" cy="170.8" r="4" fill="#d55e00"><title>2.2.0.1 · 200,000 entries · Role-state decode: 3,303,511.516 µs</title></circle>
+<path d="M 120.0 246.4 L 585.0 197.7 L 1050.0 174.1" fill="none" stroke="#6a51a3" stroke-width="2.5"/>
+<circle cx="120.0" cy="246.4" r="4" fill="#6a51a3"><title>2.2.0.3 · 30,000 entries · Role-state decode: 447,365.681 µs</title></circle>
+<circle cx="585.0" cy="197.7" r="4" fill="#6a51a3"><title>2.2.0.3 · 100,000 entries · Role-state decode: 1,622,517.737 µs</title></circle>
+<circle cx="1050.0" cy="174.1" r="4" fill="#6a51a3"><title>2.2.0.3 · 200,000 entries · Role-state decode: 3,031,532.174 µs</title></circle>
+<text x="120.0" y="355.0" font-family="Arial, sans-serif" font-size="17px" text-anchor="start" fill="#17252a" font-weight="bold">Cluster-state round-trip</text>
+<text x="18.0" y="466.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="normal">p50 µs</text>
+<path d="M 120 553.0 H 1050" stroke="#dddddd"/>
+<text x="112.0" y="557.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="end" fill="#555555" font-weight="normal">10^5</text>
+<path d="M 120 466.0 H 1050" stroke="#dddddd"/>
+<text x="112.0" y="470.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="end" fill="#555555" font-weight="normal">10^6</text>
+<path d="M 120 379.0 H 1050" stroke="#dddddd"/>
+<text x="112.0" y="383.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="end" fill="#555555" font-weight="normal">10^7</text>
+<path d="M 120.0 379 V 553" stroke="#eeeeee"/>
+<text x="120.0" y="575.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">30k</text>
+<path d="M 585.0 379 V 553" stroke="#eeeeee"/>
+<text x="585.0" y="575.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100k</text>
+<path d="M 1050.0 379 V 553" stroke="#eeeeee"/>
+<text x="1050.0" y="575.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">200k</text>
+<path d="M 120.0 479.5 L 585.0 429.8 L 1050.0 401.3" fill="none" stroke="#0072b2" stroke-width="2.5"/>
+<circle cx="120.0" cy="479.5" r="4" fill="#0072b2"><title>1.8.0.0 · 30,000 entries · Cluster-state round-trip: 699,320.301 µs</title></circle>
+<circle cx="585.0" cy="429.8" r="4" fill="#0072b2"><title>1.8.0.0 · 100,000 entries · Cluster-state round-trip: 2,607,906.101 µs</title></circle>
+<circle cx="1050.0" cy="401.3" r="4" fill="#0072b2"><title>1.8.0.0 · 200,000 entries · Cluster-state round-trip: 5,545,602.706 µs</title></circle>
+<path d="M 120.0 473.6 L 585.0 428.9 L 1050.0 401.9" fill="none" stroke="#e69f00" stroke-width="2.5"/>
+<circle cx="120.0" cy="473.6" r="4" fill="#e69f00"><title>1.9.0.1 · 30,000 entries · Cluster-state round-trip: 818,616.883 µs</title></circle>
+<circle cx="585.0" cy="428.9" r="4" fill="#e69f00"><title>1.9.0.1 · 100,000 entries · Cluster-state round-trip: 2,667,692.423 µs</title></circle>
+<circle cx="1050.0" cy="401.9" r="4" fill="#e69f00"><title>1.9.0.1 · 200,000 entries · Cluster-state round-trip: 5,453,450.383 µs</title></circle>
+<path d="M 120.0 482.1 L 585.0 433.0 L 1050.0 404.6" fill="none" stroke="#009e73" stroke-width="2.5"/>
+<circle cx="120.0" cy="482.1" r="4" fill="#009e73"><title>2.0.0.0 · 30,000 entries · Cluster-state round-trip: 652,355.504 µs</title></circle>
+<circle cx="585.0" cy="433.0" r="4" fill="#009e73"><title>2.0.0.0 · 100,000 entries · Cluster-state round-trip: 2,393,749.568 µs</title></circle>
+<circle cx="1050.0" cy="404.6" r="4" fill="#009e73"><title>2.0.0.0 · 200,000 entries · Cluster-state round-trip: 5,084,583.500 µs</title></circle>
+<path d="M 120.0 478.7 L 585.0 434.3 L 1050.0 406.6" fill="none" stroke="#cc79a7" stroke-width="2.5"/>
+<circle cx="120.0" cy="478.7" r="4" fill="#cc79a7"><title>2.0.0.2 · 30,000 entries · Cluster-state round-trip: 714,902.643 µs</title></circle>
+<circle cx="585.0" cy="434.3" r="4" fill="#cc79a7"><title>2.0.0.2 · 100,000 entries · Cluster-state round-trip: 2,316,625.685 µs</title></circle>
+<circle cx="1050.0" cy="406.6" r="4" fill="#cc79a7"><title>2.0.0.2 · 200,000 entries · Cluster-state round-trip: 4,820,128.273 µs</title></circle>
+<path d="M 120.0 476.2 L 585.0 430.1 L 1050.0 406.5" fill="none" stroke="#56b4e9" stroke-width="2.5"/>
+<circle cx="120.0" cy="476.2" r="4" fill="#56b4e9"><title>2.2.0.0 · 30,000 entries · Cluster-state round-trip: 762,628.068 µs</title></circle>
+<circle cx="585.0" cy="430.1" r="4" fill="#56b4e9"><title>2.2.0.0 · 100,000 entries · Cluster-state round-trip: 2,587,734.183 µs</title></circle>
+<circle cx="1050.0" cy="406.5" r="4" fill="#56b4e9"><title>2.2.0.0 · 200,000 entries · Cluster-state round-trip: 4,828,435.336 µs</title></circle>
+<path d="M 120.0 474.3 L 585.0 435.1 L 1050.0 409.9" fill="none" stroke="#d55e00" stroke-width="2.5"/>
+<circle cx="120.0" cy="474.3" r="4" fill="#d55e00"><title>2.2.0.1 · 30,000 entries · Cluster-state round-trip: 802,603.921 µs</title></circle>
+<circle cx="585.0" cy="435.1" r="4" fill="#d55e00"><title>2.2.0.1 · 100,000 entries · Cluster-state round-trip: 2,267,784.899 µs</title></circle>
+<circle cx="1050.0" cy="409.9" r="4" fill="#d55e00"><title>2.2.0.1 · 200,000 entries · Cluster-state round-trip: 4,408,514.205 µs</title></circle>
+<path d="M 120.0 482.7 L 585.0 433.0 L 1050.0 407.5" fill="none" stroke="#6a51a3" stroke-width="2.5"/>
+<circle cx="120.0" cy="482.7" r="4" fill="#6a51a3"><title>2.2.0.3 · 30,000 entries · Cluster-state round-trip: 642,052.580 µs</title></circle>
+<circle cx="585.0" cy="433.0" r="4" fill="#6a51a3"><title>2.2.0.3 · 100,000 entries · Cluster-state round-trip: 2,392,156.492 µs</title></circle>
+<circle cx="1050.0" cy="407.5" r="4" fill="#6a51a3"><title>2.2.0.3 · 200,000 entries · Cluster-state round-trip: 4,709,398.529 µs</title></circle>
+<path d="M 1090 116 h 28" stroke="#0072b2" stroke-width="3"/>
+<text x="1126.0" y="121.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">1.8.0.0</text>
+<path d="M 1090 148 h 28" stroke="#e69f00" stroke-width="3"/>
+<text x="1126.0" y="153.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">1.9.0.1</text>
+<path d="M 1090 180 h 28" stroke="#009e73" stroke-width="3"/>
+<text x="1126.0" y="185.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">2.0.0.0</text>
+<path d="M 1090 212 h 28" stroke="#cc79a7" stroke-width="3"/>
+<text x="1126.0" y="217.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">2.0.0.2</text>
+<path d="M 1090 244 h 28" stroke="#56b4e9" stroke-width="3"/>
+<text x="1126.0" y="249.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">2.2.0.0</text>
+<path d="M 1090 276 h 28" stroke="#d55e00" stroke-width="3"/>
+<text x="1126.0" y="281.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">2.2.0.1</text>
+<path d="M 1090 308 h 28" stroke="#6a51a3" stroke-width="3"/>
+<text x="1126.0" y="313.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">2.2.0.3</text>
+</svg>
