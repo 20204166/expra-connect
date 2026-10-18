@@ -29,6 +29,22 @@ class RoleEngineTests(unittest.TestCase):
             frozenset({ClusterRole.SUBCOORDINATOR}), NodeId("sub")
         )
 
+    def test_role_assignment_normalization_and_validation_are_preserved(self) -> None:
+        self.assertEqual(
+            RoleAssignment(frozenset({ClusterRole.COORDINATOR})).roles,
+            frozenset({ClusterRole.COORDINATOR, ClusterRole.WORKER}),
+        )
+        self.assertEqual(
+            RoleAssignment(frozenset()).roles,
+            frozenset({ClusterRole.WORKER}),
+        )
+        with self.assertRaises(ValueError):
+            RoleAssignment(
+                frozenset({ClusterRole.COORDINATOR, ClusterRole.SUBCOORDINATOR})
+            )
+        with self.assertRaises(ValueError):
+            RoleAssignment(frozenset({ClusterRole.WORKER}), paused=True, revoked=True)
+
     def test_coordinator_is_also_worker_and_worker_cannot_control(self) -> None:
         self.assertIn(ClusterRole.WORKER, self.coordinator.roles)
         with self.assertRaises(RoleAuthorizationError):

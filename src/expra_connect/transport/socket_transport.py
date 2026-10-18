@@ -59,7 +59,11 @@ def _validate_endpoint(host: str, port: int, timeout: float) -> None:
         raise ValueError("port must be between 1 and 65535")
     if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
         raise TypeError("timeout must be a real number")
-    if not math.isfinite(timeout) or timeout <= 0:
+    try:
+        finite_timeout = math.isfinite(timeout)
+    except OverflowError as error:
+        raise ValueError("timeout must be finite and positive") from error
+    if not finite_timeout or timeout <= 0:
         raise ValueError("timeout must be finite and positive")
 
 

@@ -65,6 +65,10 @@ class SocketTransportConfigurationTests(unittest.TestCase):
             ):
                 SocketRemoteTransport(cast(str, host), port, timeout=timeout)
 
+    def test_constructor_rejects_timeout_too_large_for_float_validation(self) -> None:
+        with self.assertRaises(ValueError):
+            SocketRemoteTransport("host", 1, timeout=10**10000)
+
     def test_fingerprint_requires_tls_and_nonempty_text(self) -> None:
         with self.assertRaises(ValueError):
             SocketRemoteTransport("host", 1, expected_fingerprint=" ")
