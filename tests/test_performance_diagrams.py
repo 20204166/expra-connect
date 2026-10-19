@@ -293,6 +293,7 @@ class BaselineTests(unittest.TestCase):
                 "2.2.0.0",
                 "2.2.0.1",
                 "2.2.0.3",
+                "2.2.0.3",
                 "2.2.0.4",
                 "2.2.0.4",
             ),
@@ -302,7 +303,7 @@ class BaselineTests(unittest.TestCase):
                 tuple((item.size, item.operation) for item in run.outcomes),
                 ((30_000, "cluster round-trip"), (100_000, "cluster round-trip")),
             )
-        for run in runs["cluster-large"][:7]:
+        for run in runs["cluster-large"][:6]:
             operations = {item.operation for item in run.outcomes}
             self.assertEqual(
                 operations,
@@ -336,6 +337,37 @@ class BaselineTests(unittest.TestCase):
             ).exists()
         )
 
+    def test_2203_history_is_represented_as_native_and_universal_builds(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            shared = root / "tools" / "shared-benchmark-results"
+            shutil.copytree(ROOT / "tools/shared-benchmark-results", shared)
+            build = root / "docs" / "performance-build-comparison-results"
+            shutil.copytree(ROOT / "docs/performance-build-comparison-results", build)
+            for path in shared.glob("*-2.2.0.3.json"):
+                path.unlink()
+            for suite in ("cluster_state", "persistence", "connect"):
+                for flavor in ("native", "universal"):
+                    document = json.loads(
+                        (build / f"{flavor}-{suite}.json").read_text(encoding="utf-8")
+                    )
+                    document["metadata"]["package_version"] = "2.2.0.3"
+                    output = build / f"2.2.0.3-{flavor}-{suite}.json"
+                    output.write_text(json.dumps(document), encoding="utf-8")
+
+            groups = load_shared_harness_runs(shared)
+            labels = shared_harness_labels(groups)
+
+        self.assertEqual(labels[6:8], ("2.2.0.3 native", "2.2.0.3 universal"))
+        self.assertEqual(
+            tuple(run.metadata.package_version for run in groups["cluster-1k"])[6:8],
+            ("2.2.0.3", "2.2.0.3"),
+        )
+        self.assertEqual(
+            tuple(len(run.outcomes) for run in groups["persistence-30k"])[6:8],
+            (13, 13),
+        )
+
 
 class PublishedBaselineTests(unittest.TestCase):
     def test_markdown_embeds_committed_diagrams_without_linking_local_data(
@@ -355,6 +387,22 @@ class PublishedBaselineTests(unittest.TestCase):
     "local benchmark source artifacts are not present in this checkout",
 )
 class DiagramTests(unittest.TestCase):
+    def test_comparison_diagram_viewbox_contains_rendered_content(self) -> None:
+        svg = render_diagrams()["performance-comparison.svg"]
+        root = ElementTree.fromstring(svg)
+        viewbox = tuple(float(value) for value in root.attrib["viewBox"].split())
+        height = viewbox[3]
+
+        for text in root.findall(".//{http://www.w3.org/2000/svg}text"):
+            baseline = float(text.attrib["y"])
+            font_size = float(text.attrib["font-size"].removesuffix("px"))
+            self.assertLessEqual(baseline + font_size * 0.25, height)
+
+        for circle in root.findall(".//{http://www.w3.org/2000/svg}circle"):
+            self.assertLessEqual(
+                float(circle.attrib["cy"]) + float(circle.attrib["r"]), height
+            )
+
     def test_discovers_new_versioned_build_runs_and_appends_chart_columns(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -422,7 +470,8 @@ class DiagramTests(unittest.TestCase):
                     self.assertIn(version, svg)
 
         shared_svg = diagrams["performance-comparison.svg"]
-        self.assertIn("Not measured for 2.2.0.3", shared_svg)
+        self.assertIn("2.2.0.3 native", shared_svg)
+        self.assertIn("2.2.0.3 universal", shared_svg)
         self.assertIn("200k compact pairs", shared_svg)
         self.assertIn("MessagePack store", shared_svg)
         shared_runs = load_shared_harness_runs(
@@ -512,8 +561,8 @@ class DiagramTests(unittest.TestCase):
         self.assertEqual(panel.label, "All included suites and sizes")
         self.assertEqual(row.label, "Full-workload index · equal-case · 37 cases")
         self.assertEqual(row.values[0], 1.0)
-        native_index = row.values[7]
-        universal_index = row.values[8]
+        native_index = row.values[8]
+        universal_index = row.values[9]
         if native_index is None or universal_index is None:
             self.fail("full-workload index is unavailable for a 2.2.0.4 build")
         self.assertAlmostEqual(native_index, 0.942746, places=6)
@@ -527,9 +576,10 @@ class DiagramTests(unittest.TestCase):
 
         self.assertEqual(panel.case_count, 37)
         self.assertAlmostEqual(panel.indices[0], 1.0)
-        self.assertAlmostEqual(panel.indices[6], 0.9185, places=4)
-        self.assertAlmostEqual(panel.indices[7], 0.9744, places=4)
-        self.assertAlmostEqual(panel.indices[8], 0.9919, places=4)
+        self.assertIsNotNone(panel.indices[6])
+        self.assertIsNotNone(panel.indices[7])
+        self.assertAlmostEqual(panel.indices[8], 0.9744, places=4)
+        self.assertAlmostEqual(panel.indices[9], 0.9919, places=4)
         self.assertIn("Weighted overall index", svg)
         self.assertIn("1k cluster: 5%", svg)
         self.assertIn("30k cluster: 15%", svg)
@@ -544,7 +594,8 @@ class DiagramTests(unittest.TestCase):
 
         summary = render_performance_summary(groups)
 
-        self.assertIn("2.2.0.3 (0.918", summary)
+        self.assertIn("2.2.0.3 native:", summary)
+        self.assertIn("2.2.0.3 universal:", summary)
         self.assertIn("37 matched positive-p50 cases", summary)
         self.assertIn("73 unique cases", summary)
         self.assertIn("2.2.0.4 native: 68/73", summary)
@@ -592,12 +643,13 @@ class DiagramTests(unittest.TestCase):
         self.assertEqual((rows[2].cells[6].measured, rows[2].cells[6].total), (6, 9))
         self.assertEqual((rows[2].cells[7].measured, rows[2].cells[7].total), (6, 9))
         self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (10, 12))
-        self.assertEqual((rows[4].cells[6].measured, rows[4].cells[6].total), (0, 13))
+        self.assertEqual((rows[4].cells[6].measured, rows[4].cells[6].total), (13, 13))
+        self.assertEqual((rows[4].cells[7].measured, rows[4].cells[7].total), (13, 13))
         self.assertEqual(
-            (rows[-1].cells[6].measured, rows[-1].cells[6].total), (39, 73)
+            (rows[-1].cells[6].measured, rows[-1].cells[6].total), (65, 73)
         )
         self.assertEqual(
-            (rows[-1].cells[7].measured, rows[-1].cells[7].total), (68, 73)
+            (rows[-1].cells[7].measured, rows[-1].cells[7].total), (65, 73)
         )
         self.assertIn("Workload support / coverage", svg)
         self.assertIn("6/9", svg)

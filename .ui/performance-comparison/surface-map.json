@@ -1,0 +1,19 @@
+{
+  "surface": "Expra Connect performance comparison",
+  "slug": "performance-comparison",
+  "routes": ["docs/native-wheel-performance-baseline.md"],
+  "templates": [
+    "docs/native-wheel-performance-baseline.md",
+    "docs/images/performance-comparison.svg"
+  ],
+  "styles": [],
+  "scripts": ["scripts/update_performance_diagrams.py"],
+  "components": [],
+  "states": ["default chart", "missing or unsupported measurements", "SVG title tooltips"],
+  "viewports": [375, 768, 1385],
+  "tokens_referenced": [],
+  "accessibility_landmarks": ["SVG role=img with title and aria-label"],
+  "evidence_availability": "renderable",
+  "stack": "Python-generated SVG embedded in Markdown",
+  "discovery_notes": "Single static documentation graphic; no app route, CSS, JS controls, or dynamic loading states. Captured production SVG at 1397x3114; narrower viewport captures and automated accessibility scan are not available."
+}

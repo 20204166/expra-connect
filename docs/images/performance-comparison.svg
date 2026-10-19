@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1385" height="4836" viewBox="0 0 1385 4836" role="img" aria-label="Across-release performance comparison">
+<svg xmlns="http://www.w3.org/2000/svg" width="1385" height="4879" viewBox="0 0 1385 4879" role="img" aria-label="Across-release performance comparison">
 <title>Across-release performance comparison</title>
-<rect width="1385" height="4836" fill="#ffffff"/>
+<rect width="1385" height="4879" fill="#ffffff"/>
 <text x="16.0" y="30.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">Across-release performance comparison</text>
 <text x="16.0" y="51.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#454545" font-weight="normal">Cells compare matched workloads with 1.8.0.0; below 1× is faster. Composite weights cluster, persistence, and connect equally.</text>
 <text x="16.0" y="72.0" font-family="Arial, sans-serif" font-size="18px" text-anchor="start" fill="#17252a" font-weight="bold">Composite</text>

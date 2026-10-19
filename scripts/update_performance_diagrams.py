@@ -24,9 +24,12 @@ FULL_VERSIONS = (
     "2.2.0.1",
     "2.2.0.3",
 )
+SHARED_HARNESS_VERSIONS = FULL_VERSIONS[:-1]
 REFERENCE_VERSION = "1.8.0.0"
 FOCUSED_VERSIONS = FULL_VERSIONS[:-1]
-SHARED_HARNESS_LABELS = FULL_VERSIONS + (
+SHARED_HARNESS_LABELS = SHARED_HARNESS_VERSIONS + (
+    "2.2.0.3 native",
+    "2.2.0.3 universal",
     "2.2.0.4 native",
     "2.2.0.4 universal",
 )
@@ -55,6 +58,13 @@ FOCUSED_METRICS = (
     "MessagePack store load",
     "MessagePack store save",
 )
+_INDEX_SECTION_SPACING = 250
+_SIZE_INDEX_SECTION_HEADER = 48
+_SIZE_INDEX_PANEL_PITCH = 220
+_INDEX_PANEL_ROWS_OFFSET = 35
+_INDEX_FIRST_ROW_OFFSET = 10
+_INDEX_ROW_PITCH = 17
+_INDEX_PANEL_BOTTOM_EXTENT = 10
 
 
 @dataclass(frozen=True, slots=True)
@@ -341,13 +351,13 @@ def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun,
     """Load comparable shared-harness groups and reject provenance drift."""
 
     groups = {
-        "cluster-1k": FULL_VERSIONS,
-        "cluster-large": FULL_VERSIONS,
-        "cluster-scaling": FULL_VERSIONS,
-        "connect": FULL_VERSIONS,
+        "cluster-1k": SHARED_HARNESS_VERSIONS,
+        "cluster-large": SHARED_HARNESS_VERSIONS,
+        "cluster-scaling": SHARED_HARNESS_VERSIONS,
+        "connect": SHARED_HARNESS_VERSIONS,
         "persistence-30k": FOCUSED_VERSIONS,
         "persistence-100k": FOCUSED_VERSIONS,
-        "persistence-200k": FULL_VERSIONS,
+        "persistence-200k": SHARED_HARNESS_VERSIONS,
     }
     loaded: dict[str, tuple[BenchmarkRun, ...]] = {}
     for group, versions in groups.items():
@@ -529,6 +539,19 @@ def _load_build_comparison_history(
             if flavor in flavor_runs:
                 for suite in BUILD_COMPARISON_SUITES:
                     by_suite[suite].append(flavor_runs[flavor][suite])
+    for suite_runs_list in by_suite.values():
+        suite_runs_list.sort(
+            key=lambda run: (
+                tuple(int(part) for part in run.metadata.package_version.split(".")),
+                0
+                if any(
+                    Path(module_path).suffix.lower() in {".so", ".pyd", ".dll"}
+                    for name, module_path in run.metadata.modules.items()
+                    if name.startswith("expra_connect.")
+                )
+                else 1,
+            )
+        )
     return {suite: tuple(runs) for suite, runs in by_suite.items()}
 
 
@@ -543,7 +566,7 @@ def shared_harness_labels(
     )
     for run in groups["cluster-1k"]:
         version = run.metadata.package_version
-        if version in FULL_VERSIONS and version_counts[version] == 1:
+        if version in SHARED_HARNESS_VERSIONS and version_counts[version] == 1:
             labels.append(version)
             continue
         native = any(
@@ -560,7 +583,7 @@ def _has_focused_persistence_gap(runs: tuple[BenchmarkRun, ...]) -> bool:
         len(runs) > len(FOCUSED_VERSIONS)
         and tuple(run.metadata.package_version for run in runs[: len(FOCUSED_VERSIONS)])
         == FOCUSED_VERSIONS
-        and runs[len(FOCUSED_VERSIONS)].metadata.package_version != FULL_VERSIONS[-1]
+        and runs[len(FOCUSED_VERSIONS)].metadata.package_version != "2.2.0.3"
     )
 
 
@@ -1272,14 +1295,29 @@ def _render_heatmap_svg(
     left, cell_width, row_height = 345, 112, 32
     width = left + cell_width * len(versions) + 32
     heatmap_height = 142 + sum(66 + row_height * len(rows) for _, rows in panels)
-    index_panel_count = (
-        len(size_indices)
-        + int(full_workload_index is not None)
-        + int(weighted_overall_index is not None)
-    )
-    index_height = 70 + 220 * index_panel_count if index_panel_count else 0
     coverage_height = 72 + 26 * len(support_coverage) if support_coverage else 0
-    height = heatmap_height + index_height + coverage_height
+    index_content_height = 0
+    if weighted_overall_index is not None:
+        index_content_height += 250
+    if full_workload_index is not None:
+        index_content_height += 250
+    if support_coverage:
+        index_content_height += coverage_height
+    if size_indices:
+        final_panel_content = (
+            _INDEX_PANEL_ROWS_OFFSET
+            + _INDEX_FIRST_ROW_OFFSET
+            + _INDEX_ROW_PITCH * max(0, len(versions) - 1)
+            + _INDEX_PANEL_BOTTOM_EXTENT
+        )
+        size_section_height = (
+            _SIZE_INDEX_SECTION_HEADER
+            + _SIZE_INDEX_PANEL_PITCH * (len(size_indices) - 1)
+            + final_panel_content
+        )
+        index_content_height += size_section_height
+    index_height = 18 + index_content_height + 16 if index_content_height else 0
+    height = heatmap_height + index_height
     parts = _svg_header(width, height, title)
     reference_index = versions.index(REFERENCE_VERSION)
     y = 72
@@ -1362,12 +1400,12 @@ def _render_heatmap_svg(
         _render_weighted_overall_index_plot(
             parts, weighted_overall_index, versions, index_top
         )
-        index_top += 250
+        index_top += _INDEX_SECTION_SPACING
         if full_workload_index is not None:
             _render_full_workload_index_plot(
                 parts, full_workload_index, versions, index_top
             )
-            index_top += 250
+            index_top += _INDEX_SECTION_SPACING
         if support_coverage:
             _render_support_coverage(parts, support_coverage, versions, index_top)
             index_top += coverage_height
@@ -1378,7 +1416,7 @@ def _render_heatmap_svg(
         _render_full_workload_index_plot(
             parts, full_workload_index, versions, index_top
         )
-        index_top += 250
+        index_top += _INDEX_SECTION_SPACING
         if support_coverage:
             _render_support_coverage(parts, support_coverage, versions, index_top)
             index_top += coverage_height
@@ -1411,7 +1449,9 @@ def _render_size_index_panels(
         )
     )
     for panel_index, panel in enumerate(panels):
-        panel_top = top + 48 + panel_index * 220
+        panel_top = (
+            top + _SIZE_INDEX_SECTION_HEADER + panel_index * _SIZE_INDEX_PANEL_PITCH
+        )
         _render_index_panel(parts, panel, versions, panel_top)
 
 
@@ -1563,8 +1603,8 @@ def _render_index_panel(
             color="#454545",
         )
     )
-    rows_top = top + 35
-    rows_bottom = rows_top + len(versions) * 17
+    rows_top = top + _INDEX_PANEL_ROWS_OFFSET
+    rows_bottom = rows_top + len(versions) * _INDEX_ROW_PITCH
     for tick in (0.7, 0.8, 0.9, 1.0, 1.1):
         x = plot_left + (tick - axis_min) / (axis_max - axis_min) * (
             plot_right - plot_left
@@ -1579,7 +1619,7 @@ def _render_index_panel(
     for version_index, (version, value) in enumerate(
         zip(versions, panel.indices, strict=True)
     ):
-        y = rows_top + 10 + version_index * 17
+        y = rows_top + _INDEX_FIRST_ROW_OFFSET + version_index * _INDEX_ROW_PITCH
         x = plot_left + (value - axis_min) / (axis_max - axis_min) * (
             plot_right - plot_left
         )
