@@ -151,14 +151,17 @@ class BuildComparisonTests(unittest.TestCase):
             self._pairwise_history()
         )
 
-        self.assertIn("vs 2.2.0.4 native", svg)
-        self.assertIn("vs 2.2.0.5 universal", svg)
-        self.assertIn("vs 2.2.0.4 universal", svg)
-        self.assertIn("vs 2.2.0.5 native", svg)
+        self.assertIn("Candidate: 2.2.0.5 native", svg)
+        self.assertIn("Reference: 2.2.0.4 native", svg)
+        self.assertIn("Candidate: 2.2.0.5 universal", svg)
+        self.assertIn("Reference: 2.2.0.5 native", svg)
+        self.assertIn("Candidate p50 80.000 µs", svg)
+        self.assertIn("Reference p50 100.000 µs", svg)
+        self.assertIn("Ratio 0.800×", svg)
         self.assertIn("0.800×", svg)
         self.assertNotIn("2.2.0.6", svg)
         self.assertIn("unweighted", svg)
-        self.assertIn("Blue indicates candidate is faster", svg)
+        self.assertIn("Blue is faster; red is slower", svg)
 
     def test_latest_pairwise_diagram_handles_unsupported_and_missing_cases(
         self,
@@ -191,7 +194,11 @@ class BuildComparisonTests(unittest.TestCase):
 
         self.assertEqual(
             performance_diagrams._pairwise_case_cell(candidate, reference),
-            ("40.000 / 100.000 µs · 0.400×", "#2166ac", "#ffffff"),
+            (
+                "Candidate p50 40.000 µs · Reference p50 100.000 µs · Ratio 0.400×",
+                "#2166ac",
+                "#ffffff",
+            ),
         )
 
     def test_render_diagrams_includes_pairwise_chart_when_build_history_is_given(

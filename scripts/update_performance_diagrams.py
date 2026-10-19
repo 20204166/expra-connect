@@ -762,7 +762,7 @@ def _render_latest_build_pairwise_svg(
     label_x = 18
     column_x = (510, 930, 1350, 1770)
     column_width = 400
-    top = 170
+    top = 188
     case_maps: list[
         tuple[dict[str, tuple[BenchmarkOutcome, BenchmarkOutcome]], ...]
     ] = []
@@ -816,10 +816,7 @@ def _render_latest_build_pairwise_svg(
         f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
         _text(18, 32, title, size=22, weight="bold"),
         _text(
-            18,
-            61,
-            f"Candidate / reference p50 in µs and ratio · compared versions: {previous_version} → {latest_version}",
-            size=13,
+            18, 61, f"Builds compared: {previous_version} → {latest_version}", size=13
         ),
         _text(
             18,
@@ -830,21 +827,29 @@ def _render_latest_build_pairwise_svg(
         _text(
             18,
             112,
-            "Blue indicates candidate is faster; red indicates slower.",
+            "Each cell: candidate p50 · reference p50 · candidate/reference ratio. Blue is faster; red is slower.",
             size=11,
         ),
-        _text(label_x, 145, "Suite · size · operation · case", size=12, weight="bold"),
-        _text(510, 112, "Latest native", size=14, weight="bold"),
-        _text(1350, 112, "Latest universal", size=14, weight="bold"),
+        _text(label_x, 174, "Suite · size · operation · case", size=12, weight="bold"),
     ]
-    header_labels = (
-        f"vs {previous_version} native",
-        f"vs {latest_version} universal",
-        f"vs {previous_version} universal",
-        f"vs {latest_version} native",
+    comparison_builds = (
+        (f"{latest_version} native", f"{previous_version} native"),
+        (f"{latest_version} native", f"{latest_version} universal"),
+        (f"{latest_version} universal", f"{previous_version} universal"),
+        (f"{latest_version} universal", f"{latest_version} native"),
     )
-    for x, label in zip(column_x, header_labels, strict=True):
-        parts.append(_text(x + 8, 145, label, size=12, weight="bold"))
+    for x, (candidate_build, reference_build) in zip(
+        column_x, comparison_builds, strict=True
+    ):
+        parts.append(
+            f'<rect x="{x}" y="128" width="{column_width}" height="48" rx="3" fill="#edf2f5"/>'
+        )
+        parts.append(
+            _text(x + 8, 147, f"Candidate: {candidate_build}", size=12, weight="bold")
+        )
+        parts.append(
+            _text(x + 8, 166, f"Reference: {reference_build}", size=12, weight="bold")
+        )
 
     y = top
     row_index = 0
@@ -938,21 +943,21 @@ def _pairwise_case_cell(
             )
             if outcome.result is None
         ]
-        return (
-            f"unsupported: {', '.join(unsupported_sides)}",
-            "#eeeeee",
-            "#142323",
-        )
+        return f"unsupported: {', '.join(unsupported_sides)}", "#eeeeee", "#142323"
     candidate_p50 = candidate.result.p50
     reference_p50 = reference.result.p50
     if reference_p50 == 0:
-        return f"{candidate_p50:.3f} / 0.000 µs · ratio n/a", "#eeeeee", "#142323"
+        return (
+            f"Candidate p50 {candidate_p50:.3f} µs · Reference p50 0.000 µs · Ratio n/a",
+            "#eeeeee",
+            "#142323",
+        )
     ratio = candidate_p50 / reference_p50
     bucket = _ratio_bucket(ratio)
     color = PALETTE[bucket]
     text_color = "#ffffff" if bucket in (0, len(PALETTE) - 1) else "#142323"
     return (
-        f"{candidate_p50:.3f} / {reference_p50:.3f} µs · {ratio:.3f}×",
+        f"Candidate p50 {candidate_p50:.3f} µs · Reference p50 {reference_p50:.3f} µs · Ratio {ratio:.3f}×",
         color,
         text_color,
     )
