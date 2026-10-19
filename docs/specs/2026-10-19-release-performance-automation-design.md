@@ -1,6 +1,6 @@
 # Release Performance Automation and Weighted Comparison
 
-**Status:** Proposed for user review
+**Status:** Approved for implementation
 **Date:** 2026-10-19
 
 ## Goal
@@ -30,6 +30,8 @@ separate from latency scoring.
    `docs/performance-build-comparison-results/`. Refuse to overwrite existing
    versioned result files. Native-only builds add only a native result set;
    builds requested with `--universal` add native and universal result sets.
+   Reuse the complete legacy 2.2.0.4 result files instead of benchmarking that
+   already-measured build again or creating duplicate version columns.
 5. Load the tracked historical shared-harness JSON plus all versioned
    historical and newly generated build results, then regenerate the existing
    unified SVG and associated documentation. Preserve prior results and
@@ -59,27 +61,27 @@ descriptive across host/harness/configuration differences, not causal claims.
 ## Overall index and weighting
 
 The new primary overall index is a weighted geometric mean of p50 ratios against
-1.8.0.0. It uses these five categories, each weighted 20%:
+1.8.0.0. Larger state sizes receive greater weight:
 
-1. Cluster state at 1k.
-2. Cluster state at 30k.
-3. Cluster state at 100k.
-4. Connect operations.
-5. JSON persistence at 200k.
+1. Cluster state at 1k: 5%.
+2. Cluster state at 30k: 15%.
+3. Cluster state at 100k: 25%.
+4. Connect operations: 20%.
+5. JSON persistence at 200k: 35%.
 
 Within each category, include only positive-p50 cases measured for every plotted
 release/build and weight those cases equally. Thus every currently scoreable
 case participates, while each case’s contribution differs by category size.
 For the current 37 common cases, this yields the following per-case weights:
 
-- 1k cluster: 1/45 each (9 cases share 20%).
-- 30k cluster: 1/30 each (6 cases share 20%).
-- 100k cluster: 1/30 each (6 cases share 20%).
-- Connect: 1/50 each (10 cases share 20%).
-- 200k JSON persistence: 1/30 each (6 cases share 20%).
+- 1k cluster: 5/9 percentage points each (9 cases share 5%).
+- 30k cluster: 2.5 percentage points each (6 cases share 15%).
+- 100k cluster: 25/6 percentage points each (6 cases share 25%).
+- Connect: 2 percentage points each (10 cases share 20%).
+- 200k JSON persistence: 35/6 percentage points each (6 cases share 35%).
 
 The overall index is unitless and lower is faster. In the current saved data,
-the lowest score under this weighting is 2.2.0.3 at approximately 0.889; this is
+the lowest score under this weighting is 2.2.0.3 at approximately 0.918; this is
 the winner for the declared measured workload set and weighting, not a claim of
 universal real-world superiority. Both 2.2.0.4 builds remain separate plotted
 columns. The current equal-case full-workload index and equal-suite composite
@@ -89,10 +91,12 @@ weighting choice.
 ## Coverage and unavailable cases
 
 Keep coverage outside the latency formula; do not invent a penalty for a
-missing or unsupported measurement. Expand the support matrix to cover all
-distinct workload families represented by the chart, including focused 30k and
-100k persistence, connect, cluster, and 200k persistence. Show measured/total
-case counts per release/build and retain unavailable reasons in SVG tooltips.
+missing or unsupported measurement. Expand the support matrix to cover every
+distinct measured workload set represented by the chart: cluster state at 1k,
+30k, and 100k; connect; and persistence at 30k, 100k, and 200k. Show
+measured/total case counts per release/build and retain unavailable reasons in
+SVG tooltips. Exclude duplicate visualizations of the same cases (such as
+cluster round-trip scaling) from coverage rows and totals.
 Show missing 2.2.0.3 focused-persistence measurements, YAML limits, and
 unsupported 200k MessagePack StateStore cases explicitly. Any repeated
 visualization of the same underlying benchmark case (for example, the separate
@@ -114,7 +118,8 @@ part of the current five-category score because 2.2.0.3 lacks those runs.
   plots, support/coverage view, N/A reasons, and interpretation caveats.
 - Regenerate the unified `docs/images/performance-comparison.svg` and update
   `docs/native-wheel-performance-baseline.md` with the workflow, weighting,
-  current winner, and coverage limitations.
+  generated current winner and per-build coverage summary, and coverage
+  limitations. Its `--check` mode verifies both the SVG and generated summary.
 
 ## Validation
 

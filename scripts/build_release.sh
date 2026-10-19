@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 PYTHON_BIN=${PYTHON:-python3}
 
 BUILD_UNIVERSAL=0
+BUILD_PERFORMANCE=1
 BUILD_BUMP=
 while (($#)); do
   case "$1" in
@@ -15,6 +16,13 @@ while (($#)); do
         exit 2
       fi
       BUILD_UNIVERSAL=1
+      ;;
+    --skip-performance-benchmarks)
+      if [[ "$BUILD_PERFORMANCE" -eq 0 ]]; then
+        printf 'error: --skip-performance-benchmarks may only be specified once\n' >&2
+        exit 2
+      fi
+      BUILD_PERFORMANCE=0
       ;;
     --bump)
       if [[ -n "$BUILD_BUMP" || $# -lt 2 || -z "${2:-}" ]]; then
@@ -32,7 +40,7 @@ while (($#)); do
       BUILD_BUMP=${1#--bump=}
       ;;
     *)
-      printf 'usage: %s [--universal] [--bump auto|none|patch|feature|minor]\n' "$0" >&2
+      printf 'usage: %s [--universal] [--skip-performance-benchmarks] [--bump auto|none|patch|feature|minor]\n' "$0" >&2
       exit 2
       ;;
   esac
@@ -92,6 +100,16 @@ for wheel in "$BUILD_ROOT"/artifacts/*.whl; do
   "$PYTHON_BIN" scripts/verify_wheel.py "$wheel" \
     --source-package "$BUILD_ROOT/source/src/expra_connect"
 done
+if [[ "$BUILD_PERFORMANCE" -eq 1 ]]; then
+  "$PYTHON_BIN" scripts/benchmark_release_wheels.py \
+    --wheel-dir "$BUILD_ROOT/artifacts" \
+    --results-dir "$ROOT_DIR/docs/performance-build-comparison-results" \
+    --python "$PYTHON_BIN" \
+    --repository-root "$ROOT_DIR"
+  "$PYTHON_BIN" -m scripts.update_performance_diagrams
+else
+  printf 'Skipping release wheel benchmarks and performance chart refresh.\n'
+fi
 SYNC_ARGS=(--package-dir . --artifact-dir "$BUILD_ROOT/artifacts")
 if [[ "$BUILD_UNIVERSAL" -eq 1 ]]; then
   SYNC_ARGS+=(--allow-universal)

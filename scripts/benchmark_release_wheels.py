@@ -1,0 +1,256 @@
+"""Benchmark newly built wheels and preserve immutable release measurements."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import zipfile
+from collections.abc import Sequence
+from pathlib import Path, PurePosixPath
+
+from scripts.benchmark_support import BenchmarkRun, load_results, write_results
+
+_WHEEL_NAME = re.compile(
+    r"^expra_connect-(?P<version>\d+\.\d+\.\d+\.\d+)-"
+    r"(?P<python>[^-]+)-(?P<abi>[^-]+)-(?P<platform>.+)\.whl$"
+)
+_SUITES = ("cluster_state", "persistence", "connect")
+_LEGACY_BUILD_VERSION = "2.2.0.4"
+
+
+def run_release_benchmarks(
+    wheel_dir: Path,
+    results_dir: Path,
+    python_bin: str,
+    repository_root: Path,
+) -> tuple[Path, ...]:
+    """Benchmark each wheel once, reusing complete immutable result sets."""
+
+    wheels = tuple(sorted(wheel_dir.glob("expra_connect-*.whl")))
+    if not wheels:
+        raise ValueError(f"no release wheels found in {wheel_dir}")
+    identities = tuple(_wheel_identity(wheel) for wheel in wheels)
+    if len(set(identities)) != len(identities):
+        raise ValueError("wheel directory contains duplicate version/flavor artifacts")
+
+    result_sets = tuple(
+        (wheel, version, flavor, _result_paths(results_dir, version, flavor))
+        for wheel, (version, flavor) in zip(wheels, identities, strict=True)
+    )
+    for _, version, flavor, paths in result_sets:
+        present = tuple(path.exists() for path in paths)
+        if any(present) and not all(present):
+            raise ValueError(
+                f"partial benchmark results for {version} {flavor}; refusing overwrite"
+            )
+        if all(present):
+            for suite, path in zip(_SUITES, paths, strict=True):
+                _validate_saved_run(load_results(path), suite, version)
+
+    results_dir.mkdir(parents=True, exist_ok=True)
+    produced: list[Path] = []
+    for wheel, version, flavor, paths in result_sets:
+        if all(path.exists() for path in paths):
+            produced.extend(paths)
+            continue
+        _benchmark_wheel(wheel, version, flavor, paths, python_bin, repository_root)
+        produced.extend(paths)
+    return tuple(produced)
+
+
+def _wheel_identity(wheel: Path) -> tuple[str, str]:
+    match = _WHEEL_NAME.fullmatch(wheel.name)
+    if match is None:
+        raise ValueError(f"unsupported wheel filename: {wheel.name}")
+    if (match.group("python"), match.group("abi"), match.group("platform")) == (
+        "py3",
+        "none",
+        "any",
+    ):
+        return match.group("version"), "universal"
+    if not match.group("python").startswith("cp"):
+        raise ValueError(f"unsupported native wheel tag: {wheel.name}")
+    return match.group("version"), "native"
+
+
+def _result_paths(results_dir: Path, version: str, flavor: str) -> tuple[Path, ...]:
+    versioned = tuple(
+        results_dir / f"{version}-{flavor}-{suite}.json" for suite in _SUITES
+    )
+    if version != _LEGACY_BUILD_VERSION:
+        return versioned
+    legacy = tuple(results_dir / f"{flavor}-{suite}.json" for suite in _SUITES)
+    versioned_present = any(path.exists() for path in versioned)
+    legacy_present = tuple(path.exists() for path in legacy)
+    if versioned_present and any(legacy_present):
+        raise ValueError(
+            f"both legacy and versioned benchmark results exist for {version} {flavor}"
+        )
+    if any(legacy_present):
+        if not all(legacy_present):
+            raise ValueError(f"partial legacy benchmark results for {version} {flavor}")
+        return legacy
+    return versioned
+
+
+def _benchmark_wheel(
+    wheel: Path,
+    version: str,
+    flavor: str,
+    result_paths: tuple[Path, ...],
+    python_bin: str,
+    repository_root: Path,
+) -> None:
+    results_dir = result_paths[0].parent
+    with tempfile.TemporaryDirectory(
+        prefix="expra-connect-wheel-benchmark-"
+    ) as temporary:
+        temporary_root = Path(temporary)
+        extracted = temporary_root / "wheel"
+        extracted.mkdir()
+        _extract_package(wheel, extracted)
+        raw_paths = {suite: temporary_root / f"{suite}.json" for suite in _SUITES}
+        commands = (
+            (
+                "cluster_state",
+                repository_root / "scripts" / "benchmark_cluster_state.py",
+                (
+                    "--sizes",
+                    "1000",
+                    "30000",
+                    "100000",
+                    "--skip-allocation-tracking",
+                    "--json-output",
+                    str(raw_paths["cluster_state"]),
+                ),
+            ),
+            (
+                "persistence",
+                repository_root / "scripts" / "benchmark_persistence.py",
+                (
+                    "--sizes",
+                    "30000",
+                    "100000",
+                    "200000",
+                    "--json-output",
+                    str(raw_paths["persistence"]),
+                ),
+            ),
+            (
+                "connect",
+                repository_root / "tools" / "connect_performance_benchmark.py",
+                ("--json-output", str(raw_paths["connect"])),
+            ),
+        )
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = os.pathsep.join(
+            (str(extracted), str(repository_root))
+        )
+        environment["PYTHONNOUSERSITE"] = "1"
+        runs: list[BenchmarkRun] = []
+        for suite, script, options in commands:
+            subprocess.run(
+                (python_bin, str(script), *options),
+                cwd=repository_root,
+                env=environment,
+                check=True,
+            )
+            run = load_results(raw_paths[suite])
+            _validate_saved_run(run, suite, version)
+            _validate_module_provenance(run, extracted)
+            runs.append(run)
+
+        with tempfile.TemporaryDirectory(
+            prefix=".release-benchmark-stage-", dir=results_dir
+        ) as staging:
+            staged_paths: list[tuple[Path, Path]] = []
+            for path, run in zip(result_paths, runs, strict=True):
+                staged = Path(staging) / path.name
+                write_results(staged, run.metadata, run.outcomes)
+                staged_paths.append((staged, path))
+            if any(path.exists() for _, path in staged_paths):
+                raise FileExistsError("versioned benchmark result already exists")
+            published: list[tuple[Path, Path]] = []
+            try:
+                for staged, path in staged_paths:
+                    os.link(staged, path)
+                    published.append((staged, path))
+            except OSError:
+                for staged, path in reversed(published):
+                    if path.exists() and os.path.samefile(staged, path):
+                        path.unlink()
+                raise
+
+
+def _extract_package(wheel: Path, destination: Path) -> None:
+    with zipfile.ZipFile(wheel) as archive:
+        for member in archive.infolist():
+            name = PurePosixPath(member.filename)
+            if name.is_absolute() or ".." in name.parts:
+                raise ValueError(f"unsafe path in wheel: {member.filename}")
+            if not name.parts or name.parts[0] != "expra_connect":
+                continue
+            mode = member.external_attr >> 16
+            if mode & 0o170000 == 0o120000:
+                raise ValueError(f"symlink in wheel package: {member.filename}")
+            target = destination.joinpath(*name.parts)
+            if member.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(archive.read(member))
+    if not (destination / "expra_connect" / "__init__.py").is_file():
+        raise ValueError(f"wheel has no importable expra_connect package: {wheel}")
+
+
+def _validate_saved_run(run: BenchmarkRun, suite: str, version: str) -> None:
+    if run.metadata.suite != suite or run.metadata.package_version != version:
+        raise ValueError(f"benchmark output does not match {version} {suite}")
+    if not run.outcomes:
+        raise ValueError(f"benchmark produced no outcomes for {version} {suite}")
+    if not any(name.startswith("expra_connect.") for name in run.metadata.modules):
+        raise ValueError(f"benchmark has no package module provenance for {suite}")
+
+
+def _validate_module_provenance(run: BenchmarkRun, extracted: Path) -> None:
+    wheel_root = extracted.resolve()
+    for name, module_path in run.metadata.modules.items():
+        if name.startswith("expra_connect.") and not Path(
+            module_path
+        ).resolve().is_relative_to(wheel_root):
+            raise ValueError(f"benchmark imported {name} outside the built wheel")
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--wheel-dir", type=Path, required=True)
+    parser.add_argument("--results-dir", type=Path, required=True)
+    parser.add_argument("--python", default=sys.executable)
+    parser.add_argument(
+        "--repository-root", type=Path, default=Path(__file__).resolve().parents[1]
+    )
+    args = parser.parse_args(argv)
+    try:
+        paths = run_release_benchmarks(
+            args.wheel_dir, args.results_dir, args.python, args.repository_root
+        )
+    except (
+        OSError,
+        ValueError,
+        subprocess.CalledProcessError,
+        zipfile.BadZipFile,
+    ) as error:
+        print(f"release wheel benchmarking failed: {error}", file=sys.stderr)
+        return 2
+    print("Release benchmark results:")
+    for path in paths:
+        print(path)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

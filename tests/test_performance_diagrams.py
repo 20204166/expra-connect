@@ -19,12 +19,18 @@ from scripts.update_performance_diagrams import (
     _full_workload_coverage_rows,
     _full_workload_index_panel,
     _full_workload_index_row,
+    _render_heatmap_svg,
+    _shared_harness_panels,
+    _weighted_overall_index_panel,
     load_measurements,
     load_shared_harness_runs,
     render_build_comparison_diagrams,
     render_diagrams,
+    render_performance_summary,
+    shared_harness_labels,
     size_specific_indices,
     sync_diagrams,
+    sync_performance_summary,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -253,7 +259,7 @@ class BaselineTests(unittest.TestCase):
     def test_baseline_explains_local_sources_and_ratios(self) -> None:
         source = BASELINE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("local `tools/shared-benchmark-results/`", source)
+        self.assertIn("tracked in `tools/shared-benchmark-results/`", source)
         self.assertIn("geometric mean", source)
         self.assertIn("weighted equally", source)
         self.assertFalse(
@@ -348,6 +354,57 @@ class PublishedBaselineTests(unittest.TestCase):
     "local benchmark source artifacts are not present in this checkout",
 )
 class DiagramTests(unittest.TestCase):
+    def test_discovers_new_versioned_build_runs_and_appends_chart_columns(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            results_dir = root / "tools" / "shared-benchmark-results"
+            shutil.copytree(ROOT / "tools/shared-benchmark-results", results_dir)
+            build_dir = root / "docs" / "performance-build-comparison-results"
+            shutil.copytree(
+                ROOT / "docs/performance-build-comparison-results", build_dir
+            )
+            for suite in ("cluster_state", "persistence", "connect"):
+                for flavor in ("native",):
+                    document = json.loads(
+                        (build_dir / f"{flavor}-{suite}.json").read_text(
+                            encoding="utf-8"
+                        )
+                    )
+                    document["metadata"]["package_version"] = "2.2.0.5"
+                    document["metadata"]["modules"] = {
+                        name: f"/wheel/{flavor}/{Path(module).name}"
+                        for name, module in document["metadata"]["modules"].items()
+                    }
+                    if suite == "cluster_state":
+                        extra_case = dict(document["outcomes"][0])
+                        extra_case["case_id"] = "1000:future cluster operation"
+                        extra_case["operation"] = "future cluster operation"
+                        document["outcomes"].append(extra_case)
+                    (build_dir / f"2.2.0.5-{flavor}-{suite}.json").write_text(
+                        json.dumps(document), encoding="utf-8"
+                    )
+
+            groups = load_shared_harness_runs(results_dir)
+            labels = shared_harness_labels(groups)
+            svg = _render_heatmap_svg(
+                "dynamic release history",
+                labels,
+                _shared_harness_panels(groups),
+                weighted_overall_index=_weighted_overall_index_panel(groups),
+                support_coverage=_full_workload_coverage_rows(groups),
+            )
+            coverage = _full_workload_coverage_rows(groups)
+
+        self.assertEqual(labels[-1], "2.2.0.5 native")
+        self.assertEqual(len(groups["cluster-1k"][0].outcomes), 9)
+        self.assertEqual(len(groups["cluster-1k"]), len(labels))
+        self.assertIn("2.2.0.5 native", svg)
+        self.assertIn("future cluster operation", svg)
+        self.assertEqual(
+            (coverage[0].cells[-1].measured, coverage[0].cells[-1].total), (10, 10)
+        )
+        ElementTree.fromstring(svg)
+
     def test_renders_one_complete_deterministic_svg_diagram(self) -> None:
         diagrams = render_diagrams()
 
@@ -461,6 +518,55 @@ class DiagramTests(unittest.TestCase):
         self.assertAlmostEqual(native_index, 0.942746, places=6)
         self.assertAlmostEqual(universal_index, 1.003027, places=6)
 
+    def test_weighted_overall_index_uses_declared_size_biased_categories(self) -> None:
+        groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+
+        panel = _weighted_overall_index_panel(groups)
+        svg = render_diagrams()["performance-comparison.svg"]
+
+        self.assertEqual(panel.case_count, 37)
+        self.assertAlmostEqual(panel.indices[0], 1.0)
+        self.assertAlmostEqual(panel.indices[6], 0.9185, places=4)
+        self.assertAlmostEqual(panel.indices[7], 0.9744, places=4)
+        self.assertAlmostEqual(panel.indices[8], 0.9919, places=4)
+        self.assertIn("Weighted overall index", svg)
+        self.assertIn("1k cluster: 5%", svg)
+        self.assertIn("30k cluster: 15%", svg)
+        self.assertIn("100k cluster: 25%", svg)
+        self.assertIn("Connect: 20%", svg)
+        self.assertIn("200k JSON persistence: 35%", svg)
+
+    def test_generated_summary_reports_current_winner_and_all_unique_coverage(
+        self,
+    ) -> None:
+        groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+
+        summary = render_performance_summary(groups)
+
+        self.assertIn("2.2.0.3 (0.918", summary)
+        self.assertIn("37 matched positive-p50 cases", summary)
+        self.assertIn("73 unique cases", summary)
+        self.assertIn("2.2.0.4 native: 68/73", summary)
+
+    def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "baseline.md"
+            path.write_text(
+                "before\n<!-- performance-summary:start -->\nold\n"
+                "<!-- performance-summary:end -->\nafter\n",
+                encoding="utf-8",
+            )
+
+            stale = sync_performance_summary(path, "new summary", check=True)
+            self.assertTrue(stale)
+            self.assertFalse(sync_performance_summary(path, "new summary", check=False))
+            self.assertFalse(sync_performance_summary(path, "new summary", check=True))
+            self.assertEqual(
+                path.read_text(encoding="utf-8"),
+                "before\n<!-- performance-summary:start -->\nnew summary\n"
+                "<!-- performance-summary:end -->\nafter\n",
+            )
+
     def test_full_workload_coverage_shows_support_outside_scored_cases(self) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
 
@@ -471,21 +577,35 @@ class DiagramTests(unittest.TestCase):
             tuple(row.label for row in rows),
             (
                 "Cluster state · 1k",
-                "Cluster state · 30k / 100k",
+                "Cluster state · 30k",
+                "Cluster state · 100k",
                 "Connect operations",
+                "Persistence · 30k",
+                "Persistence · 100k",
                 "JSON persistence · 200k",
-                "Total in full-workload scope",
+                "Total unique measured cases",
             ),
         )
-        self.assertEqual((rows[1].cells[6].measured, rows[1].cells[6].total), (12, 18))
-        self.assertEqual((rows[1].cells[7].measured, rows[1].cells[7].total), (15, 18))
-        self.assertEqual((rows[2].cells[0].measured, rows[2].cells[0].total), (10, 12))
+        self.assertEqual((rows[1].cells[6].measured, rows[1].cells[6].total), (6, 9))
+        self.assertEqual((rows[1].cells[7].measured, rows[1].cells[7].total), (9, 9))
+        self.assertEqual((rows[2].cells[6].measured, rows[2].cells[6].total), (6, 9))
+        self.assertEqual((rows[2].cells[7].measured, rows[2].cells[7].total), (6, 9))
+        self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (10, 12))
+        self.assertEqual((rows[4].cells[6].measured, rows[4].cells[6].total), (0, 13))
         self.assertEqual(
-            (rows[-1].cells[7].measured, rows[-1].cells[7].total), (42, 47)
+            (rows[-1].cells[6].measured, rows[-1].cells[6].total), (39, 73)
+        )
+        self.assertEqual(
+            (rows[-1].cells[7].measured, rows[-1].cells[7].total), (68, 73)
         )
         self.assertIn("Workload support / coverage", svg)
-        self.assertIn("15/18", svg)
+        self.assertIn("6/9", svg)
+        self.assertIn("68/73", svg)
         self.assertIn("Exceeds configured YAML maximum size 30,000", svg)
+        self.assertNotIn(
+            "Cluster round-trip scaling",
+            svg[svg.index("Workload support / coverage") :],
+        )
 
     def test_sync_writes_and_detects_stale_svg_files(self) -> None:
         diagrams = render_diagrams()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from collections import Counter
 from collections.abc import Sequence
@@ -327,6 +328,13 @@ SIZE_INDEX_GROUPS = (
     (100_000, "cluster-large", "cluster state"),
     (200_000, "persistence-200k", "JSON persistence"),
 )
+WEIGHTED_INDEX_GROUPS = (
+    ("cluster-1k", 1_000, "1k cluster", 5),
+    ("cluster-large", 30_000, "30k cluster", 15),
+    ("cluster-large", 100_000, "100k cluster", 25),
+    ("connect", None, "Connect", 20),
+    ("persistence-200k", 200_000, "200k JSON persistence", 35),
+)
 
 
 def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun, ...]]:
@@ -367,13 +375,14 @@ def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun,
                 raise ValueError(
                     f"{group}: run metadata is not comparable for {version}"
                 )
+        case_ids = {outcome.case_id for run in runs for outcome in run.outcomes}
         reference_cases = {outcome.case_id: outcome for outcome in reference.outcomes}
         for version, run in zip(versions, runs, strict=True):
             cases = {outcome.case_id: outcome for outcome in run.outcomes}
-            if cases.keys() != reference_cases.keys():
-                raise ValueError(f"{group}: operation coverage differs for {version}")
             for case_id, outcome in cases.items():
-                reference_outcome = reference_cases[case_id]
+                reference_outcome = reference_cases.get(case_id)
+                if reference_outcome is None:
+                    continue
                 payload_size_mismatch = (
                     outcome.payload_bytes != reference_outcome.payload_bytes
                     and (
@@ -396,28 +405,57 @@ def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun,
                     )
         loaded[group] = runs
 
-    build_pairs = load_build_comparison_runs(
+    build_runs = _load_build_comparison_history(
         results_dir.parents[1] / "docs" / "performance-build-comparison-results"
     )
     for group, runs in tuple(loaded.items()):
         suite = "cluster_state" if group.startswith("cluster-") else group.split("-")[0]
-        native, universal = build_pairs[suite]
-        case_ids = {outcome.case_id for outcome in runs[0].outcomes}
-        build_runs = tuple(
+        suite_build_runs = build_runs[suite]
+        known_cases = tuple(outcome for run in runs for outcome in run.outcomes)
+        case_ids = {outcome.case_id for outcome in known_cases}
+        known_sizes = {outcome.size for outcome in known_cases}
+        scaling_cases = {(outcome.size, outcome.operation) for outcome in known_cases}
+
+        def belongs_to_group(
+            outcome: BenchmarkOutcome,
+            *,
+            group_name: str = group,
+            sizes: set[int] = known_sizes,
+            scaling: set[tuple[int, str]] = scaling_cases,
+        ) -> bool:
+            if group_name == "cluster-scaling":
+                return (outcome.size, outcome.operation) in scaling
+            if group_name.startswith(("cluster-", "persistence-")):
+                return outcome.size in sizes
+            return True
+
+        case_ids.update(
+            outcome.case_id
+            for run in suite_build_runs
+            for outcome in run.outcomes
+            if belongs_to_group(outcome)
+        )
+        filtered_build_runs = tuple(
             BenchmarkRun(
                 run.metadata,
                 tuple(
-                    outcome for outcome in run.outcomes if outcome.case_id in case_ids
+                    outcome
+                    for outcome in run.outcomes
+                    if outcome.case_id in case_ids and belongs_to_group(outcome)
                 ),
             )
-            for run in (native, universal)
+            for run in suite_build_runs
         )
-        loaded[group] = runs + build_runs
+        loaded[group] = runs + filtered_build_runs
     return loaded
 
 
 BUILD_COMPARISON_SUITES = ("cluster_state", "persistence", "connect")
 BUILD_COMPARISON_VERSION = "2.2.0.4"
+_VERSIONED_BUILD_RESULT_RE = re.compile(
+    r"(?P<version>\d+\.\d+\.\d+\.\d+)-(?P<flavor>native|universal)-"
+    r"(?P<suite>cluster_state|persistence|connect)\.json"
+)
 
 
 def load_build_comparison_runs(
@@ -432,6 +470,98 @@ def load_build_comparison_runs(
             load_results(results_dir / f"universal-{suite}.json"),
         )
     return pairs
+
+
+def _load_build_comparison_history(
+    results_dir: Path,
+) -> dict[str, tuple[BenchmarkRun, ...]]:
+    """Load the legacy 2.2.0.4 pair and every immutable versioned build run."""
+
+    by_suite: dict[str, list[BenchmarkRun]] = {
+        suite: list(pair)
+        for suite, pair in load_build_comparison_runs(results_dir).items()
+    }
+    discovered: dict[tuple[str, str], dict[str, BenchmarkRun]] = {}
+    for path in sorted(results_dir.glob("*.json")):
+        match = _VERSIONED_BUILD_RESULT_RE.fullmatch(path.name)
+        if match is None:
+            continue
+        version, flavor, suite = (
+            match.group("version"),
+            match.group("flavor"),
+            match.group("suite"),
+        )
+        key = (version, flavor)
+        suite_runs = discovered.setdefault(key, {})
+        if suite in suite_runs:
+            raise ValueError(f"duplicate versioned build result: {path.name}")
+        run = load_results(path)
+        if run.metadata.package_version != version or run.metadata.suite != suite:
+            raise ValueError(f"result metadata does not match filename: {path.name}")
+        suite_runs[suite] = run
+
+    versions = sorted(
+        {version for version, _ in discovered},
+        key=lambda version: tuple(int(part) for part in version.split(".")),
+    )
+    for version in versions:
+        flavor_runs: dict[str, dict[str, BenchmarkRun]] = {}
+        for flavor in ("native", "universal"):
+            runs = discovered.get((version, flavor))
+            if runs is None:
+                continue
+            if set(runs) != set(BUILD_COMPARISON_SUITES):
+                raise ValueError(
+                    f"{version} {flavor}: expected results for all build suites"
+                )
+            flavor_runs[flavor] = runs
+        if not flavor_runs:
+            raise ValueError(f"{version}: no complete build result set")
+        if "native" in flavor_runs and "universal" in flavor_runs:
+            for suite in BUILD_COMPARISON_SUITES:
+                _validate_build_comparison_pair(
+                    suite,
+                    flavor_runs["native"][suite],
+                    flavor_runs["universal"][suite],
+                    version,
+                )
+        for flavor in ("native", "universal"):
+            if flavor in flavor_runs:
+                for suite in BUILD_COMPARISON_SUITES:
+                    by_suite[suite].append(flavor_runs[flavor][suite])
+    return {suite: tuple(runs) for suite, runs in by_suite.items()}
+
+
+def shared_harness_labels(
+    groups: dict[str, tuple[BenchmarkRun, ...]],
+) -> tuple[str, ...]:
+    """Return stable release/build labels in the same order as run columns."""
+
+    labels: list[str] = []
+    version_counts = Counter(
+        run.metadata.package_version for run in groups["cluster-1k"]
+    )
+    for run in groups["cluster-1k"]:
+        version = run.metadata.package_version
+        if version in FULL_VERSIONS and version_counts[version] == 1:
+            labels.append(version)
+            continue
+        native = any(
+            Path(module_path).suffix.lower() in {".so", ".pyd", ".dll"}
+            for name, module_path in run.metadata.modules.items()
+            if name.startswith("expra_connect.")
+        )
+        labels.append(f"{version} {'native' if native else 'universal'}")
+    return tuple(labels)
+
+
+def _has_focused_persistence_gap(runs: tuple[BenchmarkRun, ...]) -> bool:
+    return (
+        len(runs) > len(FOCUSED_VERSIONS)
+        and tuple(run.metadata.package_version for run in runs[: len(FOCUSED_VERSIONS)])
+        == FOCUSED_VERSIONS
+        and runs[len(FOCUSED_VERSIONS)].metadata.package_version != FULL_VERSIONS[-1]
+    )
 
 
 def render_build_comparison_diagrams(
@@ -463,17 +593,15 @@ def render_build_comparison_diagrams(
 
 
 def _validate_build_comparison_pair(
-    suite: str, native: BenchmarkRun, universal: BenchmarkRun
+    suite: str,
+    native: BenchmarkRun,
+    universal: BenchmarkRun,
+    version: str = BUILD_COMPARISON_VERSION,
 ) -> None:
     for label, run in (("native", native), ("universal", universal)):
         metadata = run.metadata
-        if (
-            metadata.suite != suite
-            or metadata.package_version != BUILD_COMPARISON_VERSION
-        ):
-            raise ValueError(
-                f"{suite}: expected matching {BUILD_COMPARISON_VERSION} {label} run"
-            )
+        if metadata.suite != suite or metadata.package_version != version:
+            raise ValueError(f"{suite}: expected matching {version} {label} run")
     native_metadata, universal_metadata = native.metadata, universal.metadata
     if (
         native_metadata.python_version != universal_metadata.python_version
@@ -606,6 +734,13 @@ VERSION_COLORS = (
 )
 
 
+def _version_color(index: int) -> str:
+    if index < len(VERSION_COLORS):
+        return VERSION_COLORS[index]
+    hue = int((index * 137.508) % 360)
+    return f"hsl({hue}, 65%, 42%)"
+
+
 def render_diagrams() -> dict[str, str]:
     """Render one across-release comparison with a composite and suite detail."""
 
@@ -613,7 +748,9 @@ def render_diagrams() -> dict[str, str]:
         Path(__file__).resolve().parents[1] / "tools" / "shared-benchmark-results"
     )
     shared_runs = load_shared_harness_runs(shared_results)
+    labels = shared_harness_labels(shared_runs)
     full_workload_index = _full_workload_index_panel(shared_runs)
+    weighted_overall_index = _weighted_overall_index_panel(shared_runs)
     panels = _shared_harness_panels(shared_runs)
     panels.insert(
         0,
@@ -621,6 +758,7 @@ def render_diagrams() -> dict[str, str]:
             "Composite",
             [
                 _composite_performance_row(shared_runs),
+                _weighted_overall_index_row(weighted_overall_index),
                 _full_workload_index_row(full_workload_index),
             ],
         ),
@@ -628,9 +766,10 @@ def render_diagrams() -> dict[str, str]:
     return {
         "performance-comparison.svg": _render_heatmap_svg(
             "Across-release performance comparison",
-            SHARED_HARNESS_LABELS,
+            labels,
             panels,
             full_workload_index=full_workload_index,
+            weighted_overall_index=weighted_overall_index,
             support_coverage=_full_workload_coverage_rows(shared_runs),
             size_indices=size_specific_indices(shared_runs),
         ),
@@ -674,7 +813,7 @@ def size_specific_indices(
                 sum(math.log(values[index] / values[0]) for values in vectors)
                 / len(vectors)
             )
-            for index in range(len(SHARED_HARNESS_LABELS))
+            for index in range(len(runs))
         )
         panels.append(
             MatchedIndexPanel(f"{size // 1000}k · {suite}", len(vectors), indices)
@@ -709,7 +848,7 @@ def _composite_performance_row(
                     )
                     / len(case_vectors)
                 )
-                for index in range(len(SHARED_HARNESS_LABELS))
+                for index in range(len(groups["cluster-1k"]))
             )
         )
 
@@ -717,7 +856,7 @@ def _composite_performance_row(
         math.exp(
             sum(math.log(suite[index]) for suite in suite_values) / len(suite_values)
         )
-        for index in range(len(SHARED_HARNESS_LABELS))
+        for index in range(len(groups["cluster-1k"]))
     )
     return HeatmapRow(
         "Composite index · equal-suite geometric mean",
@@ -741,9 +880,73 @@ def _full_workload_index_panel(
             sum(math.log(vector[index] / vector[0]) for vector in vectors)
             / len(vectors)
         )
-        for index in range(len(SHARED_HARNESS_LABELS))
+        for index in range(len(groups["cluster-1k"]))
     )
     return MatchedIndexPanel("All included suites and sizes", len(vectors), values)
+
+
+def _weighted_overall_index_panel(
+    groups: dict[str, tuple[BenchmarkRun, ...]],
+) -> MatchedIndexPanel:
+    """Apply declared category weights, with equal case weights per category."""
+
+    category_logs: list[tuple[int, tuple[float, ...]]] = []
+    case_count = 0
+    for group_name, selected_size, _, weight in WEIGHTED_INDEX_GROUPS:
+        runs = groups[group_name]
+        case_maps = [
+            {
+                outcome.case_id: outcome
+                for outcome in run.outcomes
+                if selected_size is None or outcome.size == selected_size
+            }
+            for run in runs
+        ]
+        common_ids = set(case_maps[0])
+        for cases in case_maps[1:]:
+            common_ids.intersection_update(cases)
+        vectors: list[tuple[float, ...]] = []
+        for case_id in sorted(common_ids):
+            values_list: list[float] = []
+            for cases in case_maps:
+                result = cases[case_id].result
+                values_list.append(0.0 if result is None else result.p50)
+            values = tuple(values_list)
+            if all(value > 0 for value in values):
+                vectors.append(values)
+        if not vectors:
+            raise ValueError(
+                f"weighted index category has no matched cases: {group_name}"
+            )
+        case_count += len(vectors)
+        category_logs.append(
+            (
+                weight,
+                tuple(
+                    sum(math.log(values[index] / values[0]) for values in vectors)
+                    / len(vectors)
+                    for index in range(len(runs))
+                ),
+            )
+        )
+
+    values = tuple(
+        math.exp(
+            sum(weight * category[index] for weight, category in category_logs)
+            / sum(weight for weight, _ in category_logs)
+        )
+        for index in range(len(category_logs[0][1]))
+    )
+    return MatchedIndexPanel("Five weighted workload categories", case_count, values)
+
+
+def _weighted_overall_index_row(panel: MatchedIndexPanel) -> HeatmapRow:
+    return HeatmapRow(
+        f"Weighted overall index · 5 categories · {panel.case_count} cases",
+        panel.indices,
+        (None,) * len(panel.indices),
+        value_unit="index",
+    )
 
 
 def _full_workload_index_row(panel: MatchedIndexPanel) -> HeatmapRow:
@@ -758,39 +961,61 @@ def _full_workload_index_row(panel: MatchedIndexPanel) -> HeatmapRow:
 def _full_workload_coverage_rows(
     groups: dict[str, tuple[BenchmarkRun, ...]],
 ) -> tuple[CoverageRow, ...]:
-    """Summarize measured and unavailable cases for the scored workload scope."""
+    """Summarize every distinct suite/size case once, separately from scoring."""
 
     group_labels = (
-        ("cluster-1k", "Cluster state · 1k"),
-        ("cluster-large", "Cluster state · 30k / 100k"),
-        ("connect", "Connect operations"),
-        ("persistence-200k", "JSON persistence · 200k"),
+        ("cluster-1k", 1_000, "Cluster state · 1k"),
+        ("cluster-large", 30_000, "Cluster state · 30k"),
+        ("cluster-large", 100_000, "Cluster state · 100k"),
+        ("connect", None, "Connect operations"),
+        ("persistence-30k", 30_000, "Persistence · 30k"),
+        ("persistence-100k", 100_000, "Persistence · 100k"),
+        ("persistence-200k", 200_000, "JSON persistence · 200k"),
     )
     rows: list[CoverageRow] = []
-    for group_name, label in group_labels:
+    labels = shared_harness_labels(groups)
+    for group_name, selected_size, label in group_labels:
         runs = groups[group_name]
+        cases_by_run = [
+            {
+                outcome.case_id: outcome
+                for outcome in run.outcomes
+                if selected_size is None or outcome.size == selected_size
+            }
+            for run in runs
+        ]
+        case_ids = set().union(*(cases.keys() for cases in cases_by_run))
+        aligned_cases: list[dict[str, BenchmarkOutcome] | None] = list(cases_by_run)
+        aligned_labels = list(labels)
+        if _has_focused_persistence_gap(runs):
+            aligned_cases.insert(len(FOCUSED_VERSIONS), None)
+            aligned_labels.insert(len(FOCUSED_VERSIONS), FULL_VERSIONS[-1])
         cells: list[CoverageCell] = []
-        for run in runs:
-            measured = sum(
-                outcome.result is not None and outcome.result.p50 > 0
-                for outcome in run.outcomes
-            )
-            unavailable = Counter(
-                outcome.unavailable_reason or "Unavailable reason not recorded"
-                for outcome in run.outcomes
-                if outcome.result is None or outcome.result.p50 <= 0
-            )
+        for run_index, cases in enumerate(aligned_cases):
+            unavailable: Counter[str] = Counter()
+            measured = 0
+            for case_id in case_ids:
+                outcome = None if cases is None else cases.get(case_id)
+                if outcome is None:
+                    version_label = aligned_labels[run_index]
+                    unavailable[f"Not measured for {version_label}"] += 1
+                elif outcome.result is not None and outcome.result.p50 > 0:
+                    measured += 1
+                else:
+                    unavailable[
+                        outcome.unavailable_reason or "Unavailable reason not recorded"
+                    ] += 1
             cells.append(
                 CoverageCell(
                     measured,
-                    len(run.outcomes),
+                    len(case_ids),
                     tuple(sorted(unavailable.items())),
                 )
             )
         rows.append(CoverageRow(label, tuple(cells)))
 
     total_cells: list[CoverageCell] = []
-    for version_index in range(len(SHARED_HARNESS_LABELS)):
+    for version_index in range(len(groups["cluster-1k"])):
         cells = [row.cells[version_index] for row in rows]
         reasons: Counter[str] = Counter()
         for cell in cells:
@@ -802,8 +1027,57 @@ def _full_workload_coverage_rows(
                 tuple(sorted(reasons.items())),
             )
         )
-    rows.append(CoverageRow("Total in full-workload scope", tuple(total_cells)))
+    rows.append(CoverageRow("Total unique measured cases", tuple(total_cells)))
     return tuple(rows)
+
+
+def render_performance_summary(
+    groups: dict[str, tuple[BenchmarkRun, ...]],
+) -> str:
+    """Render the current weighted winner and distinct-case coverage summary."""
+
+    labels = shared_harness_labels(groups)
+    weighted = _weighted_overall_index_panel(groups)
+    best = min(weighted.indices)
+    winners = tuple(
+        label
+        for label, index in zip(labels, weighted.indices, strict=True)
+        if math.isclose(index, best, rel_tol=1e-12)
+    )
+    coverage = _full_workload_coverage_rows(groups)[-1]
+    coverage_by_build = "; ".join(
+        f"{label}: {cell.measured}/{cell.total}"
+        for label, cell in zip(labels, coverage.cells, strict=True)
+    )
+    return (
+        f"**Current weighted winner:** {', '.join(winners)} ({best:.3f} index; "
+        f"{weighted.case_count} matched positive-p50 cases). This result is specific "
+        "to the declared workload set and weighting, not a universal performance claim.\n\n"
+        f"**Distinct-workload coverage (separate from latency scoring):** "
+        f"{coverage.cells[0].total} unique cases; {coverage_by_build}. Missing or "
+        "unsupported cases receive no invented latency penalty."
+    )
+
+
+def sync_performance_summary(path: Path, summary: str, *, check: bool) -> bool:
+    """Update or check the generated summary between its documentation markers."""
+
+    start_marker = "<!-- performance-summary:start -->"
+    end_marker = "<!-- performance-summary:end -->"
+    document = path.read_text(encoding="utf-8")
+    if document.count(start_marker) != 1 or document.count(end_marker) != 1:
+        raise ValueError(f"expected one performance summary marker pair in {path}")
+    start = document.index(start_marker) + len(start_marker)
+    end = document.index(end_marker)
+    if end < start:
+        raise ValueError(f"performance summary markers are out of order in {path}")
+    current = document[start:end]
+    rendered = f"\n{summary.strip()}\n"
+    if check:
+        return current != rendered
+    if current != rendered:
+        path.write_text(document[:start] + rendered + document[end:], encoding="utf-8")
+    return False
 
 
 def _common_measured_case_vectors(
@@ -845,28 +1119,40 @@ def _shared_harness_panels(
         "persistence-200k": "Shared harness · persistence · 200k compact pairs",
     }
     panels: list[tuple[str, list[HeatmapRow]]] = []
+    labels = shared_harness_labels(groups)
     for group, runs in groups.items():
-        first_cases = {outcome.case_id: outcome for outcome in runs[0].outcomes}
+        case_maps = [
+            {outcome.case_id: outcome for outcome in run.outcomes} for run in runs
+        ]
+        run_labels = list(labels)
+        has_focus_gap = _has_focused_persistence_gap(runs)
+        if has_focus_gap:
+            run_labels.pop(len(FOCUSED_VERSIONS))
+        all_cases = {
+            case_id: outcome
+            for cases in case_maps
+            for case_id, outcome in cases.items()
+        }
         rows: list[HeatmapRow] = []
-        for case_id in sorted(first_cases):
+        for case_id in sorted(all_cases):
             values: list[float | None] = []
             reasons: list[str | None] = []
-            outcome = first_cases[case_id]
-            for run in runs:
-                current = next(item for item in run.outcomes if item.case_id == case_id)
-                values.append(None if current.result is None else current.result.p50)
-                reasons.append(current.unavailable_reason)
-            if len(runs) == len(FOCUSED_VERSIONS) + 2:
+            outcome = all_cases[case_id]
+            for run_index, cases in enumerate(case_maps):
+                current = cases.get(case_id)
+                values.append(
+                    None
+                    if current is None or current.result is None
+                    else current.result.p50
+                )
+                reasons.append(
+                    f"Not measured for {run_labels[run_index]}"
+                    if current is None
+                    else current.unavailable_reason
+                )
+            if has_focus_gap:
                 values.insert(len(FOCUSED_VERSIONS), None)
                 reasons.insert(len(FOCUSED_VERSIONS), "Not measured for 2.2.0.3")
-            if (
-                len(runs) < len(SHARED_HARNESS_LABELS)
-                and len(runs) != len(FOCUSED_VERSIONS) + 2
-            ):
-                values.extend([None] * (len(SHARED_HARNESS_LABELS) - len(runs)))
-                reasons.extend(
-                    ["Not measured"] * (len(SHARED_HARNESS_LABELS) - len(runs))
-                )
             label = outcome.operation
             if group == "cluster-scaling":
                 label = f"{outcome.size // 1000}k {label}"
@@ -970,17 +1256,20 @@ def _render_heatmap_svg(
     panels: list[tuple[str, list[HeatmapRow]]],
     *,
     full_workload_index: MatchedIndexPanel | None = None,
+    weighted_overall_index: MatchedIndexPanel | None = None,
     support_coverage: tuple[CoverageRow, ...] = (),
     size_indices: tuple[MatchedIndexPanel, ...] = (),
 ) -> str:
     left, cell_width, row_height = 345, 112, 32
     width = left + cell_width * len(versions) + 32
     heatmap_height = 142 + sum(66 + row_height * len(rows) for _, rows in panels)
-    index_panel_count = len(size_indices) + (
-        1 if full_workload_index is not None else 0
+    index_panel_count = (
+        len(size_indices)
+        + int(full_workload_index is not None)
+        + int(weighted_overall_index is not None)
     )
     index_height = 70 + 220 * index_panel_count if index_panel_count else 0
-    coverage_height = 210 if support_coverage else 0
+    coverage_height = 72 + 26 * len(support_coverage) if support_coverage else 0
     height = heatmap_height + index_height + coverage_height
     parts = _svg_header(width, height, title)
     reference_index = versions.index(REFERENCE_VERSION)
@@ -1059,7 +1348,23 @@ def _render_heatmap_svg(
             ">2×",
         )[index]
         parts.append(_text(x + 28, legend_y + 14, label, size=11))
-    if full_workload_index is not None:
+    if weighted_overall_index is not None:
+        index_top = heatmap_height + 18
+        _render_weighted_overall_index_plot(
+            parts, weighted_overall_index, versions, index_top
+        )
+        index_top += 250
+        if full_workload_index is not None:
+            _render_full_workload_index_plot(
+                parts, full_workload_index, versions, index_top
+            )
+            index_top += 250
+        if support_coverage:
+            _render_support_coverage(parts, support_coverage, versions, index_top)
+            index_top += coverage_height
+        if size_indices:
+            _render_size_index_panels(parts, size_indices, versions, index_top)
+    elif full_workload_index is not None:
         index_top = heatmap_height + 18
         _render_full_workload_index_plot(
             parts, full_workload_index, versions, index_top
@@ -1115,6 +1420,31 @@ def _render_full_workload_index_plot(
         )
     )
     _render_index_panel(parts, panel, versions, top + 48)
+
+
+def _render_weighted_overall_index_plot(
+    parts: list[str], panel: MatchedIndexPanel, versions: tuple[str, ...], top: int
+) -> None:
+    parts.append(_text(16, top, "Weighted overall index", size=18, weight="bold"))
+    parts.append(
+        _text(
+            16,
+            top + 21,
+            "Weighted geometric mean of matched p50 ratios; cases are equally weighted within each category.",
+            size=11,
+            color="#454545",
+        )
+    )
+    parts.append(
+        _text(
+            16,
+            top + 38,
+            "1k cluster: 5% · 30k cluster: 15% · 100k cluster: 25% · Connect: 20% · 200k JSON persistence: 35%",
+            size=10,
+            color="#454545",
+        )
+    )
+    _render_index_panel(parts, panel, versions, top + 58)
 
 
 def _render_support_coverage(
@@ -1244,7 +1574,7 @@ def _render_index_panel(
         x = plot_left + (value - axis_min) / (axis_max - axis_min) * (
             plot_right - plot_left
         )
-        color = VERSION_COLORS[version_index]
+        color = _version_color(version_index)
         point_radius = 5 if math.isclose(value, best, rel_tol=1e-12) else 4
         parts.append(_text(475, y + 4, version, size=10, anchor="end"))
         parts.append(
@@ -1357,7 +1687,7 @@ def _render_state_scaling_svg(baseline: BaselineData) -> str:
                 for index, (x, y, _, _) in enumerate(points)
             )
             if path:
-                color = VERSION_COLORS[version_index]
+                color = _version_color(version_index)
                 parts.append(
                     f'<path d="{path}" fill="none" stroke="{color}" stroke-width="2.5"/>'
                 )
@@ -1370,7 +1700,7 @@ def _render_state_scaling_svg(baseline: BaselineData) -> str:
     legend_y = 116
     for index, version in enumerate(FULL_VERSIONS):
         y = legend_y + index * 32
-        color = VERSION_COLORS[index]
+        color = _version_color(index)
         parts.append(f'<path d="M 1090 {y} h 28" stroke="{color}" stroke-width="3"/>')
         parts.append(_text(1126, y + 5, version, size=13))
     parts.append("</svg>")
@@ -1437,26 +1767,41 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     repository_root = Path(__file__).resolve().parents[1]
     output_dir = repository_root / "docs" / "images"
+    summary_path = repository_root / "docs" / "native-wheel-performance-baseline.md"
     try:
+        groups = load_shared_harness_runs(
+            repository_root / "tools" / "shared-benchmark-results"
+        )
+        summary = render_performance_summary(groups)
         diagrams = render_diagrams()
         stale = sync_diagrams(diagrams, output_dir, check=args.check)
+        summary_stale = sync_performance_summary(
+            summary_path, summary, check=args.check
+        )
     except (OSError, TypeError, ValueError) as error:
         print(f"performance diagram update failed: {error}", file=sys.stderr)
         return 2
 
     if args.check:
-        if stale:
+        if stale or summary_stale:
             for path in stale:
                 print(
                     f"stale or missing diagram: {path.relative_to(repository_root)}",
                     file=sys.stderr,
                 )
+            if summary_stale:
+                print(
+                    "stale generated performance summary: "
+                    f"{summary_path.relative_to(repository_root)}",
+                    file=sys.stderr,
+                )
             return 1
-        print("Performance diagrams are current.")
+        print("Performance diagrams and summary are current.")
         return 0
 
     print(
-        f"Updated {len(diagrams)} diagrams in {output_dir.relative_to(repository_root)}."
+        f"Updated {len(diagrams)} diagrams and "
+        f"{summary_path.relative_to(repository_root)}."
     )
     return 0
 

@@ -115,6 +115,83 @@ class ReleaseTests(unittest.TestCase):
                 marker.read_text(encoding="utf-8"),
             )
 
+    def test_build_release_accepts_explicit_performance_benchmark_opt_out(self) -> None:
+        root = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            fake_python = temporary / "fake-python"
+            marker = temporary / "python-arguments"
+            fake_python.write_text(
+                '#!/bin/sh\nprintf "%s\\n" "$*" >> "$INVOCATION_MARKER"\n'
+                'case "$*" in *"scripts/release.py prepare-build"*) exit 37;; esac\n',
+                encoding="utf-8",
+            )
+            fake_python.chmod(0o755)
+            environment = os.environ.copy()
+            environment["PYTHON"] = str(fake_python)
+            environment["INVOCATION_MARKER"] = str(marker)
+
+            completed = subprocess.run(
+                [
+                    "bash",
+                    str(root / "scripts" / "build_release.sh"),
+                    "--skip-performance-benchmarks",
+                ],
+                capture_output=True,
+                check=False,
+                env=environment,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 37, completed.stderr)
+            self.assertIn("scripts/release.py prepare-build", marker.read_text())
+
+    def test_performance_failure_stops_before_release_artifact_sync(self) -> None:
+        root = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            fake_python = temporary / "fake-python"
+            marker = temporary / "python-arguments"
+            fake_python.write_text(
+                '#!/bin/sh\nprintf "%s\\n" "$*" >> "$INVOCATION_MARKER"\n'
+                'case "$*" in\n'
+                '  *"-m pip wheel"*)\n'
+                '    while [ "$#" -gt 0 ]; do\n'
+                '      if [ "$1" = "--wheel-dir" ]; then\n'
+                '        mkdir -p "$2"\n'
+                '        touch "$2/expra_connect-9.9.9.9-cp312-cp312-linux_x86_64.whl"\n'
+                "        break\n"
+                "      fi\n"
+                "      shift\n"
+                "    done\n"
+                "    exit 0;;\n"
+                '  *"scripts/benchmark_release_wheels.py"*) exit 55;;\n'
+                "esac\nexit 0\n",
+                encoding="utf-8",
+            )
+            fake_python.chmod(0o755)
+            environment = os.environ.copy()
+            environment.update(
+                {
+                    "PYTHON": str(fake_python),
+                    "INVOCATION_MARKER": str(marker),
+                    "TMPDIR": str(temporary),
+                }
+            )
+
+            completed = subprocess.run(
+                ["bash", str(root / "scripts" / "build_release.sh"), "--bump", "none"],
+                capture_output=True,
+                check=False,
+                env=environment,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 55, completed.stderr)
+            invocations = marker.read_text(encoding="utf-8")
+            self.assertIn("scripts/benchmark_release_wheels.py", invocations)
+            self.assertNotIn("sync-artifacts", invocations)
+
     def test_native_wheels_share_version_and_newest_native_is_manifest_baseline(
         self,
     ) -> None:

@@ -1,0 +1,568 @@
+{
+  "metadata": {
+    "config": {
+      "batch_count": 1,
+      "repetitions": 9,
+      "track_allocations": false,
+      "warmups": 2
+    },
+    "modules": {
+      "expra_connect.persistence": "/tmp/opencode/bench-comparison-2.2.0.1/2.2.0.0/expra_connect/persistence.py",
+      "json": "/usr/lib/python3.12/json/__init__.py",
+      "msgpack": "/home/btn17/Downloads/expra-connect/.venv/lib/python3.12/site-packages/msgpack/__init__.py"
+    },
+    "package_version": "2.2.0.0",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "suite": "persistence"
+  },
+  "outcomes": [
+    {
+      "case_id": "30000:MessagePack:MessagePack encode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "msgpack",
+        "shape": "dictionary_records"
+      },
+      "operation": "MessagePack encode",
+      "payload_bytes": 678909,
+      "result": {
+        "maximum": 8760.648,
+        "mean_us": 7845.678888888889,
+        "minimum": 6679.272,
+        "ops_per_second": 127.45869594742244,
+        "outliers": 0,
+        "p25": 7438.664,
+        "p50": 7686.372,
+        "p75": 8714.331,
+        "p95": 8746.4736,
+        "p99": 8757.813119999999,
+        "peak_bytes": null,
+        "samples_us": [
+          7506.151,
+          7438.664,
+          7687.554,
+          7686.372,
+          8714.331,
+          7412.906,
+          8760.648,
+          6679.272,
+          8725.212
+        ],
+        "spread": 2081.3759999999993
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:MessagePack:MessagePack file read",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "msgpack",
+        "shape": "dictionary_records"
+      },
+      "operation": "MessagePack file read",
+      "payload_bytes": 678909,
+      "result": {
+        "maximum": 93.927,
+        "mean_us": 80.60855555555555,
+        "minimum": 77.867,
+        "ops_per_second": 12405.631053775654,
+        "outliers": 1,
+        "p25": 78.538,
+        "p50": 78.989,
+        "p75": 79.69,
+        "p95": 88.3966,
+        "p99": 92.82092,
+        "peak_bytes": null,
+        "samples_us": [
+          79.69,
+          78.348,
+          77.867,
+          79.139,
+          93.927,
+          80.101,
+          78.538,
+          78.878,
+          78.989
+        ],
+        "spread": 16.060000000000002
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:MessagePack:MessagePack decode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "msgpack",
+        "shape": "dictionary_records"
+      },
+      "operation": "MessagePack decode",
+      "payload_bytes": 678909,
+      "result": {
+        "maximum": 18539.357,
+        "mean_us": 17654.249888888888,
+        "minimum": 17226.751,
+        "ops_per_second": 56.64358476252074,
+        "outliers": 0,
+        "p25": 17318.464,
+        "p50": 17377.004,
+        "p75": 17935.98,
+        "p95": 18356.3282,
+        "p99": 18502.75124,
+        "peak_bytes": null,
+        "samples_us": [
+          17324.175,
+          18539.357,
+          17377.004,
+          17301.532,
+          17783.201,
+          17318.464,
+          18081.785,
+          17935.98,
+          17226.751
+        ],
+        "spread": 1312.6059999999998
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:MessagePack:MessagePack root validation",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "msgpack",
+        "shape": "dictionary_records"
+      },
+      "operation": "MessagePack root validation",
+      "payload_bytes": 678909,
+      "result": {
+        "maximum": 1.443,
+        "mean_us": 1.1376666666666666,
+        "minimum": 1.012,
+        "ops_per_second": 878992.0890711984,
+        "outliers": 0,
+        "p25": 1.022,
+        "p50": 1.052,
+        "p75": 1.202,
+        "p95": 1.4106,
+        "p99": 1.43652,
+        "peak_bytes": null,
+        "samples_us": [
+          1.362,
+          1.443,
+          1.202,
+          1.092,
+          1.022,
+          1.052,
+          1.012,
+          1.042,
+          1.012
+        ],
+        "spread": 0.43100000000000005
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:MessagePack:MessagePack decode + root validation",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "msgpack",
+        "shape": "dictionary_records"
+      },
+      "operation": "MessagePack decode + root validation",
+      "payload_bytes": 678909,
+      "result": {
+        "maximum": 33053.841,
+        "mean_us": 18390.101555555557,
+        "minimum": 16161.161,
+        "ops_per_second": 54.37707872243397,
+        "outliers": 1,
+        "p25": 16242.594,
+        "p50": 16514.757,
+        "p75": 16850.271,
+        "p95": 26819.326999999997,
+        "p99": 31806.938199999997,
+        "peak_bytes": null,
+        "samples_us": [
+          16367.57,
+          33053.841,
+          17467.556,
+          16514.757,
+          16675.201,
+          16850.271,
+          16177.963,
+          16242.594,
+          16161.161
+        ],
+        "spread": 16892.68
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:MessagePack:MessagePack store load",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "msgpack",
+        "shape": "dictionary_records"
+      },
+      "operation": "MessagePack store load",
+      "payload_bytes": 678909,
+      "result": {
+        "maximum": 16406.123,
+        "mean_us": 15993.624777777777,
+        "minimum": 15327.758,
+        "ops_per_second": 62.52491313848019,
+        "outliers": 0,
+        "p25": 15788.317,
+        "p50": 15949.401,
+        "p75": 16267.592,
+        "p95": 16395.6514,
+        "p99": 16404.02868,
+        "peak_bytes": null,
+        "samples_us": [
+          16406.123,
+          15327.758,
+          15788.317,
+          15949.401,
+          16267.592,
+          15828.714,
+          15781.575,
+          16379.944,
+          16213.199
+        ],
+        "spread": 1078.3649999999998
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:MessagePack:MessagePack store save",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "msgpack",
+        "shape": "dictionary_records"
+      },
+      "operation": "MessagePack store save",
+      "payload_bytes": 678909,
+      "result": {
+        "maximum": 38330.397,
+        "mean_us": 22523.944,
+        "minimum": 18103.505,
+        "ops_per_second": 44.397197933008535,
+        "outliers": 1,
+        "p25": 20048.314,
+        "p50": 20805.333,
+        "p75": 21559.285,
+        "p95": 32424.254199999996,
+        "p99": 37149.168439999994,
+        "peak_bytes": null,
+        "samples_us": [
+          21559.285,
+          18103.505,
+          19006.539,
+          20805.333,
+          20885.293,
+          20411.79,
+          23565.04,
+          20048.314,
+          38330.397
+        ],
+        "spread": 20226.891999999996
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:JSON:JSON encode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "json",
+        "shape": "compact_pairs"
+      },
+      "operation": "JSON encode",
+      "payload_bytes": 453915,
+      "result": {
+        "maximum": 13098.111,
+        "mean_us": 8444.174666666666,
+        "minimum": 6761.096,
+        "ops_per_second": 118.42483599344465,
+        "outliers": 2,
+        "p25": 7137.056,
+        "p50": 7340.489,
+        "p75": 8281.845,
+        "p95": 12503.5978,
+        "p99": 12979.20836,
+        "peak_bytes": null,
+        "samples_us": [
+          11611.828,
+          8281.845,
+          6761.096,
+          7137.056,
+          6928.872,
+          7170.348,
+          7340.489,
+          7667.927,
+          13098.111
+        ],
+        "spread": 6337.015000000001
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:JSON:JSON file read",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "json",
+        "shape": "compact_pairs"
+      },
+      "operation": "JSON file read",
+      "payload_bytes": 453915,
+      "result": {
+        "maximum": 294.866,
+        "mean_us": 218.13133333333334,
+        "minimum": 176.553,
+        "ops_per_second": 4584.394111192951,
+        "outliers": 0,
+        "p25": 192.904,
+        "p50": 204.436,
+        "p75": 245.623,
+        "p95": 284.7068,
+        "p99": 292.83416,
+        "peak_bytes": null,
+        "samples_us": [
+          294.866,
+          269.468,
+          245.623,
+          205.868,
+          195.569,
+          204.436,
+          177.895,
+          176.553,
+          192.904
+        ],
+        "spread": 118.31299999999999
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:JSON:JSON decode",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "json",
+        "shape": "compact_pairs"
+      },
+      "operation": "JSON decode",
+      "payload_bytes": 453915,
+      "result": {
+        "maximum": 10778.285,
+        "mean_us": 7258.825,
+        "minimum": 6282.042,
+        "ops_per_second": 137.76334324081378,
+        "outliers": 1,
+        "p25": 6650.076,
+        "p50": 6854.843,
+        "p75": 7208.149,
+        "p95": 9369.166599999999,
+        "p99": 10496.461319999999,
+        "peak_bytes": null,
+        "samples_us": [
+          6282.042,
+          6854.843,
+          6802.464,
+          6878.558,
+          6619.519,
+          7208.149,
+          7255.489,
+          6650.076,
+          10778.285
+        ],
+        "spread": 4496.2429999999995
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:JSON:JSON object-root validation",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "json",
+        "shape": "compact_pairs"
+      },
+      "operation": "JSON object-root validation",
+      "payload_bytes": 453915,
+      "result": {
+        "maximum": 0.752,
+        "mean_us": 0.5877777777777777,
+        "minimum": 0.521,
+        "ops_per_second": 1701323.2514177696,
+        "outliers": 2,
+        "p25": 0.531,
+        "p50": 0.541,
+        "p75": 0.591,
+        "p95": 0.7355999999999999,
+        "p99": 0.74872,
+        "peak_bytes": null,
+        "samples_us": [
+          0.752,
+          0.711,
+          0.591,
+          0.541,
+          0.541,
+          0.521,
+          0.531,
+          0.521,
+          0.581
+        ],
+        "spread": 0.23099999999999998
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:JSON:JSON store load",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "json",
+        "shape": "compact_pairs"
+      },
+      "operation": "JSON store load",
+      "payload_bytes": 453915,
+      "result": {
+        "maximum": 6950.974,
+        "mean_us": 6631.919888888889,
+        "minimum": 6387.16,
+        "ops_per_second": 150.78589861668848,
+        "outliers": 0,
+        "p25": 6480.296,
+        "p50": 6630.84,
+        "p75": 6729.607,
+        "p95": 6893.8024000000005,
+        "p99": 6939.53968,
+        "peak_bytes": null,
+        "samples_us": [
+          6950.974,
+          6478.603,
+          6480.296,
+          6556.81,
+          6664.944,
+          6808.045,
+          6630.84,
+          6387.16,
+          6729.607
+        ],
+        "spread": 563.8140000000003
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:JSON:JSON store save",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "codec": "json",
+        "shape": "compact_pairs"
+      },
+      "operation": "JSON store save",
+      "payload_bytes": 453915,
+      "result": {
+        "maximum": 77264.261,
+        "mean_us": 72471.66488888889,
+        "minimum": 69402.489,
+        "ops_per_second": 13.798496302426145,
+        "outliers": 1,
+        "p25": 71051.581,
+        "p50": 72709.869,
+        "p75": 73053.617,
+        "p95": 75913.4886,
+        "p99": 76994.10652,
+        "peak_bytes": null,
+        "samples_us": [
+          69402.489,
+          73887.33,
+          72709.869,
+          71051.581,
+          73053.617,
+          77264.261,
+          70475.874,
+          72823.593,
+          71576.37
+        ],
+        "spread": 7861.771999999997
+      },
+      "size": 30000,
+      "status": "measured"
+    }
+  ],
+  "schema_version": 1
+}
