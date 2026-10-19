@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError
 from threading import Barrier, Event, Thread
 
 from expra_connect.identity import NodeId
-from expra_connect.sharing.capabilities import CapabilityShare
+from expra_connect.sharing.capabilities import CapabilityHandlerError, CapabilityShare
 from expra_connect.surfaces.registry import (
     SurfaceAccess,
     SurfaceHandlerError,
@@ -13,6 +13,20 @@ from expra_connect.surfaces.registry import (
 
 
 class SharingTests(unittest.TestCase):
+    def test_handler_failures_do_not_expose_raw_exception_text(self) -> None:
+        share = CapabilityShare()
+        peer = NodeId("peer")
+
+        def broken(_peer: NodeId, _params: dict[str, object]) -> object:
+            raise RuntimeError("private handler detail")
+
+        share.register("read", broken)
+        share.allow(peer, "read")
+        with self.assertRaises(CapabilityHandlerError) as raised:
+            share.request(peer, "read")
+        self.assertNotIn("private handler detail", str(raised.exception))
+        self.assertIsInstance(raised.exception.__cause__, RuntimeError)
+
     def test_target_owned_capability_requires_explicit_permission(self) -> None:
         share = CapabilityShare()
         share.register("demo.read_state", lambda _peer, _params: {"ok": True})

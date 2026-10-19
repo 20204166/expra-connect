@@ -11,6 +11,10 @@ MAX_CAPABILITY_ID_LENGTH = 128
 CapabilityHandler = Callable[[NodeId, dict[str, object]], object]
 
 
+class CapabilityHandlerError(RuntimeError):
+    """Raised when a host-owned capability handler fails."""
+
+
 def validate_capability_id(capability: object) -> None:
     """Validate an opaque capability identifier without normalizing it."""
 
@@ -110,7 +114,10 @@ class CapabilityShare:
             ):
                 raise PermissionError("capability is not authorized")
 
-        result = handler(peer_id, request_params)
+        try:
+            result = handler(peer_id, request_params)
+        except Exception as error:
+            raise CapabilityHandlerError("capability handler failed") from error
 
         with self._lock:
             current_allowed = self._allowed.get(peer_id)
