@@ -1,126 +1,151 @@
 # Native and shared-harness performance baselines
 
-**Historical measurements:** 18 October 2026<br>
-**Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39<br>
-**Packages:** 1.8.0.0, 1.9.0.1, 2.0.0.0, 2.0.0.2, 2.2.0.0, 2.2.0.1, and 2.2.0.3.
+- **Historical shared-harness measurements:** 18 October 2026
+- **2.2.0.3 native/universal rerun:** 19 October 2026
+- **Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39
+- **Compared results:** 1.8.0.0, 1.9.0.1, 2.0.0.0, 2.0.0.2, 2.2.0.0,
+  2.2.0.1, 2.2.0.3 native/universal, and 2.2.0.4 native/universal.
 
-One consolidated diagram compares the earlier releases and separate native and
-universal build columns. It contains the composite index, cluster, persistence,
-and connect panels, four size-specific matched-workload index panels, a weighted
-overall index, and distinct-workload coverage.
-Cells compare matching p50 measurements with 1.8.0.0; below 1× is faster. The
-composite uses the geometric mean of matched case ratios, with cluster state,
-persistence, and connect weighted equally. Within each suite, cases receive
-equal weight. The index is unitless and lower is better; it is a summary of this
-specific benchmark mix, not a prediction for every deployment workload.
+## What the diagram shows
 
-The **weighted overall index** is the primary winner score. It computes a
-geometric mean of matched p50 ratios against 1.8.0.0, first averaging cases
-within each category and then applying these category weights: 1k cluster 5%,
-30k cluster 15%, 100k cluster 25%, connect 20%, and 200k JSON persistence 35%.
-Larger state workloads therefore have more influence; the chart labels every
-weight. The currently measured winner and per-build coverage are regenerated
-from the saved run data below. This is the winner for the declared workload set
-and weighting, not a universal claim.
-Only cases with positive p50 results for every plotted column enter latency
-scores. Coverage is reported separately and does not add penalties.
+- One consolidated comparison of historical releases and native/universal builds.
+- Composite, cluster-state, persistence, and connect heatmaps.
+- Weighted and full-workload indices, workload coverage, and four size-specific
+  matched-workload plots.
+- Ratios are relative to 1.8.0.0. Values below `1×` are faster; index values
+  are unitless and lower is better.
+- Results describe this benchmark mix. They are not predictions for every
+  deployment workload.
 
-The Composite section also reports a **full-workload index**: one geometric
-mean across all 37 positive-p50 cases shared by every displayed release/build,
-with each case weighted equally. It includes cluster-state cases at 1k, 30k,
-and 100k, matched connect cases, and 200k JSON-persistence cases. This differs
-from the adjacent composite, which first combines results within suites and
-then weights the three suites equally. The full-workload index is still specific
-to this benchmark mix and does not imply a universal winner. Focused 30k/100k
-persistence cases are excluded because 2.2.0.3 was not measured there; YAML and
-unsupported 200k MessagePack cases have no common positive-p50 result to score.
-The full-workload index also has its own point-plot section below, using the
-same release/build series and index values as the summary row above.
+## How scores and coverage work
 
-The **Workload support / coverage** section reports measured cases separately
-from latency scoring. For each suite and size, the newest package version's
-saved native and universal runs define the workload inventory; every displayed
-historical version/build is recalculated against that same inventory. This
-means newly introduced cases appear as unmeasured for older versions, while
-historical-only cases do not inflate the current denominator. It shows cluster
-state at 1k, 30k, and 100k; connect; and persistence at 30k, 100k, and 200k.
-The separate cluster round-trip scaling visualization reuses cases and is not
-counted again. Current measured/total counts are regenerated below. The two
-200k MessagePack StateStore cases are unsupported by payload/array limits; YAML
-size limits and unavailable connect operations are explained in chart tooltips.
-Missing cases receive no invented latency penalty.
+- **Composite index:** geometric mean of matched p50 ratios. Cluster state,
+  persistence, and connect receive equal suite weight; cases are equally
+  weighted within each suite.
+- **Weighted overall index (primary winner score):** geometric mean of matched
+  p50 ratios, averaged within categories before applying these weights:
+  - 1k cluster: 5%
+  - 30k cluster: 15%
+  - 100k cluster: 25%
+  - Connect: 20%
+  - 200k JSON persistence: 35%
+- **Full-workload index:** equal-case geometric mean across the 37 positive-p50
+  cases shared by every displayed result. It includes cluster state at 1k,
+  30k, and 100k; matched connect cases; and 200k JSON persistence. It differs
+  from the composite, which gives equal weight to the three suites.
+- Only positive p50 results present in every compared column contribute to
+  latency scores. Coverage is reported separately; missing cases receive no
+  invented latency penalty.
+- **Workload support / coverage:** the newest native/universal runs define the
+  case inventory for each suite and size. Older results are measured against
+  that inventory: new cases appear as unmeasured, and historical-only cases do
+  not increase the denominator.
+- Coverage includes cluster state at 1k, 30k, and 100k; connect; and persistence
+  at 30k, 100k, and 200k. Cluster round-trip scaling reuses cases and is not
+  counted twice.
+- YAML size limits, unavailable connect operations, and the two unsupported
+  200k MessagePack StateStore cases are explained in chart tooltips.
+
+## Visible history window
+
+- Keep at most 10 columns: the 1.8.0.0 baseline plus the newest results.
+- Keep the baseline first/left and at the top of vertical plots. Order the
+  remaining results chronologically, with the newest last/right/bottom.
+- Use this same window for heatmaps, plots, summary winners, and index scores.
+- When a new result exceeds the window, move the oldest non-baseline raw JSON
+  into a sibling `history/` folder. Keep archived data, but exclude it from
+  normal refreshes and current scoring.
 
 <!-- performance-summary:start -->
-**Current weighted winner:** 2.2.0.3 (0.918 index; 37 matched positive-p50 cases). This result is specific to the declared workload set and weighting, not a universal performance claim.
-
-**Distinct-workload coverage (separate from latency scoring):** 73 unique cases; 1.8.0.0: 63/73; 1.9.0.1: 65/73; 2.0.0.0: 65/73; 2.0.0.2: 65/73; 2.2.0.0: 65/73; 2.2.0.1: 65/73; 2.2.0.3: 39/73; 2.2.0.4 native: 68/73; 2.2.0.4 universal: 68/73. Missing or unsupported cases receive no invented latency penalty.
+- **Current weighted winner:** 2.2.0.3 universal — 0.858 index; 37 matched positive-p50 cases.
+  - Applies only to this workload set and weighting; it is not a universal claim.
+- **Distinct-workload coverage:** 73 unique cases; reported separately from latency scoring.
+  - 1.8.0.0: 63/73
+  - 1.9.0.1: 65/73
+  - 2.0.0.0: 65/73
+  - 2.0.0.2: 65/73
+  - 2.2.0.0: 65/73
+  - 2.2.0.1: 65/73
+  - 2.2.0.3 native: 68/73
+  - 2.2.0.3 universal: 68/73
+  - 2.2.0.4 native: 68/73
+  - 2.2.0.4 universal: 68/73
+  - Missing or unsupported cases receive no invented latency penalty.
 <!-- performance-summary:end -->
 
-Only cases with measured results for every compared column contribute to the
-composite. It uses cluster 1k and 30k/100k cases, connect cases, and 200k JSON
-persistence cases; 200k MessagePack StateStore is unsupported by payload/array
-limits. Focused 30k/100k persistence is omitted from the composite because
-2.2.0.3 was not measured there, but those measurements remain visible in the
-persistence panels where available. Earlier versions have one version column;
-2.2.0.4 native and universal are separate columns.
+## Diagram and size-specific plots
 
 ![Unified across-release, native/universal, and composite performance comparison.](images/performance-comparison.svg)
 
-The appended size panels normalize each workload's p50 against its matching
-1.8.0.0 result, then take the geometric mean across cases measured for every
-displayed release/build. They show 9 cluster-state cases at 1k, 6 cluster-state
-cases at each of 30k and 100k, and 6 JSON-persistence cases at 200k. Persistence
-results at 30k/100k are not included because 2.2.0.3 was not measured there;
-unsupported 200k MessagePack cases are also excluded. Each panel marks
-its **lowest observed index** (lower is faster). These are per-panel descriptive
-summaries, not a universal release ranking. Workload mix changes across sizes,
-so the points are intentionally unconnected and do not describe one scaling
-curve.
+- The composite uses cluster-state 1k and 30k/100k cases, connect cases, and
+  200k JSON-persistence cases.
+- 200k MessagePack StateStore is unsupported by payload/array limits.
+- Focused 30k/100k persistence is excluded from the composite because it is not
+  measured for every displayed release/build. Those results remain in the
+  persistence heatmaps when available.
+- Older releases have one column. 2.2.0.3 and 2.2.0.4 have separate native and
+  universal columns.
+- Size plots normalize each workload's p50 against its matching 1.8.0.0 result,
+  then calculate a geometric mean over cases measured in every displayed result.
+  Current panels cover:
+  - 9 cluster-state cases at 1k
+  - 6 cluster-state cases at 30k
+  - 6 cluster-state cases at 100k
+  - 6 JSON-persistence cases at 200k
+- Each size panel marks its **lowest observed index**. Panels are descriptive,
+  not a universal ranking. Workload mixes differ by size, so points are not
+  connected and do not represent one scaling curve.
 
-The release build workflow benchmarks only wheel artifacts in that build,
-preserving versioned result files and refreshing the chart before release
-artifact synchronization. Use `--skip-performance-benchmarks` for an
-intentional wheel-only build. A failed benchmark or chart refresh prevents
-artifact synchronization. Existing historical result JSON is reused; prior
-wheels are not rebuilt or rerun.
+## Refresh and source data
 
-The shared harness records p50, fixture shape, module provenance, package
-version, and support reasons. Older cluster-state runs used fewer warmups and
-repetitions than the 2.2.0.4 runs, so those cross-version ratios are descriptive
-rather than controlled causal comparisons. The native suite triplet ran before
-the universal triplet; cache, thermal, and time-order effects may influence
-their pairwise differences. Allocation tracking was disabled, so `peak_bytes`
-is null. No historical wheel was rerun. The raw 2.2.0.4 JSON is in
-`docs/performance-build-comparison-results/`; the saved shared-harness JSON is
-tracked in `tools/shared-benchmark-results/` for reproducible chart updates.
-
-Package source files are unchanged from 2.2.0.3 apart from version metadata.
-The native and universal wheels differ in compiled-module versus Python-source
-representation. Native wheel SHA-256 is
-`ed1faf57de9c8b5f77aaf1d67bd077af47e0f0ef3b5835f2d41d59bb103c71f1`; the
-universal wheel SHA-256 is
-`2207230eb5731d20cd50b375734715c0e99376630bacf873ceebc9f0d27d75fe`.
+- The release workflow benchmarks the wheel artifacts for that build and
+  refreshes the chart before artifact synchronization.
+- A failed benchmark or chart refresh prevents artifact synchronization.
+- Use `--skip-performance-benchmarks` for an intentional wheel-only build.
+- Existing historical results are reused; prior wheels are not rebuilt or rerun.
+- The 2.2.0.3 native and universal wheels were rerun as a matched full matrix on
+  CPython 3.12.3. These results replace the former single 2.2.0.3 shared-harness
+  records.
+- Versioned build JSON is stored in
+  `docs/performance-build-comparison-results/`. Shared-harness JSON is tracked
+  in `tools/shared-benchmark-results/` for reproducible refreshes.
+- The shared harness records p50, fixture shape, module provenance, package
+  version, and support reasons.
 
 ## Interpretation and limitations
 
-- The 2.2.0.1 wheel is the first in this comparison that includes
-  `expra_connect.persistence` as a compiled Cython extension. Cythonizing the
-  wrapper does not compile JSON, MessagePack, or filesystem operations.
-- The 2.2.0.0-to-2.2.0.1 comparison is not a source-identical Cython A/B test:
-  source changed, and the new release adds persistence to the compiled module
-  set. Do not attribute timing differences solely to Cython.
-- Save timings include filesystem synchronization and remain sensitive to
-  filesystem/device state. Read timings are affected by cache state.
+- Older cluster-state runs used fewer warmups and repetitions than 2.2.0.4;
+  cross-version ratios are descriptive, not controlled causal comparisons.
+- Native suites ran before universal suites. Cache, thermal, and time-order
+  effects may influence pairwise results.
+- Allocation tracking was disabled; `peak_bytes` is null.
 - Historical and shared-harness runs use different harnesses and fixture
-  scales. They must not be used as one ratio series or treated as controlled
-  before/after measurements.
-- These representative workloads do not measure live network discovery,
-  socket transport, TLS, concurrent load, or every public API.
+  scales. Do not treat them as one ratio series or as controlled before/after
+  measurements.
+- The 2.2.0.1 wheel first includes `expra_connect.persistence` as a compiled
+  Cython extension. Cythonizing the wrapper does not compile JSON, MessagePack,
+  or filesystem operations.
+- The 2.2.0.0-to-2.2.0.1 comparison is not a source-identical Cython A/B test:
+  source changed, and 2.2.0.1 adds persistence to the compiled module set.
+  Timing differences cannot be attributed solely to Cython.
+- Save timings include filesystem synchronization and are device-sensitive;
+  read timings are affected by cache state.
+- These workloads do not cover live discovery, socket transport, TLS,
+  concurrency, or every public API.
 
-## Refresh
+## Wheel artifacts
 
-The committed SVG is embedded above. To rebuild it, the tracked shared-run and
-build-comparison JSON artifacts must be present in the working tree:
+- Package source files are unchanged from 2.2.0.3 apart from version metadata.
+- Native and universal wheels differ in compiled-module versus Python-source
+  representation.
+- Native wheel SHA-256:
+  `ed1faf57de9c8b5f77aaf1d67bd077af47e0f0ef3b5835f2d41d59bb103c71f1`
+- Universal wheel SHA-256:
+  `2207230eb5731d20cd50b375734715c0e99376630bacf873ceebc9f0d27d75fe`
+
+## Refresh commands
+
+The committed SVG is embedded above. Refresh and verify it with:
 
 ```sh
 .venv/bin/python -m scripts.update_performance_diagrams

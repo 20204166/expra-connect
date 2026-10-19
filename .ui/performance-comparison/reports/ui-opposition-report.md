@@ -1,5 +1,19 @@
 # Opposition report — performance size index
 
+## Rolling history window — 2026-10-19
+
+- The change remains within the existing single-SVG design language; no
+  additional palette, typography, or interaction pattern was introduced.
+- Ordering is shared across tables, plots, and score calculations so hidden
+  releases cannot affect the displayed winner. Baseline is pinned; the newest
+  nine entries follow it when more than 10 are available.
+- Archival is a move, not deletion. Normal refresh archives only after SVG and
+  summary synchronization; `--check` is read-only. Destination conflicts are
+  checked before moving, and completed moves are rolled back on an I/O failure.
+- The selected visual-polish mode does not call for a separate opposition
+  stage. These checks are implementation constraints, not independent reviewer
+  evidence.
+
 ## Follow-up spacing patch opposition — 2026-10-19
 
 - **Independent reviewer decision:** modify before accepting; share the layout

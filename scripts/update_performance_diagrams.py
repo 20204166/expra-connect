@@ -27,12 +27,7 @@ FULL_VERSIONS = (
 SHARED_HARNESS_VERSIONS = FULL_VERSIONS[:-1]
 REFERENCE_VERSION = "1.8.0.0"
 FOCUSED_VERSIONS = FULL_VERSIONS[:-1]
-SHARED_HARNESS_LABELS = SHARED_HARNESS_VERSIONS + (
-    "2.2.0.3 native",
-    "2.2.0.3 universal",
-    "2.2.0.4 native",
-    "2.2.0.4 universal",
-)
+MAX_VISIBLE_COLUMNS = 10
 FULL_METRICS = (
     "Identity fingerprint",
     "Identity create",
@@ -347,17 +342,31 @@ WEIGHTED_INDEX_GROUPS = (
 )
 
 
-def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun, ...]]:
-    """Load comparable shared-harness groups and reject provenance drift."""
+def _load_all_shared_harness_runs(
+    results_dir: Path,
+) -> dict[str, tuple[BenchmarkRun, ...]]:
+    """Load every active comparable result and reject provenance drift."""
+
+    shared_versions = tuple(
+        version
+        for version in SHARED_HARNESS_VERSIONS
+        if (results_dir / f"cluster-1k-{version}.json").is_file()
+    )
+    if not shared_versions or shared_versions[0] != REFERENCE_VERSION:
+        raise ValueError("active shared results must include the reference baseline")
 
     groups = {
-        "cluster-1k": SHARED_HARNESS_VERSIONS,
-        "cluster-large": SHARED_HARNESS_VERSIONS,
-        "cluster-scaling": SHARED_HARNESS_VERSIONS,
-        "connect": SHARED_HARNESS_VERSIONS,
-        "persistence-30k": FOCUSED_VERSIONS,
-        "persistence-100k": FOCUSED_VERSIONS,
-        "persistence-200k": SHARED_HARNESS_VERSIONS,
+        "cluster-1k": shared_versions,
+        "cluster-large": shared_versions,
+        "cluster-scaling": shared_versions,
+        "connect": shared_versions,
+        "persistence-30k": tuple(
+            version for version in shared_versions if version in FOCUSED_VERSIONS
+        ),
+        "persistence-100k": tuple(
+            version for version in shared_versions if version in FOCUSED_VERSIONS
+        ),
+        "persistence-200k": shared_versions,
     }
     loaded: dict[str, tuple[BenchmarkRun, ...]] = {}
     for group, versions in groups.items():
@@ -460,6 +469,102 @@ def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun,
     return loaded
 
 
+def _select_visible_history(
+    groups: dict[str, tuple[BenchmarkRun, ...]],
+) -> tuple[dict[str, tuple[BenchmarkRun, ...]], tuple[BenchmarkRun, ...]]:
+    """Keep the baseline and newest columns, returning evicted result identities."""
+
+    reference_runs = groups["cluster-1k"]
+    labels = shared_harness_labels(groups)
+    if not labels or labels[0] != REFERENCE_VERSION:
+        raise ValueError("active comparison history must start with the baseline")
+    if any(len(runs) != len(labels) for runs in groups.values()):
+        raise ValueError("comparison groups do not share aligned version columns")
+    if len(labels) <= MAX_VISIBLE_COLUMNS:
+        return groups, ()
+
+    keep_from = len(labels) - (MAX_VISIBLE_COLUMNS - 1)
+    visible_indices = (0, *range(keep_from, len(labels)))
+    visible_index_set = set(visible_indices)
+    visible_groups = {
+        name: tuple(run for index, run in enumerate(runs) if index in visible_index_set)
+        for name, runs in groups.items()
+    }
+    evicted_runs = tuple(
+        run
+        for index, run in enumerate(reference_runs)
+        if index not in visible_index_set
+    )
+    return visible_groups, evicted_runs
+
+
+def load_shared_harness_runs(results_dir: Path) -> dict[str, tuple[BenchmarkRun, ...]]:
+    """Load the visible baseline-plus-newest comparison window."""
+
+    groups = _load_all_shared_harness_runs(results_dir)
+    return _select_visible_history(groups)[0]
+
+
+def _run_build_flavor(run: BenchmarkRun) -> str | None:
+    module_paths = tuple(
+        Path(module_path).suffix.lower()
+        for name, module_path in run.metadata.modules.items()
+        if name.startswith("expra_connect.")
+    )
+    if not module_paths:
+        return None
+    if any(suffix in {".so", ".pyd", ".dll"} for suffix in module_paths):
+        return "native"
+    return "universal"
+
+
+def _archive_evicted_results(
+    runs: tuple[BenchmarkRun, ...], shared_results: Path, build_results: Path
+) -> tuple[Path, ...]:
+    """Move evicted raw JSON results out of the directories scanned on refresh."""
+
+    sources: list[Path] = []
+    for run in runs:
+        version = run.metadata.package_version
+        if version in SHARED_HARNESS_VERSIONS:
+            sources.extend(shared_results.glob(f"*-{version}.json"))
+            continue
+
+        flavor = _run_build_flavor(run)
+        if flavor is None:
+            raise ValueError(f"cannot determine build flavor for {version}")
+        if version == BUILD_COMPARISON_VERSION:
+            legacy = tuple(
+                build_results / f"{flavor}-{suite}.json"
+                for suite in BUILD_COMPARISON_SUITES
+            )
+            if all(path.is_file() for path in legacy):
+                sources.extend(legacy)
+                continue
+        sources.extend(build_results.glob(f"{version}-{flavor}-*.json"))
+
+    unique_sources = tuple(dict.fromkeys(sources))
+    if not unique_sources:
+        raise ValueError("no active JSON result files found for evicted versions")
+    moves = tuple(
+        (source, source.parent / "history" / source.name) for source in unique_sources
+    )
+    if any(destination.exists() for _, destination in moves):
+        raise FileExistsError("history archive already contains an evicted result")
+
+    moved: list[tuple[Path, Path]] = []
+    try:
+        for source, destination in moves:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            source.rename(destination)
+            moved.append((source, destination))
+    except OSError:
+        for source, destination in reversed(moved):
+            destination.rename(source)
+        raise
+    return tuple(destination for _, destination in moves)
+
+
 BUILD_COMPARISON_SUITES = ("cluster_state", "persistence", "connect")
 BUILD_COMPARISON_VERSION = "2.2.0.4"
 _VERSIONED_BUILD_RESULT_RE = re.compile(
@@ -468,18 +573,53 @@ _VERSIONED_BUILD_RESULT_RE = re.compile(
 )
 
 
+def _load_legacy_build_runs(
+    results_dir: Path,
+) -> dict[str, dict[str, BenchmarkRun]]:
+    legacy: dict[str, dict[str, BenchmarkRun]] = {}
+    for flavor in ("native", "universal"):
+        paths = {
+            suite: results_dir / f"{flavor}-{suite}.json"
+            for suite in BUILD_COMPARISON_SUITES
+        }
+        present = {suite for suite, path in paths.items() if path.is_file()}
+        if present and present != set(BUILD_COMPARISON_SUITES):
+            raise ValueError(f"legacy 2.2.0.4 {flavor} result set is incomplete")
+        if present:
+            runs = {suite: load_results(path) for suite, path in paths.items()}
+            for suite, run in runs.items():
+                if (
+                    run.metadata.package_version != BUILD_COMPARISON_VERSION
+                    or run.metadata.suite != suite
+                    or _run_build_flavor(run) != flavor
+                ):
+                    raise ValueError(
+                        f"legacy result metadata differs for {flavor}/{suite}"
+                    )
+            legacy[flavor] = runs
+
+    if set(legacy) == {"native", "universal"}:
+        for suite in BUILD_COMPARISON_SUITES:
+            _validate_build_comparison_pair(
+                suite,
+                legacy["native"][suite],
+                legacy["universal"][suite],
+            )
+    return legacy
+
+
 def load_build_comparison_runs(
     results_dir: Path,
 ) -> dict[str, tuple[BenchmarkRun, BenchmarkRun]]:
-    """Load the matched native/universal run pair for each full benchmark suite."""
+    """Load the legacy matched native/universal runs for every build suite."""
 
-    pairs: dict[str, tuple[BenchmarkRun, BenchmarkRun]] = {}
-    for suite in BUILD_COMPARISON_SUITES:
-        pairs[suite] = (
-            load_results(results_dir / f"native-{suite}.json"),
-            load_results(results_dir / f"universal-{suite}.json"),
-        )
-    return pairs
+    legacy = _load_legacy_build_runs(results_dir)
+    if set(legacy) != {"native", "universal"}:
+        raise ValueError("legacy 2.2.0.4 native/universal result pair is unavailable")
+    return {
+        suite: (legacy["native"][suite], legacy["universal"][suite])
+        for suite in BUILD_COMPARISON_SUITES
+    }
 
 
 def _load_build_comparison_history(
@@ -488,9 +628,12 @@ def _load_build_comparison_history(
     """Load the legacy 2.2.0.4 pair and every immutable versioned build run."""
 
     by_suite: dict[str, list[BenchmarkRun]] = {
-        suite: list(pair)
-        for suite, pair in load_build_comparison_runs(results_dir).items()
+        suite: [] for suite in BUILD_COMPARISON_SUITES
     }
+    legacy_flavors = _load_legacy_build_runs(results_dir)
+    for legacy_suite_runs in legacy_flavors.values():
+        for suite, run in legacy_suite_runs.items():
+            by_suite[suite].append(run)
     discovered: dict[tuple[str, str], dict[str, BenchmarkRun]] = {}
     for path in sorted(results_dir.glob("*.json")):
         match = _VERSIONED_BUILD_RESULT_RE.fullmatch(path.name)
@@ -509,6 +652,12 @@ def _load_build_comparison_history(
         if run.metadata.package_version != version or run.metadata.suite != suite:
             raise ValueError(f"result metadata does not match filename: {path.name}")
         suite_runs[suite] = run
+
+    for flavor in legacy_flavors:
+        if (BUILD_COMPARISON_VERSION, flavor) in discovered:
+            raise ValueError(
+                f"duplicate legacy and versioned {BUILD_COMPARISON_VERSION} {flavor} results"
+            )
 
     versions = sorted(
         {version for version, _ in discovered},
@@ -543,13 +692,7 @@ def _load_build_comparison_history(
         suite_runs_list.sort(
             key=lambda run: (
                 tuple(int(part) for part in run.metadata.package_version.split(".")),
-                0
-                if any(
-                    Path(module_path).suffix.lower() in {".so", ".pyd", ".dll"}
-                    for name, module_path in run.metadata.modules.items()
-                    if name.startswith("expra_connect.")
-                )
-                else 1,
+                0 if _run_build_flavor(run) == "native" else 1,
             )
         )
     return {suite: tuple(runs) for suite, runs in by_suite.items()}
@@ -569,12 +712,8 @@ def shared_harness_labels(
         if version in SHARED_HARNESS_VERSIONS and version_counts[version] == 1:
             labels.append(version)
             continue
-        native = any(
-            Path(module_path).suffix.lower() in {".so", ".pyd", ".dll"}
-            for name, module_path in run.metadata.modules.items()
-            if name.startswith("expra_connect.")
-        )
-        labels.append(f"{version} {'native' if native else 'universal'}")
+        flavor = _run_build_flavor(run) or "universal"
+        labels.append(f"{version} {flavor}")
     return tuple(labels)
 
 
@@ -764,13 +903,18 @@ def _version_color(index: int) -> str:
     return f"hsl({hue}, 65%, 42%)"
 
 
-def render_diagrams() -> dict[str, str]:
+def render_diagrams(
+    groups: dict[str, tuple[BenchmarkRun, ...]] | None = None,
+) -> dict[str, str]:
     """Render one across-release comparison with a composite and suite detail."""
 
     shared_results = (
         Path(__file__).resolve().parents[1] / "tools" / "shared-benchmark-results"
     )
-    shared_runs = load_shared_harness_runs(shared_results)
+    if groups is None:
+        shared_runs = load_shared_harness_runs(shared_results)
+    else:
+        shared_runs, _ = _select_visible_history(groups)
     labels = shared_harness_labels(shared_runs)
     full_workload_index = _full_workload_index_panel(shared_runs)
     weighted_overall_index = _weighted_overall_index_panel(shared_runs)
@@ -1077,17 +1221,24 @@ def render_performance_summary(
         if math.isclose(index, best, rel_tol=1e-12)
     )
     coverage = _full_workload_coverage_rows(groups)[-1]
-    coverage_by_build = "; ".join(
-        f"{label}: {cell.measured}/{cell.total}"
+    coverage_lines = [
+        f"  - {label}: {cell.measured}/{cell.total}"
         for label, cell in zip(labels, coverage.cells, strict=True)
-    )
-    return (
-        f"**Current weighted winner:** {', '.join(winners)} ({best:.3f} index; "
-        f"{weighted.case_count} matched positive-p50 cases). This result is specific "
-        "to the declared workload set and weighting, not a universal performance claim.\n\n"
-        f"**Distinct-workload coverage (separate from latency scoring):** "
-        f"{coverage.cells[0].total} unique cases; {coverage_by_build}. Missing or "
-        "unsupported cases receive no invented latency penalty."
+    ]
+    return "\n".join(
+        [
+            (
+                f"- **Current weighted winner:** {', '.join(winners)} — {best:.3f} index; "
+                f"{weighted.case_count} matched positive-p50 cases."
+            ),
+            "  - Applies only to this workload set and weighting; it is not a universal claim.",
+            (
+                f"- **Distinct-workload coverage:** {coverage.cells[0].total} unique cases; "
+                "reported separately from latency scoring."
+            ),
+            *coverage_lines,
+            "  - Missing or unsupported cases receive no invented latency penalty.",
+        ]
     )
 
 
@@ -1817,22 +1968,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     repository_root = Path(__file__).resolve().parents[1]
     output_dir = repository_root / "docs" / "images"
     summary_path = repository_root / "docs" / "native-wheel-performance-baseline.md"
+    shared_results = repository_root / "tools" / "shared-benchmark-results"
+    build_results = repository_root / "docs" / "performance-build-comparison-results"
     try:
-        groups = load_shared_harness_runs(
-            repository_root / "tools" / "shared-benchmark-results"
-        )
+        all_groups = _load_all_shared_harness_runs(shared_results)
+        groups, evicted_runs = _select_visible_history(all_groups)
         summary = render_performance_summary(groups)
-        diagrams = render_diagrams()
+        diagrams = render_diagrams(groups)
         stale = sync_diagrams(diagrams, output_dir, check=args.check)
         summary_stale = sync_performance_summary(
             summary_path, summary, check=args.check
         )
+        if not args.check and evicted_runs:
+            _archive_evicted_results(evicted_runs, shared_results, build_results)
     except (OSError, TypeError, ValueError) as error:
         print(f"performance diagram update failed: {error}", file=sys.stderr)
         return 2
 
     if args.check:
-        if stale or summary_stale:
+        if stale or summary_stale or evicted_runs:
             for path in stale:
                 print(
                     f"stale or missing diagram: {path.relative_to(repository_root)}",
@@ -1842,6 +1996,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(
                     "stale generated performance summary: "
                     f"{summary_path.relative_to(repository_root)}",
+                    file=sys.stderr,
+                )
+            if evicted_runs:
+                print(
+                    "evicted benchmark results still need to be moved into history",
                     file=sys.stderr,
                 )
             return 1

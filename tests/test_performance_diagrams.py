@@ -8,6 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 from xml.etree import ElementTree
 
+import scripts.update_performance_diagrams as performance_diagrams
 from scripts.benchmark_support import (
     BenchmarkOutcome,
     BenchmarkRun,
@@ -16,7 +17,6 @@ from scripts.benchmark_support import (
     measure,
 )
 from scripts.update_performance_diagrams import (
-    SHARED_HARNESS_LABELS,
     _full_workload_coverage_rows,
     _full_workload_index_panel,
     _full_workload_index_row,
@@ -260,9 +260,9 @@ class BaselineTests(unittest.TestCase):
     def test_baseline_explains_local_sources_and_ratios(self) -> None:
         source = BASELINE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("tracked in `tools/shared-benchmark-results/`", source)
+        self.assertIn("Shared-harness JSON is tracked", source)
         self.assertIn("geometric mean", source)
-        self.assertIn("weighted equally", source)
+        self.assertIn("receive equal suite weight", source)
         self.assertFalse(
             any(line.lstrip().startswith("|") for line in source.splitlines())
         )
@@ -387,6 +387,150 @@ class PublishedBaselineTests(unittest.TestCase):
     "local benchmark source artifacts are not present in this checkout",
 )
 class DiagramTests(unittest.TestCase):
+    def test_visible_history_keeps_baseline_and_nine_newest_columns(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            results_dir = root / "tools" / "shared-benchmark-results"
+            shutil.copytree(ROOT / "tools/shared-benchmark-results", results_dir)
+            build_dir = root / "docs" / "performance-build-comparison-results"
+            shutil.copytree(
+                ROOT / "docs/performance-build-comparison-results", build_dir
+            )
+            for suite in ("cluster_state", "persistence", "connect"):
+                for flavor in ("native", "universal"):
+                    source = build_dir / f"2.2.0.3-{flavor}-{suite}.json"
+                    document = json.loads(source.read_text(encoding="utf-8"))
+                    document["metadata"]["package_version"] = "2.2.0.5"
+                    target = build_dir / f"2.2.0.5-{flavor}-{suite}.json"
+                    target.write_text(json.dumps(document), encoding="utf-8")
+
+            groups = load_shared_harness_runs(results_dir)
+            labels = shared_harness_labels(groups)
+            weighted = _weighted_overall_index_panel(groups)
+            summary = render_performance_summary(groups)
+            svg = render_diagrams(groups)["performance-comparison.svg"]
+            svg_root = ElementTree.fromstring(svg)
+            rendered_labels = [
+                (node.text, float(node.attrib["y"]))
+                for node in svg_root.findall(".//{http://www.w3.org/2000/svg}text")
+                if node.text in {labels[0], labels[-1]}
+            ]
+
+        self.assertEqual(len(labels), 10)
+        self.assertEqual(labels[0], "1.8.0.0")
+        self.assertEqual(labels[-2:], ("2.2.0.5 native", "2.2.0.5 universal"))
+        self.assertNotIn("1.9.0.1", labels)
+        self.assertEqual(len(weighted.indices), 10)
+        self.assertNotIn("1.9.0.1:", summary)
+        self.assertNotIn("1.9.0.1", svg)
+        self.assertIn(labels[-1], svg)
+        baseline_y = next(
+            y for label, y in reversed(rendered_labels) if label == labels[0]
+        )
+        newest_y = next(
+            y for label, y in reversed(rendered_labels) if label == labels[-1]
+        )
+        self.assertLess(baseline_y, newest_y)
+        self.assertEqual(
+            len(groups["cluster-1k"]),
+            len(groups["persistence-30k"]),
+        )
+
+    def test_evicted_shared_run_json_moves_to_history(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            results_dir = root / "tools" / "shared-benchmark-results"
+            shutil.copytree(ROOT / "tools/shared-benchmark-results", results_dir)
+            build_dir = root / "docs" / "performance-build-comparison-results"
+            shutil.copytree(
+                ROOT / "docs/performance-build-comparison-results", build_dir
+            )
+            groups = load_shared_harness_runs(results_dir)
+            evicted_run = groups["cluster-1k"][1]
+
+            archive_evicted_results = getattr(
+                performance_diagrams, "_archive_evicted_results", None
+            )
+            self.assertTrue(callable(archive_evicted_results))
+            if not callable(archive_evicted_results):
+                return
+            archive_evicted_results((evicted_run,), results_dir, build_dir)
+
+            active_files = tuple(results_dir.glob("*-1.9.0.1.json"))
+            archived_files = tuple((results_dir / "history").glob("*-1.9.0.1.json"))
+            remaining_labels = shared_harness_labels(
+                load_shared_harness_runs(results_dir)
+            )
+
+        self.assertEqual(active_files, ())
+        self.assertEqual(len(archived_files), 7)
+        self.assertNotIn("1.9.0.1", remaining_labels)
+        self.assertEqual(remaining_labels[0], "1.8.0.0")
+
+    def test_evicted_build_run_archives_only_its_flavor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            results_dir = root / "tools" / "shared-benchmark-results"
+            shutil.copytree(ROOT / "tools/shared-benchmark-results", results_dir)
+            build_dir = root / "docs" / "performance-build-comparison-results"
+            shutil.copytree(
+                ROOT / "docs/performance-build-comparison-results", build_dir
+            )
+            groups = load_shared_harness_runs(results_dir)
+            native_run = groups["cluster-1k"][6]
+            archive_evicted_results = getattr(
+                performance_diagrams, "_archive_evicted_results", None
+            )
+            self.assertTrue(callable(archive_evicted_results))
+            if not callable(archive_evicted_results):
+                return
+
+            archive_evicted_results((native_run,), results_dir, build_dir)
+
+            native_active = tuple(build_dir.glob("2.2.0.3-native-*.json"))
+            native_archived = tuple(
+                (build_dir / "history").glob("2.2.0.3-native-*.json")
+            )
+            universal_active = tuple(build_dir.glob("2.2.0.3-universal-*.json"))
+            remaining_labels = shared_harness_labels(
+                load_shared_harness_runs(results_dir)
+            )
+
+        self.assertEqual(native_active, ())
+        self.assertEqual(len(native_archived), 3)
+        self.assertEqual(len(universal_active), 3)
+        self.assertNotIn("2.2.0.3 native", remaining_labels)
+        self.assertIn("2.2.0.3 universal", remaining_labels)
+
+    def test_evicted_legacy_build_flavor_can_be_archived_independently(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            results_dir = root / "tools" / "shared-benchmark-results"
+            shutil.copytree(ROOT / "tools/shared-benchmark-results", results_dir)
+            build_dir = root / "docs" / "performance-build-comparison-results"
+            shutil.copytree(
+                ROOT / "docs/performance-build-comparison-results", build_dir
+            )
+            groups = load_shared_harness_runs(results_dir)
+            native_run = groups["cluster-1k"][8]
+            archive_evicted_results = getattr(
+                performance_diagrams, "_archive_evicted_results", None
+            )
+            self.assertTrue(callable(archive_evicted_results))
+            if not callable(archive_evicted_results):
+                return
+
+            archive_evicted_results((native_run,), results_dir, build_dir)
+
+            remaining_labels = shared_harness_labels(
+                load_shared_harness_runs(results_dir)
+            )
+            archived = tuple((build_dir / "history").glob("native-*.json"))
+
+        self.assertEqual(len(archived), 3)
+        self.assertNotIn("2.2.0.4 native", remaining_labels)
+        self.assertIn("2.2.0.4 universal", remaining_labels)
+
     def test_comparison_diagram_viewbox_contains_rendered_content(self) -> None:
         svg = render_diagrams()["performance-comparison.svg"]
         root = ElementTree.fromstring(svg)
@@ -466,7 +610,9 @@ class DiagramTests(unittest.TestCase):
                 root = ElementTree.fromstring(svg)
                 self.assertTrue(root.tag.endswith("svg"))
                 self.assertEqual(svg, render_diagrams()[name])
-                for version in SHARED_HARNESS_LABELS:
+                for version in shared_harness_labels(
+                    load_shared_harness_runs(ROOT / "tools/shared-benchmark-results")
+                ):
                     self.assertIn(version, svg)
 
         shared_svg = diagrams["performance-comparison.svg"]
@@ -516,7 +662,10 @@ class DiagramTests(unittest.TestCase):
         self.assertIn("0.777", svg)
         self.assertIn("1.000", svg)
         appended = svg[svg.index("Size-specific matched-workload index") :]
-        self.assertEqual(appended.count("<circle "), 4 * len(SHARED_HARNESS_LABELS))
+        labels = shared_harness_labels(
+            load_shared_harness_runs(ROOT / "tools/shared-benchmark-results")
+        )
+        self.assertEqual(appended.count("<circle "), 4 * len(labels))
         self.assertNotIn(" L ", appended)
         self.assertLess(
             svg.index("Full-workload index plot"),
@@ -527,7 +676,7 @@ class DiagramTests(unittest.TestCase):
                 "Size-specific matched-workload index"
             )
         ]
-        self.assertEqual(full_plot.count("<circle "), len(SHARED_HARNESS_LABELS))
+        self.assertEqual(full_plot.count("<circle "), len(labels))
 
     def test_size_indices_intersect_only_positive_measured_cases(self) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
@@ -546,10 +695,11 @@ class DiagramTests(unittest.TestCase):
         self.assertAlmostEqual(min(panels[0].indices), 0.7638, places=4)
         self.assertAlmostEqual(min(panels[1].indices), 0.7831, places=4)
         self.assertAlmostEqual(min(panels[2].indices), 0.7771, places=4)
-        self.assertAlmostEqual(min(panels[3].indices), 1.0, places=4)
+        self.assertAlmostEqual(panels[3].indices[7], 0.898178, places=6)
+        self.assertAlmostEqual(min(panels[3].indices), 0.898178, places=6)
         for panel in panels:
             self.assertEqual(panel.indices[0], 1.0)
-            self.assertEqual(len(panel.indices), len(SHARED_HARNESS_LABELS))
+            self.assertEqual(len(panel.indices), len(groups["cluster-1k"]))
 
     def test_full_workload_index_weights_every_common_case_equally(self) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
@@ -594,6 +744,8 @@ class DiagramTests(unittest.TestCase):
 
         summary = render_performance_summary(groups)
 
+        self.assertTrue(summary.startswith("- **Current weighted winner:**"))
+        self.assertIn("\n- **Distinct-workload coverage:**", summary)
         self.assertIn("2.2.0.3 native:", summary)
         self.assertIn("2.2.0.3 universal:", summary)
         self.assertIn("37 matched positive-p50 cases", summary)
@@ -638,7 +790,7 @@ class DiagramTests(unittest.TestCase):
                 "Total unique measured cases",
             ),
         )
-        self.assertEqual((rows[1].cells[6].measured, rows[1].cells[6].total), (6, 9))
+        self.assertEqual((rows[1].cells[6].measured, rows[1].cells[6].total), (9, 9))
         self.assertEqual((rows[1].cells[7].measured, rows[1].cells[7].total), (9, 9))
         self.assertEqual((rows[2].cells[6].measured, rows[2].cells[6].total), (6, 9))
         self.assertEqual((rows[2].cells[7].measured, rows[2].cells[7].total), (6, 9))
@@ -646,10 +798,10 @@ class DiagramTests(unittest.TestCase):
         self.assertEqual((rows[4].cells[6].measured, rows[4].cells[6].total), (13, 13))
         self.assertEqual((rows[4].cells[7].measured, rows[4].cells[7].total), (13, 13))
         self.assertEqual(
-            (rows[-1].cells[6].measured, rows[-1].cells[6].total), (65, 73)
+            (rows[-1].cells[6].measured, rows[-1].cells[6].total), (68, 73)
         )
         self.assertEqual(
-            (rows[-1].cells[7].measured, rows[-1].cells[7].total), (65, 73)
+            (rows[-1].cells[7].measured, rows[-1].cells[7].total), (68, 73)
         )
         self.assertIn("Workload support / coverage", svg)
         self.assertIn("6/9", svg)

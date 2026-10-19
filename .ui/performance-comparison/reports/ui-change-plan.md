@@ -1,5 +1,22 @@
 # UI Change Plan — Performance comparison
 
+## Rolling history window — 2026-10-19
+
+- **Accepted issue:** UI-005 — keep the baseline plus newest nine entries
+  visible across tables, plots, and score calculations; archive older raw JSON
+  rather than deleting it.
+- **Patch:** select one shared ordered window for every panel and summary;
+  preserve baseline-first/newest-last order. On successful refresh, move evicted
+  top-level source JSON files into sibling `history/` folders. `--check` does
+  not mutate source files and reports pending archival.
+- **Rollback:** remove `MAX_VISIBLE_COLUMNS`, `_select_visible_history`, and
+  `_archive_evicted_results`; restore unbounded loading and the previous tests.
+- **Risk:** medium, because normal generation moves data files after successful
+  chart/summary writes. Archive moves preflight destination conflicts and roll
+  back already moved files on an I/O failure.
+- **Validation:** focused diagram tests, full project checks, generator check,
+  and Firefox renders at 375, 768, and 1,385 CSS px.
+
 ## Follow-up spacing fix — 2026-10-19
 
 - **Mode/risk:** visual polish / low.

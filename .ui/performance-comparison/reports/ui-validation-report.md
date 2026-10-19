@@ -1,5 +1,29 @@
 # UI Validation Report — Performance comparison
 
+## Rolling history window — 2026-10-19
+
+- The regenerated SVG contains 10 release/build columns, beginning with
+  1.8.0.0 and ending with 2.2.0.4 universal. The visible selection drives the
+  tables, all point plots, summary winner, and weighted/geometric indices.
+- Test coverage exercises a 12-entry input, verifies the baseline and newest
+  nine remain in chronological order, confirms older labels leave summary and
+  plot inputs, and checks that shared and build JSON move to history without
+  dropping the counterpart native/universal column.
+- Firefox headless renders of the Markdown image at 375, 768, and 1,385 CSS px
+  were inspected. The complete graphic fits without horizontal overflow or
+  clipping. Narrow renders scale down the technical labels proportionally.
+- Accessibility/interaction: static SVG, no controls or motion. SVG `role=img`,
+  `aria-label`, `<title>` tooltips, and color semantics remain unchanged.
+- CSS architecture checks are not applicable to the Python-generated SVG.
+- Source archive behavior is verified with temporary directory copies; the
+  actual source tree was not pruned because the current 10-column window is full.
+
+## Rolling history verdict
+
+The visible series stays at 10 columns once history exceeds the window; all
+plotted and scored series use that same window. Historical result JSON remains
+available under `history/` after future evictions.
+
 ## Follow-up spacing fix — 2026-10-19
 
 - The generated SVG viewBox now extends beyond the last label and marker; the

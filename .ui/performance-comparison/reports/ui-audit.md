@@ -1,5 +1,39 @@
 # TEMPORARY AUDIT WORKING FILE — DO NOT COMMIT
 
+## Rolling history window — 2026-10-19
+
+```text
+task_type: visual polish
+stack: Python-generated SVG embedded in Markdown
+surface_size: one multi-panel documentation graphic
+evidence_availability: renderable
+mode: visual polish
+risk: medium (source result files are moved to a local history subfolder)
+```
+
+- **Finding UI-005 (layout debt, medium):** Continued accumulation of columns
+  would shrink a fixed-width SVG further when Markdown scales it to narrow
+  content widths. Retain at most 10 visible columns: the 1.8.0.0 baseline plus
+  the newest nine run/build columns. When over capacity, evict the oldest
+  non-baseline column from tables, plots, and score calculations.
+- **Design-language fit:** Keep the existing technical-report typography,
+  palette, grid, and panel hierarchy. The baseline remains first/left and at the
+  top of vertical plots; chronological results continue to the newest at
+  right/bottom.
+- **Source-data handling:** On a successful normal refresh, move evicted raw
+  result JSON into a sibling `history/` directory. The loader scans only active
+  top-level result files; archived results are retained but excluded from the
+  visible chart and all current scoring. `--check` remains read-only and reports
+  when an archive move is pending.
+- **Implementation:** `scripts/update_performance_diagrams.py` owns selection,
+  scoring input, and archive moves. Tests cover window limits, baseline/newest
+  ordering, and independent archival of shared, versioned-build, and legacy
+  native/universal result sets.
+- **Rendered evidence:** updated SVG rendered in Firefox headless at 375, 768,
+  and 1,385 CSS px; captures are in `evidence/screenshots/after/`.
+- **Limit:** The data-dense graphic scales as a single Markdown image; labels
+  remain present but become smaller at narrow widths.
+
 ## Follow-up spacing review — 2026-10-19
 
 ```text
