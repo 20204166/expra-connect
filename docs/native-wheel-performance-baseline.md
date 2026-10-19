@@ -2,9 +2,11 @@
 
 - **Historical shared-harness measurements:** 18 October 2026
 - **2.2.0.3 native/universal rerun:** 19 October 2026
+- **2.2.1.0 native/universal full benchmark matrix:** 19 October 2026
 - **Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39
 - **Compared results:** 1.8.0.0, 1.9.0.1, 2.0.0.0, 2.0.0.2, 2.2.0.0,
-  2.2.0.1, 2.2.0.3 native/universal, and 2.2.0.4 native/universal.
+  2.2.0.1, 2.2.0.3 native/universal, 2.2.0.4 native/universal,
+  2.2.0.5 native/universal, and 2.2.1.0 native/universal.
 
 ## What the diagram shows
 
@@ -93,8 +95,8 @@
 - Focused 30k/100k persistence is excluded from the composite because it is not
   measured for every displayed release/build. Those results remain in the
   persistence heatmaps when available.
-- Older releases have one column. 2.2.0.3, 2.2.0.4, and 2.2.0.5 have separate
-  native and universal columns.
+- Older releases have one column. 2.2.0.3, 2.2.0.4, 2.2.0.5, and 2.2.1.0
+  have separate native and universal columns.
 - Size plots normalize each workload's p50 against its matching 1.8.0.0 result,
   then calculate a geometric mean over cases measured in every displayed result.
   Current panels cover:
@@ -116,6 +118,12 @@
 - The 2.2.0.3 native and universal wheels were rerun as a matched full matrix on
   CPython 3.12.3. These results replace the former single 2.2.0.3 shared-harness
   records.
+- The 2.2.1.0 native and universal wheels each completed the release benchmark
+  matrix: cluster state (1k, 30k, 100k), persistence (30k, 100k, 200k), and
+  connect. Each wheel has a saved JSON result for each suite under
+  `docs/performance-build-comparison-results/2.2.1.0-<flavor>-*.json`. The
+  configured limits leave the three 100k YAML cluster operations and two 200k
+  MessagePack StateStore operations explicitly unavailable, not omitted runs.
 - Versioned build JSON is stored in
   `docs/performance-build-comparison-results/`. Shared-harness JSON is tracked
   in `tools/shared-benchmark-results/` for reproducible refreshes.
@@ -145,13 +153,13 @@
 
 ## Wheel artifacts
 
-- Package source files are unchanged from 2.2.0.3 apart from version metadata.
-- Native and universal wheels differ in compiled-module versus Python-source
-  representation.
+- Latest release: 2.2.1.0 (CPython 3.12 Linux x86_64 native and universal
+  wheels). The native wheel compiles selected modules; the universal wheel uses
+  Python source.
 - Native wheel SHA-256:
-  `ed1faf57de9c8b5f77aaf1d67bd077af47e0f0ef3b5835f2d41d59bb103c71f1`
+  `df78b078a2c7434592b7cefda9aba2027d63c16f235c984eacbb8d4ee9666446`
 - Universal wheel SHA-256:
-  `2207230eb5731d20cd50b375734715c0e99376630bacf873ceebc9f0d27d75fe`
+  `72ef3ebc4bff3b1bbdd300aafffc64da80c549e76ed14bcad99bcbe19aee90df`
 
 ## Refresh commands
 
