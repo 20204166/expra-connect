@@ -208,6 +208,36 @@ class PairingTests(unittest.TestCase):
             RelationshipState.IDENTITY_CONFLICT,
         )
 
+    def test_candidate_transport_generation_policy_accepts_only_forward_proven_rotation(
+        self,
+    ) -> None:
+        from expra_connect.pairing.manager import (
+            candidate_transport_generation_allowed,
+        )
+
+        identity = NodeIdentity.create(NodeId("peer-b"))
+        trusted = TrustedPeer(
+            identity.node_id,
+            "t" * 64,
+            frozenset(),
+            root_public_key=identity.root_public_key,
+            transport_fingerprint="tls-old",
+            transport_generation=3,
+        )
+
+        def allowed(generation: int, proof: str | None) -> bool:
+            return candidate_transport_generation_allowed(
+                trusted,
+                transport_fingerprint="tls-new",
+                transport_generation=generation,
+                transport_proof=proof,
+            )
+
+        self.assertTrue(allowed(4, identity.sign_transport_proof(4, "tls-new")))
+        self.assertFalse(allowed(3, identity.sign_transport_proof(3, "tls-new")))
+        self.assertFalse(allowed(4, "forged"))
+        self.assertFalse(allowed(4, None))
+
     def test_revoke_trusted_preserves_the_inbound_grant(self) -> None:
         peer = NodeId("peer-b")
         manager = PairingManager(NodeId("peer-a"))

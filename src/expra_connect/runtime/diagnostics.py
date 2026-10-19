@@ -7,9 +7,12 @@ from dataclasses import asdict
 from hashlib import sha256
 from typing import Any
 
-from ..connections.manager import ConnectionManager
 from ..identity import NodeId, node_identity_fingerprint
-from ..pairing.manager import PairingManager, TrustedPeer
+from ..pairing.manager import (
+    PairingManager,
+    TrustedPeer,
+    candidate_transport_generation_allowed,
+)
 
 
 def build_peer_diagnostics(runtime: Any, peer_id: NodeId) -> dict[str, Any]:
@@ -91,7 +94,12 @@ def _transport_continuity(trusted: TrustedPeer | None, candidate: Any) -> str:
         return "no_candidate"
     if candidate.transport_fingerprint == trusted.transport_fingerprint:
         return "same_generation"
-    if ConnectionManager._candidate_generation_allowed(trusted, candidate):
+    if candidate_transport_generation_allowed(
+        trusted,
+        transport_fingerprint=candidate.transport_fingerprint,
+        transport_generation=candidate.transport_generation,
+        transport_proof=candidate.transport_proof,
+    ):
         return "rotation_proven"
     return "unproven"
 

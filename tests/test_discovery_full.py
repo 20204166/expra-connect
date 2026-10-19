@@ -278,6 +278,20 @@ class FullDiscoveryTests(unittest.TestCase):
         self.assertNotIn("fingerprint", properties)
         self.assertNotIn("tls_fingerprint", properties)
 
+    def test_invalid_transport_generation_is_omitted_from_txt(self) -> None:
+        for generation in (True, -1, 1.5):
+            with self.subTest(generation=generation):
+                properties = _advertisement_txt_properties(
+                    DiscoveryAdvertisement(
+                        stable_id="local",
+                        display_name="Local",
+                        hostname="localhost",
+                        app_version="1",
+                        transport_generation=generation,  # type: ignore[arg-type]
+                    )
+                )
+                self.assertNotIn("transport_generation", properties)
+
     def test_rotated_transport_gets_a_new_service_instance_name(self) -> None:
         base = DiscoveryAdvertisement(
             stable_id="peer-a",

@@ -134,7 +134,11 @@ def _advertisement_txt_properties(
         if value:
             properties[key] = value
 
-    if advertisement.transport_generation is not None:
+    if (
+        isinstance(advertisement.transport_generation, int)
+        and not isinstance(advertisement.transport_generation, bool)
+        and advertisement.transport_generation >= 0
+    ):
         properties["transport_generation"] = str(advertisement.transport_generation)
     if (
         isinstance(advertisement.pairing_port, int)

@@ -11,10 +11,10 @@ from typing import Any, cast
 
 from ..discovery.candidates import endpoint_rank
 from ..discovery.models import DiscoveredNodeCandidate, EndpointCandidate
-from ..identity import NodeId, verify_transport_proof
+from ..identity import NodeId
 from ..nodes.registry import NodeRegistry
 from ..observability import ObservabilityWatcher, ObservationToken
-from ..pairing.manager import PairingManager
+from ..pairing.manager import PairingManager, candidate_transport_generation_allowed
 from ..remote.provider import AuthenticatedNodeProvider
 from ..remote.wire_protocol import (
     RemoteAuthError,
@@ -115,7 +115,12 @@ class ConnectionManager:
             )
             if not endpoints:
                 raise ConnectionError("peer has no connectable endpoint")
-            if not self._candidate_generation_allowed(trusted, candidate):
+            if not candidate_transport_generation_allowed(
+                trusted,
+                transport_fingerprint=candidate.transport_fingerprint,
+                transport_generation=candidate.transport_generation,
+                transport_proof=candidate.transport_proof,
+            ):
                 self._registry.observe(peer_id, frozenset())
                 self._set_state(
                     peer_id,
@@ -286,31 +291,6 @@ class ConnectionManager:
         self._report_route_attempt("connection", endpoint, "failed", str(error))
 
     @staticmethod
-    def _candidate_generation_allowed(
-        trusted: Any, candidate: DiscoveredNodeCandidate
-    ) -> bool:
-        fingerprint = trusted.transport_fingerprint
-        if fingerprint is None or candidate.transport_fingerprint == fingerprint:
-            return True
-        generation = candidate.transport_generation
-        return bool(
-            trusted.root_public_key
-            and generation is not None
-            and (
-                trusted.transport_generation is None
-                or generation > trusted.transport_generation
-            )
-            and candidate.transport_proof
-            and verify_transport_proof(
-                NodeId(candidate.stable_id),
-                trusted.root_public_key,
-                generation,
-                candidate.transport_fingerprint or "",
-                candidate.transport_proof,
-            )
-        )
-
-    @staticmethod
     def _validate_hello_generation(
         trusted: Any,
         candidate: DiscoveredNodeCandidate,
@@ -332,7 +312,12 @@ class ConnectionManager:
                 raise RemoteAuthError("hello transport continuity does not match route")
         if candidate.transport_fingerprint == trusted.transport_fingerprint:
             return
-        if not ConnectionManager._candidate_generation_allowed(trusted, candidate):
+        if not candidate_transport_generation_allowed(
+            trusted,
+            transport_fingerprint=candidate.transport_fingerprint,
+            transport_generation=candidate.transport_generation,
+            transport_proof=candidate.transport_proof,
+        ):
             raise RemoteAuthError("transport continuity proof is invalid")
 
     def _record_generation(

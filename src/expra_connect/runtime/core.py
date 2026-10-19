@@ -50,6 +50,7 @@ from ..pairing.manager import (
     PendingPairing,
     RelationshipState,
     TrustedPeer,
+    candidate_transport_generation_allowed,
 )
 from ..pairing.target import handle_pairing_request
 from ..persistence import StateDataError, YamlStateStore, migrate_state
@@ -712,7 +713,12 @@ class ConnectRuntime(
         return (
             peer.transport_fingerprint is None
             or candidate.transport_fingerprint == peer.transport_fingerprint
-            or bool(ConnectionManager._candidate_generation_allowed(peer, candidate))
+            or candidate_transport_generation_allowed(
+                peer,
+                transport_fingerprint=candidate.transport_fingerprint,
+                transport_generation=candidate.transport_generation,
+                transport_proof=candidate.transport_proof,
+            )
         )
 
     def _handle_pairing_request(self, request: PairingRequest) -> dict[str, Any]:

@@ -139,6 +139,37 @@ class PeerGrant:
     transport_proof: str | None = None
 
 
+def candidate_transport_generation_allowed(
+    trusted: TrustedPeer | PeerGrant,
+    *,
+    transport_fingerprint: str | None,
+    transport_generation: int | None,
+    transport_proof: str | None,
+) -> bool:
+    """Return whether candidate transport material preserves stored trust."""
+
+    fingerprint = trusted.transport_fingerprint
+    if fingerprint is None or transport_fingerprint == fingerprint:
+        return True
+    generation = transport_generation
+    return bool(
+        trusted.root_public_key
+        and generation is not None
+        and (
+            trusted.transport_generation is None
+            or generation > trusted.transport_generation
+        )
+        and transport_proof
+        and verify_transport_proof(
+            trusted.peer_id if isinstance(trusted, TrustedPeer) else trusted.caller_id,
+            trusted.root_public_key,
+            generation,
+            transport_fingerprint or "",
+            transport_proof,
+        )
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class PairingManagerSnapshot:
     trusted: dict[NodeId, TrustedPeer]
