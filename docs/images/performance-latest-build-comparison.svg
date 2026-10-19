@@ -1,196 +1,196 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="2720" viewBox="0 0 2200 2720" role="img" aria-label="Latest native and universal · unweighted per-case comparison">
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="2678" viewBox="0 0 2200 2678" role="img" aria-label="Latest native and universal · unweighted per-case comparison">
 <title>Latest native and universal · unweighted per-case comparison</title>
-<rect width="2200" height="2720" fill="#ffffff"/>
+<rect width="2200" height="2678" fill="#ffffff"/>
 <text x="18.0" y="32.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">Latest native and universal · unweighted per-case comparison</text>
-<text x="18.0" y="61.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">Builds compared: 2.2.0.4 → 2.2.0.5</text>
+<text x="18.0" y="61.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">Builds compared: 2.2.0.5 → 2.2.1.0</text>
 <text x="18.0" y="84.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">Unweighted case comparisons only; excluded from the historical weighted score. Ratios below 1× favor the candidate.</text>
 <text x="18.0" y="112.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">Each cell: candidate p50 · reference p50 · candidate/reference ratio. Blue is faster; red is slower.</text>
 <text x="18.0" y="174.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Suite · size · operation · case</text>
 <rect x="510" y="128" width="400" height="48" rx="3" fill="#edf2f5"/>
-<text x="518.0" y="147.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Candidate: 2.2.0.5 native</text>
-<text x="518.0" y="166.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Reference: 2.2.0.4 native</text>
+<text x="518.0" y="147.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Candidate: 2.2.1.0 native</text>
+<text x="518.0" y="166.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Reference: 2.2.0.5 native</text>
 <rect x="930" y="128" width="400" height="48" rx="3" fill="#edf2f5"/>
-<text x="938.0" y="147.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Candidate: 2.2.0.5 native</text>
-<text x="938.0" y="166.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Reference: 2.2.0.5 universal</text>
+<text x="938.0" y="147.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Candidate: 2.2.1.0 native</text>
+<text x="938.0" y="166.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Reference: 2.2.1.0 universal</text>
 <rect x="1350" y="128" width="400" height="48" rx="3" fill="#edf2f5"/>
-<text x="1358.0" y="147.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Candidate: 2.2.0.5 universal</text>
-<text x="1358.0" y="166.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Reference: 2.2.0.4 universal</text>
+<text x="1358.0" y="147.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Candidate: 2.2.1.0 universal</text>
+<text x="1358.0" y="166.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Reference: 2.2.0.5 universal</text>
 <rect x="1770" y="128" width="400" height="48" rx="3" fill="#edf2f5"/>
-<text x="1778.0" y="147.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Candidate: 2.2.0.5 universal</text>
-<text x="1778.0" y="166.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Reference: 2.2.0.5 native</text>
+<text x="1778.0" y="147.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Candidate: 2.2.1.0 universal</text>
+<text x="1778.0" y="166.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Reference: 2.2.1.0 native</text>
 <rect x="0" y="188" width="2200" height="32" fill="#e8eef2"/>
 <text x="18.0" y="209.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="bold">Cluster State</text>
 <text x="18.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · YAML cluster round-trip · 1000:YAML cluster round-trip</text>
-<rect x="510" y="222" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 339592.716 µs · Reference p50 1447934.870 µs · Ratio 0.235×</text>
+<rect x="510" y="222" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 300940.315 µs · Reference p50 339592.716 µs · Ratio 0.886×</text>
 <rect x="930" y="222" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 339592.716 µs · Reference p50 273507.052 µs · Ratio 1.242×</text>
-<rect x="1350" y="222" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 273507.052 µs · Reference p50 1581202.778 µs · Ratio 0.173×</text>
+<text x="938.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 300940.315 µs · Reference p50 283265.504 µs · Ratio 1.062×</text>
+<rect x="1350" y="222" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 283265.504 µs · Reference p50 273507.052 µs · Ratio 1.036×</text>
 <rect x="1770" y="222" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 273507.052 µs · Reference p50 339592.716 µs · Ratio 0.805×</text>
+<text x="1778.0" y="241.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 283265.504 µs · Reference p50 300940.315 µs · Ratio 0.941×</text>
 <rect x="0" y="252" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · YAML encode · 1000:YAML encode</text>
-<rect x="510" y="254" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 137761.003 µs · Reference p50 462855.715 µs · Ratio 0.298×</text>
-<rect x="930" y="254" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 137761.003 µs · Reference p50 116579.424 µs · Ratio 1.182×</text>
-<rect x="1350" y="254" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 116579.424 µs · Reference p50 678400.131 µs · Ratio 0.172×</text>
-<rect x="1770" y="254" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 116579.424 µs · Reference p50 137761.003 µs · Ratio 0.846×</text>
+<rect x="510" y="254" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 116455.151 µs · Reference p50 137761.003 µs · Ratio 0.845×</text>
+<rect x="930" y="254" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 116455.151 µs · Reference p50 112650.483 µs · Ratio 1.034×</text>
+<rect x="1350" y="254" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 112650.483 µs · Reference p50 116579.424 µs · Ratio 0.966×</text>
+<rect x="1770" y="254" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="273.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 112650.483 µs · Reference p50 116455.151 µs · Ratio 0.967×</text>
 <text x="18.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · YAML parse · 1000:YAML parse</text>
-<rect x="510" y="286" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 151807.160 µs · Reference p50 885546.409 µs · Ratio 0.171×</text>
-<rect x="930" y="286" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 151807.160 µs · Reference p50 126673.824 µs · Ratio 1.198×</text>
-<rect x="1350" y="286" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 126673.824 µs · Reference p50 1036803.692 µs · Ratio 0.122×</text>
-<rect x="1770" y="286" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 126673.824 µs · Reference p50 151807.160 µs · Ratio 0.834×</text>
+<rect x="510" y="286" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 143023.331 µs · Reference p50 151807.160 µs · Ratio 0.942×</text>
+<rect x="930" y="286" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 143023.331 µs · Reference p50 141881.281 µs · Ratio 1.008×</text>
+<rect x="1350" y="286" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 141881.281 µs · Reference p50 126673.824 µs · Ratio 1.120×</text>
+<rect x="1770" y="286" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="305.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 141881.281 µs · Reference p50 143023.331 µs · Ratio 0.992×</text>
 <rect x="0" y="316" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · cluster decode · 1000:cluster decode</text>
-<rect x="510" y="318" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12535.831 µs · Reference p50 9664.405 µs · Ratio 1.297×</text>
+<rect x="510" y="318" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11127.097 µs · Reference p50 12535.831 µs · Ratio 0.888×</text>
 <rect x="930" y="318" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12535.831 µs · Reference p50 12447.746 µs · Ratio 1.007×</text>
-<rect x="1350" y="318" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12447.746 µs · Reference p50 12665.021 µs · Ratio 0.983×</text>
+<text x="938.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11127.097 µs · Reference p50 10795.675 µs · Ratio 1.031×</text>
+<rect x="1350" y="318" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10795.675 µs · Reference p50 12447.746 µs · Ratio 0.867×</text>
 <rect x="1770" y="318" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12447.746 µs · Reference p50 12535.831 µs · Ratio 0.993×</text>
+<text x="1778.0" y="337.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10795.675 µs · Reference p50 11127.097 µs · Ratio 0.970×</text>
 <text x="18.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · cluster document round-trip · 1000:cluster document round-trip</text>
-<rect x="510" y="350" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12983.755 µs · Reference p50 11976.080 µs · Ratio 1.084×</text>
+<rect x="510" y="350" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12560.697 µs · Reference p50 12983.755 µs · Ratio 0.967×</text>
 <rect x="930" y="350" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12983.755 µs · Reference p50 14691.577 µs · Ratio 0.884×</text>
-<rect x="1350" y="350" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14691.577 µs · Reference p50 15421.783 µs · Ratio 0.953×</text>
+<text x="938.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12560.697 µs · Reference p50 13571.873 µs · Ratio 0.925×</text>
+<rect x="1350" y="350" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13571.873 µs · Reference p50 14691.577 µs · Ratio 0.924×</text>
 <rect x="1770" y="350" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14691.577 µs · Reference p50 12983.755 µs · Ratio 1.132×</text>
+<text x="1778.0" y="369.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13571.873 µs · Reference p50 12560.697 µs · Ratio 1.081×</text>
 <rect x="0" y="380" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · cluster encode · 1000:cluster encode</text>
-<rect x="510" y="382" width="400" height="28" rx="3" fill="#ef8a62"/>
-<text x="518.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4018.559 µs · Reference p50 2300.603 µs · Ratio 1.747×</text>
-<rect x="930" y="382" width="400" height="28" rx="3" fill="#ef8a62"/>
-<text x="938.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4018.559 µs · Reference p50 2182.705 µs · Ratio 1.841×</text>
-<rect x="1350" y="382" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 2182.705 µs · Reference p50 4492.143 µs · Ratio 0.486×</text>
-<rect x="1770" y="382" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="1778.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2182.705 µs · Reference p50 4018.559 µs · Ratio 0.543×</text>
+<rect x="510" y="382" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2239.540 µs · Reference p50 4018.559 µs · Ratio 0.557×</text>
+<rect x="930" y="382" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2239.540 µs · Reference p50 2735.383 µs · Ratio 0.819×</text>
+<rect x="1350" y="382" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2735.383 µs · Reference p50 2182.705 µs · Ratio 1.253×</text>
+<rect x="1770" y="382" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="401.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2735.383 µs · Reference p50 2239.540 µs · Ratio 1.221×</text>
 <text x="18.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · cluster round-trip · 1000:cluster round-trip</text>
-<rect x="510" y="414" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12019.519 µs · Reference p50 11311.648 µs · Ratio 1.063×</text>
+<rect x="510" y="414" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11945.869 µs · Reference p50 12019.519 µs · Ratio 0.994×</text>
 <rect x="930" y="414" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12019.519 µs · Reference p50 14587.069 µs · Ratio 0.824×</text>
-<rect x="1350" y="414" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14587.069 µs · Reference p50 16085.284 µs · Ratio 0.907×</text>
+<text x="938.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11945.869 µs · Reference p50 14481.968 µs · Ratio 0.825×</text>
+<rect x="1350" y="414" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14481.968 µs · Reference p50 14587.069 µs · Ratio 0.993×</text>
 <rect x="1770" y="414" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14587.069 µs · Reference p50 12019.519 µs · Ratio 1.214×</text>
+<text x="1778.0" y="433.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14481.968 µs · Reference p50 11945.869 µs · Ratio 1.212×</text>
 <rect x="0" y="444" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · role decode · 1000:role decode</text>
-<rect x="510" y="446" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13187.048 µs · Reference p50 9374.549 µs · Ratio 1.407×</text>
-<rect x="930" y="446" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13187.048 µs · Reference p50 12161.386 µs · Ratio 1.084×</text>
+<rect x="510" y="446" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 9368.673 µs · Reference p50 13187.048 µs · Ratio 0.710×</text>
+<rect x="930" y="446" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 9368.673 µs · Reference p50 10714.010 µs · Ratio 0.874×</text>
 <rect x="1350" y="446" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12161.386 µs · Reference p50 13612.104 µs · Ratio 0.893×</text>
-<rect x="1770" y="446" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12161.386 µs · Reference p50 13187.048 µs · Ratio 0.922×</text>
+<text x="1358.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10714.010 µs · Reference p50 12161.386 µs · Ratio 0.881×</text>
+<rect x="1770" y="446" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="465.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10714.010 µs · Reference p50 9368.673 µs · Ratio 1.144×</text>
 <text x="18.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · role encode · 1000:role encode</text>
-<rect x="510" y="478" width="400" height="28" rx="3" fill="#b2182b"/>
-<text x="518.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 2185.977 µs · Reference p50 1084.673 µs · Ratio 2.015×</text>
-<rect x="930" y="478" width="400" height="28" rx="3" fill="#ef8a62"/>
-<text x="938.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2185.977 µs · Reference p50 1389.820 µs · Ratio 1.573×</text>
-<rect x="1350" y="478" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1389.820 µs · Reference p50 1341.507 µs · Ratio 1.036×</text>
+<rect x="510" y="478" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1522.098 µs · Reference p50 2185.977 µs · Ratio 0.696×</text>
+<rect x="930" y="478" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1522.098 µs · Reference p50 1100.693 µs · Ratio 1.383×</text>
+<rect x="1350" y="478" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1100.693 µs · Reference p50 1389.820 µs · Ratio 0.792×</text>
 <rect x="1770" y="478" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="1778.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1389.820 µs · Reference p50 2185.977 µs · Ratio 0.636×</text>
+<text x="1778.0" y="497.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1100.693 µs · Reference p50 1522.098 µs · Ratio 0.723×</text>
 <rect x="0" y="508" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · YAML cluster round-trip · 30000:YAML cluster round-trip</text>
-<rect x="510" y="510" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 12564908.279 µs · Reference p50 51887571.723 µs · Ratio 0.242×</text>
-<rect x="930" y="510" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12564908.279 µs · Reference p50 15139117.730 µs · Ratio 0.830×</text>
-<rect x="1350" y="510" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 15139117.730 µs · Reference p50 53642182.273 µs · Ratio 0.282×</text>
-<rect x="1770" y="510" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15139117.730 µs · Reference p50 12564908.279 µs · Ratio 1.205×</text>
+<rect x="510" y="510" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12303502.909 µs · Reference p50 12564908.279 µs · Ratio 0.979×</text>
+<rect x="930" y="510" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12303502.909 µs · Reference p50 12873157.554 µs · Ratio 0.956×</text>
+<rect x="1350" y="510" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12873157.554 µs · Reference p50 15139117.730 µs · Ratio 0.850×</text>
+<rect x="1770" y="510" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="529.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12873157.554 µs · Reference p50 12303502.909 µs · Ratio 1.046×</text>
 <text x="18.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · YAML encode · 30000:YAML encode</text>
-<rect x="510" y="542" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 4694628.316 µs · Reference p50 15567475.889 µs · Ratio 0.302×</text>
-<rect x="930" y="542" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4694628.316 µs · Reference p50 3975100.135 µs · Ratio 1.181×</text>
-<rect x="1350" y="542" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 3975100.135 µs · Reference p50 16789929.754 µs · Ratio 0.237×</text>
-<rect x="1770" y="542" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 3975100.135 µs · Reference p50 4694628.316 µs · Ratio 0.847×</text>
+<rect x="510" y="542" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4419146.758 µs · Reference p50 4694628.316 µs · Ratio 0.941×</text>
+<rect x="930" y="542" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4419146.758 µs · Reference p50 4252783.489 µs · Ratio 1.039×</text>
+<rect x="1350" y="542" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4252783.489 µs · Reference p50 3975100.135 µs · Ratio 1.070×</text>
+<rect x="1770" y="542" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="561.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4252783.489 µs · Reference p50 4419146.758 µs · Ratio 0.962×</text>
 <rect x="0" y="572" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · YAML parse · 30000:YAML parse</text>
-<rect x="510" y="574" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 6492604.788 µs · Reference p50 30011707.086 µs · Ratio 0.216×</text>
-<rect x="930" y="574" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6492604.788 µs · Reference p50 6533652.380 µs · Ratio 0.994×</text>
-<rect x="1350" y="574" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 6533652.380 µs · Reference p50 32102763.494 µs · Ratio 0.204×</text>
-<rect x="1770" y="574" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6533652.380 µs · Reference p50 6492604.788 µs · Ratio 1.006×</text>
+<rect x="510" y="574" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6982529.057 µs · Reference p50 6492604.788 µs · Ratio 1.075×</text>
+<rect x="930" y="574" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6982529.057 µs · Reference p50 6449903.813 µs · Ratio 1.083×</text>
+<rect x="1350" y="574" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6449903.813 µs · Reference p50 6533652.380 µs · Ratio 0.987×</text>
+<rect x="1770" y="574" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="593.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6449903.813 µs · Reference p50 6982529.057 µs · Ratio 0.924×</text>
 <text x="18.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · cluster decode · 30000:cluster decode</text>
-<rect x="510" y="606" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 541212.771 µs · Reference p50 415377.560 µs · Ratio 1.303×</text>
-<rect x="930" y="606" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 541212.771 µs · Reference p50 492327.948 µs · Ratio 1.099×</text>
-<rect x="1350" y="606" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 492327.948 µs · Reference p50 613757.626 µs · Ratio 0.802×</text>
-<rect x="1770" y="606" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 492327.948 µs · Reference p50 541212.771 µs · Ratio 0.910×</text>
+<rect x="510" y="606" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 414033.176 µs · Reference p50 541212.771 µs · Ratio 0.765×</text>
+<rect x="930" y="606" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="938.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 414033.176 µs · Reference p50 555063.309 µs · Ratio 0.746×</text>
+<rect x="1350" y="606" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 555063.309 µs · Reference p50 492327.948 µs · Ratio 1.127×</text>
+<rect x="1770" y="606" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="625.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 555063.309 µs · Reference p50 414033.176 µs · Ratio 1.341×</text>
 <rect x="0" y="636" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · cluster document round-trip · 30000:cluster document round-trip</text>
-<rect x="510" y="638" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 700322.466 µs · Reference p50 646610.975 µs · Ratio 1.083×</text>
-<rect x="930" y="638" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 700322.466 µs · Reference p50 630125.325 µs · Ratio 1.111×</text>
-<rect x="1350" y="638" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 630125.325 µs · Reference p50 837249.137 µs · Ratio 0.753×</text>
-<rect x="1770" y="638" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 630125.325 µs · Reference p50 700322.466 µs · Ratio 0.900×</text>
+<rect x="510" y="638" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 663633.200 µs · Reference p50 700322.466 µs · Ratio 0.948×</text>
+<rect x="930" y="638" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 663633.200 µs · Reference p50 704108.567 µs · Ratio 0.943×</text>
+<rect x="1350" y="638" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 704108.567 µs · Reference p50 630125.325 µs · Ratio 1.117×</text>
+<rect x="1770" y="638" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="657.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 704108.567 µs · Reference p50 663633.200 µs · Ratio 1.061×</text>
 <text x="18.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · cluster encode · 30000:cluster encode</text>
-<rect x="510" y="670" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 211270.721 µs · Reference p50 199220.093 µs · Ratio 1.060×</text>
-<rect x="930" y="670" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 211270.721 µs · Reference p50 182690.762 µs · Ratio 1.156×</text>
-<rect x="1350" y="670" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="1358.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 182690.762 µs · Reference p50 309983.789 µs · Ratio 0.589×</text>
-<rect x="1770" y="670" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 182690.762 µs · Reference p50 211270.721 µs · Ratio 0.865×</text>
+<rect x="510" y="670" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 182512.964 µs · Reference p50 211270.721 µs · Ratio 0.864×</text>
+<rect x="930" y="670" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 182512.964 µs · Reference p50 194843.434 µs · Ratio 0.937×</text>
+<rect x="1350" y="670" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 194843.434 µs · Reference p50 182690.762 µs · Ratio 1.067×</text>
+<rect x="1770" y="670" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="689.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 194843.434 µs · Reference p50 182512.964 µs · Ratio 1.068×</text>
 <rect x="0" y="700" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · cluster round-trip · 30000:cluster round-trip</text>
-<rect x="510" y="702" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 865161.423 µs · Reference p50 646379.466 µs · Ratio 1.338×</text>
-<rect x="930" y="702" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 865161.423 µs · Reference p50 607367.770 µs · Ratio 1.424×</text>
-<rect x="1350" y="702" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="1358.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 607367.770 µs · Reference p50 828112.109 µs · Ratio 0.733×</text>
-<rect x="1770" y="702" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="1778.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 607367.770 µs · Reference p50 865161.423 µs · Ratio 0.702×</text>
+<rect x="510" y="702" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 611551.645 µs · Reference p50 865161.423 µs · Ratio 0.707×</text>
+<rect x="930" y="702" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 611551.645 µs · Reference p50 686603.060 µs · Ratio 0.891×</text>
+<rect x="1350" y="702" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 686603.060 µs · Reference p50 607367.770 µs · Ratio 1.130×</text>
+<rect x="1770" y="702" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="721.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 686603.060 µs · Reference p50 611551.645 µs · Ratio 1.123×</text>
 <text x="18.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · role decode · 30000:role decode</text>
-<rect x="510" y="734" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 487288.002 µs · Reference p50 394866.564 µs · Ratio 1.234×</text>
-<rect x="930" y="734" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 487288.002 µs · Reference p50 499112.301 µs · Ratio 0.976×</text>
-<rect x="1350" y="734" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 499112.301 µs · Reference p50 627108.722 µs · Ratio 0.796×</text>
-<rect x="1770" y="734" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 499112.301 µs · Reference p50 487288.002 µs · Ratio 1.024×</text>
+<rect x="510" y="734" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 431396.817 µs · Reference p50 487288.002 µs · Ratio 0.885×</text>
+<rect x="930" y="734" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 431396.817 µs · Reference p50 475051.556 µs · Ratio 0.908×</text>
+<rect x="1350" y="734" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 475051.556 µs · Reference p50 499112.301 µs · Ratio 0.952×</text>
+<rect x="1770" y="734" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="753.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 475051.556 µs · Reference p50 431396.817 µs · Ratio 1.101×</text>
 <rect x="0" y="764" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · role encode · 30000:role encode</text>
-<rect x="510" y="766" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 154986.078 µs · Reference p50 136612.489 µs · Ratio 1.134×</text>
-<rect x="930" y="766" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 154986.078 µs · Reference p50 128362.245 µs · Ratio 1.207×</text>
-<rect x="1350" y="766" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 128362.245 µs · Reference p50 153039.822 µs · Ratio 0.839×</text>
-<rect x="1770" y="766" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 128362.245 µs · Reference p50 154986.078 µs · Ratio 0.828×</text>
+<rect x="510" y="766" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 128499.722 µs · Reference p50 154986.078 µs · Ratio 0.829×</text>
+<rect x="930" y="766" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 128499.722 µs · Reference p50 165895.701 µs · Ratio 0.775×</text>
+<rect x="1350" y="766" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 165895.701 µs · Reference p50 128362.245 µs · Ratio 1.292×</text>
+<rect x="1770" y="766" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="785.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 165895.701 µs · Reference p50 128499.722 µs · Ratio 1.291×</text>
 <text x="18.0" y="817.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · YAML cluster round-trip · 100000:YAML cluster round-trip</text>
 <rect x="510" y="798" width="400" height="28" rx="3" fill="#eeeeee"/>
 <text x="518.0" y="817.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
@@ -221,367 +221,367 @@
 <text x="1778.0" y="881.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
 <rect x="0" y="892" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · cluster decode · 100000:cluster decode</text>
-<rect x="510" y="894" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1400101.555 µs · Reference p50 1449492.804 µs · Ratio 0.966×</text>
+<rect x="510" y="894" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1470923.046 µs · Reference p50 1400101.555 µs · Ratio 1.051×</text>
 <rect x="930" y="894" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1400101.555 µs · Reference p50 1836925.793 µs · Ratio 0.762×</text>
+<text x="938.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1470923.046 µs · Reference p50 1754421.057 µs · Ratio 0.838×</text>
 <rect x="1350" y="894" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1836925.793 µs · Reference p50 1808839.281 µs · Ratio 1.016×</text>
+<text x="1358.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1754421.057 µs · Reference p50 1836925.793 µs · Ratio 0.955×</text>
 <rect x="1770" y="894" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1836925.793 µs · Reference p50 1400101.555 µs · Ratio 1.312×</text>
+<text x="1778.0" y="913.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1754421.057 µs · Reference p50 1470923.046 µs · Ratio 1.193×</text>
 <text x="18.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · cluster document round-trip · 100000:cluster document round-trip</text>
-<rect x="510" y="926" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1988473.342 µs · Reference p50 2000725.004 µs · Ratio 0.994×</text>
+<rect x="510" y="926" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2125278.989 µs · Reference p50 1988473.342 µs · Ratio 1.069×</text>
 <rect x="930" y="926" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1988473.342 µs · Reference p50 2489547.110 µs · Ratio 0.799×</text>
-<rect x="1350" y="926" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2489547.110 µs · Reference p50 2554782.545 µs · Ratio 0.974×</text>
+<text x="938.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2125278.989 µs · Reference p50 2353939.420 µs · Ratio 0.903×</text>
+<rect x="1350" y="926" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2353939.420 µs · Reference p50 2489547.110 µs · Ratio 0.946×</text>
 <rect x="1770" y="926" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2489547.110 µs · Reference p50 1988473.342 µs · Ratio 1.252×</text>
+<text x="1778.0" y="945.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2353939.420 µs · Reference p50 2125278.989 µs · Ratio 1.108×</text>
 <rect x="0" y="956" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · cluster encode · 100000:cluster encode</text>
-<rect x="510" y="958" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="518.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 474986.115 µs · Reference p50 658061.392 µs · Ratio 0.722×</text>
-<rect x="930" y="958" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="938.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 474986.115 µs · Reference p50 634371.078 µs · Ratio 0.749×</text>
+<rect x="510" y="958" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 624900.933 µs · Reference p50 474986.115 µs · Ratio 1.316×</text>
+<rect x="930" y="958" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 624900.933 µs · Reference p50 577486.250 µs · Ratio 1.082×</text>
 <rect x="1350" y="958" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 634371.078 µs · Reference p50 770213.294 µs · Ratio 0.824×</text>
-<rect x="1770" y="958" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 634371.078 µs · Reference p50 474986.115 µs · Ratio 1.336×</text>
+<text x="1358.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 577486.250 µs · Reference p50 634371.078 µs · Ratio 0.910×</text>
+<rect x="1770" y="958" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="977.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 577486.250 µs · Reference p50 624900.933 µs · Ratio 0.924×</text>
 <text x="18.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · cluster round-trip · 100000:cluster round-trip</text>
-<rect x="510" y="990" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1808172.624 µs · Reference p50 2169730.277 µs · Ratio 0.833×</text>
+<rect x="510" y="990" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2077176.828 µs · Reference p50 1808172.624 µs · Ratio 1.149×</text>
 <rect x="930" y="990" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="938.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1808172.624 µs · Reference p50 2738839.500 µs · Ratio 0.660×</text>
-<rect x="1350" y="990" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2738839.500 µs · Reference p50 2519218.902 µs · Ratio 1.087×</text>
-<rect x="1770" y="990" width="400" height="28" rx="3" fill="#ef8a62"/>
-<text x="1778.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2738839.500 µs · Reference p50 1808172.624 µs · Ratio 1.515×</text>
+<text x="938.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2077176.828 µs · Reference p50 2808500.723 µs · Ratio 0.740×</text>
+<rect x="1350" y="990" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2808500.723 µs · Reference p50 2738839.500 µs · Ratio 1.025×</text>
+<rect x="1770" y="990" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1009.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2808500.723 µs · Reference p50 2077176.828 µs · Ratio 1.352×</text>
 <rect x="0" y="1020" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · role decode · 100000:role decode</text>
-<rect x="510" y="1022" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1624779.808 µs · Reference p50 1578335.169 µs · Ratio 1.029×</text>
+<rect x="510" y="1022" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1494678.478 µs · Reference p50 1624779.808 µs · Ratio 0.920×</text>
 <rect x="930" y="1022" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1624779.808 µs · Reference p50 2075064.527 µs · Ratio 0.783×</text>
-<rect x="1350" y="1022" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2075064.527 µs · Reference p50 1872519.075 µs · Ratio 1.108×</text>
+<text x="938.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1494678.478 µs · Reference p50 1797110.643 µs · Ratio 0.832×</text>
+<rect x="1350" y="1022" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1797110.643 µs · Reference p50 2075064.527 µs · Ratio 0.866×</text>
 <rect x="1770" y="1022" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2075064.527 µs · Reference p50 1624779.808 µs · Ratio 1.277×</text>
+<text x="1778.0" y="1041.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1797110.643 µs · Reference p50 1494678.478 µs · Ratio 1.202×</text>
 <text x="18.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · role encode · 100000:role encode</text>
-<rect x="510" y="1054" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 484485.242 µs · Reference p50 397836.628 µs · Ratio 1.218×</text>
-<rect x="930" y="1054" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 484485.242 µs · Reference p50 460456.947 µs · Ratio 1.052×</text>
-<rect x="1350" y="1054" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 460456.947 µs · Reference p50 453906.121 µs · Ratio 1.014×</text>
+<rect x="510" y="1054" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 434725.009 µs · Reference p50 484485.242 µs · Ratio 0.897×</text>
+<rect x="930" y="1054" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 434725.009 µs · Reference p50 416153.209 µs · Ratio 1.045×</text>
+<rect x="1350" y="1054" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 416153.209 µs · Reference p50 460456.947 µs · Ratio 0.904×</text>
 <rect x="1770" y="1054" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 460456.947 µs · Reference p50 484485.242 µs · Ratio 0.950×</text>
+<text x="1778.0" y="1073.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 416153.209 µs · Reference p50 434725.009 µs · Ratio 0.957×</text>
 <rect x="0" y="1084" width="2200" height="32" fill="#e8eef2"/>
 <text x="18.0" y="1105.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="bold">Persistence</text>
 <rect x="0" y="1116" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON decode · 30000:JSON:JSON decode</text>
-<rect x="510" y="1118" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6599.935 µs · Reference p50 7195.886 µs · Ratio 0.917×</text>
-<rect x="930" y="1118" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6599.935 µs · Reference p50 7382.815 µs · Ratio 0.894×</text>
-<rect x="1350" y="1118" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7382.815 µs · Reference p50 6570.166 µs · Ratio 1.124×</text>
-<rect x="1770" y="1118" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7382.815 µs · Reference p50 6599.935 µs · Ratio 1.119×</text>
+<rect x="510" y="1118" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7040.172 µs · Reference p50 6599.935 µs · Ratio 1.067×</text>
+<rect x="930" y="1118" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7040.172 µs · Reference p50 6666.255 µs · Ratio 1.056×</text>
+<rect x="1350" y="1118" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6666.255 µs · Reference p50 7382.815 µs · Ratio 0.903×</text>
+<rect x="1770" y="1118" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1137.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6666.255 µs · Reference p50 7040.172 µs · Ratio 0.947×</text>
 <text x="18.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON encode · 30000:JSON:JSON encode</text>
-<rect x="510" y="1150" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 8773.403 µs · Reference p50 7935.911 µs · Ratio 1.106×</text>
+<rect x="510" y="1150" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7695.096 µs · Reference p50 8773.403 µs · Ratio 0.877×</text>
 <rect x="930" y="1150" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 8773.403 µs · Reference p50 9187.026 µs · Ratio 0.955×</text>
-<rect x="1350" y="1150" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 9187.026 µs · Reference p50 8113.042 µs · Ratio 1.132×</text>
+<text x="938.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7695.096 µs · Reference p50 7466.031 µs · Ratio 1.031×</text>
+<rect x="1350" y="1150" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7466.031 µs · Reference p50 9187.026 µs · Ratio 0.813×</text>
 <rect x="1770" y="1150" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 9187.026 µs · Reference p50 8773.403 µs · Ratio 1.047×</text>
+<text x="1778.0" y="1169.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7466.031 µs · Reference p50 7695.096 µs · Ratio 0.970×</text>
 <rect x="0" y="1180" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON file read · 30000:JSON:JSON file read</text>
-<rect x="510" y="1182" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 112.653 µs · Reference p50 134.022 µs · Ratio 0.841×</text>
-<rect x="930" y="1182" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="938.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 112.653 µs · Reference p50 192.924 µs · Ratio 0.584×</text>
-<rect x="1350" y="1182" width="400" height="28" rx="3" fill="#ef8a62"/>
-<text x="1358.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 192.924 µs · Reference p50 97.714 µs · Ratio 1.974×</text>
-<rect x="1770" y="1182" width="400" height="28" rx="3" fill="#ef8a62"/>
-<text x="1778.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 192.924 µs · Reference p50 112.653 µs · Ratio 1.713×</text>
+<rect x="510" y="1182" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 124.174 µs · Reference p50 112.653 µs · Ratio 1.102×</text>
+<rect x="930" y="1182" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 124.174 µs · Reference p50 163.178 µs · Ratio 0.761×</text>
+<rect x="1350" y="1182" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 163.178 µs · Reference p50 192.924 µs · Ratio 0.846×</text>
+<rect x="1770" y="1182" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1201.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 163.178 µs · Reference p50 124.174 µs · Ratio 1.314×</text>
 <text x="18.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON object-root validation · 30000:JSON:JSON object-root validation</text>
 <rect x="510" y="1214" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.431 µs · Reference p50 0.451 µs · Ratio 0.956×</text>
-<rect x="930" y="1214" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="938.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 0.431 µs · Reference p50 0.902 µs · Ratio 0.478×</text>
-<rect x="1350" y="1214" width="400" height="28" rx="3" fill="#b2182b"/>
-<text x="1358.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 0.902 µs · Reference p50 0.401 µs · Ratio 2.249×</text>
-<rect x="1770" y="1214" width="400" height="28" rx="3" fill="#b2182b"/>
-<text x="1778.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 0.902 µs · Reference p50 0.431 µs · Ratio 2.093×</text>
+<text x="518.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.421 µs · Reference p50 0.431 µs · Ratio 0.977×</text>
+<rect x="930" y="1214" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.421 µs · Reference p50 0.461 µs · Ratio 0.913×</text>
+<rect x="1350" y="1214" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1358.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.461 µs · Reference p50 0.902 µs · Ratio 0.511×</text>
+<rect x="1770" y="1214" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1233.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.461 µs · Reference p50 0.421 µs · Ratio 1.095×</text>
 <rect x="0" y="1244" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON store load · 30000:JSON:JSON store load</text>
-<rect x="510" y="1246" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6922.112 µs · Reference p50 7009.276 µs · Ratio 0.988×</text>
-<rect x="930" y="1246" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6922.112 µs · Reference p50 7369.009 µs · Ratio 0.939×</text>
-<rect x="1350" y="1246" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7369.009 µs · Reference p50 6160.183 µs · Ratio 1.196×</text>
-<rect x="1770" y="1246" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7369.009 µs · Reference p50 6922.112 µs · Ratio 1.065×</text>
+<rect x="510" y="1246" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7382.577 µs · Reference p50 6922.112 µs · Ratio 1.067×</text>
+<rect x="930" y="1246" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 7382.577 µs · Reference p50 6601.353 µs · Ratio 1.118×</text>
+<rect x="1350" y="1246" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6601.353 µs · Reference p50 7369.009 µs · Ratio 0.896×</text>
+<rect x="1770" y="1246" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1265.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6601.353 µs · Reference p50 7382.577 µs · Ratio 0.894×</text>
 <text x="18.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON store save · 30000:JSON:JSON store save</text>
-<rect x="510" y="1278" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 20933.061 µs · Reference p50 78491.153 µs · Ratio 0.267×</text>
-<rect x="930" y="1278" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 20933.061 µs · Reference p50 22074.708 µs · Ratio 0.948×</text>
-<rect x="1350" y="1278" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 22074.708 µs · Reference p50 68539.514 µs · Ratio 0.322×</text>
-<rect x="1770" y="1278" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22074.708 µs · Reference p50 20933.061 µs · Ratio 1.055×</text>
+<rect x="510" y="1278" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 23017.551 µs · Reference p50 20933.061 µs · Ratio 1.100×</text>
+<rect x="930" y="1278" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 23017.551 µs · Reference p50 20136.634 µs · Ratio 1.143×</text>
+<rect x="1350" y="1278" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 20136.634 µs · Reference p50 22074.708 µs · Ratio 0.912×</text>
+<rect x="1770" y="1278" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1297.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 20136.634 µs · Reference p50 23017.551 µs · Ratio 0.875×</text>
 <rect x="0" y="1308" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack decode · 30000:MessagePack:MessagePack decode</text>
-<rect x="510" y="1310" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12561.356 µs · Reference p50 15490.013 µs · Ratio 0.811×</text>
-<rect x="930" y="1310" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12561.356 µs · Reference p50 13775.215 µs · Ratio 0.912×</text>
+<rect x="510" y="1310" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14510.265 µs · Reference p50 12561.356 µs · Ratio 1.155×</text>
+<rect x="930" y="1310" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14510.265 µs · Reference p50 14332.743 µs · Ratio 1.012×</text>
 <rect x="1350" y="1310" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13775.215 µs · Reference p50 13516.069 µs · Ratio 1.019×</text>
-<rect x="1770" y="1310" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13775.215 µs · Reference p50 12561.356 µs · Ratio 1.097×</text>
+<text x="1358.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14332.743 µs · Reference p50 13775.215 µs · Ratio 1.040×</text>
+<rect x="1770" y="1310" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1329.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14332.743 µs · Reference p50 14510.265 µs · Ratio 0.988×</text>
 <text x="18.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack decode + root validation · 30000:MessagePack:MessagePack decode + root validation</text>
-<rect x="510" y="1342" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12842.575 µs · Reference p50 13737.070 µs · Ratio 0.935×</text>
-<rect x="930" y="1342" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12842.575 µs · Reference p50 16773.916 µs · Ratio 0.766×</text>
-<rect x="1350" y="1342" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 16773.916 µs · Reference p50 13497.484 µs · Ratio 1.243×</text>
-<rect x="1770" y="1342" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 16773.916 µs · Reference p50 12842.575 µs · Ratio 1.306×</text>
+<rect x="510" y="1342" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15293.360 µs · Reference p50 12842.575 µs · Ratio 1.191×</text>
+<rect x="930" y="1342" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15293.360 µs · Reference p50 14370.264 µs · Ratio 1.064×</text>
+<rect x="1350" y="1342" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14370.264 µs · Reference p50 16773.916 µs · Ratio 0.857×</text>
+<rect x="1770" y="1342" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1361.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14370.264 µs · Reference p50 15293.360 µs · Ratio 0.940×</text>
 <rect x="0" y="1372" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack encode · 30000:MessagePack:MessagePack encode</text>
-<rect x="510" y="1374" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 5472.298 µs · Reference p50 6545.742 µs · Ratio 0.836×</text>
+<rect x="510" y="1374" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6367.135 µs · Reference p50 5472.298 µs · Ratio 1.164×</text>
 <rect x="930" y="1374" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 5472.298 µs · Reference p50 5736.302 µs · Ratio 0.954×</text>
-<rect x="1350" y="1374" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 5736.302 µs · Reference p50 6121.871 µs · Ratio 0.937×</text>
+<text x="938.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6367.135 µs · Reference p50 6369.125 µs · Ratio 1.000×</text>
+<rect x="1350" y="1374" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6369.125 µs · Reference p50 5736.302 µs · Ratio 1.110×</text>
 <rect x="1770" y="1374" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 5736.302 µs · Reference p50 5472.298 µs · Ratio 1.048×</text>
+<text x="1778.0" y="1393.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6369.125 µs · Reference p50 6367.135 µs · Ratio 1.000×</text>
 <text x="18.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack file read · 30000:MessagePack:MessagePack file read</text>
-<rect x="510" y="1406" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 62.969 µs · Reference p50 71.425 µs · Ratio 0.882×</text>
-<rect x="930" y="1406" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 62.969 µs · Reference p50 63.249 µs · Ratio 0.996×</text>
-<rect x="1350" y="1406" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 63.249 µs · Reference p50 60.454 µs · Ratio 1.046×</text>
-<rect x="1770" y="1406" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 63.249 µs · Reference p50 62.969 µs · Ratio 1.004×</text>
+<rect x="510" y="1406" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 72.817 µs · Reference p50 62.969 µs · Ratio 1.156×</text>
+<rect x="930" y="1406" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 72.817 µs · Reference p50 82.966 µs · Ratio 0.878×</text>
+<rect x="1350" y="1406" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 82.966 µs · Reference p50 63.249 µs · Ratio 1.312×</text>
+<rect x="1770" y="1406" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1425.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 82.966 µs · Reference p50 72.817 µs · Ratio 1.139×</text>
 <rect x="0" y="1436" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack root validation · 30000:MessagePack:MessagePack root validation</text>
-<rect x="510" y="1438" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="518.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.762 µs · Reference p50 1.183 µs · Ratio 0.644×</text>
-<rect x="930" y="1438" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.762 µs · Reference p50 0.781 µs · Ratio 0.976×</text>
-<rect x="1350" y="1438" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.781 µs · Reference p50 0.751 µs · Ratio 1.040×</text>
-<rect x="1770" y="1438" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.781 µs · Reference p50 0.762 µs · Ratio 1.025×</text>
+<rect x="510" y="1438" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.931 µs · Reference p50 0.762 µs · Ratio 1.222×</text>
+<rect x="930" y="1438" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.931 µs · Reference p50 0.821 µs · Ratio 1.134×</text>
+<rect x="1350" y="1438" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.821 µs · Reference p50 0.781 µs · Ratio 1.051×</text>
+<rect x="1770" y="1438" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1457.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.821 µs · Reference p50 0.931 µs · Ratio 0.882×</text>
 <text x="18.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack store load · 30000:MessagePack:MessagePack store load</text>
-<rect x="510" y="1470" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13907.564 µs · Reference p50 15957.052 µs · Ratio 0.872×</text>
-<rect x="930" y="1470" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="938.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13907.564 µs · Reference p50 24330.570 µs · Ratio 0.572×</text>
-<rect x="1350" y="1470" width="400" height="28" rx="3" fill="#ef8a62"/>
-<text x="1358.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 24330.570 µs · Reference p50 14598.548 µs · Ratio 1.667×</text>
-<rect x="1770" y="1470" width="400" height="28" rx="3" fill="#ef8a62"/>
-<text x="1778.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 24330.570 µs · Reference p50 13907.564 µs · Ratio 1.749×</text>
+<rect x="510" y="1470" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15402.977 µs · Reference p50 13907.564 µs · Ratio 1.108×</text>
+<rect x="930" y="1470" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15402.977 µs · Reference p50 15099.778 µs · Ratio 1.020×</text>
+<rect x="1350" y="1470" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1358.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15099.778 µs · Reference p50 24330.570 µs · Ratio 0.621×</text>
+<rect x="1770" y="1470" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1489.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15099.778 µs · Reference p50 15402.977 µs · Ratio 0.980×</text>
 <rect x="0" y="1500" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack store save · 30000:MessagePack:MessagePack store save</text>
 <rect x="510" y="1502" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 20341.345 µs · Reference p50 20460.627 µs · Ratio 0.994×</text>
-<rect x="930" y="1502" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 20341.345 µs · Reference p50 22178.754 µs · Ratio 0.917×</text>
-<rect x="1350" y="1502" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22178.754 µs · Reference p50 18168.563 µs · Ratio 1.221×</text>
-<rect x="1770" y="1502" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22178.754 µs · Reference p50 20341.345 µs · Ratio 1.090×</text>
+<text x="518.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 20132.747 µs · Reference p50 20341.345 µs · Ratio 0.990×</text>
+<rect x="930" y="1502" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 20132.747 µs · Reference p50 18644.373 µs · Ratio 1.080×</text>
+<rect x="1350" y="1502" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 18644.373 µs · Reference p50 22178.754 µs · Ratio 0.841×</text>
+<rect x="1770" y="1502" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1521.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 18644.373 µs · Reference p50 20132.747 µs · Ratio 0.926×</text>
 <text x="18.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON decode · 100000:JSON:JSON decode</text>
-<rect x="510" y="1534" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31325.397 µs · Reference p50 33754.001 µs · Ratio 0.928×</text>
-<rect x="930" y="1534" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31325.397 µs · Reference p50 41234.340 µs · Ratio 0.760×</text>
-<rect x="1350" y="1534" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 41234.340 µs · Reference p50 33054.202 µs · Ratio 1.247×</text>
-<rect x="1770" y="1534" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 41234.340 µs · Reference p50 31325.397 µs · Ratio 1.316×</text>
+<rect x="510" y="1534" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 32381.161 µs · Reference p50 31325.397 µs · Ratio 1.034×</text>
+<rect x="930" y="1534" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 32381.161 µs · Reference p50 31324.534 µs · Ratio 1.034×</text>
+<rect x="1350" y="1534" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31324.534 µs · Reference p50 41234.340 µs · Ratio 0.760×</text>
+<rect x="1770" y="1534" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1553.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31324.534 µs · Reference p50 32381.161 µs · Ratio 0.967×</text>
 <rect x="0" y="1564" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON encode · 100000:JSON:JSON encode</text>
-<rect x="510" y="1566" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31327.391 µs · Reference p50 30506.492 µs · Ratio 1.027×</text>
-<rect x="930" y="1566" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31327.391 µs · Reference p50 27279.057 µs · Ratio 1.148×</text>
-<rect x="1350" y="1566" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 27279.057 µs · Reference p50 26120.893 µs · Ratio 1.044×</text>
-<rect x="1770" y="1566" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 27279.057 µs · Reference p50 31327.391 µs · Ratio 0.871×</text>
+<rect x="510" y="1566" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 26859.770 µs · Reference p50 31327.391 µs · Ratio 0.857×</text>
+<rect x="930" y="1566" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 26859.770 µs · Reference p50 29228.928 µs · Ratio 0.919×</text>
+<rect x="1350" y="1566" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 29228.928 µs · Reference p50 27279.057 µs · Ratio 1.071×</text>
+<rect x="1770" y="1566" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1585.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 29228.928 µs · Reference p50 26859.770 µs · Ratio 1.088×</text>
 <text x="18.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON file read · 100000:JSON:JSON file read</text>
-<rect x="510" y="1598" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2511.175 µs · Reference p50 2939.198 µs · Ratio 0.854×</text>
-<rect x="930" y="1598" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2511.175 µs · Reference p50 2718.394 µs · Ratio 0.924×</text>
-<rect x="1350" y="1598" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2718.394 µs · Reference p50 2528.614 µs · Ratio 1.075×</text>
-<rect x="1770" y="1598" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2718.394 µs · Reference p50 2511.175 µs · Ratio 1.083×</text>
+<rect x="510" y="1598" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2806.908 µs · Reference p50 2511.175 µs · Ratio 1.118×</text>
+<rect x="930" y="1598" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2806.908 µs · Reference p50 2807.287 µs · Ratio 1.000×</text>
+<rect x="1350" y="1598" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2807.287 µs · Reference p50 2718.394 µs · Ratio 1.033×</text>
+<rect x="1770" y="1598" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1617.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2807.287 µs · Reference p50 2806.908 µs · Ratio 1.000×</text>
 <rect x="0" y="1628" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON object-root validation · 100000:JSON:JSON object-root validation</text>
 <rect x="510" y="1630" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.431 µs · Reference p50 0.351 µs · Ratio 1.228×</text>
+<text x="518.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.501 µs · Reference p50 0.431 µs · Ratio 1.162×</text>
 <rect x="930" y="1630" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.431 µs · Reference p50 0.341 µs · Ratio 1.264×</text>
-<rect x="1350" y="1630" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.341 µs · Reference p50 0.390 µs · Ratio 0.874×</text>
+<text x="938.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.501 µs · Reference p50 0.431 µs · Ratio 1.162×</text>
+<rect x="1350" y="1630" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.431 µs · Reference p50 0.341 µs · Ratio 1.264×</text>
 <rect x="1770" y="1630" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.341 µs · Reference p50 0.431 µs · Ratio 0.791×</text>
+<text x="1778.0" y="1649.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.431 µs · Reference p50 0.501 µs · Ratio 0.860×</text>
 <text x="18.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON store load · 100000:JSON:JSON store load</text>
-<rect x="510" y="1662" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 34693.608 µs · Reference p50 37528.812 µs · Ratio 0.924×</text>
+<rect x="510" y="1662" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 35872.648 µs · Reference p50 34693.608 µs · Ratio 1.034×</text>
 <rect x="930" y="1662" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 34693.608 µs · Reference p50 33417.035 µs · Ratio 1.038×</text>
+<text x="938.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 35872.648 µs · Reference p50 34279.309 µs · Ratio 1.046×</text>
 <rect x="1350" y="1662" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 33417.035 µs · Reference p50 32739.620 µs · Ratio 1.021×</text>
+<text x="1358.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 34279.309 µs · Reference p50 33417.035 µs · Ratio 1.026×</text>
 <rect x="1770" y="1662" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 33417.035 µs · Reference p50 34693.608 µs · Ratio 0.963×</text>
+<text x="1778.0" y="1681.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 34279.309 µs · Reference p50 35872.648 µs · Ratio 0.956×</text>
 <rect x="0" y="1692" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON store save · 100000:JSON:JSON store save</text>
-<rect x="510" y="1694" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 45202.853 µs · Reference p50 244108.777 µs · Ratio 0.185×</text>
+<rect x="510" y="1694" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 43804.270 µs · Reference p50 45202.853 µs · Ratio 0.969×</text>
 <rect x="930" y="1694" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 45202.853 µs · Reference p50 46068.232 µs · Ratio 0.981×</text>
-<rect x="1350" y="1694" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 46068.232 µs · Reference p50 217412.339 µs · Ratio 0.212×</text>
+<text x="938.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 43804.270 µs · Reference p50 43632.643 µs · Ratio 1.004×</text>
+<rect x="1350" y="1694" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 43632.643 µs · Reference p50 46068.232 µs · Ratio 0.947×</text>
 <rect x="1770" y="1694" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 46068.232 µs · Reference p50 45202.853 µs · Ratio 1.019×</text>
+<text x="1778.0" y="1713.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 43632.643 µs · Reference p50 43804.270 µs · Ratio 0.996×</text>
 <text x="18.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack decode · 100000:MessagePack:MessagePack decode</text>
-<rect x="510" y="1726" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 23368.093 µs · Reference p50 23943.128 µs · Ratio 0.976×</text>
+<rect x="510" y="1726" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22124.308 µs · Reference p50 23368.093 µs · Ratio 0.947×</text>
 <rect x="930" y="1726" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 23368.093 µs · Reference p50 22416.121 µs · Ratio 1.042×</text>
+<text x="938.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22124.308 µs · Reference p50 22002.127 µs · Ratio 1.006×</text>
 <rect x="1350" y="1726" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22416.121 µs · Reference p50 22762.126 µs · Ratio 0.985×</text>
+<text x="1358.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22002.127 µs · Reference p50 22416.121 µs · Ratio 0.982×</text>
 <rect x="1770" y="1726" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22416.121 µs · Reference p50 23368.093 µs · Ratio 0.959×</text>
+<text x="1778.0" y="1745.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22002.127 µs · Reference p50 22124.308 µs · Ratio 0.994×</text>
 <rect x="0" y="1756" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack decode + root validation · 100000:MessagePack:MessagePack decode + root validation</text>
 <rect x="510" y="1758" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 23619.136 µs · Reference p50 25328.398 µs · Ratio 0.933×</text>
+<text x="518.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21988.994 µs · Reference p50 23619.136 µs · Ratio 0.931×</text>
 <rect x="930" y="1758" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 23619.136 µs · Reference p50 23349.491 µs · Ratio 1.012×</text>
-<rect x="1350" y="1758" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 23349.491 µs · Reference p50 21764.637 µs · Ratio 1.073×</text>
+<text x="938.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21988.994 µs · Reference p50 21984.584 µs · Ratio 1.000×</text>
+<rect x="1350" y="1758" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21984.584 µs · Reference p50 23349.491 µs · Ratio 0.942×</text>
 <rect x="1770" y="1758" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 23349.491 µs · Reference p50 23619.136 µs · Ratio 0.989×</text>
+<text x="1778.0" y="1777.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21984.584 µs · Reference p50 21988.994 µs · Ratio 1.000×</text>
 <text x="18.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack encode · 100000:MessagePack:MessagePack encode</text>
-<rect x="510" y="1790" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 16083.226 µs · Reference p50 14494.176 µs · Ratio 1.110×</text>
-<rect x="930" y="1790" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 16083.226 µs · Reference p50 14679.899 µs · Ratio 1.096×</text>
-<rect x="1350" y="1790" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14679.899 µs · Reference p50 13914.410 µs · Ratio 1.055×</text>
-<rect x="1770" y="1790" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14679.899 µs · Reference p50 16083.226 µs · Ratio 0.913×</text>
+<rect x="510" y="1790" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15139.981 µs · Reference p50 16083.226 µs · Ratio 0.941×</text>
+<rect x="930" y="1790" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15139.981 µs · Reference p50 14506.480 µs · Ratio 1.044×</text>
+<rect x="1350" y="1790" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14506.480 µs · Reference p50 14679.899 µs · Ratio 0.988×</text>
+<rect x="1770" y="1790" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1809.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14506.480 µs · Reference p50 15139.981 µs · Ratio 0.958×</text>
 <rect x="0" y="1820" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack file read · 100000:MessagePack:MessagePack file read</text>
-<rect x="510" y="1822" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 57.719 µs · Reference p50 51.126 µs · Ratio 1.129×</text>
-<rect x="930" y="1822" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 57.719 µs · Reference p50 62.507 µs · Ratio 0.923×</text>
-<rect x="1350" y="1822" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 62.507 µs · Reference p50 56.746 µs · Ratio 1.102×</text>
-<rect x="1770" y="1822" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 62.507 µs · Reference p50 57.719 µs · Ratio 1.083×</text>
+<rect x="510" y="1822" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 58.911 µs · Reference p50 57.719 µs · Ratio 1.021×</text>
+<rect x="930" y="1822" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 58.911 µs · Reference p50 58.962 µs · Ratio 0.999×</text>
+<rect x="1350" y="1822" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 58.962 µs · Reference p50 62.507 µs · Ratio 0.943×</text>
+<rect x="1770" y="1822" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1841.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 58.962 µs · Reference p50 58.911 µs · Ratio 1.001×</text>
 <text x="18.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack root validation · 100000:MessagePack:MessagePack root validation</text>
-<rect x="510" y="1854" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.962 µs · Reference p50 0.771 µs · Ratio 1.248×</text>
+<rect x="510" y="1854" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.942 µs · Reference p50 0.962 µs · Ratio 0.979×</text>
 <rect x="930" y="1854" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.962 µs · Reference p50 0.741 µs · Ratio 1.298×</text>
-<rect x="1350" y="1854" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.741 µs · Reference p50 0.822 µs · Ratio 0.901×</text>
+<text x="938.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.942 µs · Reference p50 0.872 µs · Ratio 1.080×</text>
+<rect x="1350" y="1854" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.872 µs · Reference p50 0.741 µs · Ratio 1.177×</text>
 <rect x="1770" y="1854" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.741 µs · Reference p50 0.962 µs · Ratio 0.770×</text>
+<text x="1778.0" y="1873.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.872 µs · Reference p50 0.942 µs · Ratio 0.926×</text>
 <rect x="0" y="1884" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack store load · 100000:MessagePack:MessagePack store load</text>
 <rect x="510" y="1886" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 24507.041 µs · Reference p50 25982.961 µs · Ratio 0.943×</text>
-<rect x="930" y="1886" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 24507.041 µs · Reference p50 22135.121 µs · Ratio 1.107×</text>
+<text x="518.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22428.241 µs · Reference p50 24507.041 µs · Ratio 0.915×</text>
+<rect x="930" y="1886" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22428.241 µs · Reference p50 22785.662 µs · Ratio 0.984×</text>
 <rect x="1350" y="1886" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22135.121 µs · Reference p50 22288.133 µs · Ratio 0.993×</text>
-<rect x="1770" y="1886" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22135.121 µs · Reference p50 24507.041 µs · Ratio 0.903×</text>
+<text x="1358.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22785.662 µs · Reference p50 22135.121 µs · Ratio 1.029×</text>
+<rect x="1770" y="1886" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1905.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 22785.662 µs · Reference p50 22428.241 µs · Ratio 1.016×</text>
 <text x="18.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack store save · 100000:MessagePack:MessagePack store save</text>
-<rect x="510" y="1918" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 32151.144 µs · Reference p50 27046.154 µs · Ratio 1.189×</text>
-<rect x="930" y="1918" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 32151.144 µs · Reference p50 29640.327 µs · Ratio 1.085×</text>
-<rect x="1350" y="1918" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 29640.327 µs · Reference p50 26007.458 µs · Ratio 1.140×</text>
-<rect x="1770" y="1918" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 29640.327 µs · Reference p50 32151.144 µs · Ratio 0.922×</text>
+<rect x="510" y="1918" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 27151.870 µs · Reference p50 32151.144 µs · Ratio 0.845×</text>
+<rect x="930" y="1918" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 27151.870 µs · Reference p50 27773.056 µs · Ratio 0.978×</text>
+<rect x="1350" y="1918" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 27773.056 µs · Reference p50 29640.327 µs · Ratio 0.937×</text>
+<rect x="1770" y="1918" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1937.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 27773.056 µs · Reference p50 27151.870 µs · Ratio 1.023×</text>
 <rect x="0" y="1948" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON decode · 200000:JSON:JSON decode</text>
 <rect x="510" y="1950" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 68618.255 µs · Reference p50 71160.853 µs · Ratio 0.964×</text>
+<text x="518.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 69674.345 µs · Reference p50 68618.255 µs · Ratio 1.015×</text>
 <rect x="930" y="1950" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 68618.255 µs · Reference p50 70694.969 µs · Ratio 0.971×</text>
-<rect x="1350" y="1950" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 70694.969 µs · Reference p50 63272.714 µs · Ratio 1.117×</text>
+<text x="938.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 69674.345 µs · Reference p50 66363.523 µs · Ratio 1.050×</text>
+<rect x="1350" y="1950" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 66363.523 µs · Reference p50 70694.969 µs · Ratio 0.939×</text>
 <rect x="1770" y="1950" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 70694.969 µs · Reference p50 68618.255 µs · Ratio 1.030×</text>
+<text x="1778.0" y="1969.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 66363.523 µs · Reference p50 69674.345 µs · Ratio 0.952×</text>
 <text x="18.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON encode · 200000:JSON:JSON encode</text>
 <rect x="510" y="1982" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 56668.813 µs · Reference p50 54875.983 µs · Ratio 1.033×</text>
+<text x="518.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 56540.763 µs · Reference p50 56668.813 µs · Ratio 0.998×</text>
 <rect x="930" y="1982" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 56668.813 µs · Reference p50 48677.880 µs · Ratio 1.164×</text>
-<rect x="1350" y="1982" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 48677.880 µs · Reference p50 49360.608 µs · Ratio 0.986×</text>
+<text x="938.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 56540.763 µs · Reference p50 51274.105 µs · Ratio 1.103×</text>
+<rect x="1350" y="1982" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 51274.105 µs · Reference p50 48677.880 µs · Ratio 1.053×</text>
 <rect x="1770" y="1982" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 48677.880 µs · Reference p50 56668.813 µs · Ratio 0.859×</text>
+<text x="1778.0" y="2001.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 51274.105 µs · Reference p50 56540.763 µs · Ratio 0.907×</text>
 <rect x="0" y="2012" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON file read · 200000:JSON:JSON file read</text>
-<rect x="510" y="2014" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 5693.716 µs · Reference p50 6281.504 µs · Ratio 0.906×</text>
-<rect x="930" y="2014" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 5693.716 µs · Reference p50 6101.450 µs · Ratio 0.933×</text>
-<rect x="1350" y="2014" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6101.450 µs · Reference p50 5229.290 µs · Ratio 1.167×</text>
-<rect x="1770" y="2014" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6101.450 µs · Reference p50 5693.716 µs · Ratio 1.072×</text>
+<rect x="510" y="2014" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6156.267 µs · Reference p50 5693.716 µs · Ratio 1.081×</text>
+<rect x="930" y="2014" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 6156.267 µs · Reference p50 5582.102 µs · Ratio 1.103×</text>
+<rect x="1350" y="2014" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 5582.102 µs · Reference p50 6101.450 µs · Ratio 0.915×</text>
+<rect x="1770" y="2014" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="2033.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 5582.102 µs · Reference p50 6156.267 µs · Ratio 0.907×</text>
 <text x="18.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON object-root validation · 200000:JSON:JSON object-root validation</text>
-<rect x="510" y="2046" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="518.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.441 µs · Reference p50 0.410 µs · Ratio 1.076×</text>
-<rect x="930" y="2046" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.441 µs · Reference p50 0.370 µs · Ratio 1.192×</text>
-<rect x="1350" y="2046" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.370 µs · Reference p50 0.400 µs · Ratio 0.925×</text>
-<rect x="1770" y="2046" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.370 µs · Reference p50 0.441 µs · Ratio 0.839×</text>
+<rect x="510" y="2046" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.411 µs · Reference p50 0.441 µs · Ratio 0.932×</text>
+<rect x="930" y="2046" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="938.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.411 µs · Reference p50 0.611 µs · Ratio 0.673×</text>
+<rect x="1350" y="2046" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="1358.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.611 µs · Reference p50 0.370 µs · Ratio 1.651×</text>
+<rect x="1770" y="2046" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2065.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 0.611 µs · Reference p50 0.411 µs · Ratio 1.487×</text>
 <rect x="0" y="2076" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON store load · 200000:JSON:JSON store load</text>
-<rect x="510" y="2078" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 65169.251 µs · Reference p50 77149.776 µs · Ratio 0.845×</text>
-<rect x="930" y="2078" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 65169.251 µs · Reference p50 70219.873 µs · Ratio 0.928×</text>
-<rect x="1350" y="2078" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 70219.873 µs · Reference p50 72450.842 µs · Ratio 0.969×</text>
-<rect x="1770" y="2078" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 70219.873 µs · Reference p50 65169.251 µs · Ratio 1.078×</text>
+<rect x="510" y="2078" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 76730.387 µs · Reference p50 65169.251 µs · Ratio 1.177×</text>
+<rect x="930" y="2078" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 76730.387 µs · Reference p50 78124.181 µs · Ratio 0.982×</text>
+<rect x="1350" y="2078" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 78124.181 µs · Reference p50 70219.873 µs · Ratio 1.113×</text>
+<rect x="1770" y="2078" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2097.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 78124.181 µs · Reference p50 76730.387 µs · Ratio 1.018×</text>
 <text x="18.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON store save · 200000:JSON:JSON store save</text>
-<rect x="510" y="2110" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 78005.546 µs · Reference p50 482182.863 µs · Ratio 0.162×</text>
+<rect x="510" y="2110" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 81563.762 µs · Reference p50 78005.546 µs · Ratio 1.046×</text>
 <rect x="930" y="2110" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 78005.546 µs · Reference p50 89664.823 µs · Ratio 0.870×</text>
-<rect x="1350" y="2110" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 89664.823 µs · Reference p50 456838.843 µs · Ratio 0.196×</text>
+<text x="938.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 81563.762 µs · Reference p50 88989.825 µs · Ratio 0.917×</text>
+<rect x="1350" y="2110" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 88989.825 µs · Reference p50 89664.823 µs · Ratio 0.992×</text>
 <rect x="1770" y="2110" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 89664.823 µs · Reference p50 78005.546 µs · Ratio 1.149×</text>
+<text x="1778.0" y="2129.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 88989.825 µs · Reference p50 81563.762 µs · Ratio 1.091×</text>
 <rect x="0" y="2140" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2161.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · MessagePack store load · 200000:MessagePack:MessagePack store load</text>
 <rect x="510" y="2142" width="400" height="28" rx="3" fill="#eeeeee"/>
@@ -605,129 +605,126 @@
 <text x="18.0" y="2225.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="bold">Connect</text>
 <rect x="0" y="2236" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · NodeIdentity.create() [Ed25519 keygen] · NodeIdentity.create() [Ed25519 keygen]</text>
-<rect x="510" y="2238" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="518.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 81.589 µs · Reference p50 152.322 µs · Ratio 0.536×</text>
-<rect x="930" y="2238" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 81.589 µs · Reference p50 85.195 µs · Ratio 0.958×</text>
-<rect x="1350" y="2238" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 85.195 µs · Reference p50 93.716 µs · Ratio 0.909×</text>
-<rect x="1770" y="2238" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 85.195 µs · Reference p50 81.589 µs · Ratio 1.044×</text>
+<rect x="510" y="2238" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 84.349 µs · Reference p50 81.589 µs · Ratio 1.034×</text>
+<rect x="930" y="2238" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 84.349 µs · Reference p50 90.315 µs · Ratio 0.934×</text>
+<rect x="1350" y="2238" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 90.315 µs · Reference p50 85.195 µs · Ratio 1.060×</text>
+<rect x="1770" y="2238" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2257.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 90.315 µs · Reference p50 84.349 µs · Ratio 1.071×</text>
 <text x="18.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · identity fingerprint · identity fingerprint</text>
-<rect x="510" y="2270" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="518.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 3.466 µs · Reference p50 6.257 µs · Ratio 0.554×</text>
-<rect x="930" y="2270" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 3.466 µs · Reference p50 3.617 µs · Ratio 0.958×</text>
-<rect x="1350" y="2270" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="1358.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 3.617 µs · Reference p50 6.282 µs · Ratio 0.576×</text>
-<rect x="1770" y="2270" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 3.617 µs · Reference p50 3.466 µs · Ratio 1.044×</text>
+<rect x="510" y="2270" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 3.657 µs · Reference p50 3.466 µs · Ratio 1.055×</text>
+<rect x="930" y="2270" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 3.657 µs · Reference p50 4.188 µs · Ratio 0.873×</text>
+<rect x="1350" y="2270" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4.188 µs · Reference p50 3.617 µs · Ratio 1.158×</text>
+<rect x="1770" y="2270" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2289.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 4.188 µs · Reference p50 3.657 µs · Ratio 1.145×</text>
 <rect x="0" y="2300" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · open_or_resume + assert_current · open_or_resume + assert_current</text>
-<rect x="510" y="2302" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 9.347 µs · Reference p50 19.778 µs · Ratio 0.473×</text>
+<rect x="510" y="2302" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 9.318 µs · Reference p50 9.347 µs · Ratio 0.997×</text>
 <rect x="930" y="2302" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 9.347 µs · Reference p50 10.510 µs · Ratio 0.889×</text>
-<rect x="1350" y="2302" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10.510 µs · Reference p50 11.872 µs · Ratio 0.885×</text>
+<text x="938.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 9.318 µs · Reference p50 10.359 µs · Ratio 0.900×</text>
+<rect x="1350" y="2302" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10.359 µs · Reference p50 10.510 µs · Ratio 0.986×</text>
 <rect x="1770" y="2302" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10.510 µs · Reference p50 9.347 µs · Ratio 1.124×</text>
+<text x="1778.0" y="2321.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10.359 µs · Reference p50 9.318 µs · Ratio 1.112×</text>
 <text x="18.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · open_or_resume + assert_current (900 active sessions) · open_or_resume + assert_current (900 active sessions)</text>
-<rect x="510" y="2334" width="400" height="28" rx="3" fill="#eeeeee"/>
-<text x="518.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">not matched</text>
-<rect x="930" y="2334" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="938.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15.665 µs · Reference p50 21.285 µs · Ratio 0.736×</text>
-<rect x="1350" y="2334" width="400" height="28" rx="3" fill="#eeeeee"/>
-<text x="1358.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">not matched</text>
-<rect x="1770" y="2334" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21.285 µs · Reference p50 15.665 µs · Ratio 1.359×</text>
+<rect x="510" y="2334" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21.416 µs · Reference p50 15.665 µs · Ratio 1.367×</text>
+<rect x="930" y="2334" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21.416 µs · Reference p50 21.060 µs · Ratio 1.017×</text>
+<rect x="1350" y="2334" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21.060 µs · Reference p50 21.285 µs · Ratio 0.989×</text>
+<rect x="1770" y="2334" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2353.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 21.060 µs · Reference p50 21.416 µs · Ratio 0.983×</text>
 <rect x="0" y="2364" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · replay cache check_and_record · replay cache check_and_record</text>
-<rect x="510" y="2366" width="400" height="28" rx="3" fill="#eeeeee"/>
-<text x="518.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">case definition differs</text>
-<rect x="930" y="2366" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1.884 µs · Reference p50 1.854 µs · Ratio 1.016×</text>
-<rect x="1350" y="2366" width="400" height="28" rx="3" fill="#eeeeee"/>
-<text x="1358.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">case definition differs</text>
-<rect x="1770" y="2366" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1.854 µs · Reference p50 1.884 µs · Ratio 0.984×</text>
+<rect x="510" y="2366" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2.224 µs · Reference p50 1.884 µs · Ratio 1.180×</text>
+<rect x="930" y="2366" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 2.224 µs · Reference p50 1.873 µs · Ratio 1.187×</text>
+<rect x="1350" y="2366" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1.873 µs · Reference p50 1.854 µs · Ratio 1.010×</text>
+<rect x="1770" y="2366" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="2385.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 1.873 µs · Reference p50 2.224 µs · Ratio 0.842×</text>
 <text x="18.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · sign_request (ping) · sign_request (ping)</text>
-<rect x="510" y="2398" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="518.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12.754 µs · Reference p50 23.845 µs · Ratio 0.535×</text>
+<rect x="510" y="2398" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13.816 µs · Reference p50 12.754 µs · Ratio 1.083×</text>
 <rect x="930" y="2398" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12.754 µs · Reference p50 12.579 µs · Ratio 1.014×</text>
-<rect x="1350" y="2398" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="1358.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12.579 µs · Reference p50 24.721 µs · Ratio 0.509×</text>
+<text x="938.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 13.816 µs · Reference p50 14.037 µs · Ratio 0.984×</text>
+<rect x="1350" y="2398" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14.037 µs · Reference p50 12.579 µs · Ratio 1.116×</text>
 <rect x="1770" y="2398" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12.579 µs · Reference p50 12.754 µs · Ratio 0.986×</text>
+<text x="1778.0" y="2417.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 14.037 µs · Reference p50 13.816 µs · Ratio 1.016×</text>
 <rect x="0" y="2428" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · sign_response · sign_response</text>
-<rect x="510" y="2430" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="518.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12.924 µs · Reference p50 23.479 µs · Ratio 0.550×</text>
-<rect x="930" y="2430" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 12.924 µs · Reference p50 11.622 µs · Ratio 1.112×</text>
-<rect x="1350" y="2430" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="1358.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11.622 µs · Reference p50 19.823 µs · Ratio 0.586×</text>
-<rect x="1770" y="2430" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11.622 µs · Reference p50 12.924 µs · Ratio 0.899×</text>
+<rect x="510" y="2430" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 17.903 µs · Reference p50 12.924 µs · Ratio 1.385×</text>
+<rect x="930" y="2430" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="938.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 17.903 µs · Reference p50 11.411 µs · Ratio 1.569×</text>
+<rect x="1350" y="2430" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11.411 µs · Reference p50 11.622 µs · Ratio 0.982×</text>
+<rect x="1770" y="2430" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1778.0" y="2449.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11.411 µs · Reference p50 17.903 µs · Ratio 0.637×</text>
 <text x="18.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · verify_request (full: sign+verify+replay) · verify_request (full: sign+verify+replay)</text>
-<rect x="510" y="2462" width="400" height="28" rx="3" fill="#eeeeee"/>
-<text x="518.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">case definition differs</text>
-<rect x="930" y="2462" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 37.371 µs · Reference p50 39.975 µs · Ratio 0.935×</text>
-<rect x="1350" y="2462" width="400" height="28" rx="3" fill="#eeeeee"/>
-<text x="1358.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">case definition differs</text>
-<rect x="1770" y="2462" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 39.975 µs · Reference p50 37.371 µs · Ratio 1.070×</text>
+<rect x="510" y="2462" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 37.956 µs · Reference p50 37.371 µs · Ratio 1.016×</text>
+<rect x="930" y="2462" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 37.956 µs · Reference p50 39.505 µs · Ratio 0.961×</text>
+<rect x="1350" y="2462" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 39.505 µs · Reference p50 39.975 µs · Ratio 0.988×</text>
+<rect x="1770" y="2462" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2481.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 39.505 µs · Reference p50 37.956 µs · Ratio 1.041×</text>
 <rect x="0" y="2492" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · verify_response · verify_response</text>
-<rect x="510" y="2494" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="518.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31.058 µs · Reference p50 54.788 µs · Ratio 0.567×</text>
+<rect x="510" y="2494" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 28.755 µs · Reference p50 31.058 µs · Ratio 0.926×</text>
 <rect x="930" y="2494" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31.058 µs · Reference p50 31.460 µs · Ratio 0.987×</text>
+<text x="938.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 28.755 µs · Reference p50 28.353 µs · Ratio 1.014×</text>
 <rect x="1350" y="2494" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31.460 µs · Reference p50 33.763 µs · Ratio 0.932×</text>
+<text x="1358.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 28.353 µs · Reference p50 31.460 µs · Ratio 0.901×</text>
 <rect x="1770" y="2494" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 31.460 µs · Reference p50 31.058 µs · Ratio 1.013×</text>
+<text x="1778.0" y="2513.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 28.353 µs · Reference p50 28.755 µs · Ratio 0.986×</text>
 <text x="18.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">5 · msgpack load · msgpack load</text>
-<rect x="510" y="2526" width="400" height="28" rx="3" fill="#67a9cf"/>
-<text x="518.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 19.496 µs · Reference p50 30.602 µs · Ratio 0.637×</text>
-<rect x="930" y="2526" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="938.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 19.496 µs · Reference p50 17.954 µs · Ratio 1.086×</text>
-<rect x="1350" y="2526" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1358.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 17.954 µs · Reference p50 18.901 µs · Ratio 0.950×</text>
-<rect x="1770" y="2526" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="1778.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 17.954 µs · Reference p50 19.496 µs · Ratio 0.921×</text>
+<rect x="510" y="2526" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15.750 µs · Reference p50 19.496 µs · Ratio 0.808×</text>
+<rect x="930" y="2526" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 15.750 µs · Reference p50 18.145 µs · Ratio 0.868×</text>
+<rect x="1350" y="2526" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 18.145 µs · Reference p50 17.954 µs · Ratio 1.011×</text>
+<rect x="1770" y="2526" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2545.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 18.145 µs · Reference p50 15.750 µs · Ratio 1.152×</text>
 <rect x="0" y="2556" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">5 · msgpack save (5-peer payload) · msgpack save (5-peer payload)</text>
-<rect x="510" y="2558" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="518.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10202.169 µs · Reference p50 10400.620 µs · Ratio 0.981×</text>
+<rect x="510" y="2558" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10850.944 µs · Reference p50 10202.169 µs · Ratio 1.064×</text>
 <rect x="930" y="2558" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10202.169 µs · Reference p50 10074.623 µs · Ratio 1.013×</text>
+<text x="938.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10850.944 µs · Reference p50 11316.967 µs · Ratio 0.959×</text>
 <rect x="1350" y="2558" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1358.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10074.623 µs · Reference p50 9515.273 µs · Ratio 1.059×</text>
+<text x="1358.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11316.967 µs · Reference p50 10074.623 µs · Ratio 1.123×</text>
 <rect x="1770" y="2558" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10074.623 µs · Reference p50 10202.169 µs · Ratio 0.987×</text>
+<text x="1778.0" y="2577.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11316.967 µs · Reference p50 10850.944 µs · Ratio 1.043×</text>
 <text x="18.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">5 · yaml load · yaml load</text>
-<rect x="510" y="2590" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="518.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 166.298 µs · Reference p50 1818.160 µs · Ratio 0.091×</text>
-<rect x="930" y="2590" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="938.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 166.298 µs · Reference p50 196.185 µs · Ratio 0.848×</text>
-<rect x="1350" y="2590" width="400" height="28" rx="3" fill="#2166ac"/>
-<text x="1358.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">Candidate p50 196.185 µs · Reference p50 1297.434 µs · Ratio 0.151×</text>
+<rect x="510" y="2590" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 175.511 µs · Reference p50 166.298 µs · Ratio 1.055×</text>
+<rect x="930" y="2590" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 175.511 µs · Reference p50 184.438 µs · Ratio 0.952×</text>
+<rect x="1350" y="2590" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 184.438 µs · Reference p50 196.185 µs · Ratio 0.940×</text>
 <rect x="1770" y="2590" width="400" height="28" rx="3" fill="#fddbc7"/>
-<text x="1778.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 196.185 µs · Reference p50 166.298 µs · Ratio 1.180×</text>
+<text x="1778.0" y="2609.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 184.438 µs · Reference p50 175.511 µs · Ratio 1.051×</text>
 <rect x="0" y="2620" width="2200" height="32" fill="#fafafa"/>
 <text x="18.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">5 · yaml save (5-peer payload) · yaml save (5-peer payload)</text>
-<rect x="510" y="2622" width="400" height="28" rx="3" fill="#d1e5f0"/>
-<text x="518.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10689.766 µs · Reference p50 12158.766 µs · Ratio 0.879×</text>
+<rect x="510" y="2622" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11460.499 µs · Reference p50 10689.766 µs · Ratio 1.072×</text>
 <rect x="930" y="2622" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="938.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 10689.766 µs · Reference p50 11174.477 µs · Ratio 0.957×</text>
+<text x="938.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11460.499 µs · Reference p50 11074.998 µs · Ratio 1.035×</text>
 <rect x="1350" y="2622" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1358.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11174.477 µs · Reference p50 11420.588 µs · Ratio 0.978×</text>
+<text x="1358.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11074.998 µs · Reference p50 11174.477 µs · Ratio 0.991×</text>
 <rect x="1770" y="2622" width="400" height="28" rx="3" fill="#f7f7f7"/>
-<text x="1778.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11174.477 µs · Reference p50 10689.766 µs · Ratio 1.045×</text>
-<text x="18.0" y="2666.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#8c2d04" font-weight="normal">Configuration differs across versions: cluster_state: 2.2.0.5 MeasurementConfig(warmups=1, repetitions=3, batch_count=1, track_allocations=False) vs 2.2.0.4 MeasurementConfig(warmups=2,</text>
-<text x="18.0" y="2680.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#8c2d04" font-weight="normal">repetitions=9, batch_count=1, track_allocations=False); connect: 2.2.0.5 MeasurementConfig(warmups=500, repetitions=5000, batch_count=1, track_allocations=False) vs 2.2.0.4</text>
-<text x="18.0" y="2694.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#8c2d04" font-weight="normal">MeasurementConfig(warmups=10, repetitions=50, batch_count=1, track_allocations=False)</text>
+<text x="1778.0" y="2641.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">Candidate p50 11074.998 µs · Reference p50 11460.499 µs · Ratio 0.966×</text>
 </svg>

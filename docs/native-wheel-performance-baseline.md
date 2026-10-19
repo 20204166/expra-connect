@@ -57,12 +57,10 @@
   normal refreshes and current scoring.
 
 <!-- performance-summary:start -->
-- **Current weighted winner:** 2.2.0.5 native — 0.770 index; 37 matched positive-p50 cases.
+- **Current weighted winner:** 2.2.1.0 native — 0.768 index; 37 matched positive-p50 cases.
   - Applies only to this workload set and weighting; it is not a universal claim.
 - **Distinct-workload coverage:** 74 unique cases; reported separately from latency scoring.
   - 1.8.0.0: 63/74
-  - 2.0.0.2: 65/74
-  - 2.2.0.0: 65/74
   - 2.2.0.1: 65/74
   - 2.2.0.3 native: 69/74
   - 2.2.0.3 universal: 69/74
@@ -70,6 +68,8 @@
   - 2.2.0.4 universal: 68/74
   - 2.2.0.5 native: 69/74
   - 2.2.0.5 universal: 69/74
+  - 2.2.1.0 native: 69/74
+  - 2.2.1.0 universal: 69/74
   - Missing or unsupported cases receive no invented latency penalty.
 <!-- performance-summary:end -->
 

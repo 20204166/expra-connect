@@ -9,6 +9,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import scripts.update_performance_diagrams as performance_diagrams
+from expra_connect import __version__
 from scripts.benchmark_support import (
     BenchmarkOutcome,
     BenchmarkRun,
@@ -452,7 +453,7 @@ class BaselineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "runs"
             shutil.copytree(source, target)
-            run_path = target / "connect-2.0.0.2.json"
+            run_path = next(target.glob("connect-*.json"))
             document = json.loads(run_path.read_text(encoding="utf-8"))
             document["outcomes"][0]["fixture"]["shape"] = "other-fixture"
             run_path.write_text(json.dumps(document), encoding="utf-8")
@@ -460,30 +461,25 @@ class BaselineTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "fixture or config differs"):
                 load_shared_harness_runs(target)
 
-    def test_shared_runs_have_all_versions_and_preserve_approved_gaps(self) -> None:
+    def test_shared_runs_keep_the_visible_window_and_preserve_approved_gaps(
+        self,
+    ) -> None:
         runs = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+        labels = shared_harness_labels(runs)
 
+        self.assertEqual(len(labels), 10)
+        self.assertEqual(labels[0], "1.8.0.0")
         self.assertEqual(
-            tuple(run.metadata.package_version for run in runs["cluster-1k"]),
-            (
-                "1.8.0.0",
-                "2.0.0.2",
-                "2.2.0.0",
-                "2.2.0.1",
-                "2.2.0.3",
-                "2.2.0.3",
-                "2.2.0.4",
-                "2.2.0.4",
-                "2.2.0.5",
-                "2.2.0.5",
-            ),
+            labels[-2:], (f"{__version__} native", f"{__version__} universal")
         )
+        self.assertNotIn("2.0.0.2", labels)
+        self.assertNotIn("2.2.0.0", labels)
         for run in runs["cluster-scaling"]:
             self.assertEqual(
                 tuple((item.size, item.operation) for item in run.outcomes),
                 ((30_000, "cluster round-trip"), (100_000, "cluster round-trip")),
             )
-        for run in runs["cluster-large"][:4]:
+        for run in runs["cluster-large"][:2]:
             operations = {item.operation for item in run.outcomes}
             self.assertEqual(
                 operations,
@@ -585,8 +581,8 @@ class DiagramTests(unittest.TestCase):
                 for flavor in ("native", "universal"):
                     source = build_dir / f"2.2.0.3-{flavor}-{suite}.json"
                     document = json.loads(source.read_text(encoding="utf-8"))
-                    document["metadata"]["package_version"] = "2.2.0.6"
-                    target = build_dir / f"2.2.0.6-{flavor}-{suite}.json"
+                    document["metadata"]["package_version"] = "99.99.99.99"
+                    target = build_dir / f"99.99.99.99-{flavor}-{suite}.json"
                     target.write_text(json.dumps(document), encoding="utf-8")
 
             groups = load_shared_harness_runs(results_dir)
@@ -603,7 +599,7 @@ class DiagramTests(unittest.TestCase):
 
         self.assertEqual(len(labels), 10)
         self.assertEqual(labels[0], "1.8.0.0")
-        self.assertEqual(labels[-2:], ("2.2.0.6 native", "2.2.0.6 universal"))
+        self.assertEqual(labels[-2:], ("99.99.99.99 native", "99.99.99.99 universal"))
         self.assertNotIn("1.9.0.1", labels)
         self.assertEqual(len(weighted.indices), 10)
         self.assertNotIn("1.9.0.1:", summary)
@@ -752,7 +748,7 @@ class DiagramTests(unittest.TestCase):
                             encoding="utf-8"
                         )
                     )
-                    document["metadata"]["package_version"] = "2.2.0.6"
+                    document["metadata"]["package_version"] = "99.99.99.99"
                     document["metadata"]["modules"] = {
                         name: f"/wheel/{flavor}/{Path(module).name}"
                         for name, module in document["metadata"]["modules"].items()
@@ -762,7 +758,7 @@ class DiagramTests(unittest.TestCase):
                         extra_case["case_id"] = "1000:future cluster operation"
                         extra_case["operation"] = "future cluster operation"
                         document["outcomes"].append(extra_case)
-                    (build_dir / f"2.2.0.6-{flavor}-{suite}.json").write_text(
+                    (build_dir / f"99.99.99.99-{flavor}-{suite}.json").write_text(
                         json.dumps(document), encoding="utf-8"
                     )
 
@@ -777,10 +773,10 @@ class DiagramTests(unittest.TestCase):
             )
             coverage = _full_workload_coverage_rows(groups)
 
-        self.assertEqual(labels[-1], "2.2.0.6 native")
+        self.assertEqual(labels[-1], "99.99.99.99 native")
         self.assertEqual(len(groups["cluster-1k"][0].outcomes), 9)
         self.assertEqual(len(groups["cluster-1k"]), len(labels))
-        self.assertIn("2.2.0.6 native", svg)
+        self.assertIn("99.99.99.99 native", svg)
         self.assertIn("future cluster operation", svg)
         self.assertEqual(
             (coverage[0].cells[-1].measured, coverage[0].cells[-1].total), (10, 10)
