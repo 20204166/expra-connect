@@ -57,19 +57,19 @@
   normal refreshes and current scoring.
 
 <!-- performance-summary:start -->
-- **Current weighted winner:** 2.2.0.3 universal — 0.858 index; 37 matched positive-p50 cases.
+- **Current weighted winner:** 2.2.0.5 native — 0.770 index; 37 matched positive-p50 cases.
   - Applies only to this workload set and weighting; it is not a universal claim.
-- **Distinct-workload coverage:** 73 unique cases; reported separately from latency scoring.
-  - 1.8.0.0: 63/73
-  - 1.9.0.1: 65/73
-  - 2.0.0.0: 65/73
-  - 2.0.0.2: 65/73
-  - 2.2.0.0: 65/73
-  - 2.2.0.1: 65/73
-  - 2.2.0.3 native: 68/73
-  - 2.2.0.3 universal: 68/73
-  - 2.2.0.4 native: 68/73
-  - 2.2.0.4 universal: 68/73
+- **Distinct-workload coverage:** 74 unique cases; reported separately from latency scoring.
+  - 1.8.0.0: 63/74
+  - 2.0.0.2: 65/74
+  - 2.2.0.0: 65/74
+  - 2.2.0.1: 65/74
+  - 2.2.0.3 native: 69/74
+  - 2.2.0.3 universal: 69/74
+  - 2.2.0.4 native: 68/74
+  - 2.2.0.4 universal: 68/74
+  - 2.2.0.5 native: 69/74
+  - 2.2.0.5 universal: 69/74
   - Missing or unsupported cases receive no invented latency penalty.
 <!-- performance-summary:end -->
 
@@ -83,8 +83,8 @@
 - Focused 30k/100k persistence is excluded from the composite because it is not
   measured for every displayed release/build. Those results remain in the
   persistence heatmaps when available.
-- Older releases have one column. 2.2.0.3 and 2.2.0.4 have separate native and
-  universal columns.
+- Older releases have one column. 2.2.0.3, 2.2.0.4, and 2.2.0.5 have separate
+  native and universal columns.
 - Size plots normalize each workload's p50 against its matching 1.8.0.0 result,
   then calculate a geometric mean over cases measured in every displayed result.
   Current panels cover:

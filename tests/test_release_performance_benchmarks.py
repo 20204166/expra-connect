@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -17,6 +19,24 @@ from scripts.benchmark_support import (
 
 
 class ReleasePerformanceTests(unittest.TestCase):
+    def test_release_benchmark_cli_supports_direct_script_invocation(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+
+        completed = subprocess.run(
+            (
+                sys.executable,
+                str(root / "scripts" / "benchmark_release_wheels.py"),
+                "--help",
+            ),
+            cwd=root,
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("--wheel-dir", completed.stdout)
+
     def test_benchmarks_only_artifact_wheels_with_controlled_subprocesses(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -272,7 +272,7 @@ class BaselineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "runs"
             shutil.copytree(source, target)
-            run_path = target / "connect-2.0.0.0.json"
+            run_path = target / "connect-2.0.0.2.json"
             document = json.loads(run_path.read_text(encoding="utf-8"))
             document["outcomes"][0]["fixture"]["shape"] = "other-fixture"
             run_path.write_text(json.dumps(document), encoding="utf-8")
@@ -287,8 +287,6 @@ class BaselineTests(unittest.TestCase):
             tuple(run.metadata.package_version for run in runs["cluster-1k"]),
             (
                 "1.8.0.0",
-                "1.9.0.1",
-                "2.0.0.0",
                 "2.0.0.2",
                 "2.2.0.0",
                 "2.2.0.1",
@@ -296,6 +294,8 @@ class BaselineTests(unittest.TestCase):
                 "2.2.0.3",
                 "2.2.0.4",
                 "2.2.0.4",
+                "2.2.0.5",
+                "2.2.0.5",
             ),
         )
         for run in runs["cluster-scaling"]:
@@ -303,7 +303,7 @@ class BaselineTests(unittest.TestCase):
                 tuple((item.size, item.operation) for item in run.outcomes),
                 ((30_000, "cluster round-trip"), (100_000, "cluster round-trip")),
             )
-        for run in runs["cluster-large"][:6]:
+        for run in runs["cluster-large"][:4]:
             operations = {item.operation for item in run.outcomes}
             self.assertEqual(
                 operations,
@@ -358,13 +358,18 @@ class BaselineTests(unittest.TestCase):
             groups = load_shared_harness_runs(shared)
             labels = shared_harness_labels(groups)
 
-        self.assertEqual(labels[6:8], ("2.2.0.3 native", "2.2.0.3 universal"))
+        native_index = labels.index("2.2.0.3 native")
+        universal_index = labels.index("2.2.0.3 universal")
         self.assertEqual(
-            tuple(run.metadata.package_version for run in groups["cluster-1k"])[6:8],
+            tuple(run.metadata.package_version for run in groups["cluster-1k"])[
+                native_index : universal_index + 1
+            ],
             ("2.2.0.3", "2.2.0.3"),
         )
         self.assertEqual(
-            tuple(len(run.outcomes) for run in groups["persistence-30k"])[6:8],
+            tuple(len(run.outcomes) for run in groups["persistence-30k"])[
+                native_index : universal_index + 1
+            ],
             (13, 13),
         )
 
@@ -400,8 +405,8 @@ class DiagramTests(unittest.TestCase):
                 for flavor in ("native", "universal"):
                     source = build_dir / f"2.2.0.3-{flavor}-{suite}.json"
                     document = json.loads(source.read_text(encoding="utf-8"))
-                    document["metadata"]["package_version"] = "2.2.0.5"
-                    target = build_dir / f"2.2.0.5-{flavor}-{suite}.json"
+                    document["metadata"]["package_version"] = "2.2.0.6"
+                    target = build_dir / f"2.2.0.6-{flavor}-{suite}.json"
                     target.write_text(json.dumps(document), encoding="utf-8")
 
             groups = load_shared_harness_runs(results_dir)
@@ -418,7 +423,7 @@ class DiagramTests(unittest.TestCase):
 
         self.assertEqual(len(labels), 10)
         self.assertEqual(labels[0], "1.8.0.0")
-        self.assertEqual(labels[-2:], ("2.2.0.5 native", "2.2.0.5 universal"))
+        self.assertEqual(labels[-2:], ("2.2.0.6 native", "2.2.0.6 universal"))
         self.assertNotIn("1.9.0.1", labels)
         self.assertEqual(len(weighted.indices), 10)
         self.assertNotIn("1.9.0.1:", summary)
@@ -477,7 +482,9 @@ class DiagramTests(unittest.TestCase):
                 ROOT / "docs/performance-build-comparison-results", build_dir
             )
             groups = load_shared_harness_runs(results_dir)
-            native_run = groups["cluster-1k"][6]
+            native_run = groups["cluster-1k"][
+                shared_harness_labels(groups).index("2.2.0.3 native")
+            ]
             archive_evicted_results = getattr(
                 performance_diagrams, "_archive_evicted_results", None
             )
@@ -512,7 +519,9 @@ class DiagramTests(unittest.TestCase):
                 ROOT / "docs/performance-build-comparison-results", build_dir
             )
             groups = load_shared_harness_runs(results_dir)
-            native_run = groups["cluster-1k"][8]
+            native_run = groups["cluster-1k"][
+                shared_harness_labels(groups).index("2.2.0.4 native")
+            ]
             archive_evicted_results = getattr(
                 performance_diagrams, "_archive_evicted_results", None
             )
@@ -563,7 +572,7 @@ class DiagramTests(unittest.TestCase):
                             encoding="utf-8"
                         )
                     )
-                    document["metadata"]["package_version"] = "2.2.0.5"
+                    document["metadata"]["package_version"] = "2.2.0.6"
                     document["metadata"]["modules"] = {
                         name: f"/wheel/{flavor}/{Path(module).name}"
                         for name, module in document["metadata"]["modules"].items()
@@ -573,7 +582,7 @@ class DiagramTests(unittest.TestCase):
                         extra_case["case_id"] = "1000:future cluster operation"
                         extra_case["operation"] = "future cluster operation"
                         document["outcomes"].append(extra_case)
-                    (build_dir / f"2.2.0.5-{flavor}-{suite}.json").write_text(
+                    (build_dir / f"2.2.0.6-{flavor}-{suite}.json").write_text(
                         json.dumps(document), encoding="utf-8"
                     )
 
@@ -588,10 +597,10 @@ class DiagramTests(unittest.TestCase):
             )
             coverage = _full_workload_coverage_rows(groups)
 
-        self.assertEqual(labels[-1], "2.2.0.5 native")
+        self.assertEqual(labels[-1], "2.2.0.6 native")
         self.assertEqual(len(groups["cluster-1k"][0].outcomes), 9)
         self.assertEqual(len(groups["cluster-1k"]), len(labels))
-        self.assertIn("2.2.0.5 native", svg)
+        self.assertIn("2.2.0.6 native", svg)
         self.assertIn("future cluster operation", svg)
         self.assertEqual(
             (coverage[0].cells[-1].measured, coverage[0].cells[-1].total), (10, 10)
@@ -692,11 +701,11 @@ class DiagramTests(unittest.TestCase):
                 ("200k · JSON persistence", 6),
             ),
         )
-        self.assertAlmostEqual(min(panels[0].indices), 0.7638, places=4)
-        self.assertAlmostEqual(min(panels[1].indices), 0.7831, places=4)
-        self.assertAlmostEqual(min(panels[2].indices), 0.7771, places=4)
-        self.assertAlmostEqual(panels[3].indices[7], 0.898178, places=6)
-        self.assertAlmostEqual(min(panels[3].indices), 0.898178, places=6)
+        native_index = shared_harness_labels(groups).index("2.2.0.4 native")
+        self.assertAlmostEqual(panels[0].indices[native_index], 0.7638, places=4)
+        self.assertAlmostEqual(panels[1].indices[native_index], 0.7831, places=4)
+        self.assertAlmostEqual(panels[2].indices[native_index], 0.7771, places=4)
+        self.assertAlmostEqual(panels[3].indices[native_index], 1.103909, places=6)
         for panel in panels:
             self.assertEqual(panel.indices[0], 1.0)
             self.assertEqual(len(panel.indices), len(groups["cluster-1k"]))
@@ -711,8 +720,9 @@ class DiagramTests(unittest.TestCase):
         self.assertEqual(panel.label, "All included suites and sizes")
         self.assertEqual(row.label, "Full-workload index · equal-case · 37 cases")
         self.assertEqual(row.values[0], 1.0)
-        native_index = row.values[8]
-        universal_index = row.values[9]
+        labels = shared_harness_labels(groups)
+        native_index = row.values[labels.index("2.2.0.4 native")]
+        universal_index = row.values[labels.index("2.2.0.4 universal")]
         if native_index is None or universal_index is None:
             self.fail("full-workload index is unavailable for a 2.2.0.4 build")
         self.assertAlmostEqual(native_index, 0.942746, places=6)
@@ -726,10 +736,13 @@ class DiagramTests(unittest.TestCase):
 
         self.assertEqual(panel.case_count, 37)
         self.assertAlmostEqual(panel.indices[0], 1.0)
-        self.assertIsNotNone(panel.indices[6])
-        self.assertIsNotNone(panel.indices[7])
-        self.assertAlmostEqual(panel.indices[8], 0.9744, places=4)
-        self.assertAlmostEqual(panel.indices[9], 0.9919, places=4)
+        labels = shared_harness_labels(groups)
+        self.assertAlmostEqual(
+            panel.indices[labels.index("2.2.0.4 native")], 0.9744, places=4
+        )
+        self.assertAlmostEqual(
+            panel.indices[labels.index("2.2.0.4 universal")], 0.9919, places=4
+        )
         self.assertIn("Weighted overall index", svg)
         self.assertIn("1k cluster: 5%", svg)
         self.assertIn("30k cluster: 15%", svg)
@@ -749,8 +762,8 @@ class DiagramTests(unittest.TestCase):
         self.assertIn("2.2.0.3 native:", summary)
         self.assertIn("2.2.0.3 universal:", summary)
         self.assertIn("37 matched positive-p50 cases", summary)
-        self.assertIn("73 unique cases", summary)
-        self.assertIn("2.2.0.4 native: 68/73", summary)
+        self.assertIn("74 unique cases", summary)
+        self.assertIn("2.2.0.4 native: 68/74", summary)
 
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -790,22 +803,57 @@ class DiagramTests(unittest.TestCase):
                 "Total unique measured cases",
             ),
         )
-        self.assertEqual((rows[1].cells[6].measured, rows[1].cells[6].total), (9, 9))
-        self.assertEqual((rows[1].cells[7].measured, rows[1].cells[7].total), (9, 9))
-        self.assertEqual((rows[2].cells[6].measured, rows[2].cells[6].total), (6, 9))
-        self.assertEqual((rows[2].cells[7].measured, rows[2].cells[7].total), (6, 9))
-        self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (10, 12))
-        self.assertEqual((rows[4].cells[6].measured, rows[4].cells[6].total), (13, 13))
-        self.assertEqual((rows[4].cells[7].measured, rows[4].cells[7].total), (13, 13))
+        labels = shared_harness_labels(groups)
+        native_index = labels.index("2.2.0.3 native")
+        universal_index = labels.index("2.2.0.3 universal")
         self.assertEqual(
-            (rows[-1].cells[6].measured, rows[-1].cells[6].total), (68, 73)
+            (rows[1].cells[native_index].measured, rows[1].cells[native_index].total),
+            (9, 9),
         )
         self.assertEqual(
-            (rows[-1].cells[7].measured, rows[-1].cells[7].total), (68, 73)
+            (
+                rows[1].cells[universal_index].measured,
+                rows[1].cells[universal_index].total,
+            ),
+            (9, 9),
+        )
+        self.assertEqual(
+            (rows[2].cells[native_index].measured, rows[2].cells[native_index].total),
+            (6, 9),
+        )
+        self.assertEqual(
+            (
+                rows[2].cells[universal_index].measured,
+                rows[2].cells[universal_index].total,
+            ),
+            (6, 9),
+        )
+        self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (10, 13))
+        self.assertEqual(
+            (rows[4].cells[native_index].measured, rows[4].cells[native_index].total),
+            (13, 13),
+        )
+        self.assertEqual(
+            (
+                rows[4].cells[universal_index].measured,
+                rows[4].cells[universal_index].total,
+            ),
+            (13, 13),
+        )
+        self.assertEqual(
+            (rows[-1].cells[native_index].measured, rows[-1].cells[native_index].total),
+            (69, 74),
+        )
+        self.assertEqual(
+            (
+                rows[-1].cells[universal_index].measured,
+                rows[-1].cells[universal_index].total,
+            ),
+            (69, 74),
         )
         self.assertIn("Workload support / coverage", svg)
         self.assertIn("6/9", svg)
-        self.assertIn("68/73", svg)
+        self.assertIn("69/74", svg)
         self.assertIn("Exceeds configured YAML maximum size 30,000", svg)
         self.assertNotIn(
             "Cluster round-trip scaling",

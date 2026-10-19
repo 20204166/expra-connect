@@ -17,8 +17,9 @@ those measurements.
   9 samples.
 - MessagePack StateStore at 200,000 entries is recorded as unsupported for all
   versions. No codec-only 200,000 measurements were substituted.
-- Persistence at 30,000/100,000 entries for 2.2.0.3 was not run. The recorded
-  2.2.0.3 200,000 run was the only approved persistence size for that version.
+- The original shared-harness records for 2.2.0.3 omitted persistence at
+  30,000/100,000 entries. A later complete native/universal wheel rerun, including
+  those sizes, is stored in `docs/performance-build-comparison-results/`.
 - Connect YAML StateStore stages are unavailable for 1.8.0.0 because that API
   is absent. Other versions record those stages as measured.
 
@@ -49,5 +50,7 @@ PYTHONPATH=/path/to/1.8.0.0 .venv/bin/python -m tools.connect_performance_benchm
   --json-output tools/shared-benchmark-results/connect-1.8.0.0.json
 ```
 
-For persistence, also run sizes 100000 for the six earlier versions and size
-200000 for all seven versions. Do not create 30k/100k results for 2.2.0.3.
+For this legacy shared-harness set, run persistence sizes 100000 for the six
+earlier versions and size 200000 for all seven original version groups. New
+release wheel runs use the versioned files under
+`docs/performance-build-comparison-results/` and cover all supported sizes.

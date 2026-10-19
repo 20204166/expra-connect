@@ -12,6 +12,9 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
+if __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from scripts.benchmark_support import BenchmarkRun, load_results, write_results
 
 _WHEEL_NAME = re.compile(
