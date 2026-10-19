@@ -49,6 +49,8 @@ from scripts.benchmark_support import (
 # ---------------------------------------------------------------------------
 WARMUP = 500
 MEASURE = 5_000
+SESSION_STRESS_ACTIVE_COUNT = 900
+SESSION_STRESS_MAX_SESSIONS = 1_024
 
 
 def _import_version_module(primary: str, legacy: str) -> Any:
@@ -92,6 +94,7 @@ class OperationSpec:
     payload_bytes: int | None = None
     warmups: int = WARMUP
     repetitions: int = MEASURE
+    setup: Callable[[], None] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -145,7 +148,13 @@ def _bench_sign_response() -> None:
     )
 
 
-_REPLAY_CACHE = ReplayCache(clock=time.monotonic, max_entries=WARMUP + MEASURE + 100)
+REPLAY_CACHE_CAPACITY = 4096
+_REPLAY_CACHE = ReplayCache(clock=time.monotonic, max_entries=REPLAY_CACHE_CAPACITY)
+
+
+def _reset_replay_cache() -> None:
+    global _REPLAY_CACHE
+    _REPLAY_CACHE = ReplayCache(clock=time.monotonic, max_entries=REPLAY_CACHE_CAPACITY)
 
 
 def _bench_verify_request() -> None:
@@ -229,6 +238,16 @@ _SMALL_CACHE = ReplayCache(clock=time.monotonic, max_entries=256)
 _SMALL_CACHE_COUNTER = 0
 
 
+def _reset_small_cache() -> None:
+    global _SMALL_CACHE
+    _SMALL_CACHE = ReplayCache(clock=time.monotonic, max_entries=256)
+    seen_at = time.monotonic()
+    for index in range(255):
+        _SMALL_CACHE.check_and_record(
+            NODE_A.value, f"setup-{index}", f"setup-nonce-{index}", seen_at
+        )
+
+
 def _bench_replay_cache() -> None:
     global _SMALL_CACHE_COUNTER
     _SMALL_CACHE_COUNTER += 1
@@ -275,6 +294,30 @@ def _bench_session_open_assert() -> None:
     _SESSION_REG.assert_current(sid, gen)
 
 
+def _reset_session_registry() -> None:
+    global _SESSION_REG
+    _SESSION_REG = LogicalSessionRegistry(clock=time.monotonic, max_sessions=2)
+
+
+def _prepare_occupied_session_registry() -> None:
+    global _SESSION_REG
+    session_ids = iter(range(SESSION_STRESS_MAX_SESSIONS))
+
+    def next_session_id() -> str:
+        return f"benchmark-session-{next(session_ids)}"
+
+    _SESSION_REG = LogicalSessionRegistry(
+        clock=time.monotonic,
+        max_sessions=SESSION_STRESS_MAX_SESSIONS,
+        session_id_factory=next_session_id,
+    )
+    for index in range(SESSION_STRESS_ACTIVE_COUNT):
+        _SESSION_REG.authenticate(
+            _make_anon_request(f"setup-{index}", f"setup-nonce-{index}"),
+            connection_generation="setup-generation",
+        )
+
+
 # ---------------------------------------------------------------------------
 # Workload E: Identity lifecycle (slower — fewer iterations)
 # ---------------------------------------------------------------------------
@@ -303,6 +346,7 @@ def main() -> None:
         "msgpack load",
         "replay cache check_and_record",
         "open_or_resume + assert_current",
+        "open_or_resume + assert_current (900 active sessions)",
         "NodeIdentity.create() [Ed25519 keygen]",
     )
     parser.add_argument("--operation", choices=operation_names)
@@ -326,13 +370,13 @@ def main() -> None:
         "verify_request (full: sign+verify+replay)",
         "replay cache check_and_record",
         "open_or_resume + assert_current",
+        "open_or_resume + assert_current (900 active sessions)",
     }
     selected_names = (
         {args.operation} if args.operation is not None else set(operation_names)
     )
     if args.batch_count > 1 and selected_names & stateful_operations:
         parser.error("stateful operation cannot be batched")
-
     from expra_connect import __version__
 
     modules = collect_modules(
@@ -382,16 +426,22 @@ def main() -> None:
             OperationSpec(
                 "verify_request (full: sign+verify+replay)",
                 _bench_verify_request,
-                {"shape": "ping_request"},
+                {"shape": "ping_request", "replay_cache_occupancy": 0},
                 1,
                 stateful=True,
+                setup=_reset_replay_cache,
             ),
             OperationSpec(
                 "replay cache check_and_record",
                 _bench_replay_cache,
-                {"shape": "unique_replay_record"},
+                {
+                    "shape": "new_record_at_capacity_boundary",
+                    "occupancy_before": 255,
+                    "max_entries": 256,
+                },
                 1,
                 stateful=True,
+                setup=_reset_small_cache,
             ),
             OperationSpec(
                 "open_or_resume + assert_current",
@@ -399,6 +449,21 @@ def main() -> None:
                 {"shape": "anonymous_session"},
                 1,
                 stateful=True,
+                setup=_reset_session_registry,
+            ),
+            OperationSpec(
+                "open_or_resume + assert_current (900 active sessions)",
+                _bench_session_open_assert,
+                {
+                    "shape": "anonymous_session_open_at_high_occupancy",
+                    "active_sessions_before": SESSION_STRESS_ACTIVE_COUNT,
+                    "max_sessions": SESSION_STRESS_MAX_SESSIONS,
+                },
+                1,
+                stateful=True,
+                warmups=10,
+                repetitions=100,
+                setup=_prepare_occupied_session_registry,
             ),
             OperationSpec(
                 "NodeIdentity.create() [Ed25519 keygen]",
@@ -526,7 +591,7 @@ def main() -> None:
                 batch_count=args.batch_count,
                 track_allocations=args.track_allocations,
             )
-            result = measure(spec.operation, config)
+            result = measure(spec.operation, config, setup=spec.setup)
             outcomes.append(
                 BenchmarkOutcome(
                     case_id=spec.name,

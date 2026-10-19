@@ -158,10 +158,7 @@ class ClusterState:
             self.promotion_epochs,
             tuple(self.capability_grants),
         )
-        value = role_state_to_dict(state)
-        value["assignments"] = [
-            dict(item, role=item["roles"][0]) for item in value["assignments"]
-        ]
+        value = role_state_to_dict(state, include_legacy_role=True)
         value.update(
             {
                 "schema_version": 2,

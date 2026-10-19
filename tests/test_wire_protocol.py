@@ -1,5 +1,6 @@
 import math
 import unittest
+from typing import Any
 
 from expra_connect.data.permissions import NodeCapability, NodePermission
 from expra_connect.remote.wire_protocol import (
@@ -365,9 +366,29 @@ class SurfaceOperationProtocolTests(unittest.TestCase):
 
 
 class WireValidationEdgeCaseTests(unittest.TestCase):
+    def test_replay_pruning_does_not_iterate_cache_entries(self) -> None:
+        class IterationCountingDict(dict[Any, Any]):
+            iteration_count = 0
+
+            def items(self) -> Any:
+                self.iteration_count += 1
+                return super().items()
+
+        cache = ReplayCache(clock=lambda: TEST_TIMESTAMP)
+        seen = IterationCountingDict()
+        request_ids = IterationCountingDict()
+        cache._seen = seen
+        cache._request_ids = request_ids
+
+        self.assertTrue(cache.check_and_record("peer", "request", "nonce", 10.0))
+        self.assertTrue(cache.check_and_record_request_id("peer", "request", 10.0))
+
+        self.assertEqual(seen.iteration_count, 0)
+        self.assertEqual(request_ids.iteration_count, 0)
+
     def test_operation_validation_rejects_non_object_parameters(self) -> None:
         with self.assertRaises(RemoteProtocolError):
-            validate_operation_params("ping", None)  # type: ignore[arg-type]
+            validate_operation_params("ping", None)
 
     def test_snapshot_validation_rejects_non_finite_payload_values(self) -> None:
         with self.assertRaises(RemoteProtocolError):

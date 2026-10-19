@@ -390,6 +390,29 @@ class GenerationFencingTests(unittest.TestCase):
 
 
 class BoundsTests(unittest.TestCase):
+    def test_creating_session_does_not_scan_all_active_sessions(self) -> None:
+        class IterationCountingDict(dict[str, Any]):
+            iteration_count = 0
+
+            def __iter__(self) -> Any:
+                self.iteration_count += 1
+                return super().__iter__()
+
+            def items(self) -> Any:
+                self.iteration_count += 1
+                return super().items()
+
+        now = [0.0]
+        registry = _registry(now=now, ttl=100.0, max_sessions=3, ids=["s1", "s2", "s3"])
+        registry.authenticate(_request(), connection_generation=None)
+        registry.authenticate(_request(), connection_generation=None)
+        sessions = IterationCountingDict(registry._sessions)
+        registry._sessions = sessions
+
+        registry.authenticate(_request(), connection_generation=None)
+
+        self.assertEqual(sessions.iteration_count, 0)
+
     def test_active_sessions_are_bounded(self) -> None:
         now = [0.0]
         registry = _registry(now=now, ttl=100.0, max_sessions=2, ids=["s1", "s2"])
@@ -397,6 +420,39 @@ class BoundsTests(unittest.TestCase):
         registry.authenticate(_request(), connection_generation=None)
         with self.assertRaises(RemoteAuthError):
             registry.authenticate(_request(), connection_generation=None)
+
+    def test_expiry_index_handles_non_monotonic_injected_clock(self) -> None:
+        now = [0.0]
+        registry = _registry(
+            now=now,
+            ttl=100.0,
+            max_sessions=3,
+            ids=["later-expiry", "earlier-expiry", "replacement"],
+        )
+        later = registry.authenticate(_request(), connection_generation=None)
+        now[0] = -200.0
+        earlier = registry.authenticate(_request(), connection_generation=None)
+
+        now[0] = -99.0
+        replacement = registry.authenticate(_request(), connection_generation=None)
+
+        registry.assert_current(later, None)
+        registry.assert_current(replacement, None)
+        with self.assertRaises(RemoteAuthError):
+            registry.assert_current(earlier, None)
+
+    def test_expiry_index_stays_bounded_after_clock_reversal_and_expiry(self) -> None:
+        now = [0.0]
+        registry = _registry(now=now, ttl=1.0, max_sessions=1)
+
+        for _ in range(8):
+            session_id = registry.authenticate(_request(), connection_generation=None)
+            now[0] = 2.0
+            with self.assertRaises(RemoteAuthError):
+                registry.assert_current(session_id, None)
+            now[0] = 0.0
+
+        self.assertLessEqual(len(registry._expirations), 2)
 
     def test_expired_sessions_are_pruned_before_capacity_failure(self) -> None:
         now = [0.0]

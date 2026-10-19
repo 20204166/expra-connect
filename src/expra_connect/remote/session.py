@@ -8,6 +8,7 @@ is an opaque equality/retirement token.
 
 from __future__ import annotations
 
+import heapq
 import math
 import secrets
 import threading
@@ -69,6 +70,7 @@ class LogicalSessionRegistry:
         )
         self._clock = clock
         self._sessions: dict[str, _LogicalSession] = {}
+        self._expirations: list[tuple[float, str]] = []
         self._lock = threading.Lock()
         self._session_id_factory = (
             session_id_factory
@@ -133,11 +135,19 @@ class LogicalSessionRegistry:
             if len(self._sessions) >= self._max_sessions:
                 raise RemoteAuthError("logical session limit reached")
             session_id = self._allocate_id_locked()
-            self._sessions[session_id] = _LogicalSession(
+            session = _LogicalSession(
                 owner=owner,
                 active_generation=generation,
                 expires_at=now + self._ttl,
             )
+            self._sessions[session_id] = session
+            heapq.heappush(self._expirations, (session.expires_at, session_id))
+            if len(self._expirations) > 2 * self._max_sessions:
+                self._expirations = [
+                    (current.expires_at, current_id)
+                    for current_id, current in self._sessions.items()
+                ]
+                heapq.heapify(self._expirations)
             return session_id
 
     def _allocate_id_locked(self) -> str:
@@ -150,11 +160,11 @@ class LogicalSessionRegistry:
         raise RemoteAuthError("could not allocate a logical session")
 
     def _prune_locked(self, now: float) -> None:
-        expired = [
-            key for key, session in self._sessions.items() if now >= session.expires_at
-        ]
-        for key in expired:
-            del self._sessions[key]
+        while self._expirations and now >= self._expirations[0][0]:
+            expires_at, session_id = heapq.heappop(self._expirations)
+            session = self._sessions.get(session_id)
+            if session is not None and session.expires_at == expires_at:
+                del self._sessions[session_id]
 
     def _validated_clock(self) -> float:
         value = self._clock()

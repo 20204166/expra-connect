@@ -218,6 +218,7 @@ def measure(
     config: MeasurementConfig,
     *,
     clock_ns: Callable[[], int] | None = None,
+    setup: Callable[[], Any] | None = None,
 ) -> MeasurementResult:
     clock = time.perf_counter_ns if clock_ns is None else clock_ns
 
@@ -226,10 +227,14 @@ def measure(
             operation()
 
     for _ in range(config.warmups):
+        if setup is not None:
+            setup()
         run_batch()
 
     samples: list[float] = []
     for _ in range(config.repetitions):
+        if setup is not None:
+            setup()
         started = clock()
         run_batch()
         elapsed_ns = clock() - started
@@ -249,6 +254,8 @@ def measure(
             raise RuntimeError("cannot track allocations while tracemalloc is active")
         tracemalloc.start()
         try:
+            if setup is not None:
+                setup()
             baseline_bytes, _ = tracemalloc.get_traced_memory()
             tracemalloc.reset_peak()
             operation()

@@ -91,6 +91,24 @@ class ProtocolTests(unittest.TestCase):
                 replay_cache=cache,
             )
 
+    def test_replay_cache_prunes_out_of_order_timestamps_without_early_expiry(
+        self,
+    ) -> None:
+        now = [20.0]
+        cache = ReplayCache(clock=lambda: now[0], ttl_seconds=10.0)
+        self.assertTrue(cache.check_and_record("peer", "new", "nonce-new", 20.0))
+        self.assertTrue(cache.check_and_record("peer", "old", "nonce-old", 10.0))
+
+        now[0] = 20.0
+        self.assertTrue(cache.check_and_record("peer", "boundary", "n", 20.0))
+        self.assertEqual(len(cache), 3)
+        now[0] = 20.0001
+        self.assertTrue(cache.check_and_record("peer", "later", "n", now[0]))
+
+        self.assertEqual(len(cache), 3)
+        self.assertFalse(cache.check_and_record("peer", "new", "nonce-new", now[0]))
+        self.assertFalse(cache.check_and_record("peer", "boundary", "n", now[0]))
+
     def test_unknown_hello_capabilities_are_metadata_only(self) -> None:
         capabilities = parse_hello_capabilities(
             {"capabilities": ["read_state", "future_capability"]}

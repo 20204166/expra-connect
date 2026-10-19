@@ -1,21 +1,56 @@
+import io
 import os
 import tempfile
 import unittest
+from collections.abc import Callable
 from pathlib import Path
-from typing import NoReturn
+from typing import NoReturn, TextIO
 from unittest.mock import patch
+
+import yaml
 
 from expra_connect.persistence import (
     JsonStateStore,
     MessagePackStateStore,
     StateDataError,
     YamlStateStore,
+    _save_json_document,
+    _yaml_dump,
+    _yaml_load,
     migrate_state,
 )
 from expra_connect.runtime.persistence import peer_grant_from_json
 
 
 class PersistenceTests(unittest.TestCase):
+    def test_json_save_writes_the_encoded_document_in_one_chunk(self) -> None:
+        class CountingWriter(io.StringIO):
+            def __init__(self) -> None:
+                super().__init__()
+                self.chunks: list[str] = []
+
+            def write(self, value: str) -> int:
+                self.chunks.append(value)
+                return super().write(value)
+
+        output = CountingWriter()
+
+        def atomic_write(
+            _path: Path,
+            writer: Callable[[TextIO], object],
+            *,
+            sync_directory: bool = True,
+        ) -> None:
+            writer(output)
+
+        _save_json_document(
+            Path("unused.json"),
+            {"z": 1, "a": 2},
+            atomic_write=atomic_write,
+        )
+
+        self.assertEqual(output.chunks, ['{"a": 2, "z": 1}'])
+
     def test_messagepack_state_rejects_malformed_and_oversized_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "identity.msgpack"
@@ -56,6 +91,20 @@ class PersistenceTests(unittest.TestCase):
         self.assertEqual(document["schema_version"], 2)
         self.assertEqual(document["grants"][0]["routes"][0]["source"], "legacy")
         self.assertNotIn("secret", document["grants"][0])
+
+    def test_migration_clones_json_tree_without_mutating_or_breaking_aliases(
+        self,
+    ) -> None:
+        shared = {"host": "10.0.0.2", "port": 27321}
+        original = {"grants": [shared], "trusted": [shared]}
+
+        migrated = migrate_state("trust", original)
+
+        self.assertIsNot(migrated, original)
+        self.assertIsNot(migrated["grants"], original["grants"])
+        self.assertIs(migrated["grants"][0], migrated["trusted"][0])
+        self.assertNotIn("routes", shared)
+        self.assertEqual(migrated["grants"][0]["routes"][0]["source"], "legacy")
 
     def test_unknown_schema_and_malformed_route_state_fail_closed(self) -> None:
         with self.assertRaises(StateDataError):
@@ -130,6 +179,23 @@ class PersistenceTests(unittest.TestCase):
 
 
 class YamlStateStoreTests(unittest.TestCase):
+    def test_yaml_fast_codec_matches_safe_codec_output_and_values(self) -> None:
+        value = {"unicode": "café", "items": [True, None, {"peer": 7}]}
+        expected = yaml.safe_dump(value, sort_keys=True, allow_unicode=True)
+        for dumper, loader in (
+            (yaml.CSafeDumper, yaml.CSafeLoader),
+            (yaml.SafeDumper, yaml.SafeLoader),
+        ):
+            with (
+                self.subTest(dumper=dumper.__name__),
+                patch("expra_connect.persistence._YAML_DUMPER", dumper),
+                patch("expra_connect.persistence._YAML_LOADER", loader),
+            ):
+                output = io.StringIO()
+                _yaml_dump(value, output)
+                self.assertEqual(output.getvalue(), expected)
+                self.assertEqual(_yaml_load(expected), value)
+
     def test_exists_includes_legacy_json_source(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.yaml"
@@ -183,6 +249,18 @@ class YamlStateStoreTests(unittest.TestCase):
             path.write_text("key: [unclosed\n", encoding="utf-8")
             with self.assertRaises(StateDataError):
                 YamlStateStore(path).load()
+
+    def test_yaml_loader_rejects_python_object_construction_tags(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.yaml"
+            marker = Path(directory) / "unexpected-execution"
+            path.write_text(
+                f"!!python/object/apply:os.system ['touch {marker}']",
+                encoding="utf-8",
+            )
+            with self.assertRaises(StateDataError):
+                YamlStateStore(path).load()
+            self.assertFalse(marker.exists())
 
     def test_empty_file_raises_state_data_error(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

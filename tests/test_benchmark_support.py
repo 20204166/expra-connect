@@ -20,6 +20,22 @@ from scripts.benchmark_support import (
 
 
 class MeasurementTests(unittest.TestCase):
+    def test_setup_runs_outside_each_warmup_and_sample_timing(self) -> None:
+        events: list[str] = []
+        ticks = iter((0, 1_000, 1_000, 2_000))
+
+        result = measure(
+            lambda: events.append("operation"),
+            MeasurementConfig(warmups=1, repetitions=2, track_allocations=False),
+            clock_ns=iter(ticks).__next__,
+            setup=lambda: events.append("setup"),
+        )
+
+        self.assertEqual(
+            events, ["setup", "operation", "setup", "operation", "setup", "operation"]
+        )
+        self.assertEqual(result.samples_us, (1.0, 1.0))
+
     def test_measures_batched_samples_and_canonical_distribution(self) -> None:
         ticks = iter((0, 1_000, 1_000, 3_000, 3_000, 5_000))
         calls = 0

@@ -11,23 +11,30 @@ from .models import CapabilityGrant, ClusterRole, CoordinatorEpoch, RoleAssignme
 from .roles import RoleState
 
 
-def role_state_to_dict(state: RoleState) -> dict[str, Any]:
+def role_state_to_dict(
+    state: RoleState, *, include_legacy_role: bool = False
+) -> dict[str, Any]:
+    assignments: list[dict[str, Any]] = []
+    for assignment in state.assignments:
+        if assignment.node_id is None:
+            continue
+        roles = (
+            [next(iter(assignment.roles)).value]
+            if len(assignment.roles) == 1
+            else sorted(role.value for role in assignment.roles)
+        )
+        item = {
+            "node_id": assignment.node_id.value,
+            "roles": roles,
+            "paused": assignment.paused,
+            "revoked": assignment.revoked,
+            "has_active_job": assignment.has_active_job,
+        }
+        if include_legacy_role:
+            item["role"] = roles[0]
+        assignments.append(item)
     return {
-        "assignments": [
-            {
-                "node_id": a.node_id.value if a.node_id else None,
-                "roles": (
-                    [next(iter(a.roles)).value]
-                    if len(a.roles) == 1
-                    else sorted(role.value for role in a.roles)
-                ),
-                "paused": a.paused,
-                "revoked": a.revoked,
-                "has_active_job": a.has_active_job,
-            }
-            for a in state.assignments
-            if a.node_id is not None
-        ],
+        "assignments": assignments,
         "epoch": None
         if state.epoch is None
         else {

@@ -83,7 +83,7 @@ class RoleAuthorityTests(unittest.TestCase):
         self.assertIsNotNone(state._assignment_index)
         self.assertIsNotNone(state._grant_index)
         with self.assertRaises(TypeError):
-            state._assignment_index[NodeId("worker")] = self.coord  # type: ignore[index,union-attr]
+            state._assignment_index[NodeId("worker")] = self.coord  # type: ignore[index]
 
         updated = state.pause(actor=self.coord, target=NodeId("worker"))
 

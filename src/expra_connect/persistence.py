@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import tempfile
 from collections.abc import Callable
-from copy import deepcopy
 from pathlib import Path
 from typing import Any, BinaryIO, TextIO, cast
 
@@ -19,6 +19,66 @@ class StateDataError(ValueError):
 
 
 CURRENT_SCHEMA_VERSION = 2
+_YAML_DUMPER = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
+_YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
+
+def _yaml_dump(value: Any, stream: TextIO | None = None) -> str | None:
+    """Serialize with the LibYAML safe dumper when available."""
+    return cast(
+        str | None,
+        yaml.dump(
+            value,
+            stream=stream,
+            Dumper=_YAML_DUMPER,
+            sort_keys=True,
+            allow_unicode=True,
+        ),
+    )
+
+
+def _yaml_load(value: str) -> Any:
+    """Parse with the LibYAML safe loader when available."""
+    return yaml.load(value, Loader=_YAML_LOADER)
+
+
+class _NonJsonTreeError(Exception):
+    """Signal that a state document needs general ``deepcopy`` semantics."""
+
+
+def _clone_json_tree(value: Any, memo: dict[int, Any]) -> Any:
+    """Clone exact JSON-shaped containers while preserving aliases and cycles."""
+    value_type = type(value)
+    if value_type in (str, int, float, bool, type(None)):
+        return value
+    if value_type is list:
+        identity = id(value)
+        if identity in memo:
+            return memo[identity]
+        cloned: list[Any] = []
+        memo[identity] = cloned
+        cloned.extend(_clone_json_tree(item, memo) for item in value)
+        return cloned
+    if value_type is dict:
+        identity = id(value)
+        if identity in memo:
+            return memo[identity]
+        cloned_dict: dict[str, Any] = {}
+        memo[identity] = cloned_dict
+        for key, item in value.items():
+            if type(key) is not str:
+                raise _NonJsonTreeError
+            cloned_dict[key] = _clone_json_tree(item, memo)
+        return cloned_dict
+    raise _NonJsonTreeError
+
+
+def _clone_state(value: dict[str, Any]) -> dict[str, Any]:
+    """Use a focused fast path for JSON trees; preserve deepcopy otherwise."""
+    try:
+        return cast(dict[str, Any], _clone_json_tree(value, {}))
+    except _NonJsonTreeError:
+        return copy.deepcopy(value)
 
 
 def _atomic_write(
@@ -56,11 +116,7 @@ def _save_text_document(
         )
     else:
         atomic_write(
-            path,
-            lambda file: yaml.safe_dump(
-                value, file, sort_keys=True, allow_unicode=True
-            ),
-            sync_directory=sync_directory,
+            path, lambda file: _yaml_dump(value, file), sync_directory=sync_directory
         )
 
 
@@ -74,7 +130,7 @@ def _save_json_document(
     """Write deterministic JSON through the configured atomic boundary."""
     atomic_write(
         path,
-        lambda file: json.dump(value, file, sort_keys=True),
+        lambda file: file.write(json.dumps(value, sort_keys=True)),
         sync_directory=sync_directory,
     )
 
@@ -145,7 +201,7 @@ def migrate_state(kind: str, value: dict[str, Any]) -> dict[str, Any]:
     Callers can therefore keep the original file when validation fails later.
     """
 
-    migrated = deepcopy(value)
+    migrated = _clone_state(value)
     raw_version = migrated.get("schema_version", migrated.get("version", 1))
     if isinstance(raw_version, bool) or not isinstance(raw_version, int):
         raise StateDataError("state schema version is invalid")
@@ -243,7 +299,7 @@ class YamlStateStore:
         except (OSError, UnicodeDecodeError) as error:
             raise StateDataError("persisted state cannot be decoded") from error
         try:
-            value = yaml.safe_load(text)
+            value = _yaml_load(text)
         except yaml.YAMLError as error:
             raise StateDataError("persisted state cannot be decoded") from error
         if not isinstance(value, dict):
@@ -269,7 +325,7 @@ class YamlStateStore:
             raise StateDataError("state root must be an object")
         _atomic_write(
             self.path,
-            lambda file: yaml.safe_dump(raw, file, sort_keys=True, allow_unicode=True),
+            lambda file: _yaml_dump(raw, file),
         )
 
 

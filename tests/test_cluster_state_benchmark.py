@@ -105,6 +105,65 @@ class ClusterStateBenchmarkTests(unittest.TestCase):
         )
         self.assertIn("p50=", completed.stdout)
 
+    def test_cluster_document_round_trip_operation_is_runnable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "cluster-round-trip.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "scripts.benchmark_cluster_state",
+                    "--sizes",
+                    "1",
+                    "--operation",
+                    "cluster document round-trip",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--skip-allocation-tracking",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(len(result["outcomes"]), 1)
+        self.assertEqual(
+            result["outcomes"][0]["operation"], "cluster document round-trip"
+        )
+
+    def test_cluster_decode_operation_is_runnable(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "scripts.benchmark_cluster_state",
+                "--sizes",
+                "1",
+                "--operation",
+                "cluster decode",
+                "--warmups",
+                "0",
+                "--repetitions",
+                "1",
+                "--skip-allocation-tracking",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("cluster decode: n=1", completed.stdout)
+
     def test_legacy_cluster_package_layout_emits_shared_results(self) -> None:
         package_root = Path("/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0")
         environment = os.environ.copy()

@@ -12,6 +12,70 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ConnectPerformanceBenchmarkTests(unittest.TestCase):
+    def test_cli_measures_session_open_at_high_occupancy(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "connect.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "tools.connect_performance_benchmark",
+                    "--operation",
+                    "open_or_resume + assert_current (900 active sessions)",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            outcome = json.loads(output_path.read_text(encoding="utf-8"))["outcomes"][0]
+
+        self.assertEqual(outcome["fixture"]["active_sessions_before"], 900)
+        self.assertEqual(outcome["fixture"]["max_sessions"], 1024)
+        self.assertEqual(outcome["config"]["repetitions"], 1)
+
+    def test_high_occupancy_setup_is_repeated_for_every_sample_and_allocation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "connect.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "tools.connect_performance_benchmark",
+                    "--operation",
+                    "open_or_resume + assert_current (900 active sessions)",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "125",
+                    "--track-allocations",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=30,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            outcome = json.loads(output_path.read_text(encoding="utf-8"))["outcomes"][0]
+
+        self.assertEqual(outcome["config"]["repetitions"], 125)
+        self.assertIsNotNone(outcome["result"]["peak_bytes"])
+
     def test_module_cli_selects_operation_and_emits_shared_result(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output_path = Path(directory) / "connect.json"

@@ -961,7 +961,7 @@ def _full_workload_index_row(panel: MatchedIndexPanel) -> HeatmapRow:
 def _full_workload_coverage_rows(
     groups: dict[str, tuple[BenchmarkRun, ...]],
 ) -> tuple[CoverageRow, ...]:
-    """Summarize every distinct suite/size case once, separately from scoring."""
+    """Measure coverage against the newest suite/build workload inventory."""
 
     group_labels = (
         ("cluster-1k", 1_000, "Cluster state · 1k"),
@@ -984,7 +984,16 @@ def _full_workload_coverage_rows(
             }
             for run in runs
         ]
-        case_ids = set().union(*(cases.keys() for cases in cases_by_run))
+        newest_version = max(
+            (run.metadata.package_version for run in runs),
+            key=lambda version: tuple(int(part) for part in version.split(".")),
+        )
+        newest_runs = tuple(
+            cases
+            for run, cases in zip(runs, cases_by_run, strict=True)
+            if run.metadata.package_version == newest_version
+        )
+        case_ids = set().union(*(cases.keys() for cases in newest_runs))
         aligned_cases: list[dict[str, BenchmarkOutcome] | None] = list(cases_by_run)
         aligned_labels = list(labels)
         if _has_focused_persistence_gap(runs):

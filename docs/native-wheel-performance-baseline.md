@@ -37,12 +37,15 @@ unsupported 200k MessagePack cases have no common positive-p50 result to score.
 The full-workload index also has its own point-plot section below, using the
 same release/build series and index values as the summary row above.
 
-The **Workload support / coverage** section reports measured cases over the
-union of every distinct workload case in scope, separately from latency
-scoring. It shows cluster state at 1k, 30k, and 100k; connect; and persistence
-at 30k, 100k, and 200k. Coverage uses the union of distinct cases in the saved
-runs; the separate cluster round-trip scaling visualization reuses cases and is
-not counted again. Current measured/total counts are regenerated below. The two
+The **Workload support / coverage** section reports measured cases separately
+from latency scoring. For each suite and size, the newest package version's
+saved native and universal runs define the workload inventory; every displayed
+historical version/build is recalculated against that same inventory. This
+means newly introduced cases appear as unmeasured for older versions, while
+historical-only cases do not inflate the current denominator. It shows cluster
+state at 1k, 30k, and 100k; connect; and persistence at 30k, 100k, and 200k.
+The separate cluster round-trip scaling visualization reuses cases and is not
+counted again. Current measured/total counts are regenerated below. The two
 200k MessagePack StateStore cases are unsupported by payload/array limits; YAML
 size limits and unavailable connect operations are explained in chart tooltips.
 Missing cases receive no invented latency penalty.

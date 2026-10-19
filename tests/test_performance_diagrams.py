@@ -4,6 +4,7 @@ import json
 import shutil
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -605,6 +606,31 @@ class DiagramTests(unittest.TestCase):
         self.assertNotIn(
             "Cluster round-trip scaling",
             svg[svg.index("Workload support / coverage") :],
+        )
+
+    def test_coverage_uses_current_native_and_universal_workload_inventory(
+        self,
+    ) -> None:
+        groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+        cluster_runs = list(groups["cluster-1k"])
+        old_case = replace(cluster_runs[0].outcomes[0], case_id="historical-only-case")
+        cluster_runs[0] = replace(
+            cluster_runs[0], outcomes=cluster_runs[0].outcomes + (old_case,)
+        )
+        for index in (-2, -1):
+            run = cluster_runs[index]
+            current_case = replace(run.outcomes[0], case_id="current-only-case")
+            cluster_runs[index] = replace(run, outcomes=run.outcomes + (current_case,))
+        groups["cluster-1k"] = tuple(cluster_runs)
+
+        rows = _full_workload_coverage_rows(groups)
+
+        self.assertEqual((rows[0].cells[0].measured, rows[0].cells[0].total), (9, 10))
+        self.assertEqual(
+            (rows[0].cells[-2].measured, rows[0].cells[-2].total), (10, 10)
+        )
+        self.assertEqual(
+            (rows[0].cells[-1].measured, rows[0].cells[-1].total), (10, 10)
         )
 
     def test_sync_writes_and_detects_stale_svg_files(self) -> None:

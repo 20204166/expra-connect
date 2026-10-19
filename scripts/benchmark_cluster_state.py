@@ -14,7 +14,7 @@ from typing import Any, cast
 
 import yaml
 
-from expra_connect import __version__
+from expra_connect import __version__, persistence
 from expra_connect.cluster import (
     CapabilityGrant,
     ClusterRole,
@@ -35,6 +35,22 @@ from scripts.benchmark_support import (
     measure,
     write_results,
 )
+
+try:
+    _yaml_dump = persistence._yaml_dump
+except AttributeError:
+
+    def _yaml_dump(value: Any, stream: Any = None) -> str | None:
+        return cast(
+            str | None,
+            yaml.safe_dump(value, stream=stream, sort_keys=True, allow_unicode=True),
+        )
+
+
+try:
+    _yaml_load = persistence._yaml_load
+except AttributeError:
+    _yaml_load = yaml.safe_load
 
 try:
     NodePermission = importlib.import_module(
@@ -102,12 +118,12 @@ def _cluster_state_round_trip(state: ClusterState) -> ClusterState:
 
 
 def _yaml_encode(document: dict[str, Any]) -> str:
-    return cast(str, yaml.safe_dump(document, sort_keys=True, allow_unicode=True))
+    return cast(str, _yaml_dump(document))
 
 
 def _yaml_cluster_round_trip(state: ClusterState) -> ClusterState:
-    encoded = yaml.safe_dump(state.to_dict(), sort_keys=True, allow_unicode=True)
-    return ClusterState.from_dict(yaml.safe_load(encoded))
+    encoded = cast(str, _yaml_dump(state.to_dict()))
+    return ClusterState.from_dict(_yaml_load(encoded))
 
 
 def _select_operations(
@@ -180,6 +196,7 @@ def main() -> None:
         "expra_connect.cluster.operations",
         "expra_connect.cluster.roles",
         "expra_connect.cluster.state",
+        "expra_connect.persistence",
     )
     modules = collect_modules(module_names)
     for module_name, module_path in modules.items():
@@ -208,6 +225,7 @@ def main() -> None:
         needs_cluster_state = args.operation is None or args.operation in (
             "cluster encode",
             "cluster round-trip",
+            "cluster document round-trip",
             "YAML encode",
             "YAML parse",
             "YAML cluster round-trip",
@@ -261,10 +279,9 @@ def main() -> None:
         )
         yaml_document: str | None = None
         yaml_payload_bytes = 0
-        if cluster_document is not None and size <= args.yaml_max_size:
-            yaml_document = yaml.safe_dump(
-                cluster_document, sort_keys=True, allow_unicode=True
-            )
+        needs_yaml = args.operation is None or args.operation.startswith("YAML ")
+        if needs_yaml and cluster_document is not None and size <= args.yaml_max_size:
+            yaml_document = cast(str, _yaml_dump(cluster_document))
             yaml_payload_bytes = len(yaml_document.encode("utf-8"))
         operations: list[tuple[str, Callable[[], Any]]] = []
         if role_state is not None:
@@ -310,7 +327,7 @@ def main() -> None:
                     ),
                     (
                         "YAML parse",
-                        partial(yaml.safe_load, yaml_text),
+                        partial(_yaml_load, yaml_text),
                     ),
                     (
                         "YAML cluster round-trip",

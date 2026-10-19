@@ -1,6 +1,7 @@
 """Versioned HMAC envelope, replay protection, and operation validation."""
 
 import hashlib
+import heapq
 import hmac
 import json
 import math
@@ -448,6 +449,8 @@ class ReplayCache:
         self._max_entries = max_entries
         self._seen: dict[tuple[str, str, str], float] = {}
         self._request_ids: dict[tuple[str, str], float] = {}
+        self._seen_expirations: list[tuple[float, tuple[str, str, str]]] = []
+        self._request_id_expirations: list[tuple[float, tuple[str, str]]] = []
         self._lock = threading.Lock()
 
     def check_and_record(
@@ -465,22 +468,18 @@ class ReplayCache:
             if len(self._seen) >= self._max_entries:
                 return False
             self._seen[key] = seen_at
+            heapq.heappush(self._seen_expirations, (seen_at, key))
             return True
 
     def _prune(self, now: float) -> None:
-        expired = [
-            key
-            for key, recorded_at in self._seen.items()
-            if now - recorded_at > self._ttl
-        ]
-        for replay_key in expired:
+        while self._seen_expirations and now - self._seen_expirations[0][0] > self._ttl:
+            _, replay_key = heapq.heappop(self._seen_expirations)
             del self._seen[replay_key]
-        expired_ids = [
-            request_key
-            for request_key, recorded_at in self._request_ids.items()
-            if now - recorded_at > self._ttl
-        ]
-        for request_key in expired_ids:
+        while (
+            self._request_id_expirations
+            and now - self._request_id_expirations[0][0] > self._ttl
+        ):
+            _, request_key = heapq.heappop(self._request_id_expirations)
             del self._request_ids[request_key]
 
     def check_and_record_request_id(
@@ -496,6 +495,7 @@ class ReplayCache:
             if len(self._request_ids) >= self._max_entries:
                 return False
             self._request_ids[key] = seen_at
+            heapq.heappush(self._request_id_expirations, (seen_at, key))
             return True
 
     def __len__(self) -> int:
