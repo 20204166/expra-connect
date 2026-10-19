@@ -51,6 +51,7 @@ class NativeBuildTests(unittest.TestCase):
                 "expra_connect.remote.session",
                 "expra_connect.remote.wire_protocol",
                 "expra_connect.persistence",
+                "expra_connect.profile_migration",
             },
         )
 

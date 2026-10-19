@@ -130,7 +130,9 @@ def _save_json_document(
     """Write deterministic JSON through the configured atomic boundary."""
     atomic_write(
         path,
-        lambda file: file.write(json.dumps(value, sort_keys=True)),
+        lambda file: file.write(
+            json.dumps(value, sort_keys=True, separators=(",", ":"))
+        ),
         sync_directory=sync_directory,
     )
 

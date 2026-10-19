@@ -11,11 +11,14 @@ baseline with 1.8.0.0 and the two preceding releases, 2.2.0.4 and 2.2.0.3.
 - Profile measured persistence operations before changing implementation.
 - Optimize only bottlenecks demonstrated by the benchmark data; prefer localized
   changes over a persistence-format replacement.
-- Preserve JSON/YAML compatibility, MessagePack limits and validation, atomic
+- Preserve logical JSON/YAML compatibility, MessagePack limits and validation, atomic
   replacement, private file permissions, fsync behavior, migration semantics,
   and fail-closed handling of malformed state.
 - Do not weaken durability or delete or rewrite existing persisted state as an
   optimization.
+- Compact JSON separators are approved for measurement and may be adopted only
+  if sorted-key determinism and compatibility remain intact and benchmarks show
+  repeatable gains; the whitespace and exact bytes may change.
 - Keep unrelated cluster, connect, and other existing improvements unchanged.
 
 ## Benchmark targets and acceptance

@@ -49,7 +49,7 @@ class PersistenceTests(unittest.TestCase):
             atomic_write=atomic_write,
         )
 
-        self.assertEqual(output.chunks, ['{"a": 2, "z": 1}'])
+        self.assertEqual(output.chunks, ['{"a":2,"z":1}'])
 
     def test_messagepack_state_rejects_malformed_and_oversized_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -120,11 +120,11 @@ class PersistenceTests(unittest.TestCase):
             self.assertEqual(store.load()["items"], ["peer"])
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
-    def test_json_state_save_is_sorted(self) -> None:
+    def test_json_state_save_is_sorted_and_compact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.json"
             JsonStateStore(path).save({"z": 1, "a": 2})
-            self.assertEqual(path.read_text(encoding="utf-8"), '{"a": 2, "z": 1}')
+            self.assertEqual(path.read_text(encoding="utf-8"), '{"a":2,"z":1}')
 
     def test_corrupt_or_non_object_state_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
