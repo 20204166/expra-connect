@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import shutil
 import sys
 import tempfile
 from collections.abc import Callable, Sequence
@@ -90,6 +91,30 @@ def _fixture(size: int) -> tuple[dict[str, Any], str]:
     raise ValueError(f"unsupported benchmark size: {size}")
 
 
+def _migration_fixture(file_count: int) -> dict[str, bytes]:
+    if (
+        isinstance(file_count, bool)
+        or not isinstance(file_count, int)
+        or file_count < 1
+    ):
+        raise ValueError("file_count must be a positive integer")
+    return {f"state-{index:03d}.json": b"x" * 256 for index in range(file_count)}
+
+
+def _resolve_migration_counts(
+    operation: str | None,
+    sizes: Sequence[int] | None,
+    migration_file_counts: Sequence[int] | None,
+) -> tuple[int, ...] | None:
+    if operation != "Profile migration":
+        if migration_file_counts is not None:
+            raise ValueError("--migration-file-counts requires Profile migration")
+        return None
+    if sizes is not None:
+        raise ValueError("--sizes cannot be combined with Profile migration")
+    return tuple(migration_file_counts or (1, 16, 64))
+
+
 def _run_operations(
     operations: Sequence[tuple[str, Callable[[], Any]]],
     *,
@@ -149,7 +174,11 @@ def main() -> None:
             "JSON object-root validation",
             "JSON store load",
             "JSON store save",
+            "Profile migration",
         ),
+    )
+    parser.add_argument(
+        "--migration-file-counts", type=int, nargs="+", choices=(1, 16, 64)
     )
     parser.add_argument("--json-output", type=Path)
     args = parser.parse_args()
@@ -162,7 +191,13 @@ def main() -> None:
         )
     except (TypeError, ValueError) as error:
         parser.error(str(error))
-    requested_sizes = args.sizes or (200_000,)
+    try:
+        migration_counts = _resolve_migration_counts(
+            args.operation, args.sizes, args.migration_file_counts
+        )
+    except ValueError as error:
+        parser.error(str(error))
+    requested_sizes = () if migration_counts is not None else (args.sizes or (200_000,))
     if (
         200_000 in requested_sizes
         and args.operation is not None
@@ -171,7 +206,10 @@ def main() -> None:
     ):
         parser.error("200k MessagePack codec-only measurements are out of scope")
 
-    modules = collect_modules(("expra_connect.persistence", "msgpack", "json"))
+    module_names = ["expra_connect.persistence", "msgpack", "json"]
+    if migration_counts is not None:
+        module_names.append("expra_connect.profile_migration")
+    modules = collect_modules(tuple(module_names))
     for module_name, module_path in modules.items():
         print(f"module={module_name} path={module_path}")
     print(
@@ -179,6 +217,73 @@ def main() -> None:
         f"python={sys.version.split()[0]} platform={platform.platform()}"
     )
     outcomes: list[BenchmarkOutcome] = []
+    if migration_counts is not None:
+        from expra_connect.profile_migration import migrate_profile
+
+        for file_count in migration_counts:
+            fixture_files = _migration_fixture(file_count)
+            payload_bytes = sum(map(len, fixture_files.values()))
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source = root / "source"
+                destination = root / "destination"
+
+                def migrate_fixture(
+                    source: Path = source,
+                    destination: Path = destination,
+                    fixture_files: dict[str, bytes] = fixture_files,
+                    migrate_profile: Callable[..., Any] = migrate_profile,
+                ) -> Any:
+                    if destination.exists():
+                        shutil.rmtree(destination)
+                    if source.exists():
+                        shutil.rmtree(source)
+                    source.mkdir()
+                    for relative_path, payload in fixture_files.items():
+                        (source / relative_path).write_bytes(payload)
+
+                    def convert(reader: Any, writer: Any) -> None:
+                        for relative_path in reader.files():
+                            writer.write_bytes(
+                                relative_path, reader.read_bytes(relative_path)
+                            )
+
+                    def verify(staged: Path) -> None:
+                        names = tuple(
+                            sorted(
+                                path.relative_to(staged).as_posix()
+                                for path in staged.rglob("*")
+                            )
+                        )
+                        if names != tuple(sorted(fixture_files)):
+                            raise ValueError(
+                                "migration output names do not match the fixture"
+                            )
+
+                    return migrate_profile(
+                        source, destination, convert=convert, verify=verify
+                    )
+
+                print(
+                    f"\nProfile migration files: {file_count}; "
+                    f"payload: {payload_bytes:,} bytes"
+                )
+                outcomes.extend(
+                    _run_operations(
+                        (("Profile migration", migrate_fixture),),
+                        selected=args.operation,
+                        suite_prefix="ProfileMigration",
+                        fixture={
+                            "shape": "flat_files",
+                            "files": file_count,
+                            "bytes_per_file": 256,
+                        },
+                        size=file_count,
+                        payload_bytes=payload_bytes,
+                        config=config,
+                    )
+                )
+
     for size in requested_sizes:
         if size == 200_000:
             if args.operation is None or args.operation in (

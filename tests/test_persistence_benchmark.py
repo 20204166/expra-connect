@@ -15,6 +15,71 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PersistenceBenchmarkTests(unittest.TestCase):
+    def test_migration_fixture_and_option_selection(self) -> None:
+        fixture = benchmark_persistence._migration_fixture(2)
+        self.assertEqual(
+            fixture,
+            {"state-000.json": b"x" * 256, "state-001.json": b"x" * 256},
+        )
+        for invalid_count in (0, -1, True):
+            with (
+                self.subTest(invalid_count=invalid_count),
+                self.assertRaises(ValueError),
+            ):
+                benchmark_persistence._migration_fixture(invalid_count)
+
+        self.assertEqual(
+            benchmark_persistence._resolve_migration_counts(
+                "Profile migration", None, None
+            ),
+            (1, 16, 64),
+        )
+        with self.assertRaises(ValueError):
+            benchmark_persistence._resolve_migration_counts(
+                "JSON store load", None, (1,)
+            )
+        with self.assertRaises(ValueError):
+            benchmark_persistence._resolve_migration_counts(
+                "Profile migration", (30_000,), None
+            )
+
+    def test_profile_migration_benchmark_cli(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "migration.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "scripts.benchmark_persistence",
+                    "--migration-file-counts",
+                    "1",
+                    "--operation",
+                    "Profile migration",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result["metadata"]["suite"], "persistence")
+        self.assertEqual(len(result["outcomes"]), 1)
+        outcome = result["outcomes"][0]
+        self.assertEqual(outcome["operation"], "Profile migration")
+        self.assertEqual(outcome["size"], 1)
+        self.assertGreater(outcome["payload_bytes"], 0)
+        self.assertEqual(outcome["fixture"]["shape"], "flat_files")
+        self.assertIn("p50=", completed.stdout)
+
     def test_json_fixtures_preserve_each_benchmark_shape(self) -> None:
         dictionary_records, dictionary_shape = benchmark_persistence._json_fixture(
             2, "dictionary_records"

@@ -109,6 +109,71 @@ return a persistence or listener failure status. Shutdown is safe to call more
 than once. The runtime holds a nonblocking profile lock for its lifetime; a
 second runtime using the same profile fails closed.
 
+For a host lifecycle that queues discovery callbacks and denies incoming
+pairing unless the host adds an explicit policy, see
+[`examples/host_integration.py`](../examples/host_integration.py). Runtime
+callbacks can be invoked away from the host/UI thread; queue events for the
+application's event loop rather than touching UI objects directly. Pairing
+approval is synchronous: a host handoff must not block a runtime thread needed
+to complete the request. If a safe handoff is unavailable, deny the request.
+Always shut the runtime down in `finally`.
+
+### Explicit profile migration
+
+`migrate_profile(source, destination, *, convert, verify)` provides a staged,
+schema-neutral migration boundary. The destination parent must already exist
+and the destination path must be absent. `ProfileSourceReader` exposes regular
+source files as relative names and bytes; `StagedProfileWriter` writes converted
+bytes only beneath a private staging directory. The host supplies both
+callbacks and owns all schema mapping and policy. The verifier receives the
+staged directory before promotion; the result reports the destination and the
+file/byte counts written by the converter. Files created by verification are
+not included in those counts.
+
+```python
+from pathlib import Path
+
+from expra_connect import migrate_profile
+
+
+def convert(reader, writer):
+    # Synthetic illustration only: map the host's real schema explicitly.
+    writer.write_bytes("identity.yaml", reader.read_bytes("legacy.json"))
+
+
+def verify(staged: Path) -> None:
+    if not (staged / "identity.yaml").is_file():
+        raise ValueError("converted identity is missing")
+
+
+result = migrate_profile(
+    Path("./legacy-profile"),
+    Path("./connect-profile-new"),
+    convert=convert,
+    verify=verify,
+)
+```
+
+The source is retained on both success and failure; failed staging is cleaned
+up, while an existing destination is never overwritten. This is an explicit
+host-controlled operation, not part of runtime startup. Coordinate it so no
+other process is activating or writing the same destination: the helper does
+not provide cross-process exclusion or a multi-file transaction. Callbacks are
+trusted host code, not sandboxed; only the writer is constrained to the staging
+tree. Test conversion and verification using synthetic fixtures before using
+real state. If validating the staged profile by starting a runtime, shut that
+runtime down before promotion and account for any files it creates.
+
+To measure synthetic end-to-end migration cost at 1, 16, and 64 files, run:
+
+```sh
+.venv/bin/python -m scripts.benchmark_persistence --operation "Profile migration" --warmups 2 --repetitions 9 --json-output /tmp/opencode/profile-migration-benchmark.json
+```
+
+The benchmark reports source file count and payload bytes for fixed 256-byte
+files. Results are diagnostic scaling measurements; there is no migration
+latency SLO.
+
 `ConnectConfig` defaults to listening on `0.0.0.0`, discovery enabled, preferred
 service port `27321`, cluster disabled, and read-only base capabilities. Choose
 `bind_host`, `preferred_port`, and `advertised_addresses` deliberately for your

@@ -44,6 +44,13 @@ from .pairing.manager import (
     TrustedPeer,
 )
 from .persistence import JsonStateStore
+from .profile_migration import (
+    ProfileMigrationError,
+    ProfileMigrationResult,
+    ProfileSourceReader,
+    StagedProfileWriter,
+    migrate_profile,
+)
 from .remote.provider import AuthenticatedNodeProvider
 from .remote.service import RemoteService
 from .runtime import ConnectConfig, ConnectRuntime, RuntimeState, RuntimeStatus
@@ -80,6 +87,9 @@ __all__ = [
     "PairingManager",
     "PeerGrant",
     "PendingPairing",
+    "ProfileMigrationError",
+    "ProfileMigrationResult",
+    "ProfileSourceReader",
     "RelationshipState",
     "RemoteService",
     "RemoteSocketServer",
@@ -90,10 +100,12 @@ __all__ = [
     "RotationConflict",
     "RuntimeState",
     "RuntimeStatus",
+    "StagedProfileWriter",
     "TransportGeneration",
     "TransportGenerationManager",
     "TransportStateError",
     "TrustedPeer",
     "__version__",
+    "migrate_profile",
     "verify_transport_proof",
 ]
