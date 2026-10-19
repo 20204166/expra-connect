@@ -1,0 +1,727 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="2702" viewBox="0 0 2200 2702" role="img" aria-label="Latest native and universal · unweighted per-case comparison">
+<title>Latest native and universal · unweighted per-case comparison</title>
+<rect width="2200" height="2702" fill="#ffffff"/>
+<text x="18.0" y="32.0" font-family="Arial, sans-serif" font-size="22px" text-anchor="start" fill="#17252a" font-weight="bold">Latest native and universal · unweighted per-case comparison</text>
+<text x="18.0" y="61.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">Candidate / reference p50 in µs and ratio · compared versions: 2.2.0.4 → 2.2.0.5</text>
+<text x="18.0" y="84.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="normal">Unweighted case comparisons only; excluded from the historical weighted score. Ratios below 1× favor the candidate.</text>
+<text x="18.0" y="112.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#17252a" font-weight="normal">Blue indicates candidate is faster; red indicates slower.</text>
+<text x="18.0" y="145.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Suite · size · operation · case</text>
+<text x="510.0" y="112.0" font-family="Arial, sans-serif" font-size="14px" text-anchor="start" fill="#17252a" font-weight="bold">Latest native</text>
+<text x="1350.0" y="112.0" font-family="Arial, sans-serif" font-size="14px" text-anchor="start" fill="#17252a" font-weight="bold">Latest universal</text>
+<text x="518.0" y="145.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">vs 2.2.0.4 native</text>
+<text x="938.0" y="145.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">vs 2.2.0.5 universal</text>
+<text x="1358.0" y="145.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">vs 2.2.0.4 universal</text>
+<text x="1778.0" y="145.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">vs 2.2.0.5 native</text>
+<rect x="0" y="170" width="2200" height="32" fill="#e8eef2"/>
+<text x="18.0" y="191.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="bold">Cluster State</text>
+<text x="18.0" y="223.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · YAML cluster round-trip · 1000:YAML cluster round-trip</text>
+<rect x="510" y="204" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="223.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">339592.716 / 1447934.870 µs · 0.235×</text>
+<rect x="930" y="204" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="223.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">339592.716 / 273507.052 µs · 1.242×</text>
+<rect x="1350" y="204" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="223.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">273507.052 / 1581202.778 µs · 0.173×</text>
+<rect x="1770" y="204" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="223.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">273507.052 / 339592.716 µs · 0.805×</text>
+<rect x="0" y="234" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="255.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · YAML encode · 1000:YAML encode</text>
+<rect x="510" y="236" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="255.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">137761.003 / 462855.715 µs · 0.298×</text>
+<rect x="930" y="236" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="255.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">137761.003 / 116579.424 µs · 1.182×</text>
+<rect x="1350" y="236" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="255.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">116579.424 / 678400.131 µs · 0.172×</text>
+<rect x="1770" y="236" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="255.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">116579.424 / 137761.003 µs · 0.846×</text>
+<text x="18.0" y="287.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · YAML parse · 1000:YAML parse</text>
+<rect x="510" y="268" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="287.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">151807.160 / 885546.409 µs · 0.171×</text>
+<rect x="930" y="268" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="287.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">151807.160 / 126673.824 µs · 1.198×</text>
+<rect x="1350" y="268" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="287.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">126673.824 / 1036803.692 µs · 0.122×</text>
+<rect x="1770" y="268" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="287.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">126673.824 / 151807.160 µs · 0.834×</text>
+<rect x="0" y="298" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="319.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · cluster decode · 1000:cluster decode</text>
+<rect x="510" y="300" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="319.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12535.831 / 9664.405 µs · 1.297×</text>
+<rect x="930" y="300" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="319.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12535.831 / 12447.746 µs · 1.007×</text>
+<rect x="1350" y="300" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="319.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12447.746 / 12665.021 µs · 0.983×</text>
+<rect x="1770" y="300" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="319.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12447.746 / 12535.831 µs · 0.993×</text>
+<text x="18.0" y="351.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · cluster document round-trip · 1000:cluster document round-trip</text>
+<rect x="510" y="332" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="351.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12983.755 / 11976.080 µs · 1.084×</text>
+<rect x="930" y="332" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="351.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12983.755 / 14691.577 µs · 0.884×</text>
+<rect x="1350" y="332" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="351.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">14691.577 / 15421.783 µs · 0.953×</text>
+<rect x="1770" y="332" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="351.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">14691.577 / 12983.755 µs · 1.132×</text>
+<rect x="0" y="362" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="383.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · cluster encode · 1000:cluster encode</text>
+<rect x="510" y="364" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="518.0" y="383.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">4018.559 / 2300.603 µs · 1.747×</text>
+<rect x="930" y="364" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="938.0" y="383.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">4018.559 / 2182.705 µs · 1.841×</text>
+<rect x="1350" y="364" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="383.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">2182.705 / 4492.143 µs · 0.486×</text>
+<rect x="1770" y="364" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1778.0" y="383.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2182.705 / 4018.559 µs · 0.543×</text>
+<text x="18.0" y="415.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · cluster round-trip · 1000:cluster round-trip</text>
+<rect x="510" y="396" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="415.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12019.519 / 11311.648 µs · 1.063×</text>
+<rect x="930" y="396" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="415.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12019.519 / 14587.069 µs · 0.824×</text>
+<rect x="1350" y="396" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="415.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">14587.069 / 16085.284 µs · 0.907×</text>
+<rect x="1770" y="396" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="415.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">14587.069 / 12019.519 µs · 1.214×</text>
+<rect x="0" y="426" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="447.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · role decode · 1000:role decode</text>
+<rect x="510" y="428" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="447.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">13187.048 / 9374.549 µs · 1.407×</text>
+<rect x="930" y="428" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="447.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">13187.048 / 12161.386 µs · 1.084×</text>
+<rect x="1350" y="428" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="447.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12161.386 / 13612.104 µs · 0.893×</text>
+<rect x="1770" y="428" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="447.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12161.386 / 13187.048 µs · 0.922×</text>
+<text x="18.0" y="479.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1,000 · role encode · 1000:role encode</text>
+<rect x="510" y="460" width="400" height="28" rx="3" fill="#b2182b"/>
+<text x="518.0" y="479.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">2185.977 / 1084.673 µs · 2.015×</text>
+<rect x="930" y="460" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="938.0" y="479.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2185.977 / 1389.820 µs · 1.573×</text>
+<rect x="1350" y="460" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="479.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1389.820 / 1341.507 µs · 1.036×</text>
+<rect x="1770" y="460" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1778.0" y="479.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1389.820 / 2185.977 µs · 0.636×</text>
+<rect x="0" y="490" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="511.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · YAML cluster round-trip · 30000:YAML cluster round-trip</text>
+<rect x="510" y="492" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="511.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">12564908.279 / 51887571.723 µs · 0.242×</text>
+<rect x="930" y="492" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="511.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12564908.279 / 15139117.730 µs · 0.830×</text>
+<rect x="1350" y="492" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="511.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">15139117.730 / 53642182.273 µs · 0.282×</text>
+<rect x="1770" y="492" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="511.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">15139117.730 / 12564908.279 µs · 1.205×</text>
+<text x="18.0" y="543.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · YAML encode · 30000:YAML encode</text>
+<rect x="510" y="524" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="543.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">4694628.316 / 15567475.889 µs · 0.302×</text>
+<rect x="930" y="524" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="543.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">4694628.316 / 3975100.135 µs · 1.181×</text>
+<rect x="1350" y="524" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="543.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">3975100.135 / 16789929.754 µs · 0.237×</text>
+<rect x="1770" y="524" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="543.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">3975100.135 / 4694628.316 µs · 0.847×</text>
+<rect x="0" y="554" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="575.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · YAML parse · 30000:YAML parse</text>
+<rect x="510" y="556" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="575.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">6492604.788 / 30011707.086 µs · 0.216×</text>
+<rect x="930" y="556" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="575.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">6492604.788 / 6533652.380 µs · 0.994×</text>
+<rect x="1350" y="556" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="575.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">6533652.380 / 32102763.494 µs · 0.204×</text>
+<rect x="1770" y="556" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="575.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">6533652.380 / 6492604.788 µs · 1.006×</text>
+<text x="18.0" y="607.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · cluster decode · 30000:cluster decode</text>
+<rect x="510" y="588" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="607.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">541212.771 / 415377.560 µs · 1.303×</text>
+<rect x="930" y="588" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="607.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">541212.771 / 492327.948 µs · 1.099×</text>
+<rect x="1350" y="588" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="607.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">492327.948 / 613757.626 µs · 0.802×</text>
+<rect x="1770" y="588" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="607.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">492327.948 / 541212.771 µs · 0.910×</text>
+<rect x="0" y="618" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="639.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · cluster document round-trip · 30000:cluster document round-trip</text>
+<rect x="510" y="620" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="639.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">700322.466 / 646610.975 µs · 1.083×</text>
+<rect x="930" y="620" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="639.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">700322.466 / 630125.325 µs · 1.111×</text>
+<rect x="1350" y="620" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="639.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">630125.325 / 837249.137 µs · 0.753×</text>
+<rect x="1770" y="620" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="639.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">630125.325 / 700322.466 µs · 0.900×</text>
+<text x="18.0" y="671.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · cluster encode · 30000:cluster encode</text>
+<rect x="510" y="652" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="671.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">211270.721 / 199220.093 µs · 1.060×</text>
+<rect x="930" y="652" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="671.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">211270.721 / 182690.762 µs · 1.156×</text>
+<rect x="1350" y="652" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1358.0" y="671.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">182690.762 / 309983.789 µs · 0.589×</text>
+<rect x="1770" y="652" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="671.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">182690.762 / 211270.721 µs · 0.865×</text>
+<rect x="0" y="682" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="703.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · cluster round-trip · 30000:cluster round-trip</text>
+<rect x="510" y="684" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="703.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">865161.423 / 646379.466 µs · 1.338×</text>
+<rect x="930" y="684" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="703.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">865161.423 / 607367.770 µs · 1.424×</text>
+<rect x="1350" y="684" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1358.0" y="703.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">607367.770 / 828112.109 µs · 0.733×</text>
+<rect x="1770" y="684" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1778.0" y="703.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">607367.770 / 865161.423 µs · 0.702×</text>
+<text x="18.0" y="735.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · role decode · 30000:role decode</text>
+<rect x="510" y="716" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="735.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">487288.002 / 394866.564 µs · 1.234×</text>
+<rect x="930" y="716" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="735.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">487288.002 / 499112.301 µs · 0.976×</text>
+<rect x="1350" y="716" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="735.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">499112.301 / 627108.722 µs · 0.796×</text>
+<rect x="1770" y="716" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="735.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">499112.301 / 487288.002 µs · 1.024×</text>
+<rect x="0" y="746" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="767.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · role encode · 30000:role encode</text>
+<rect x="510" y="748" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="767.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">154986.078 / 136612.489 µs · 1.134×</text>
+<rect x="930" y="748" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="767.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">154986.078 / 128362.245 µs · 1.207×</text>
+<rect x="1350" y="748" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="767.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">128362.245 / 153039.822 µs · 0.839×</text>
+<rect x="1770" y="748" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="767.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">128362.245 / 154986.078 µs · 0.828×</text>
+<text x="18.0" y="799.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · YAML cluster round-trip · 100000:YAML cluster round-trip</text>
+<rect x="510" y="780" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="518.0" y="799.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="930" y="780" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="938.0" y="799.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1350" y="780" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1358.0" y="799.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1770" y="780" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1778.0" y="799.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="0" y="810" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="831.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · YAML encode · 100000:YAML encode</text>
+<rect x="510" y="812" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="518.0" y="831.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="930" y="812" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="938.0" y="831.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1350" y="812" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1358.0" y="831.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1770" y="812" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1778.0" y="831.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<text x="18.0" y="863.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · YAML parse · 100000:YAML parse</text>
+<rect x="510" y="844" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="518.0" y="863.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="930" y="844" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="938.0" y="863.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1350" y="844" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1358.0" y="863.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1770" y="844" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1778.0" y="863.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="0" y="874" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="895.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · cluster decode · 100000:cluster decode</text>
+<rect x="510" y="876" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="895.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1400101.555 / 1449492.804 µs · 0.966×</text>
+<rect x="930" y="876" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="895.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1400101.555 / 1836925.793 µs · 0.762×</text>
+<rect x="1350" y="876" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="895.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1836925.793 / 1808839.281 µs · 1.016×</text>
+<rect x="1770" y="876" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="895.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1836925.793 / 1400101.555 µs · 1.312×</text>
+<text x="18.0" y="927.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · cluster document round-trip · 100000:cluster document round-trip</text>
+<rect x="510" y="908" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="927.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1988473.342 / 2000725.004 µs · 0.994×</text>
+<rect x="930" y="908" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="927.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1988473.342 / 2489547.110 µs · 0.799×</text>
+<rect x="1350" y="908" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="927.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2489547.110 / 2554782.545 µs · 0.974×</text>
+<rect x="1770" y="908" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="927.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2489547.110 / 1988473.342 µs · 1.252×</text>
+<rect x="0" y="938" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="959.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · cluster encode · 100000:cluster encode</text>
+<rect x="510" y="940" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="959.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">474986.115 / 658061.392 µs · 0.722×</text>
+<rect x="930" y="940" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="938.0" y="959.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">474986.115 / 634371.078 µs · 0.749×</text>
+<rect x="1350" y="940" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="959.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">634371.078 / 770213.294 µs · 0.824×</text>
+<rect x="1770" y="940" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="959.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">634371.078 / 474986.115 µs · 1.336×</text>
+<text x="18.0" y="991.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · cluster round-trip · 100000:cluster round-trip</text>
+<rect x="510" y="972" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="991.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1808172.624 / 2169730.277 µs · 0.833×</text>
+<rect x="930" y="972" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="938.0" y="991.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1808172.624 / 2738839.500 µs · 0.660×</text>
+<rect x="1350" y="972" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="991.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2738839.500 / 2519218.902 µs · 1.087×</text>
+<rect x="1770" y="972" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="1778.0" y="991.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2738839.500 / 1808172.624 µs · 1.515×</text>
+<rect x="0" y="1002" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1023.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · role decode · 100000:role decode</text>
+<rect x="510" y="1004" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1023.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1624779.808 / 1578335.169 µs · 1.029×</text>
+<rect x="930" y="1004" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1023.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1624779.808 / 2075064.527 µs · 0.783×</text>
+<rect x="1350" y="1004" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1023.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2075064.527 / 1872519.075 µs · 1.108×</text>
+<rect x="1770" y="1004" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1023.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2075064.527 / 1624779.808 µs · 1.277×</text>
+<text x="18.0" y="1055.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · role encode · 100000:role encode</text>
+<rect x="510" y="1036" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1055.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">484485.242 / 397836.628 µs · 1.218×</text>
+<rect x="930" y="1036" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1055.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">484485.242 / 460456.947 µs · 1.052×</text>
+<rect x="1350" y="1036" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1055.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">460456.947 / 453906.121 µs · 1.014×</text>
+<rect x="1770" y="1036" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1055.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">460456.947 / 484485.242 µs · 0.950×</text>
+<rect x="0" y="1066" width="2200" height="32" fill="#e8eef2"/>
+<text x="18.0" y="1087.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="bold">Persistence</text>
+<rect x="0" y="1098" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1119.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON decode · 30000:JSON:JSON decode</text>
+<rect x="510" y="1100" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1119.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">6599.935 / 7195.886 µs · 0.917×</text>
+<rect x="930" y="1100" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1119.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">6599.935 / 7382.815 µs · 0.894×</text>
+<rect x="1350" y="1100" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1119.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">7382.815 / 6570.166 µs · 1.124×</text>
+<rect x="1770" y="1100" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1119.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">7382.815 / 6599.935 µs · 1.119×</text>
+<text x="18.0" y="1151.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON encode · 30000:JSON:JSON encode</text>
+<rect x="510" y="1132" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1151.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">8773.403 / 7935.911 µs · 1.106×</text>
+<rect x="930" y="1132" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1151.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">8773.403 / 9187.026 µs · 0.955×</text>
+<rect x="1350" y="1132" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1151.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">9187.026 / 8113.042 µs · 1.132×</text>
+<rect x="1770" y="1132" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1151.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">9187.026 / 8773.403 µs · 1.047×</text>
+<rect x="0" y="1162" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1183.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON file read · 30000:JSON:JSON file read</text>
+<rect x="510" y="1164" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1183.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">112.653 / 134.022 µs · 0.841×</text>
+<rect x="930" y="1164" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="938.0" y="1183.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">112.653 / 192.924 µs · 0.584×</text>
+<rect x="1350" y="1164" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="1358.0" y="1183.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">192.924 / 97.714 µs · 1.974×</text>
+<rect x="1770" y="1164" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="1778.0" y="1183.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">192.924 / 112.653 µs · 1.713×</text>
+<text x="18.0" y="1215.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON object-root validation · 30000:JSON:JSON object-root validation</text>
+<rect x="510" y="1196" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1215.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.431 / 0.451 µs · 0.956×</text>
+<rect x="930" y="1196" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="938.0" y="1215.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">0.431 / 0.902 µs · 0.478×</text>
+<rect x="1350" y="1196" width="400" height="28" rx="3" fill="#b2182b"/>
+<text x="1358.0" y="1215.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">0.902 / 0.401 µs · 2.249×</text>
+<rect x="1770" y="1196" width="400" height="28" rx="3" fill="#b2182b"/>
+<text x="1778.0" y="1215.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">0.902 / 0.431 µs · 2.093×</text>
+<rect x="0" y="1226" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1247.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON store load · 30000:JSON:JSON store load</text>
+<rect x="510" y="1228" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1247.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">6922.112 / 7009.276 µs · 0.988×</text>
+<rect x="930" y="1228" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1247.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">6922.112 / 7369.009 µs · 0.939×</text>
+<rect x="1350" y="1228" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1247.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">7369.009 / 6160.183 µs · 1.196×</text>
+<rect x="1770" y="1228" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1247.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">7369.009 / 6922.112 µs · 1.065×</text>
+<text x="18.0" y="1279.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · JSON store save · 30000:JSON:JSON store save</text>
+<rect x="510" y="1260" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="1279.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">20933.061 / 78491.153 µs · 0.267×</text>
+<rect x="930" y="1260" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1279.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">20933.061 / 22074.708 µs · 0.948×</text>
+<rect x="1350" y="1260" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="1279.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">22074.708 / 68539.514 µs · 0.322×</text>
+<rect x="1770" y="1260" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1279.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">22074.708 / 20933.061 µs · 1.055×</text>
+<rect x="0" y="1290" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1311.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack decode · 30000:MessagePack:MessagePack decode</text>
+<rect x="510" y="1292" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1311.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12561.356 / 15490.013 µs · 0.811×</text>
+<rect x="930" y="1292" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1311.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12561.356 / 13775.215 µs · 0.912×</text>
+<rect x="1350" y="1292" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1311.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">13775.215 / 13516.069 µs · 1.019×</text>
+<rect x="1770" y="1292" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1311.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">13775.215 / 12561.356 µs · 1.097×</text>
+<text x="18.0" y="1343.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack decode + root validation · 30000:MessagePack:MessagePack decode + root validation</text>
+<rect x="510" y="1324" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1343.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12842.575 / 13737.070 µs · 0.935×</text>
+<rect x="930" y="1324" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1343.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12842.575 / 16773.916 µs · 0.766×</text>
+<rect x="1350" y="1324" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1343.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">16773.916 / 13497.484 µs · 1.243×</text>
+<rect x="1770" y="1324" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1343.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">16773.916 / 12842.575 µs · 1.306×</text>
+<rect x="0" y="1354" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1375.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack encode · 30000:MessagePack:MessagePack encode</text>
+<rect x="510" y="1356" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1375.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">5472.298 / 6545.742 µs · 0.836×</text>
+<rect x="930" y="1356" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1375.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">5472.298 / 5736.302 µs · 0.954×</text>
+<rect x="1350" y="1356" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1375.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">5736.302 / 6121.871 µs · 0.937×</text>
+<rect x="1770" y="1356" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1375.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">5736.302 / 5472.298 µs · 1.048×</text>
+<text x="18.0" y="1407.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack file read · 30000:MessagePack:MessagePack file read</text>
+<rect x="510" y="1388" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1407.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">62.969 / 71.425 µs · 0.882×</text>
+<rect x="930" y="1388" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1407.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">62.969 / 63.249 µs · 0.996×</text>
+<rect x="1350" y="1388" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1407.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">63.249 / 60.454 µs · 1.046×</text>
+<rect x="1770" y="1388" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1407.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">63.249 / 62.969 µs · 1.004×</text>
+<rect x="0" y="1418" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1439.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack root validation · 30000:MessagePack:MessagePack root validation</text>
+<rect x="510" y="1420" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="1439.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.762 / 1.183 µs · 0.644×</text>
+<rect x="930" y="1420" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1439.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.762 / 0.781 µs · 0.976×</text>
+<rect x="1350" y="1420" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1439.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.781 / 0.751 µs · 1.040×</text>
+<rect x="1770" y="1420" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1439.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.781 / 0.762 µs · 1.025×</text>
+<text x="18.0" y="1471.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack store load · 30000:MessagePack:MessagePack store load</text>
+<rect x="510" y="1452" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1471.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">13907.564 / 15957.052 µs · 0.872×</text>
+<rect x="930" y="1452" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="938.0" y="1471.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">13907.564 / 24330.570 µs · 0.572×</text>
+<rect x="1350" y="1452" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="1358.0" y="1471.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">24330.570 / 14598.548 µs · 1.667×</text>
+<rect x="1770" y="1452" width="400" height="28" rx="3" fill="#ef8a62"/>
+<text x="1778.0" y="1471.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">24330.570 / 13907.564 µs · 1.749×</text>
+<rect x="0" y="1482" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1503.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">30,000 · MessagePack store save · 30000:MessagePack:MessagePack store save</text>
+<rect x="510" y="1484" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1503.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">20341.345 / 20460.627 µs · 0.994×</text>
+<rect x="930" y="1484" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1503.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">20341.345 / 22178.754 µs · 0.917×</text>
+<rect x="1350" y="1484" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1503.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">22178.754 / 18168.563 µs · 1.221×</text>
+<rect x="1770" y="1484" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1503.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">22178.754 / 20341.345 µs · 1.090×</text>
+<text x="18.0" y="1535.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON decode · 100000:JSON:JSON decode</text>
+<rect x="510" y="1516" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1535.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">31325.397 / 33754.001 µs · 0.928×</text>
+<rect x="930" y="1516" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1535.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">31325.397 / 41234.340 µs · 0.760×</text>
+<rect x="1350" y="1516" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1535.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">41234.340 / 33054.202 µs · 1.247×</text>
+<rect x="1770" y="1516" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1535.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">41234.340 / 31325.397 µs · 1.316×</text>
+<rect x="0" y="1546" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1567.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON encode · 100000:JSON:JSON encode</text>
+<rect x="510" y="1548" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1567.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">31327.391 / 30506.492 µs · 1.027×</text>
+<rect x="930" y="1548" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1567.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">31327.391 / 27279.057 µs · 1.148×</text>
+<rect x="1350" y="1548" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1567.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">27279.057 / 26120.893 µs · 1.044×</text>
+<rect x="1770" y="1548" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1567.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">27279.057 / 31327.391 µs · 0.871×</text>
+<text x="18.0" y="1599.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON file read · 100000:JSON:JSON file read</text>
+<rect x="510" y="1580" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1599.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2511.175 / 2939.198 µs · 0.854×</text>
+<rect x="930" y="1580" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1599.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2511.175 / 2718.394 µs · 0.924×</text>
+<rect x="1350" y="1580" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1599.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2718.394 / 2528.614 µs · 1.075×</text>
+<rect x="1770" y="1580" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1599.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">2718.394 / 2511.175 µs · 1.083×</text>
+<rect x="0" y="1610" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1631.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON object-root validation · 100000:JSON:JSON object-root validation</text>
+<rect x="510" y="1612" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1631.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.431 / 0.351 µs · 1.228×</text>
+<rect x="930" y="1612" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1631.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.431 / 0.341 µs · 1.264×</text>
+<rect x="1350" y="1612" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1631.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.341 / 0.390 µs · 0.874×</text>
+<rect x="1770" y="1612" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1631.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.341 / 0.431 µs · 0.791×</text>
+<text x="18.0" y="1663.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON store load · 100000:JSON:JSON store load</text>
+<rect x="510" y="1644" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1663.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">34693.608 / 37528.812 µs · 0.924×</text>
+<rect x="930" y="1644" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1663.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">34693.608 / 33417.035 µs · 1.038×</text>
+<rect x="1350" y="1644" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1663.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">33417.035 / 32739.620 µs · 1.021×</text>
+<rect x="1770" y="1644" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1663.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">33417.035 / 34693.608 µs · 0.963×</text>
+<rect x="0" y="1674" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1695.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · JSON store save · 100000:JSON:JSON store save</text>
+<rect x="510" y="1676" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="1695.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">45202.853 / 244108.777 µs · 0.185×</text>
+<rect x="930" y="1676" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1695.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">45202.853 / 46068.232 µs · 0.981×</text>
+<rect x="1350" y="1676" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="1695.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">46068.232 / 217412.339 µs · 0.212×</text>
+<rect x="1770" y="1676" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1695.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">46068.232 / 45202.853 µs · 1.019×</text>
+<text x="18.0" y="1727.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack decode · 100000:MessagePack:MessagePack decode</text>
+<rect x="510" y="1708" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1727.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">23368.093 / 23943.128 µs · 0.976×</text>
+<rect x="930" y="1708" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1727.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">23368.093 / 22416.121 µs · 1.042×</text>
+<rect x="1350" y="1708" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1727.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">22416.121 / 22762.126 µs · 0.985×</text>
+<rect x="1770" y="1708" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1727.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">22416.121 / 23368.093 µs · 0.959×</text>
+<rect x="0" y="1738" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1759.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack decode + root validation · 100000:MessagePack:MessagePack decode + root validation</text>
+<rect x="510" y="1740" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1759.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">23619.136 / 25328.398 µs · 0.933×</text>
+<rect x="930" y="1740" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1759.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">23619.136 / 23349.491 µs · 1.012×</text>
+<rect x="1350" y="1740" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1759.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">23349.491 / 21764.637 µs · 1.073×</text>
+<rect x="1770" y="1740" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1759.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">23349.491 / 23619.136 µs · 0.989×</text>
+<text x="18.0" y="1791.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack encode · 100000:MessagePack:MessagePack encode</text>
+<rect x="510" y="1772" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1791.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">16083.226 / 14494.176 µs · 1.110×</text>
+<rect x="930" y="1772" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1791.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">16083.226 / 14679.899 µs · 1.096×</text>
+<rect x="1350" y="1772" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1791.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">14679.899 / 13914.410 µs · 1.055×</text>
+<rect x="1770" y="1772" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1791.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">14679.899 / 16083.226 µs · 0.913×</text>
+<rect x="0" y="1802" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1823.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack file read · 100000:MessagePack:MessagePack file read</text>
+<rect x="510" y="1804" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1823.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">57.719 / 51.126 µs · 1.129×</text>
+<rect x="930" y="1804" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="1823.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">57.719 / 62.507 µs · 0.923×</text>
+<rect x="1350" y="1804" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1823.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">62.507 / 56.746 µs · 1.102×</text>
+<rect x="1770" y="1804" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="1823.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">62.507 / 57.719 µs · 1.083×</text>
+<text x="18.0" y="1855.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack root validation · 100000:MessagePack:MessagePack root validation</text>
+<rect x="510" y="1836" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1855.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.962 / 0.771 µs · 1.248×</text>
+<rect x="930" y="1836" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1855.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.962 / 0.741 µs · 1.298×</text>
+<rect x="1350" y="1836" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="1855.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.741 / 0.822 µs · 0.901×</text>
+<rect x="1770" y="1836" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1855.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.741 / 0.962 µs · 0.770×</text>
+<rect x="0" y="1866" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1887.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack store load · 100000:MessagePack:MessagePack store load</text>
+<rect x="510" y="1868" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="1887.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">24507.041 / 25982.961 µs · 0.943×</text>
+<rect x="930" y="1868" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1887.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">24507.041 / 22135.121 µs · 1.107×</text>
+<rect x="1350" y="1868" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1887.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">22135.121 / 22288.133 µs · 0.993×</text>
+<rect x="1770" y="1868" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1887.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">22135.121 / 24507.041 µs · 0.903×</text>
+<text x="18.0" y="1919.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">100,000 · MessagePack store save · 100000:MessagePack:MessagePack store save</text>
+<rect x="510" y="1900" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="1919.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">32151.144 / 27046.154 µs · 1.189×</text>
+<rect x="930" y="1900" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1919.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">32151.144 / 29640.327 µs · 1.085×</text>
+<rect x="1350" y="1900" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1919.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">29640.327 / 26007.458 µs · 1.140×</text>
+<rect x="1770" y="1900" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1919.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">29640.327 / 32151.144 µs · 0.922×</text>
+<rect x="0" y="1930" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="1951.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON decode · 200000:JSON:JSON decode</text>
+<rect x="510" y="1932" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1951.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">68618.255 / 71160.853 µs · 0.964×</text>
+<rect x="930" y="1932" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="1951.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">68618.255 / 70694.969 µs · 0.971×</text>
+<rect x="1350" y="1932" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="1951.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">70694.969 / 63272.714 µs · 1.117×</text>
+<rect x="1770" y="1932" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="1951.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">70694.969 / 68618.255 µs · 1.030×</text>
+<text x="18.0" y="1983.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON encode · 200000:JSON:JSON encode</text>
+<rect x="510" y="1964" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="1983.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">56668.813 / 54875.983 µs · 1.033×</text>
+<rect x="930" y="1964" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="1983.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">56668.813 / 48677.880 µs · 1.164×</text>
+<rect x="1350" y="1964" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="1983.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">48677.880 / 49360.608 µs · 0.986×</text>
+<rect x="1770" y="1964" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="1983.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">48677.880 / 56668.813 µs · 0.859×</text>
+<rect x="0" y="1994" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2015.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON file read · 200000:JSON:JSON file read</text>
+<rect x="510" y="1996" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="2015.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">5693.716 / 6281.504 µs · 0.906×</text>
+<rect x="930" y="1996" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2015.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">5693.716 / 6101.450 µs · 0.933×</text>
+<rect x="1350" y="1996" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="2015.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">6101.450 / 5229.290 µs · 1.167×</text>
+<rect x="1770" y="1996" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2015.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">6101.450 / 5693.716 µs · 1.072×</text>
+<text x="18.0" y="2047.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON object-root validation · 200000:JSON:JSON object-root validation</text>
+<rect x="510" y="2028" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="518.0" y="2047.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.441 / 0.410 µs · 1.076×</text>
+<rect x="930" y="2028" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="2047.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.441 / 0.370 µs · 1.192×</text>
+<rect x="1350" y="2028" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="2047.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.370 / 0.400 µs · 0.925×</text>
+<rect x="1770" y="2028" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="2047.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">0.370 / 0.441 µs · 0.839×</text>
+<rect x="0" y="2058" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2079.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON store load · 200000:JSON:JSON store load</text>
+<rect x="510" y="2060" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="2079.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">65169.251 / 77149.776 µs · 0.845×</text>
+<rect x="930" y="2060" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2079.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">65169.251 / 70219.873 µs · 0.928×</text>
+<rect x="1350" y="2060" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2079.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">70219.873 / 72450.842 µs · 0.969×</text>
+<rect x="1770" y="2060" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2079.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">70219.873 / 65169.251 µs · 1.078×</text>
+<text x="18.0" y="2111.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · JSON store save · 200000:JSON:JSON store save</text>
+<rect x="510" y="2092" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="2111.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">78005.546 / 482182.863 µs · 0.162×</text>
+<rect x="930" y="2092" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2111.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">78005.546 / 89664.823 µs · 0.870×</text>
+<rect x="1350" y="2092" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="2111.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">89664.823 / 456838.843 µs · 0.196×</text>
+<rect x="1770" y="2092" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2111.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">89664.823 / 78005.546 µs · 1.149×</text>
+<rect x="0" y="2122" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2143.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · MessagePack store load · 200000:MessagePack:MessagePack store load</text>
+<rect x="510" y="2124" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="518.0" y="2143.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="930" y="2124" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="938.0" y="2143.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1350" y="2124" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1358.0" y="2143.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1770" y="2124" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1778.0" y="2143.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<text x="18.0" y="2175.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">200,000 · MessagePack store save · 200000:MessagePack:MessagePack store save</text>
+<rect x="510" y="2156" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="518.0" y="2175.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="930" y="2156" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="938.0" y="2175.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1350" y="2156" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1358.0" y="2175.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="1770" y="2156" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1778.0" y="2175.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">unsupported: candidate, reference</text>
+<rect x="0" y="2186" width="2200" height="32" fill="#e8eef2"/>
+<text x="18.0" y="2207.0" font-family="Arial, sans-serif" font-size="13px" text-anchor="start" fill="#17252a" font-weight="bold">Connect</text>
+<rect x="0" y="2218" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2239.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · NodeIdentity.create() [Ed25519 keygen] · NodeIdentity.create() [Ed25519 keygen]</text>
+<rect x="510" y="2220" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="2239.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">81.589 / 152.322 µs · 0.536×</text>
+<rect x="930" y="2220" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2239.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">81.589 / 85.195 µs · 0.958×</text>
+<rect x="1350" y="2220" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="2239.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">85.195 / 93.716 µs · 0.909×</text>
+<rect x="1770" y="2220" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2239.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">85.195 / 81.589 µs · 1.044×</text>
+<text x="18.0" y="2271.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · identity fingerprint · identity fingerprint</text>
+<rect x="510" y="2252" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="2271.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">3.466 / 6.257 µs · 0.554×</text>
+<rect x="930" y="2252" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2271.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">3.466 / 3.617 µs · 0.958×</text>
+<rect x="1350" y="2252" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1358.0" y="2271.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">3.617 / 6.282 µs · 0.576×</text>
+<rect x="1770" y="2252" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2271.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">3.617 / 3.466 µs · 1.044×</text>
+<rect x="0" y="2282" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2303.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · open_or_resume + assert_current · open_or_resume + assert_current</text>
+<rect x="510" y="2284" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="2303.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">9.347 / 19.778 µs · 0.473×</text>
+<rect x="930" y="2284" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2303.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">9.347 / 10.510 µs · 0.889×</text>
+<rect x="1350" y="2284" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="2303.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">10.510 / 11.872 µs · 0.885×</text>
+<rect x="1770" y="2284" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2303.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">10.510 / 9.347 µs · 1.124×</text>
+<text x="18.0" y="2335.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · open_or_resume + assert_current (900 active sessions) · open_or_resume + assert_current (900 active sessions)</text>
+<rect x="510" y="2316" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="518.0" y="2335.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">not matched</text>
+<rect x="930" y="2316" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="938.0" y="2335.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">15.665 / 21.285 µs · 0.736×</text>
+<rect x="1350" y="2316" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1358.0" y="2335.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">not matched</text>
+<rect x="1770" y="2316" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2335.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">21.285 / 15.665 µs · 1.359×</text>
+<rect x="0" y="2346" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2367.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · replay cache check_and_record · replay cache check_and_record</text>
+<rect x="510" y="2348" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="518.0" y="2367.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">case definition differs</text>
+<rect x="930" y="2348" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2367.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1.884 / 1.854 µs · 1.016×</text>
+<rect x="1350" y="2348" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1358.0" y="2367.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">case definition differs</text>
+<rect x="1770" y="2348" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2367.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">1.854 / 1.884 µs · 0.984×</text>
+<text x="18.0" y="2399.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · sign_request (ping) · sign_request (ping)</text>
+<rect x="510" y="2380" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="2399.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12.754 / 23.845 µs · 0.535×</text>
+<rect x="930" y="2380" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2399.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12.754 / 12.579 µs · 1.014×</text>
+<rect x="1350" y="2380" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1358.0" y="2399.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12.579 / 24.721 µs · 0.509×</text>
+<rect x="1770" y="2380" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2399.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12.579 / 12.754 µs · 0.986×</text>
+<rect x="0" y="2410" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2431.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · sign_response · sign_response</text>
+<rect x="510" y="2412" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="2431.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12.924 / 23.479 µs · 0.550×</text>
+<rect x="930" y="2412" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="2431.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">12.924 / 11.622 µs · 1.112×</text>
+<rect x="1350" y="2412" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="1358.0" y="2431.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">11.622 / 19.823 µs · 0.586×</text>
+<rect x="1770" y="2412" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="2431.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">11.622 / 12.924 µs · 0.899×</text>
+<text x="18.0" y="2463.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · verify_request (full: sign+verify+replay) · verify_request (full: sign+verify+replay)</text>
+<rect x="510" y="2444" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="518.0" y="2463.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">case definition differs</text>
+<rect x="930" y="2444" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2463.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">37.371 / 39.975 µs · 0.935×</text>
+<rect x="1350" y="2444" width="400" height="28" rx="3" fill="#eeeeee"/>
+<text x="1358.0" y="2463.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">case definition differs</text>
+<rect x="1770" y="2444" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2463.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">39.975 / 37.371 µs · 1.070×</text>
+<rect x="0" y="2474" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2495.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">1 · verify_response · verify_response</text>
+<rect x="510" y="2476" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="2495.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">31.058 / 54.788 µs · 0.567×</text>
+<rect x="930" y="2476" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2495.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">31.058 / 31.460 µs · 0.987×</text>
+<rect x="1350" y="2476" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="2495.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">31.460 / 33.763 µs · 0.932×</text>
+<rect x="1770" y="2476" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2495.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">31.460 / 31.058 µs · 1.013×</text>
+<text x="18.0" y="2527.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">5 · msgpack load · msgpack load</text>
+<rect x="510" y="2508" width="400" height="28" rx="3" fill="#67a9cf"/>
+<text x="518.0" y="2527.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">19.496 / 30.602 µs · 0.637×</text>
+<rect x="930" y="2508" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="938.0" y="2527.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">19.496 / 17.954 µs · 1.086×</text>
+<rect x="1350" y="2508" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1358.0" y="2527.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">17.954 / 18.901 µs · 0.950×</text>
+<rect x="1770" y="2508" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="1778.0" y="2527.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">17.954 / 19.496 µs · 0.921×</text>
+<rect x="0" y="2538" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2559.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">5 · msgpack save (5-peer payload) · msgpack save (5-peer payload)</text>
+<rect x="510" y="2540" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="518.0" y="2559.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">10202.169 / 10400.620 µs · 0.981×</text>
+<rect x="930" y="2540" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2559.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">10202.169 / 10074.623 µs · 1.013×</text>
+<rect x="1350" y="2540" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1358.0" y="2559.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">10074.623 / 9515.273 µs · 1.059×</text>
+<rect x="1770" y="2540" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2559.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">10074.623 / 10202.169 µs · 0.987×</text>
+<text x="18.0" y="2591.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">5 · yaml load · yaml load</text>
+<rect x="510" y="2572" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="518.0" y="2591.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">166.298 / 1818.160 µs · 0.091×</text>
+<rect x="930" y="2572" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="938.0" y="2591.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">166.298 / 196.185 µs · 0.848×</text>
+<rect x="1350" y="2572" width="400" height="28" rx="3" fill="#2166ac"/>
+<text x="1358.0" y="2591.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#ffffff" font-weight="normal">196.185 / 1297.434 µs · 0.151×</text>
+<rect x="1770" y="2572" width="400" height="28" rx="3" fill="#fddbc7"/>
+<text x="1778.0" y="2591.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">196.185 / 166.298 µs · 1.180×</text>
+<rect x="0" y="2602" width="2200" height="32" fill="#fafafa"/>
+<text x="18.0" y="2623.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#17252a" font-weight="normal">5 · yaml save (5-peer payload) · yaml save (5-peer payload)</text>
+<rect x="510" y="2604" width="400" height="28" rx="3" fill="#d1e5f0"/>
+<text x="518.0" y="2623.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">10689.766 / 12158.766 µs · 0.879×</text>
+<rect x="930" y="2604" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="938.0" y="2623.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">10689.766 / 11174.477 µs · 0.957×</text>
+<rect x="1350" y="2604" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1358.0" y="2623.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">11174.477 / 11420.588 µs · 0.978×</text>
+<rect x="1770" y="2604" width="400" height="28" rx="3" fill="#f7f7f7"/>
+<text x="1778.0" y="2623.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#142323" font-weight="normal">11174.477 / 10689.766 µs · 1.045×</text>
+<text x="18.0" y="2648.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#8c2d04" font-weight="normal">Configuration differs across versions: cluster_state: 2.2.0.5 MeasurementConfig(warmups=1, repetitions=3, batch_count=1, track_allocations=False) vs 2.2.0.4 MeasurementConfig(warmups=2,</text>
+<text x="18.0" y="2662.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#8c2d04" font-weight="normal">repetitions=9, batch_count=1, track_allocations=False); connect: 2.2.0.5 MeasurementConfig(warmups=500, repetitions=5000, batch_count=1, track_allocations=False) vs 2.2.0.4</text>
+<text x="18.0" y="2676.0" font-family="Arial, sans-serif" font-size="10px" text-anchor="start" fill="#8c2d04" font-weight="normal">MeasurementConfig(warmups=10, repetitions=50, batch_count=1, track_allocations=False)</text>
+</svg>

@@ -77,6 +77,16 @@
 
 ![Unified across-release, native/universal, and composite performance comparison.](images/performance-comparison.svg)
 
+- The latest-build diagram below compares every matched case across the two
+  newest complete native/universal versions. It shows candidate/reference p50s
+  and ratios, is unweighted, and does not affect the weighted winner above.
+- Each direction is shown explicitly: latest native against previous native and
+  latest universal; latest universal against previous universal and latest
+  native. Ratios below `1×` favor the candidate. Configuration differences are
+  called out because they can limit version-to-version comparability.
+
+![Unweighted per-case comparisons between the newest native and universal builds and their previous versions.](images/performance-latest-build-comparison.svg)
+
 - The composite uses cluster-state 1k and 30k/100k cases, connect cases, and
   200k JSON-persistence cases.
 - 200k MessagePack StateStore is unsupported by payload/array limits.

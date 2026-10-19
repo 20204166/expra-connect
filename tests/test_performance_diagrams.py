@@ -40,6 +40,179 @@ DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 
 class BuildComparisonTests(unittest.TestCase):
+    @staticmethod
+    def _pairwise_run(
+        version: str,
+        flavor: str,
+        suite: str,
+        p50: float | None,
+        *,
+        case_id: str = "shared-case",
+        config: MeasurementConfig | None = None,
+    ) -> BenchmarkRun:
+        run_config = config or MeasurementConfig(
+            warmups=0, repetitions=1, track_allocations=False
+        )
+        result = None
+        if p50 is not None:
+            elapsed_ns = round(p50 * 1_000)
+            ticks = iter(
+                value
+                for _ in range(run_config.repetitions)
+                for value in (0, elapsed_ns)
+            )
+            result = measure(
+                lambda: None,
+                run_config,
+                clock_ns=ticks.__next__,
+            )
+        suffix = ".so" if flavor == "native" else ".py"
+        return BenchmarkRun(
+            RunMetadata(
+                1,
+                suite,
+                version,
+                "3.12.3",
+                "Linux test",
+                {"expra_connect.test.module": f"/wheel/{flavor}/module{suffix}"},
+                run_config,
+            ),
+            (
+                BenchmarkOutcome(
+                    case_id=case_id,
+                    operation=f"{suite} operation",
+                    fixture={"shape": "pairwise-test"},
+                    size=100_000,
+                    payload_bytes=128,
+                    config=run_config,
+                    result=result,
+                    unavailable_reason="unsupported by test fixture"
+                    if result is None
+                    else None,
+                ),
+            ),
+        )
+
+    @classmethod
+    def _pairwise_history(
+        cls,
+        *,
+        latest_config: MeasurementConfig | None = None,
+        unsupported: bool = False,
+        include_latest_only_case: bool = False,
+    ) -> dict[str, tuple[BenchmarkRun, ...]]:
+        history: dict[str, tuple[BenchmarkRun, ...]] = {}
+        suites = ("cluster_state", "persistence", "connect")
+        for suite in suites:
+            runs: list[BenchmarkRun] = []
+            for version, flavor, p50 in (
+                ("2.2.0.4", "native", 100.0),
+                ("2.2.0.4", "universal", 120.0),
+                ("2.2.0.5", "native", 80.0),
+                ("2.2.0.5", "universal", 90.0),
+            ):
+                case_id = "shared-case"
+                case_p50: float | None = p50
+                if unsupported and case_id == "shared-case" and version == "2.2.0.5":
+                    case_p50 = None
+                config = latest_config if version == "2.2.0.5" else None
+                runs.append(
+                    cls._pairwise_run(
+                        version,
+                        flavor,
+                        suite,
+                        case_p50,
+                        case_id=case_id,
+                        config=config,
+                    )
+                )
+            if include_latest_only_case:
+                runs.append(
+                    cls._pairwise_run(
+                        "2.2.0.5",
+                        "native",
+                        suite,
+                        70.0,
+                        case_id="latest-only-case",
+                        config=latest_config,
+                    )
+                )
+            # A later one-sided version must not displace the newest complete pair.
+            runs.append(cls._pairwise_run("2.2.0.6", "universal", suite, 70.0))
+            history[suite] = tuple(runs)
+        return history
+
+    def test_latest_pairwise_diagram_compares_newest_complete_versions(self) -> None:
+        self.assertTrue(
+            hasattr(performance_diagrams, "render_latest_build_pairwise_diagram"),
+            "latest-build pairwise renderer has not been implemented",
+        )
+        svg = performance_diagrams.render_latest_build_pairwise_diagram(
+            self._pairwise_history()
+        )
+
+        self.assertIn("vs 2.2.0.4 native", svg)
+        self.assertIn("vs 2.2.0.5 universal", svg)
+        self.assertIn("vs 2.2.0.4 universal", svg)
+        self.assertIn("vs 2.2.0.5 native", svg)
+        self.assertIn("0.800×", svg)
+        self.assertNotIn("2.2.0.6", svg)
+        self.assertIn("unweighted", svg)
+        self.assertIn("Blue indicates candidate is faster", svg)
+
+    def test_latest_pairwise_diagram_handles_unsupported_and_missing_cases(
+        self,
+    ) -> None:
+        svg = performance_diagrams.render_latest_build_pairwise_diagram(
+            self._pairwise_history(unsupported=True, include_latest_only_case=True)
+        )
+
+        self.assertIn("shared-case", svg)
+        self.assertIn("unsupported: candidate", svg)
+        self.assertNotIn("latest-only-case", svg)
+
+    def test_latest_pairwise_diagram_flags_configuration_differences(self) -> None:
+        svg = performance_diagrams.render_latest_build_pairwise_diagram(
+            self._pairwise_history(
+                latest_config=MeasurementConfig(
+                    warmups=1, repetitions=3, track_allocations=False
+                )
+            )
+        )
+
+        self.assertIn("Configuration differs", svg)
+        self.assertIn("batch_count=1", svg)
+
+    def test_pairwise_ratio_extremes_use_contrasting_text(self) -> None:
+        candidate = self._pairwise_run("2.2.0.5", "native", "connect", 40.0).outcomes[0]
+        reference = self._pairwise_run("2.2.0.4", "native", "connect", 100.0).outcomes[
+            0
+        ]
+
+        self.assertEqual(
+            performance_diagrams._pairwise_case_cell(candidate, reference),
+            ("40.000 / 100.000 µs · 0.400×", "#2166ac", "#ffffff"),
+        )
+
+    def test_render_diagrams_includes_pairwise_chart_when_build_history_is_given(
+        self,
+    ) -> None:
+        diagrams = render_diagrams(build_history=self._pairwise_history())
+
+        self.assertEqual(
+            set(diagrams),
+            {
+                "performance-comparison.svg",
+                "performance-latest-build-comparison.svg",
+            },
+        )
+        self.assertEqual(
+            ElementTree.fromstring(
+                diagrams["performance-latest-build-comparison.svg"]
+            ).attrib["role"],
+            "img",
+        )
+
     def test_shared_harness_chart_includes_both_2204_builds(self) -> None:
         diagrams = render_diagrams()
         self.assertEqual(set(diagrams), {"performance-comparison.svg"})

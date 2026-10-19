@@ -7,6 +7,7 @@ import json
 import math
 import re
 import sys
+import textwrap
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -698,6 +699,265 @@ def _load_build_comparison_history(
     return {suite: tuple(runs) for suite, runs in by_suite.items()}
 
 
+def render_latest_build_pairwise_diagram(
+    history: dict[str, tuple[BenchmarkRun, ...]],
+) -> str:
+    """Render unweighted per-case comparisons for the newest two paired versions."""
+
+    runs_by_suite: dict[str, dict[tuple[str, str], BenchmarkRun]] = {}
+    for suite in BUILD_COMPARISON_SUITES:
+        runs_by_suite[suite] = {
+            (run.metadata.package_version, flavor): run
+            for run in history.get(suite, ())
+            if (flavor := _run_build_flavor(run)) is not None
+        }
+
+    complete_pairs = set.intersection(
+        *(
+            {
+                version
+                for version, flavor in runs
+                if flavor == "native" and (version, "universal") in runs
+            }
+            for runs in runs_by_suite.values()
+        )
+    )
+    versions = sorted(
+        complete_pairs,
+        key=lambda version: tuple(int(part) for part in version.split(".")),
+    )
+    if len(versions) < 2:
+        raise ValueError(
+            "latest-build pairwise diagram requires two complete native/universal versions"
+        )
+    previous_version, latest_version = versions[-2:]
+
+    comparisons: list[tuple[BenchmarkRun, BenchmarkRun]] = []
+    for suite in BUILD_COMPARISON_SUITES:
+        runs = runs_by_suite[suite]
+        comparisons.extend(
+            (
+                (runs[(latest_version, "native")], runs[(previous_version, "native")]),
+                (runs[(latest_version, "native")], runs[(latest_version, "universal")]),
+                (
+                    runs[(latest_version, "universal")],
+                    runs[(previous_version, "universal")],
+                ),
+                (runs[(latest_version, "universal")], runs[(latest_version, "native")]),
+            )
+        )
+
+    return _render_latest_build_pairwise_svg(
+        previous_version, latest_version, comparisons
+    )
+
+
+def _render_latest_build_pairwise_svg(
+    previous_version: str,
+    latest_version: str,
+    comparisons: list[tuple[BenchmarkRun, BenchmarkRun]],
+) -> str:
+    width = 2200
+    row_height = 32
+    label_x = 18
+    column_x = (510, 930, 1350, 1770)
+    column_width = 400
+    top = 170
+    case_maps: list[
+        tuple[dict[str, tuple[BenchmarkOutcome, BenchmarkOutcome]], ...]
+    ] = []
+    config_warnings: set[str] = set()
+
+    for suite_index, suite in enumerate(BUILD_COMPARISON_SUITES):
+        suite_comparisons = comparisons[suite_index * 4 : suite_index * 4 + 4]
+        suite_maps: list[dict[str, tuple[BenchmarkOutcome, BenchmarkOutcome]]] = []
+        for candidate, reference in suite_comparisons:
+            candidate_cases = {
+                outcome.case_id: outcome for outcome in candidate.outcomes
+            }
+            reference_cases = {
+                outcome.case_id: outcome for outcome in reference.outcomes
+            }
+            suite_maps.append(
+                {
+                    case_id: (candidate_cases[case_id], reference_cases[case_id])
+                    for case_id in candidate_cases.keys() & reference_cases.keys()
+                }
+            )
+            if candidate.metadata.config != reference.metadata.config:
+                config_warnings.add(
+                    f"{suite}: {candidate.metadata.package_version} "
+                    f"{candidate.metadata.config!r} vs "
+                    f"{reference.metadata.package_version} "
+                    f"{reference.metadata.config!r}"
+                )
+        case_maps.append(tuple(suite_maps))
+    suite_headers = len(BUILD_COMPARISON_SUITES)
+    suite_case_counts = tuple(
+        len({case_id for mapping in suite_maps for case_id in mapping})
+        for suite_maps in case_maps
+    )
+    rendered_row_count = sum(max(1, count) for count in suite_case_counts)
+    content_bottom = top + row_height * (rendered_row_count + suite_headers)
+    warning_lines = (
+        textwrap.wrap(
+            "Configuration differs across versions: "
+            + "; ".join(sorted(config_warnings)),
+            width=190,
+        )
+        if config_warnings
+        else []
+    )
+    height = content_bottom + 18 + 14 * len(warning_lines) + 8
+    title = "Latest native and universal · unweighted per-case comparison"
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}">',
+        f"<title>{escape(title)}</title>",
+        f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
+        _text(18, 32, title, size=22, weight="bold"),
+        _text(
+            18,
+            61,
+            f"Candidate / reference p50 in µs and ratio · compared versions: {previous_version} → {latest_version}",
+            size=13,
+        ),
+        _text(
+            18,
+            84,
+            "Unweighted case comparisons only; excluded from the historical weighted score. Ratios below 1× favor the candidate.",
+            size=13,
+        ),
+        _text(
+            18,
+            112,
+            "Blue indicates candidate is faster; red indicates slower.",
+            size=11,
+        ),
+        _text(label_x, 145, "Suite · size · operation · case", size=12, weight="bold"),
+        _text(510, 112, "Latest native", size=14, weight="bold"),
+        _text(1350, 112, "Latest universal", size=14, weight="bold"),
+    ]
+    header_labels = (
+        f"vs {previous_version} native",
+        f"vs {latest_version} universal",
+        f"vs {previous_version} universal",
+        f"vs {latest_version} native",
+    )
+    for x, label in zip(column_x, header_labels, strict=True):
+        parts.append(_text(x + 8, 145, label, size=12, weight="bold"))
+
+    y = top
+    row_index = 0
+    for suite_index, suite in enumerate(BUILD_COMPARISON_SUITES):
+        suite_cases = sorted(
+            {case_id for mapping in case_maps[suite_index] for case_id in mapping},
+            key=lambda case_id: (
+                next(
+                    mapping[case_id][0].size
+                    for mapping in case_maps[suite_index]
+                    if case_id in mapping
+                ),
+                next(
+                    mapping[case_id][0].operation
+                    for mapping in case_maps[suite_index]
+                    if case_id in mapping
+                ),
+                case_id,
+            ),
+        )
+        parts.append(
+            f'<rect x="0" y="{y}" width="{width}" height="{row_height}" fill="#e8eef2"/>'
+        )
+        parts.append(
+            _text(
+                label_x, y + 21, suite.replace("_", " ").title(), size=13, weight="bold"
+            )
+        )
+        y += row_height
+        if not suite_cases:
+            parts.append(
+                _text(label_x, y + 21, "No matched cases", size=11, color="#666666")
+            )
+            y += row_height
+            continue
+        for case_id in suite_cases:
+            outcome = next(
+                mapping[case_id][0]
+                for mapping in case_maps[suite_index]
+                if case_id in mapping
+            )
+            if row_index % 2:
+                parts.append(
+                    f'<rect x="0" y="{y}" width="{width}" height="{row_height}" fill="#fafafa"/>'
+                )
+            label = f"{outcome.size:,} · {outcome.operation} · {case_id}"
+            parts.append(_text(label_x, y + 21, label, size=10))
+            for column, x in enumerate(column_x):
+                pair = case_maps[suite_index][column].get(case_id)
+                if pair is None:
+                    text, color, text_color = "not matched", "#eeeeee", "#142323"
+                else:
+                    text, color, text_color = _pairwise_case_cell(*pair)
+                parts.append(
+                    f'<rect x="{x}" y="{y + 2}" width="{column_width}" height="{row_height - 4}" rx="3" fill="{color}"/>'
+                )
+                parts.append(_text(x + 8, y + 21, text, size=10, color=text_color))
+            y += row_height
+            row_index += 1
+
+    for index, warning_line in enumerate(warning_lines):
+        parts.append(
+            _text(
+                18,
+                content_bottom + 14 + index * 14,
+                warning_line,
+                size=10,
+                color="#8c2d04",
+            )
+        )
+    parts.append("</svg>")
+    return "\n".join(parts)
+
+
+def _pairwise_case_cell(
+    candidate: BenchmarkOutcome, reference: BenchmarkOutcome
+) -> tuple[str, str, str]:
+    if (
+        candidate.operation != reference.operation
+        or candidate.fixture != reference.fixture
+        or candidate.size != reference.size
+        or candidate.payload_bytes != reference.payload_bytes
+    ):
+        return "case definition differs", "#eeeeee", "#142323"
+    if candidate.result is None or reference.result is None:
+        unsupported_sides = [
+            label
+            for label, outcome in (
+                ("candidate", candidate),
+                ("reference", reference),
+            )
+            if outcome.result is None
+        ]
+        return (
+            f"unsupported: {', '.join(unsupported_sides)}",
+            "#eeeeee",
+            "#142323",
+        )
+    candidate_p50 = candidate.result.p50
+    reference_p50 = reference.result.p50
+    if reference_p50 == 0:
+        return f"{candidate_p50:.3f} / 0.000 µs · ratio n/a", "#eeeeee", "#142323"
+    ratio = candidate_p50 / reference_p50
+    bucket = _ratio_bucket(ratio)
+    color = PALETTE[bucket]
+    text_color = "#ffffff" if bucket in (0, len(PALETTE) - 1) else "#142323"
+    return (
+        f"{candidate_p50:.3f} / {reference_p50:.3f} µs · {ratio:.3f}×",
+        color,
+        text_color,
+    )
+
+
 def shared_harness_labels(
     groups: dict[str, tuple[BenchmarkRun, ...]],
 ) -> tuple[str, ...]:
@@ -905,8 +1165,10 @@ def _version_color(index: int) -> str:
 
 def render_diagrams(
     groups: dict[str, tuple[BenchmarkRun, ...]] | None = None,
+    *,
+    build_history: dict[str, tuple[BenchmarkRun, ...]] | None = None,
 ) -> dict[str, str]:
-    """Render one across-release comparison with a composite and suite detail."""
+    """Render the historical chart and optional latest-build pairwise chart."""
 
     shared_results = (
         Path(__file__).resolve().parents[1] / "tools" / "shared-benchmark-results"
@@ -930,7 +1192,7 @@ def render_diagrams(
             ],
         ),
     )
-    return {
+    diagrams = {
         "performance-comparison.svg": _render_heatmap_svg(
             "Across-release performance comparison",
             labels,
@@ -941,6 +1203,11 @@ def render_diagrams(
             size_indices=size_specific_indices(shared_runs),
         ),
     }
+    if build_history is not None:
+        diagrams["performance-latest-build-comparison.svg"] = (
+            render_latest_build_pairwise_diagram(build_history)
+        )
+    return diagrams
 
 
 def size_specific_indices(
@@ -1974,7 +2241,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         all_groups = _load_all_shared_harness_runs(shared_results)
         groups, evicted_runs = _select_visible_history(all_groups)
         summary = render_performance_summary(groups)
-        diagrams = render_diagrams(groups)
+        build_history = _load_build_comparison_history(build_results)
+        diagrams = render_diagrams(groups, build_history=build_history)
         stale = sync_diagrams(diagrams, output_dir, check=args.check)
         summary_stale = sync_performance_summary(
             summary_path, summary, check=args.check
