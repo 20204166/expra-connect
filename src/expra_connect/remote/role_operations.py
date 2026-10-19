@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import time
 from typing import Any, cast
 
 from ..cluster import ClusterRole
@@ -476,6 +475,7 @@ def dispatch_role_request(runtime: Any, request: Any) -> dict[str, Any]:
         epoch=request.params["epoch"],
         fencing_token=request.params["fencing_token"],
     )
+    now = cluster._clock()
     if request.op == "consume_invite":
         previous = (
             dict(cluster.assignments),
@@ -485,7 +485,7 @@ def dispatch_role_request(runtime: Any, request: Any) -> dict[str, Any]:
             set(cluster._used_invites),
         )
         invite = cluster.consume_invite(
-            request.params["token"], caller, allow_retry=True
+            request.params["token"], caller, now=now, allow_retry=True
         )
         if not runtime._save_persisted_state():
             (
@@ -520,7 +520,7 @@ def dispatch_role_request(runtime: Any, request: Any) -> dict[str, Any]:
             old,
             coordinator_id=caller,
             fencing_token=request.params["fencing_token"],
-            now=cluster._clock(),
+            now=now,
         )
         if runtime._cluster_store is not None and not runtime._save_persisted_state():
             cluster.epoch = old
@@ -552,7 +552,7 @@ def dispatch_role_request(runtime: Any, request: Any) -> dict[str, Any]:
             actor=actor,
             target=target,
             roles=frozenset({ClusterRole(roles[0])}),
-            now=time.time(),
+            now=now,
         )
         cluster.assignments = {
             item.node_id: item
@@ -646,7 +646,7 @@ def dispatch_role_request(runtime: Any, request: Any) -> dict[str, Any]:
                 permissions=frozenset(
                     NodePermission(item) for item in request.params["permissions"]
                 ),
-                now=time.time(),
+                now=now,
                 expires_at=float(request.params["expires_at"]),
             )
         runtime._cluster_capability_grants = updated.capability_grants

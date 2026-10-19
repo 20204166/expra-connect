@@ -507,6 +507,34 @@ class RuntimeClusterOperationTests(unittest.TestCase):
                 self._request("renew_coordinator_lease", "worker", params)
             )
 
+    def test_capability_grant_uses_cluster_clock(self) -> None:
+        runtime = self._runtime_with_cluster()
+        cluster = runtime.cluster
+        assert cluster is not None
+        cluster.assign(NodeId("sub"), ClusterRole.SUBCOORDINATOR)
+        cluster.assign(NodeId("worker"), ClusterRole.WORKER)
+        params = {
+            "subject_node_id": "sub",
+            "target_node_id": "worker",
+            "permissions": [NodePermission.READ_STATE.value],
+            "expires_at": 150.0,
+            "cluster_id": cluster.cluster_id,
+            "epoch": cluster.epoch.epoch,
+            "fencing_token": cluster.epoch.fencing_token,
+        }
+
+        with (
+            patch.object(runtime, "_save_persisted_state", return_value=True),
+            patch.object(cluster, "_clock", wraps=cluster._clock) as clock,
+        ):
+            runtime._handle_role_request(
+                self._request("grant_capabilities", "coord", params)
+            )
+
+        self.assertEqual(len(runtime._cluster_capability_grants), 1)
+        self.assertEqual(runtime._cluster_capability_grants[0].issued_at, 100.0)
+        clock.assert_called_once_with()
+
     def test_role_handler_rolls_back_membership_when_cluster_save_fails(self) -> None:
         runtime = self._runtime_with_cluster()
         cluster = runtime.cluster

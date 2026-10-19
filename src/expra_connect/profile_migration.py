@@ -5,7 +5,8 @@ from __future__ import annotations
 import os
 import stat
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import BinaryIO, Literal, Protocol
@@ -33,11 +34,15 @@ class ProfileSourceReader(Protocol):
 
     def read_bytes(self, relative_path: str) -> bytes: ...
 
+    def open_read(self, relative_path: str) -> AbstractContextManager[BinaryIO]: ...
+
 
 class StagedProfileWriter(Protocol):
     """Write-only access to files in the private staging profile."""
 
     def write_bytes(self, relative_path: str, payload: bytes) -> None: ...
+
+    def open_write(self, relative_path: str) -> AbstractContextManager[BinaryIO]: ...
 
 
 ProfileConverter = Callable[[ProfileSourceReader, StagedProfileWriter], None]
@@ -195,13 +200,18 @@ class _ProfileSourceReader:
         return tuple(sorted(found))
 
     def read_bytes(self, relative_path: str) -> bytes:
+        with self.open_read(relative_path) as stream:
+            return stream.read()
+
+    @contextmanager
+    def open_read(self, relative_path: str) -> Iterator[BinaryIO]:
         relative = _relative_path(relative_path)
         path = self._root.joinpath(*relative.parts)
         _require_safe_components(self._root, relative, final_kind="file")
         flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
         try:
             with _open_binary_stream(path, flags, mode="rb") as stream:
-                return stream.read()
+                yield stream
         except OSError:
             raise ProfileMigrationError("source profile file cannot be read") from None
 
@@ -216,43 +226,65 @@ class _StagedProfileWriter:
         self.bytes_written = 0
 
     def write_bytes(self, relative_path: str, payload: bytes) -> None:
-        relative = _relative_path(relative_path)
         if not isinstance(payload, bytes):
             raise ProfileMigrationError("profile payload must be bytes")
+        with self.open_write(relative_path) as stream:
+            if stream.write(payload) != len(payload):
+                raise OSError("short profile write")
+
+    @contextmanager
+    def open_write(self, relative_path: str) -> Iterator[BinaryIO]:
+        relative = _relative_path(relative_path)
         normalized = relative.as_posix()
         if normalized in self._written_paths:
             raise ProfileMigrationError("profile output path is duplicated")
-        parent = self._root
-        for component in relative.parts[:-1]:
-            parent = parent / component
-            try:
-                parent.mkdir(mode=0o700)
-            except FileExistsError:
-                pass
-            _require_directory(parent)
-        path = parent / relative.parts[-1]
-        if os.path.lexists(path):
-            raise ProfileMigrationError("profile output path already exists")
-        flags = (
-            os.O_WRONLY
-            | os.O_CREAT
-            | os.O_EXCL
-            | getattr(os, "O_NOFOLLOW", 0)
-            | getattr(os, "O_BINARY", 0)
-        )
+        self._written_paths.add(normalized)
+        path = self._root.joinpath(*relative.parts)
+        created = False
         try:
-            with _open_binary_stream(path, flags, mode="wb", file_mode=0o600) as stream:
+            parent = self._root
+            for component in relative.parts[:-1]:
+                parent = parent / component
+                try:
+                    parent.mkdir(mode=0o700)
+                except FileExistsError:
+                    pass
+                _require_directory(parent)
+            path = parent / relative.parts[-1]
+            if os.path.lexists(path):
+                raise ProfileMigrationError("profile output path already exists")
+            flags = (
+                os.O_WRONLY
+                | os.O_CREAT
+                | os.O_EXCL
+                | getattr(os, "O_NOFOLLOW", 0)
+                | getattr(os, "O_BINARY", 0)
+            )
+            stream = _open_binary_stream(path, flags, mode="wb", file_mode=0o600)
+            created = True
+            with stream:
                 if os.name == "posix":
                     os.fchmod(stream.fileno(), 0o600)
-                if stream.write(payload) != len(payload):
-                    raise OSError("short profile write")
+                yield stream
                 stream.flush()
                 os.fsync(stream.fileno())
-        except OSError:
-            raise ProfileMigrationError("profile output could not be written") from None
-        self._written_paths.add(normalized)
+            size = path.stat().st_size
+        except BaseException as error:
+            self._written_paths.remove(normalized)
+            if created:
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+            if isinstance(error, ProfileMigrationError):
+                raise
+            if isinstance(error, OSError):
+                raise ProfileMigrationError(
+                    "profile output could not be written"
+                ) from None
+            raise
         self.files_written += 1
-        self.bytes_written += len(payload)
+        self.bytes_written += size
 
 
 def _open_binary_stream(

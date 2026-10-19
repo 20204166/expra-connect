@@ -246,6 +246,50 @@ class ProfileMigrationTests(unittest.TestCase):
 
             self.assertEqual((stage / "nested/state").stat().st_mode & 0o777, 0o600)
 
+    def test_streaming_reader_and_writer_migrate_large_payload_in_chunks(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "legacy"
+            destination = root / "connect"
+            source.mkdir()
+            payload = b"streamed-data" * 100
+            (source / "legacy.bin").write_bytes(payload)
+
+            def convert(
+                reader: ProfileSourceReader, writer: StagedProfileWriter
+            ) -> None:
+                with (
+                    reader.open_read("legacy.bin") as incoming,
+                    writer.open_write("converted.bin") as outgoing,
+                ):
+                    while chunk := incoming.read(17):
+                        outgoing.write(chunk)
+
+            result = migrate_profile(
+                source, destination, convert=convert, verify=lambda _: None
+            )
+
+            self.assertEqual((destination / "converted.bin").read_bytes(), payload)
+            self.assertEqual(result.files_written, 1)
+            self.assertEqual(result.bytes_written, len(payload))
+
+    def test_failed_streaming_write_is_removed_and_not_counted(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            stage = Path(directory) / "stage"
+            stage.mkdir()
+            writer = _StagedProfileWriter(stage)
+
+            with (
+                self.assertRaises(RuntimeError),
+                writer.open_write("partial.bin") as stream,
+            ):
+                stream.write(b"partial")
+                raise RuntimeError("abort output")
+
+            self.assertFalse((stage / "partial.bin").exists())
+            self.assertEqual(writer.files_written, 0)
+            self.assertEqual(writer.bytes_written, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

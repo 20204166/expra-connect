@@ -124,11 +124,15 @@ Always shut the runtime down in `finally`.
 schema-neutral migration boundary. The destination parent must already exist
 and the destination path must be absent. `ProfileSourceReader` exposes regular
 source files as relative names and bytes; `StagedProfileWriter` writes converted
-bytes only beneath a private staging directory. The host supplies both
-callbacks and owns all schema mapping and policy. The verifier receives the
-staged directory before promotion; the result reports the destination and the
-file/byte counts written by the converter. Files created by verification are
-not included in those counts.
+bytes only beneath a private staging directory. For large files, use the
+context-managed `reader.open_read(path)` and `writer.open_write(path)` streams
+instead of materializing the full payload with `read_bytes`/`write_bytes`.
+Completed streamed files are flushed and synced before they are counted; an
+aborted streamed output is removed. The host supplies both callbacks and owns
+all schema mapping and policy. The verifier receives the staged directory before
+promotion; the result reports the destination and the file/byte counts written
+by the converter. Files created by verification are not included in those
+counts.
 
 ```python
 from pathlib import Path
@@ -138,7 +142,10 @@ from expra_connect import migrate_profile
 
 def convert(reader, writer):
     # Synthetic illustration only: map the host's real schema explicitly.
-    writer.write_bytes("identity.yaml", reader.read_bytes("legacy.json"))
+    with reader.open_read("legacy.json") as source:
+        with writer.open_write("identity.yaml") as destination:
+            while chunk := source.read(64 * 1024):
+                destination.write(chunk)
 
 
 def verify(staged: Path) -> None:
