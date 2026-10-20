@@ -49,7 +49,9 @@
 - The added deterministic feature slices are discovery (3 cases), pairing/trust
   (3), capability and surface authorization (3), cluster role authorization
   (3), and profile migration (3). These measure in-process APIs, not live LAN
-  discovery or network transport.
+  discovery or network transport. Discovery, pairing, capability, and surface
+  cases use Python source modules in both wheel flavors; role authorization and
+  profile migration exercise modules compiled into the native wheel.
 - YAML size limits, unavailable connect operations, and the two unsupported
   200k MessagePack StateStore cases are explained in chart tooltips.
 
