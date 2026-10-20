@@ -449,6 +449,38 @@ class RuntimeClusterOperationTests(unittest.TestCase):
             timestamp=0.0,
         )
 
+    def test_public_role_operations_persist_cluster_membership(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = ConnectConfig(
+                profile_dir=Path(directory),
+                bind_host="127.0.0.1",
+                preferred_port=0,
+                pairing_port=0,
+                discovery_enabled=False,
+                cluster_enabled=True,
+            )
+            runtime = ConnectRuntime(config)
+            self.assertEqual(runtime.start().state, RuntimeState.STARTED)
+            try:
+                assignment = runtime.assign_role(NodeId("worker"), ClusterRole.WORKER)
+                self.assertEqual(assignment.node_id, NodeId("worker"))
+                runtime.revoke_member(NodeId("worker"))
+            finally:
+                runtime.shutdown()
+
+            restarted = ConnectRuntime(config)
+            self.assertEqual(restarted.start().state, RuntimeState.STARTED)
+            try:
+                cluster = restarted.cluster
+                self.assertIsNotNone(cluster)
+                assert cluster is not None
+                revoked_assignment = cluster.assignments.get(NodeId("worker"))
+                self.assertIsNotNone(revoked_assignment)
+                assert revoked_assignment is not None
+                self.assertTrue(revoked_assignment.revoked)
+            finally:
+                restarted.shutdown()
+
     def test_role_handler_consumes_invite_and_returns_current_fence(self) -> None:
         runtime = self._runtime_with_cluster()
         cluster = runtime.cluster

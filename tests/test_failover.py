@@ -56,3 +56,65 @@ class FailoverTests(unittest.TestCase):
         if assignment is None:
             self.fail("stale rejoin removed the assignment")
         self.assertIn(ClusterRole.COORDINATOR, assignment.roles)
+
+    def test_role_assignment_is_persisted_before_becoming_current(self) -> None:
+        saved: list[RoleState] = []
+        initial = self._state()
+        actor = initial.assignment_for(NodeId("coord"))
+        assert actor is not None
+        manager = FailoverCoordinator(initial, persist=saved.append)
+
+        change = manager.assign_role(
+            actor=actor,
+            target=NodeId("worker"),
+            roles=frozenset({ClusterRole.WORKER}),
+            now=25.0,
+        )
+
+        self.assertEqual(change.node_id, NodeId("worker"))
+        self.assertEqual(
+            manager.state.assignment_for(NodeId("worker")), change.assignment
+        )
+        self.assertEqual(saved, [manager.state])
+
+    def test_role_assignment_failure_does_not_publish_unpersisted_state(self) -> None:
+        initial = self._state()
+
+        def fail_persist(_state: RoleState) -> None:
+            raise OSError("simulated persistence failure")
+
+        manager = FailoverCoordinator(initial, persist=fail_persist)
+        actor = initial.assignment_for(NodeId("coord"))
+        assert actor is not None
+
+        with self.assertRaises(OSError):
+            manager.assign_role(
+                actor=actor,
+                target=NodeId("worker"),
+                roles=frozenset({ClusterRole.WORKER}),
+                now=25.0,
+            )
+
+        self.assertIs(manager.state, initial)
+        self.assertIsNone(manager.state.assignment_for(NodeId("worker")))
+
+    def test_member_revocation_is_persisted(self) -> None:
+        saved: list[RoleState] = []
+        base = self._state()
+        actor = base.assignment_for(NodeId("coord"))
+        assert actor is not None
+        initial = base.assign(
+            actor=actor,
+            target=NodeId("worker"),
+            roles=frozenset({ClusterRole.WORKER}),
+            now=10.0,
+        )[0]
+        manager = FailoverCoordinator(initial, persist=saved.append)
+
+        manager.revoke_member(actor=actor, target=NodeId("worker"))
+
+        assignment = manager.state.assignment_for(NodeId("worker"))
+        self.assertIsNotNone(assignment)
+        assert assignment is not None
+        self.assertTrue(assignment.revoked)
+        self.assertEqual(saved, [manager.state])

@@ -89,6 +89,24 @@ class RuntimeClusterOperations:
             node_id=node_id, current_epoch=current_epoch
         )
 
+    def assign_role(self, target_node_id: NodeId, role: ClusterRole) -> RoleAssignment:
+        """Persist a local Coordinator's assignment through the runtime owner."""
+        cluster = self._require_cluster()
+        change = self._require_failover().assign_role(
+            actor=cluster.local_assignment,
+            target=target_node_id,
+            roles=frozenset({role}),
+            now=cluster._clock(),
+        )
+        return cast(RoleAssignment, change.assignment)
+
+    def revoke_member(self, target_node_id: NodeId) -> None:
+        """Persist a local Coordinator's membership revocation."""
+        cluster = self._require_cluster()
+        self._require_failover().revoke_member(
+            actor=cluster.local_assignment, target=target_node_id
+        )
+
     def _require_cluster(self) -> Any:
         if self._cluster is None:
             raise RuntimeError("cluster participation is disabled")

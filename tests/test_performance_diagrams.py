@@ -62,21 +62,26 @@ class BuildComparisonTests(unittest.TestCase):
                         if flavor == "native"
                         else 120.0
                     )
+                    template = self._pairwise_run(
+                        version,
+                        flavor,
+                        suite,
+                        p50,
+                        case_id=f"{suite}-{sizes[0]}",
+                    )
                     outcomes = []
                     for size in sizes:
                         case_id = f"{suite}-{size}"
-                        run = self._pairwise_run(
-                            version, flavor, suite, p50, case_id=case_id
-                        )
                         outcomes.append(
                             replace(
-                                run.outcomes[0],
+                                template.outcomes[0],
+                                case_id=case_id,
                                 operation=f"operation-{case_id}",
                                 size=size,
                                 fixture={"shape": case_id},
                             )
                         )
-                    runs.append(BenchmarkRun(run.metadata, tuple(outcomes)))
+                    runs.append(BenchmarkRun(template.metadata, tuple(outcomes)))
             history[suite] = tuple(runs)
 
         scores = performance_diagrams._recent_reference_scores(history)
@@ -537,8 +542,8 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertIn("Reference: 2.2.0.5 native", svg)
         self.assertIn("Candidate p50 80.000 µs", svg)
         self.assertIn("Reference p50 100.000 µs", svg)
-        self.assertIn("Ratio 0.800×", svg)
-        self.assertIn("0.800×", svg)
+        self.assertIn("Candidate/reference 80.0%", svg)
+        self.assertIn("80.0%", svg)
         self.assertNotIn("2.2.0.6", svg)
         self.assertIn("unweighted", svg)
         self.assertIn("Blue is faster; red is slower", svg)
@@ -575,7 +580,7 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertEqual(
             performance_diagrams._pairwise_case_cell(candidate, reference),
             (
-                "Candidate p50 40.000 µs · Reference p50 100.000 µs · Ratio 0.400×",
+                "Candidate p50 40.000 µs · Reference p50 100.000 µs · Candidate/reference 40.0%",
                 "#2166ac",
                 "#ffffff",
             ),
@@ -607,8 +612,10 @@ class BuildComparisonTests(unittest.TestCase):
 
         self.assertIn("2.2.0.4 native", svg)
         self.assertIn("2.2.0.4 universal", svg)
+        self.assertIn("Percent vs 1.8.0.0", svg)
+        self.assertIn("≤50%", svg)
         self.assertIn("Composite index · equal-suite geometric mean", svg)
-        self.assertIn("Full-workload index · equal-case · 35 cases", svg)
+        self.assertIn("Full-workload index · equal-case · 40 cases", svg)
         self.assertIn("cluster state", svg)
         self.assertIn("persistence", svg)
         self.assertIn("connect", svg)
@@ -833,13 +840,16 @@ class BaselineTests(unittest.TestCase):
             any(line.lstrip().startswith("|") for line in source.splitlines())
         )
 
-    def test_shared_runs_keep_different_historical_fixtures_out_of_comparisons(
+    def test_shared_runs_keep_different_fixtures_out_of_comparisons(
         self,
     ) -> None:
         source = ROOT / "tools" / "shared-benchmark-results"
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "runs"
             shutil.copytree(source, target)
+            archived_runs = target / "history"
+            for archived_path in archived_runs.glob("*-2.2.0.1.json"):
+                shutil.copy2(archived_path, target / archived_path.name)
             run_path = target / "connect-2.2.0.1.json"
             document = json.loads(run_path.read_text(encoding="utf-8"))
             document["outcomes"][0]["fixture"]["shape"] = "other-fixture"
@@ -940,7 +950,9 @@ class BaselineTests(unittest.TestCase):
             ).exists()
         )
 
-    def test_2203_history_is_represented_as_native_and_universal_builds(self) -> None:
+    def test_versioned_history_is_represented_as_native_and_universal_builds(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             shared = root / "tools" / "shared-benchmark-results"
@@ -952,28 +964,30 @@ class BaselineTests(unittest.TestCase):
             for suite in ("cluster_state", "persistence", "connect"):
                 for flavor in ("native", "universal"):
                     document = json.loads(
-                        (build / f"{flavor}-{suite}.json").read_text(encoding="utf-8")
+                        (build / f"2.2.1.1-{flavor}-{suite}.json").read_text(
+                            encoding="utf-8"
+                        )
                     )
-                    document["metadata"]["package_version"] = "2.2.0.3"
-                    output = build / f"2.2.0.3-{flavor}-{suite}.json"
+                    document["metadata"]["package_version"] = "99.99.99.98"
+                    output = build / f"99.99.99.98-{flavor}-{suite}.json"
                     output.write_text(json.dumps(document), encoding="utf-8")
 
             groups = load_shared_harness_runs(shared)
             labels = shared_harness_labels(groups)
 
-        native_index = labels.index("2.2.0.3 native")
-        universal_index = labels.index("2.2.0.3 universal")
+        native_index = labels.index("99.99.99.98 native")
+        universal_index = labels.index("99.99.99.98 universal")
         self.assertEqual(
             tuple(run.metadata.package_version for run in groups["cluster-1k"])[
                 native_index : universal_index + 1
             ],
-            ("2.2.0.3", "2.2.0.3"),
+            ("99.99.99.98", "99.99.99.98"),
         )
         self.assertEqual(
             tuple(len(run.outcomes) for run in groups["persistence-30k"])[
                 native_index : universal_index + 1
             ],
-            (13, 13),
+            (16, 16),
         )
 
 
@@ -1006,7 +1020,7 @@ class DiagramTests(unittest.TestCase):
             )
             for suite in ("cluster_state", "persistence", "connect"):
                 for flavor in ("native", "universal"):
-                    source = build_dir / f"2.2.0.3-{flavor}-{suite}.json"
+                    source = build_dir / f"2.2.1.1-{flavor}-{suite}.json"
                     document = json.loads(source.read_text(encoding="utf-8"))
                     document["metadata"]["package_version"] = "99.99.99.99"
                     target = build_dir / f"99.99.99.99-{flavor}-{suite}.json"
@@ -1086,7 +1100,7 @@ class DiagramTests(unittest.TestCase):
             )
             groups = load_shared_harness_runs(results_dir)
             native_run = groups["cluster-1k"][
-                shared_harness_labels(groups).index("2.2.0.3 native")
+                shared_harness_labels(groups).index("2.2.1.1 native")
             ]
             archive_evicted_results = getattr(
                 performance_diagrams, "_archive_evicted_results", None
@@ -1097,11 +1111,11 @@ class DiagramTests(unittest.TestCase):
 
             archive_evicted_results((native_run,), results_dir, build_dir)
 
-            native_active = tuple(build_dir.glob("2.2.0.3-native-*.json"))
+            native_active = tuple(build_dir.glob("2.2.1.1-native-*.json"))
             native_archived = tuple(
-                (build_dir / "history").glob("2.2.0.3-native-*.json")
+                (build_dir / "history").glob("2.2.1.1-native-*.json")
             )
-            universal_active = tuple(build_dir.glob("2.2.0.3-universal-*.json"))
+            universal_active = tuple(build_dir.glob("2.2.1.1-universal-*.json"))
             remaining_labels = shared_harness_labels(
                 load_shared_harness_runs(results_dir)
             )
@@ -1109,8 +1123,8 @@ class DiagramTests(unittest.TestCase):
         self.assertEqual(native_active, ())
         self.assertEqual(len(native_archived), 3)
         self.assertEqual(len(universal_active), 3)
-        self.assertNotIn("2.2.0.3 native", remaining_labels)
-        self.assertIn("2.2.0.3 universal", remaining_labels)
+        self.assertNotIn("2.2.1.1 native", remaining_labels)
+        self.assertIn("2.2.1.1 universal", remaining_labels)
 
     def test_evicted_legacy_build_flavor_can_be_archived_independently(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1228,7 +1242,7 @@ class DiagramTests(unittest.TestCase):
                     self.assertIn(version, svg)
 
         shared_svg = diagrams["performance-comparison.svg"]
-        self.assertIn("2.2.0.3 native", shared_svg)
+        self.assertIn("2.2.1.1 native", shared_svg)
         self.assertIn("2.2.0.3 universal", shared_svg)
         self.assertIn("200k compact pairs", shared_svg)
         self.assertIn("MessagePack store", shared_svg)
@@ -1246,7 +1260,7 @@ class DiagramTests(unittest.TestCase):
         if first_role.result is None or last_role.result is None:
             self.fail("shared cluster role-encode result is unavailable")
         self.assertIn(
-            f"{last_role.result.p50 / first_role.result.p50:.3g}×", shared_svg
+            f"{last_role.result.p50 / first_role.result.p50 * 100:.1f}%", shared_svg
         )
         self.assertIn(f"{last_role.result.p50:,.3f} µs", shared_svg)
 
@@ -1259,20 +1273,20 @@ class DiagramTests(unittest.TestCase):
 
         for label in (
             "Full-workload index plot",
-            "All included suites and sizes · 35 matched cases",
+            "All included suites and sizes · 40 matched cases",
             "Size-specific matched-workload index",
             "1k · cluster state · 9 matched cases",
-            "30k · cluster state · 6 matched cases",
+            "30k · cluster state · 9 matched cases",
             "100k · cluster state · 6 matched cases",
             "200k · JSON persistence · 6 matched cases",
-            "lowest observed index",
+            "lowest observed",
         ):
             with self.subTest(label=label):
                 self.assertIn(label, text)
-        self.assertIn("0.728", svg)
-        self.assertIn("0.687", svg)
-        self.assertIn("0.830", svg)
-        self.assertIn("1.000", svg)
+        self.assertIn("72.8%", svg)
+        self.assertIn("68.7%", svg)
+        self.assertIn("83.0%", svg)
+        self.assertIn("100.0%", svg)
         appended = svg[svg.index("Size-specific matched-workload index") :]
         labels = shared_harness_labels(
             load_shared_harness_runs(ROOT / "tools/shared-benchmark-results")
@@ -1299,14 +1313,14 @@ class DiagramTests(unittest.TestCase):
             tuple((panel.label, panel.case_count) for panel in panels),
             (
                 ("1k · cluster state", 9),
-                ("30k · cluster state", 6),
+                ("30k · cluster state", 9),
                 ("100k · cluster state", 6),
                 ("200k · JSON persistence", 6),
             ),
         )
         native_index = shared_harness_labels(groups).index("2.2.0.4 native")
         self.assertAlmostEqual(panels[0].indices[native_index], 0.728151, places=6)
-        self.assertAlmostEqual(panels[1].indices[native_index], 0.687017, places=6)
+        self.assertAlmostEqual(panels[1].indices[native_index], 0.744944, places=6)
         self.assertAlmostEqual(panels[2].indices[native_index], 0.830477, places=6)
         self.assertAlmostEqual(panels[3].indices[native_index], 0.905026, places=6)
         for panel in panels:
@@ -1319,17 +1333,17 @@ class DiagramTests(unittest.TestCase):
         panel = _full_workload_index_panel(groups)
         row = _full_workload_index_row(panel)
 
-        self.assertEqual(panel.case_count, 35)
+        self.assertEqual(panel.case_count, 40)
         self.assertEqual(panel.label, "All included suites and sizes")
-        self.assertEqual(row.label, "Full-workload index · equal-case · 35 cases")
+        self.assertEqual(row.label, "Full-workload index · equal-case · 40 cases")
         self.assertEqual(row.values[0], 1.0)
         labels = shared_harness_labels(groups)
         native_index = row.values[labels.index("2.2.0.4 native")]
         universal_index = row.values[labels.index("2.2.0.4 universal")]
         if native_index is None or universal_index is None:
             self.fail("full-workload index is unavailable for a 2.2.0.4 build")
-        self.assertAlmostEqual(native_index, 0.888690, places=6)
-        self.assertAlmostEqual(universal_index, 0.968770, places=6)
+        self.assertAlmostEqual(native_index, 0.859015, places=6)
+        self.assertAlmostEqual(universal_index, 0.913719, places=6)
 
     def test_weighted_overall_index_uses_declared_size_biased_categories(self) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
@@ -1337,14 +1351,14 @@ class DiagramTests(unittest.TestCase):
         panel = _weighted_overall_index_panel(groups)
         svg = render_diagrams()["performance-comparison.svg"]
 
-        self.assertEqual(panel.case_count, 35)
+        self.assertEqual(panel.case_count, 40)
         self.assertAlmostEqual(panel.indices[0], 1.0)
         labels = shared_harness_labels(groups)
         self.assertAlmostEqual(
-            panel.indices[labels.index("2.2.0.4 native")], 0.917345, places=6
+            panel.indices[labels.index("2.2.0.4 native")], 0.888163, places=6
         )
         self.assertAlmostEqual(
-            panel.indices[labels.index("2.2.0.4 universal")], 0.937294, places=6
+            panel.indices[labels.index("2.2.0.4 universal")], 0.892494, places=6
         )
         self.assertIn("Weighted overall index", svg)
         self.assertIn("1k cluster: 5%", svg)
@@ -1357,16 +1371,38 @@ class DiagramTests(unittest.TestCase):
         self,
     ) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+        history = performance_diagrams._load_build_comparison_history(
+            ROOT / "docs" / "performance-build-comparison-results"
+        )
 
-        summary = render_performance_summary(groups)
+        summary = render_performance_summary(groups, build_history=history)
 
         self.assertTrue(summary.startswith("- **Current weighted winner:**"))
+        self.assertIn("100% = 1.8.0.0 historical reference", summary)
+        self.assertIn("Recent reference: 2.2.1.0", summary)
+        self.assertIn("2.2.0.5 native", summary)
+        self.assertIn("98.8%", summary)
         self.assertIn("\n- **Distinct-workload coverage:**", summary)
-        self.assertIn("2.2.0.3 native:", summary)
-        self.assertIn("2.2.0.3 universal:", summary)
-        self.assertIn("35 matched positive-p50 cases", summary)
+        self.assertIn("2.2.1.1 native:", summary)
+        self.assertIn("2.2.1.1 universal:", summary)
+        self.assertIn("40 matched positive-p50 cases", summary)
         self.assertIn("110 unique cases", summary)
         self.assertIn("2.2.0.4 native: 68/110", summary)
+
+    def test_recent_reference_is_explicit_in_generated_diagram(self) -> None:
+        groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+        history = performance_diagrams._load_build_comparison_history(
+            ROOT / "docs" / "performance-build-comparison-results"
+        )
+
+        diagrams = render_diagrams(groups, build_history=history)
+        svg = diagrams["performance-recent-reference.svg"]
+
+        self.assertIn("Recent reference: 2.2.1.0 native/universal", svg)
+        self.assertIn("Each flavor has its own 2.2.1.0 baseline: 100%", svg)
+        self.assertIn("2.2.0.5 native", svg)
+        self.assertIn("98.8%", svg)
+        self.assertIn("Percent vs 1.8.0.0", diagrams["performance-comparison.svg"])
 
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1408,29 +1444,29 @@ class DiagramTests(unittest.TestCase):
             ),
         )
         labels = shared_harness_labels(groups)
-        native_index = labels.index("2.2.0.3 native")
-        universal_index = labels.index("2.2.0.3 universal")
+        native_index = labels.index("2.2.1.1 native")
+        universal_index = labels.index("2.2.1.1 universal")
         self.assertEqual(
             (rows[1].cells[native_index].measured, rows[1].cells[native_index].total),
-            (9, 17),
+            (17, 17),
         )
         self.assertEqual(
             (
                 rows[1].cells[universal_index].measured,
                 rows[1].cells[universal_index].total,
             ),
-            (9, 17),
+            (17, 17),
         )
         self.assertEqual(
             (rows[2].cells[native_index].measured, rows[2].cells[native_index].total),
-            (6, 17),
+            (14, 17),
         )
         self.assertEqual(
             (
                 rows[2].cells[universal_index].measured,
                 rows[2].cells[universal_index].total,
             ),
-            (6, 17),
+            (14, 17),
         )
         self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (11, 22))
         self.assertEqual(
@@ -1446,18 +1482,18 @@ class DiagramTests(unittest.TestCase):
         )
         self.assertEqual(
             (rows[-1].cells[native_index].measured, rows[-1].cells[native_index].total),
-            (69, 110),
+            (105, 110),
         )
         self.assertEqual(
             (
                 rows[-1].cells[universal_index].measured,
                 rows[-1].cells[universal_index].total,
             ),
-            (69, 110),
+            (105, 110),
         )
         self.assertIn("Workload support / coverage", svg)
         self.assertIn("6/17", svg)
-        self.assertIn("69/110", svg)
+        self.assertIn("105/110", svg)
         self.assertIn("Exceeds configured YAML maximum size 30,000", svg)
         self.assertNotIn(
             "Cluster round-trip scaling",

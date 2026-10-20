@@ -1005,13 +1005,13 @@ def _render_latest_build_pairwise_svg(
         _text(
             18,
             84,
-            "Unweighted case comparisons only; excluded from the historical weighted score. Ratios below 1× favor the candidate.",
+            "Unweighted case comparisons only; excluded from the historical weighted score. Percentages below 100% favor the candidate.",
             size=13,
         ),
         _text(
             18,
             112,
-            "Each cell: candidate p50 · reference p50 · candidate/reference ratio. Blue is faster; red is slower.",
+            "Each cell: candidate p50 · reference p50 · candidate/reference percentage. Blue is faster; red is slower.",
             size=11,
         ),
         _text(label_x, 174, "Suite · size · operation · case", size=12, weight="bold"),
@@ -1141,7 +1141,7 @@ def _pairwise_case_cell(
     color = PALETTE[bucket]
     text_color = "#ffffff" if bucket in (0, len(PALETTE) - 1) else "#142323"
     return (
-        f"Candidate p50 {candidate_p50:.3f} µs · Reference p50 {reference_p50:.3f} µs · Ratio {ratio:.3f}×",
+        f"Candidate p50 {candidate_p50:.3f} µs · Reference p50 {reference_p50:.3f} µs · Candidate/reference {ratio * 100:.1f}%",
         color,
         text_color,
     )
@@ -1357,7 +1357,7 @@ def render_diagrams(
     *,
     build_history: dict[str, tuple[BenchmarkRun, ...]] | None = None,
 ) -> dict[str, str]:
-    """Render the historical chart and optional latest-build pairwise chart."""
+    """Render historical and, when available, recent-reference comparisons."""
 
     shared_results = (
         Path(__file__).resolve().parents[1] / "tools" / "shared-benchmark-results"
@@ -1396,7 +1396,80 @@ def render_diagrams(
         diagrams["performance-latest-build-comparison.svg"] = (
             render_latest_build_pairwise_diagram(build_history)
         )
+        if all(
+            any(
+                run.metadata.package_version == RECENT_REFERENCE_VERSION
+                for run in build_history.get(suite, ())
+            )
+            for suite in BUILD_COMPARISON_SUITES
+        ):
+            diagrams["performance-recent-reference.svg"] = _render_recent_reference_svg(
+                _recent_reference_scores(build_history)
+            )
     return diagrams
+
+
+def _render_recent_reference_svg(
+    scores: dict[str, RecentReferenceScore],
+) -> str:
+    """Render flavor-specific scores without mixing their denominators."""
+
+    width, height = 980, 190
+    title = f"Recent reference: {RECENT_REFERENCE_VERSION} native/universal"
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}">',
+        f"<title>{escape(title)}</title>",
+        f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
+        _text(16, 29, title, size=20, weight="bold"),
+        _text(
+            16,
+            52,
+            "Each flavor has its own 2.2.1.0 baseline: 100%; lower is faster.",
+            size=12,
+        ),
+        _text(16, 80, "Build / reference", size=12, weight="bold"),
+        _text(590, 80, "Weighted", size=12, anchor="middle", weight="bold"),
+        _text(760, 80, "Full workload", size=12, anchor="middle", weight="bold"),
+    ]
+    for row_index, flavor in enumerate(("native", "universal")):
+        score = scores[flavor]
+        y = 108 + row_index * 34
+        parts.append(
+            _text(
+                16, y + 14, f"{score.reference_version} {flavor} · reference", size=12
+            )
+        )
+        parts.append(_text(590, y + 14, "100%", size=12, anchor="middle"))
+        parts.append(_text(760, y + 14, "100%", size=12, anchor="middle"))
+        parts.append(
+            _text(
+                16,
+                y + 30,
+                f"{score.candidate_version} {flavor} · {score.weighted_case_count} matched cases",
+                size=11,
+                color="#454545",
+            )
+        )
+        parts.append(
+            _text(
+                590,
+                y + 30,
+                f"{score.candidate_weighted_percent:.1f}%",
+                size=12,
+                anchor="middle",
+            )
+        )
+        parts.append(
+            _text(
+                760,
+                y + 30,
+                f"{score.candidate_full_workload_percent:.1f}%",
+                size=12,
+                anchor="middle",
+            )
+        )
+    parts.append("</svg>")
+    return "\n".join(parts)
 
 
 def size_specific_indices(
@@ -1573,13 +1646,14 @@ def _recent_reference_scores(
     ) -> tuple[BenchmarkRun, BenchmarkRun]:
         if sizes is None:
             return pair
-        return tuple(
+        selected = tuple(
             BenchmarkRun(
                 run.metadata,
                 tuple(outcome for outcome in run.outcomes if outcome.size in sizes),
             )
             for run in pair
         )
+        return selected[0], selected[1]
 
     runs_by_suite = {
         suite: {
@@ -1643,41 +1717,48 @@ def _recent_reference_scores(
             ) != len(candidate.outcomes):
                 raise ValueError(f"{suite}: duplicate case ID in recent comparison")
 
-            matched_ids = {
-                case_id
-                for case_id in reference_cases.keys() & candidate_cases.keys()
+            matched_ids: set[str] = set()
+            for case_id in reference_cases.keys() & candidate_cases.keys():
+                reference_outcome = reference_cases[case_id]
+                candidate_outcome = candidate_cases[case_id]
+                reference_result = reference_outcome.result
+                candidate_result = candidate_outcome.result
                 if (
-                    reference_cases[case_id].operation
-                    == candidate_cases[case_id].operation
-                    and reference_cases[case_id].fixture
-                    == candidate_cases[case_id].fixture
-                    and reference_cases[case_id].size == candidate_cases[case_id].size
-                    and reference_cases[case_id].config
-                    == candidate_cases[case_id].config
-                    and reference_cases[case_id].result is not None
-                    and reference_cases[case_id].result.p50 > 0
-                    and candidate_cases[case_id].result is not None
-                    and candidate_cases[case_id].result.p50 > 0
-                )
-            }
+                    reference_outcome.operation == candidate_outcome.operation
+                    and reference_outcome.fixture == candidate_outcome.fixture
+                    and reference_outcome.size == candidate_outcome.size
+                    and reference_outcome.config == candidate_outcome.config
+                    and reference_result is not None
+                    and reference_result.p50 > 0
+                    and candidate_result is not None
+                    and candidate_result.p50 > 0
+                ):
+                    matched_ids.add(case_id)
             if not matched_ids:
                 raise ValueError(
                     f"{suite}: no matched positive-p50 {flavor} cases for "
                     f"{candidate_version}/{RECENT_REFERENCE_VERSION}"
                 )
-            paired_runs[suite] = tuple(
+            paired_runs[suite] = (
                 BenchmarkRun(
-                    run.metadata,
+                    reference.metadata,
                     tuple(
                         outcome
-                        for outcome in run.outcomes
+                        for outcome in reference.outcomes
                         if outcome.case_id in matched_ids
                     ),
-                )
-                for run in (reference, candidate)
+                ),
+                BenchmarkRun(
+                    candidate.metadata,
+                    tuple(
+                        outcome
+                        for outcome in candidate.outcomes
+                        if outcome.case_id in matched_ids
+                    ),
+                ),
             )
 
-        groups = {
+        groups: dict[str, tuple[BenchmarkRun, ...]] = {
             "cluster-1k": sized_pair(paired_runs["cluster_state"], (1_000,)),
             "cluster-large": sized_pair(
                 paired_runs["cluster_state"], (30_000, 100_000)
@@ -1815,6 +1896,8 @@ def _full_workload_coverage_rows(
 
 def render_performance_summary(
     groups: dict[str, tuple[BenchmarkRun, ...]],
+    *,
+    build_history: dict[str, tuple[BenchmarkRun, ...]] | None = None,
 ) -> str:
     """Render the current weighted winner and distinct-case coverage summary."""
 
@@ -1831,10 +1914,24 @@ def render_performance_summary(
         f"  - {label}: {cell.measured}/{cell.total}"
         for label, cell in zip(labels, coverage.cells, strict=True)
     ]
+    recent_lines = [
+        f"- **100% = {REFERENCE_VERSION} historical reference** (historical scores above use this denominator)."
+    ]
+    if build_history is not None:
+        recent_lines.append(
+            f"- **Recent reference: {RECENT_REFERENCE_VERSION}** — each flavor is normalized independently; 100% is its own reference and lower is faster."
+        )
+        for flavor, score in _recent_reference_scores(build_history).items():
+            recent_lines.extend(
+                (
+                    f"  - {score.reference_version} {flavor} reference: weighted 100.0%; full workload 100.0%.",
+                    f"  - {score.candidate_version} {flavor}: weighted {score.candidate_weighted_percent:.1f}%; full workload {score.candidate_full_workload_percent:.1f}% ({score.weighted_case_count} matched cases).",
+                )
+            )
     return "\n".join(
         [
             (
-                f"- **Current weighted winner:** {', '.join(winners)} — {best:.3f} index; "
+                f"- **Current weighted winner:** {', '.join(winners)} — {best * 100:.1f}% of 1.8.0.0; "
                 f"{weighted.case_count} matched positive-p50 cases."
             ),
             "  - Applies only to this workload set and weighting; it is not a universal claim.",
@@ -1844,6 +1941,7 @@ def render_performance_summary(
             ),
             *coverage_lines,
             "  - Missing or unsupported cases receive no invented latency penalty.",
+            *recent_lines,
         ]
     )
 
@@ -2111,10 +2209,10 @@ def _render_heatmap_svg(
                         ratio = value / reference_value
                         bucket = _ratio_bucket(ratio)
                         color = PALETTE[bucket]
-                        label = f"{ratio:.3g}×"
+                        label = f"{ratio * 100:.1f}%"
                         detail = (
                             f"{row.label}, {versions[index]}: {value:,.3f} {row.value_unit}; "
-                            f"{ratio:.6g}× versus {REFERENCE_VERSION}"
+                            f"{ratio * 100:.6g}% versus {REFERENCE_VERSION}"
                         )
                         text_color = (
                             "#ffffff" if bucket in (0, len(PALETTE) - 1) else "#142323"
@@ -2136,20 +2234,22 @@ def _render_heatmap_svg(
                 )
         y += 25
     legend_y = heatmap_height - 38
-    parts.append(_text(16, legend_y + 15, "Ratio vs 1.8.0.0:", size=12, weight="bold"))
+    parts.append(
+        _text(16, legend_y + 15, "Percent vs 1.8.0.0:", size=12, weight="bold")
+    )
     for index, color in enumerate(PALETTE):
         x = 112 + index * 98
         parts.append(
             f'<rect x="{x}" y="{legend_y}" width="22" height="18" fill="{color}"/>'
         )
         label = (
-            "≤0.5×",
-            "0.5–0.75×",
-            "0.75–0.95×",
-            "≈1.0×",
-            "1.05–1.5×",
-            "1.5–2×",
-            ">2×",
+            "≤50%",
+            "50–75%",
+            "75–95%",
+            "≈100%",
+            "105–150%",
+            "150–200%",
+            ">200%",
         )[index]
         parts.append(_text(x + 28, legend_y + 14, label, size=11))
     if weighted_overall_index is not None:
@@ -2200,7 +2300,7 @@ def _render_size_index_panels(
         _text(
             16,
             top + 21,
-            "Geometric mean of matched p50 ratios vs 1.8.0.0; lower is faster. Points are not connected across sizes.",
+            "Geometric mean as percent of matched p50 baseline 1.8.0.0; 100% is baseline, lower is faster. Points are not connected across sizes.",
             size=11,
             color="#454545",
         )
@@ -2220,7 +2320,7 @@ def _render_full_workload_index_plot(
         _text(
             16,
             top + 21,
-            "Geometric mean of all common positive-p50 cases across included suites and sizes; lower is faster.",
+            "Geometric mean as percent of the 1.8.0.0 reference across common positive-p50 cases; 100% is baseline, lower is faster.",
             size=11,
             color="#454545",
         )
@@ -2236,7 +2336,7 @@ def _render_weighted_overall_index_plot(
         _text(
             16,
             top + 21,
-            "Weighted geometric mean of matched p50 ratios; cases are equally weighted within each category.",
+            "Weighted geometric mean as percent of the 1.8.0.0 reference; cases are equally weighted within each category.",
             size=11,
             color="#454545",
         )
@@ -2355,7 +2455,7 @@ def _render_index_panel(
         _text(
             1085,
             top + 15,
-            f"lowest observed index: {', '.join(best_versions)} ({best:.3f})",
+            f"lowest observed: {', '.join(best_versions)} ({best * 100:.1f}%)",
             size=10,
             color="#454545",
         )
@@ -2372,7 +2472,9 @@ def _render_index_panel(
             f'<path d="M {x:.1f} {rows_top} V {rows_bottom}" '
             f'stroke="{stroke}" stroke-dasharray="{dash}"/>'
         )
-        parts.append(_text(x, rows_top - 3, f"{tick:.1f}", size=9, anchor="middle"))
+        parts.append(
+            _text(x, rows_top - 3, f"{tick * 100:.0f}%", size=9, anchor="middle")
+        )
     for version_index, (version, value) in enumerate(
         zip(versions, panel.indices, strict=True)
     ):
@@ -2386,9 +2488,9 @@ def _render_index_panel(
         parts.append(
             f'<circle cx="{x:.1f}" cy="{y}" r="{point_radius}" fill="{color}">'
             f"<title>{escape(version)} · {escape(panel.label)} · "
-            f"index {value:.6f}; {panel.case_count} matched cases</title></circle>"
+            f"{value * 100:.3f}% of reference; {panel.case_count} matched cases</title></circle>"
         )
-        parts.append(_text(1085, y + 4, f"{value:.3f}", size=10))
+        parts.append(_text(1085, y + 4, f"{value * 100:.1f}%", size=10))
 
 
 def _svg_header(width: int, height: int, title: str) -> list[str]:
@@ -2401,7 +2503,7 @@ def _svg_header(width: int, height: int, title: str) -> list[str]:
         _text(
             16,
             51,
-            "Cells compare matched workloads with 1.8.0.0; below 1× is faster. Composite weights cluster, persistence, and connect equally.",
+            "Cells are percentages of the 1.8.0.0 baseline; 100% is baseline and lower is faster. Composite weights cluster, persistence, and connect equally.",
             size=12,
             color="#454545",
         ),
@@ -2579,8 +2681,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         all_groups = _load_all_shared_harness_runs(shared_results)
         groups, evicted_runs = _select_visible_history(all_groups)
-        summary = render_performance_summary(groups)
         build_history = _load_build_comparison_history(build_results)
+        summary = render_performance_summary(groups, build_history=build_history)
         diagrams = render_diagrams(groups, build_history=build_history)
         stale = sync_diagrams(diagrams, output_dir, check=args.check)
         summary_stale = sync_performance_summary(

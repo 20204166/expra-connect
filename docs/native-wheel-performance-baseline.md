@@ -101,12 +101,10 @@
   keep the 2.2.1.0 record as historical context.
 
 <!-- performance-summary:start -->
-- **Current weighted winner:** 2.2.1.0 native — 0.730 index; 35 matched positive-p50 cases.
+- **Current weighted winner:** 2.2.0.5 native — 64.9% of 1.8.0.0; 40 matched positive-p50 cases.
   - Applies only to this workload set and weighting; it is not a universal claim.
 - **Distinct-workload coverage:** 110 unique cases; reported separately from latency scoring.
   - 1.8.0.0: 91/110
-  - 2.2.0.1: 63/110
-  - 2.2.0.3 native: 69/110
   - 2.2.0.3 universal: 69/110
   - 2.2.0.4 native: 68/110
   - 2.2.0.4 universal: 68/110
@@ -114,19 +112,29 @@
   - 2.2.0.5 universal: 69/110
   - 2.2.1.0 native: 105/110
   - 2.2.1.0 universal: 105/110
+  - 2.2.1.1 native: 105/110
+  - 2.2.1.1 universal: 105/110
   - Missing or unsupported cases receive no invented latency penalty.
+- **100% = 1.8.0.0 historical reference** (historical scores above use this denominator).
+- **Recent reference: 2.2.1.0** — each flavor is normalized independently; 100% is its own reference and lower is faster.
+  - 2.2.1.0 native reference: weighted 100.0%; full workload 100.0%.
+  - 2.2.0.5 native: weighted 98.8%; full workload 103.5% (43 matched cases).
+  - 2.2.1.0 universal reference: weighted 100.0%; full workload 100.0%.
+  - 2.2.0.5 universal: weighted 97.8%; full workload 98.7% (43 matched cases).
 <!-- performance-summary:end -->
 
 ## Diagram and size-specific plots
 
 ![Unified across-release, native/universal, and composite performance comparison.](images/performance-comparison.svg)
 
+![Recent-reference percentages against the matching 2.2.1.0 native and universal baselines.](images/performance-recent-reference.svg)
+
 - The latest-build diagram below compares every matched case across the two
   newest complete native/universal versions. It shows candidate/reference p50s
-  and ratios, is unweighted, and does not affect the weighted winner above.
+  and percentages, is unweighted, and does not affect the weighted winner above.
 - Each direction is shown explicitly: latest native against previous native and
   latest universal; latest universal against previous universal and latest
-  native. Ratios below `1×` favor the candidate. Configuration differences are
+  native. Percentages below `100%` favor the candidate. Configuration differences are
   called out because they can limit version-to-version comparability.
 
 ![Unweighted per-case comparisons between the newest native and universal builds and their previous versions.](images/performance-latest-build-comparison.svg)

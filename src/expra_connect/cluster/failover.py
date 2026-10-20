@@ -7,6 +7,7 @@ from collections.abc import Callable
 from dataclasses import replace
 
 from ..identity import NodeId
+from .models import ClusterRole, RoleAssignment, RoleChange
 from .roles import (
     FencingError,
     RoleState,
@@ -73,3 +74,24 @@ class FailoverCoordinator:
                     self.state, node_id=node_id, current_epoch=current_epoch
                 )
             )
+
+    def assign_role(
+        self,
+        *,
+        actor: RoleAssignment,
+        target: NodeId,
+        roles: frozenset[ClusterRole],
+        now: float,
+    ) -> RoleChange:
+        """Assign a member role and persist it before publishing the new state."""
+        with self._lock:
+            candidate, change = self.state.assign(
+                actor=actor, target=target, roles=roles, now=now
+            )
+            self._commit(candidate)
+            return change
+
+    def revoke_member(self, *, actor: RoleAssignment, target: NodeId) -> None:
+        """Revoke cluster membership and persist before publishing the change."""
+        with self._lock:
+            self._commit(self.state.revoke(actor=actor, target=target))
