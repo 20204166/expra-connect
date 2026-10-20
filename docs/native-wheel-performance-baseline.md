@@ -117,10 +117,15 @@
   - Missing or unsupported cases receive no invented latency penalty.
 - **100.000p = 1.8.0.0 historical reference** (historical scores above use this denominator).
 - **Recent reference: 2.2.1.0** — each flavor is normalized independently; 100.000p is its own reference and lower is faster.
-  - 2.2.1.0 native reference: weighted 100.000p; full workload 100.000p.
-  - 2.2.0.5 native: weighted 98.803p; full workload 103.512p (43 matched cases).
-  - 2.2.1.0 universal reference: weighted 100.000p; full workload 100.000p.
-  - 2.2.0.5 universal: weighted 97.773p; full workload 98.672p (43 matched cases).
+  - 2.2.0.4 native vs 2.2.1.0 native: unavailable (runtime or measurement configuration differs).
+  - 2.2.0.5 native vs 2.2.1.0 native: weighted 98.803p; full workload 103.512p (43 weighted matched cases).
+  - 2.2.1.0 native vs 2.2.1.0 native: weighted 100.000p; full workload 100.000p (76 weighted matched cases).
+  - 2.2.1.1 native vs 2.2.1.0 native: weighted 101.109p; full workload 104.745p (49 weighted matched cases).
+  - 2.2.0.3 universal vs 2.2.1.0 universal: weighted 116.516p; full workload 134.124p (43 weighted matched cases).
+  - 2.2.0.4 universal vs 2.2.1.0 universal: unavailable (runtime or measurement configuration differs).
+  - 2.2.0.5 universal vs 2.2.1.0 universal: weighted 97.773p; full workload 98.672p (43 weighted matched cases).
+  - 2.2.1.0 universal vs 2.2.1.0 universal: weighted 100.000p; full workload 100.000p (76 weighted matched cases).
+  - 2.2.1.1 universal vs 2.2.1.0 universal: weighted 86.430p; full workload 86.804p (49 weighted matched cases).
 <!-- performance-summary:end -->
 
 ## Diagram and size-specific plots

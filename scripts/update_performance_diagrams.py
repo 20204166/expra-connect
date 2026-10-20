@@ -1697,24 +1697,23 @@ def _recent_reference_scores(
                 ) != len(candidate.outcomes):
                     raise ValueError(f"{suite}: duplicate case ID in recent comparison")
 
-                matched_ids = {
-                    case_id
-                    for case_id in reference_cases.keys() & candidate_cases.keys()
+                matched_ids: set[str] = set()
+                for case_id in reference_cases.keys() & candidate_cases.keys():
+                    reference_outcome = reference_cases[case_id]
+                    candidate_outcome = candidate_cases[case_id]
+                    reference_result = reference_outcome.result
+                    candidate_result = candidate_outcome.result
                     if (
-                        reference_cases[case_id].operation
-                        == candidate_cases[case_id].operation
-                        and reference_cases[case_id].fixture
-                        == candidate_cases[case_id].fixture
-                        and reference_cases[case_id].size
-                        == candidate_cases[case_id].size
-                        and reference_cases[case_id].config
-                        == candidate_cases[case_id].config
-                        and reference_cases[case_id].result is not None
-                        and reference_cases[case_id].result.p50 > 0
-                        and candidate_cases[case_id].result is not None
-                        and candidate_cases[case_id].result.p50 > 0
-                    )
-                }
+                        reference_outcome.operation == candidate_outcome.operation
+                        and reference_outcome.fixture == candidate_outcome.fixture
+                        and reference_outcome.size == candidate_outcome.size
+                        and reference_outcome.config == candidate_outcome.config
+                        and reference_result is not None
+                        and reference_result.p50 > 0
+                        and candidate_result is not None
+                        and candidate_result.p50 > 0
+                    ):
+                        matched_ids.add(case_id)
                 if not matched_ids:
                     unavailable_reason = f"no matched positive-p50 {suite} cases"
                     break

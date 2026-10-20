@@ -105,8 +105,8 @@ class BuildComparisonTests(unittest.TestCase):
         universal_prior_ratio = universal["2.2.0.5"].candidate_weighted_ratio
         self.assertIsNotNone(native_prior_ratio)
         self.assertIsNotNone(universal_prior_ratio)
-        self.assertAlmostEqual(native_prior_ratio, 1.1)
-        self.assertAlmostEqual(universal_prior_ratio, 1.2)
+        self.assertEqual(native_prior_ratio, 1.1)
+        self.assertEqual(universal_prior_ratio, 1.2)
         self.assertEqual(native["2.2.0.5"].weighted_case_count, 5)
         self.assertEqual(native["2.2.0.5"].full_workload_case_count, 5)
 
