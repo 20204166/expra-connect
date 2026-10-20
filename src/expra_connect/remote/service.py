@@ -651,19 +651,23 @@ class RemoteService:
         self, *, cluster_id: str, coordinator_epoch: int, fencing_token: str
     ) -> None:
         with self._fence_lock:
-            if self._cluster_id == cluster_id and self._coordinator_epoch is not None:
-                if coordinator_epoch < self._coordinator_epoch:
+            if self._cluster_id != cluster_id or self._coordinator_epoch is None:
+                self._cluster_id = cluster_id
+                self._coordinator_epoch = coordinator_epoch
+                self._fencing_token = fencing_token
+                return
+            if coordinator_epoch < self._coordinator_epoch:
+                raise RemoteAuthorizationError(
+                    "cannot install an older coordinator epoch"
+                )
+            if coordinator_epoch == self._coordinator_epoch:
+                if self._fencing_token is None or not hmac.compare_digest(
+                    fencing_token, self._fencing_token
+                ):
                     raise RemoteAuthorizationError(
-                        "cannot install an older coordinator epoch"
+                        "coordinator fencing token conflicts"
                     )
-                if coordinator_epoch == self._coordinator_epoch:
-                    if self._fencing_token is None or not hmac.compare_digest(
-                        fencing_token, self._fencing_token
-                    ):
-                        raise RemoteAuthorizationError(
-                            "coordinator fencing token conflicts"
-                        )
-                    return
+                return
             self._cluster_id = cluster_id
             self._coordinator_epoch = coordinator_epoch
             self._fencing_token = fencing_token

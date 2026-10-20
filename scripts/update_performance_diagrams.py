@@ -2441,7 +2441,7 @@ def _render_index_panel(
 ) -> None:
     plot_left, plot_right = 490, 1070
     best = min(panel.indices)
-    axis_min_tenths = min(5, math.floor(best * 10))
+    axis_min_tenths = min(3, math.floor(best * 10))
     axis_min, axis_max = axis_min_tenths / 10, 1.15
     parts.append(
         _text(

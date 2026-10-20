@@ -1397,7 +1397,7 @@ class DiagramTests(unittest.TestCase):
         self.assertIn("Connect: 20%", svg)
         self.assertIn("200k JSON persistence: 35%", svg)
 
-    def test_index_plot_axis_reaches_50_points_or_below(self) -> None:
+    def test_index_plot_axis_reaches_30_points_or_below(self) -> None:
         parts: list[str] = []
         panel = performance_diagrams.MatchedIndexPanel(
             "Synthetic index", 1, (0.45, 1.0)
@@ -1406,9 +1406,10 @@ class DiagramTests(unittest.TestCase):
         performance_diagrams._render_index_panel(parts, panel, ("fast", "baseline"), 0)
         plot = "\n".join(parts)
 
+        self.assertIn(">30.000p</text>", plot)
         self.assertIn(">40.000p</text>", plot)
         self.assertIn(">50.000p</text>", plot)
-        self.assertNotIn(">30.000p</text>", plot)
+        self.assertNotIn(">20.000p</text>", plot)
 
     def test_generated_summary_reports_current_winner_and_all_unique_coverage(
         self,

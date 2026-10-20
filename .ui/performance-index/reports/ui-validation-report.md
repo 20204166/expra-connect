@@ -1,8 +1,8 @@
 # UI validation — performance index axis
 
 - Firefox headless screenshots captured before and after at SVG intrinsic size under `evidence/screenshots/`.
-- The rendered index plots now show a `50.000p` tick at minimum and expand to `40.000p` when the lowest measured index (40.881p) falls below 50p. Previously the fixed 70p minimum placed sub-70p points outside the plot.
+- The rendered index plots now reach `30.000p`, one 10-point tick below the previous `40.000p` minimum. If future data falls below 30p, the axis expands to the next lower 10-point tick. The current lowest measured index (40.881p) remains in range.
 - Index values, baseline reference, series colors, and 100p marker are unchanged.
-- Regression coverage checks a synthetic 45p minimum extends to 40p and still includes 50p.
+- Regression coverage checks a synthetic 45p minimum includes 30p, 40p, and 50p ticks without extending unnecessarily to 20p.
 - Full unittest suite: 980 tests passed. Ruff, Pyright, and Mypy passed; final formatting check passed after formatting the new test.
 - Static SVG review only; no interactive, alternate-viewport, or assistive-technology review was performed.

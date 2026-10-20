@@ -236,11 +236,8 @@ class NetworkPairing:
         except (KeyError, TypeError, ValueError) as error:
             self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
             raise ValueError("pairing response permissions are malformed") from error
-        if (
-            not accepted_permissions
-            or not accepted_permissions <= frozenset(NodePermission)
-            or not accepted_permissions
-            <= frozenset(NodePermission(item) for item in permissions)
+        if not accepted_permissions or not accepted_permissions <= frozenset(
+            NodePermission(item) for item in permissions
         ):
             self._rollback(peer_id, previous, previous_broken, pending.transaction_id)
             raise PermissionError("peer returned permissions outside the request")
@@ -339,10 +336,6 @@ class NetworkPairing:
     ) -> None:
         self._pairing.abort(transaction_id)
         self._pairing.restore_trusted(peer_id, previous, auth_broken=previous_broken)
-        self._persist()
-
-    def _abort(self, transaction_id: str) -> None:
-        self._pairing.abort(transaction_id)
         self._persist()
 
     def _report_route_attempt(
