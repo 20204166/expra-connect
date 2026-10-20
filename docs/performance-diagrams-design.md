@@ -2,19 +2,21 @@
 
 ## Goal
 
-Generate one readable, comprehensive diagram in
+Generate a readable, comprehensive historical comparison in
 [`native-wheel-performance-baseline.md`](../native-wheel-performance-baseline.md)
-that compares every measured release with the 2.2.0.4 native and universal
-builds, presents a clearly defined composite index, and retains suite-level
-detail without duplicating the same results across several charts.
+that retains 1.8.0.0 as its long-range anchor, presents a clearly defined
+composite index, and retains suite-level detail. Keep the newest complete
+native/universal pair as the recent reference for incremental performance work;
+do not treat the historical chart as a controlled before/after test.
 
 ## Source of truth and update workflow
 
-- The shared-harness JSON runs and paired 2.2.0.4 raw JSON in
+- The shared-harness JSON runs and versioned native/universal raw JSON in
   `docs/performance-build-comparison-results/` are the source data.
 - The updater validates run provenance and generates one SVG in `docs/images/`.
-- The composite is the geometric mean of common measured case ratios relative
-  to 1.8.0.0, with equal weights for cluster state, persistence, and connect.
+- The historical composite is the geometric mean of common measured case
+  ratios relative to 1.8.0.0, with equal weights for cluster state,
+  persistence, and connect.
   Cases not measured for every column are omitted from the composite and remain
   visible as explicit gaps or results in the suite panels.
 - The updater removes only the explicitly named superseded performance SVGs;
@@ -28,9 +30,9 @@ detail without duplicating the same results across several charts.
 ## Unified diagram
 
 The SVG contains a top composite row plus separate cluster-state, connect, and
-persistence panels. Every panel uses the earlier release columns and separate
-2.2.0.4 native/universal columns. The score uses common measured cases only;
-suite results remain visible independently and gaps are never fabricated.
+persistence panels. Every panel uses the historical release columns and the
+newest available native/universal columns. The score uses common measured cases
+only; suite results remain visible independently and gaps are never fabricated.
 
 ## Visual and data rules
 

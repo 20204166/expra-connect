@@ -778,6 +778,12 @@ class BaselineTests(unittest.TestCase):
         self.assertIn("Shared-harness JSON is tracked", source)
         self.assertIn("geometric mean", source)
         self.assertIn("receive equal suite weight", source)
+        normalized = " ".join(source.split())
+        self.assertIn("2.2.1.0 native and universal, with saved full-suite", normalized)
+        self.assertIn(
+            "same machine, runtime, workload, and measurement configuration",
+            normalized,
+        )
         self.assertFalse(
             any(line.lstrip().startswith("|") for line in source.splitlines())
         )

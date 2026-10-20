@@ -7,6 +7,12 @@
 - **2.2.1.0 native/universal full benchmark matrix:** 19 October 2026
 - **2.2.1.0 supplemental feature workloads:** 20 October 2026
 - **Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39
+- **Historical comparison anchor:** 1.8.0.0 universal. This long-range view is
+  retained for history, not as the sole reference for incremental performance
+  work.
+- **Recent performance reference:** 2.2.1.0 native and universal, with saved
+  full-suite and supplemental results under
+  `docs/performance-build-comparison-results/`.
 - **Compared results:** 1.8.0.0, 1.9.0.1, 2.0.0.0, 2.0.0.2, 2.2.0.0,
   2.2.0.1, 2.2.0.3 native/universal, 2.2.0.4 native/universal,
   2.2.0.5 native/universal, and 2.2.1.0 native/universal.
@@ -18,7 +24,8 @@
 - Weighted and full-workload indices, workload coverage, and four size-specific
   matched-workload plots.
 - Ratios are relative to 1.8.0.0. Values below `1×` are faster; index values
-  are unitless and lower is better.
+  are unitless and lower is better. This ratio is the historical view; use the
+  recent reference procedure below to evaluate incremental changes.
 - Results describe this benchmark mix. They are not predictions for every
   deployment workload.
 
@@ -76,6 +83,22 @@
 - When a new result exceeds the window, move the oldest non-baseline raw JSON
   into a sibling `history/` folder. Keep archived data, but exclude it from
   normal refreshes and current scoring.
+
+## Recent reference for performance work
+
+- Use the saved 2.2.1.0 native and universal runs as the recent reference pair;
+  compare native changes with native and universal changes with universal.
+  Keep both flavors so a flavor-specific tradeoff is visible.
+- For a change-level claim, run the before and after revisions with the same
+  machine, runtime, workload, and measurement configuration. Keep the harness
+  and fixture definitions fixed, record the source revision and artifact hashes,
+  and retain raw results for both sides. Do not infer a change-level gain from
+  the historical 1.8.0.0 ratios or from comparisons with different sampling
+  configurations.
+- The 2.2.1.0 results are a recent reference dataset, not a controlled A/B of
+  every later code change. If its original environment or workload cannot be
+  reproduced, establish a fresh before/after pair on the target environment and
+  keep the 2.2.1.0 record as historical context.
 
 <!-- performance-summary:start -->
 - **Current weighted winner:** 2.2.1.0 native — 0.730 index; 35 matched positive-p50 cases.
@@ -159,13 +182,13 @@
   measured against the 110-case inventory; new cases remain unmeasured rather
   than receiving fabricated timings. Supplement shards remain separate files;
   the updater validates and merges them in memory.
-- The 1.8.0.0 baseline was measured from the existing universal wheel. It is a
-  flavor-independent reference: current native and universal results are
-  compared with it independently, and a release with only one complete flavor
-  remains comparable. When both flavors exist, same-version native/universal
-  results are still fixture-validated as a pair. The old wheel lacks profile
-  migration, YAML StateStore, and newer feature benchmark APIs; those cases are
-  explicitly unavailable rather than borrowed from another build.
+- The 1.8.0.0 historical anchor was measured from the existing universal wheel.
+  It is flavor-independent: current native and universal results are compared
+  with it independently, and a release with only one complete flavor remains
+  comparable. When both flavors exist, same-version native/universal results
+  are still fixture-validated as a pair. The old wheel lacks profile migration,
+  YAML StateStore, and newer feature benchmark APIs; those cases are explicitly
+  unavailable rather than borrowed from another build.
 - Versioned build JSON is stored in
   `docs/performance-build-comparison-results/`. Shared-harness JSON is tracked
   in `tools/shared-benchmark-results/` for reproducible refreshes.
