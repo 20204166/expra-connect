@@ -2,14 +2,15 @@
 
 ## Goal
 
-Extend role-authorization benchmark evidence to 200,000 cluster records and
-make `NodeIdentity.create` reject invalid falsey node-ID arguments such as `0`
+Extend cluster-state correctness evidence across 1,000, 30,000, 100,000, and
+200,000 records, add separate role-authorization workload categories, and make
+`NodeIdentity.create` reject invalid falsey node-ID arguments such as `0`
 instead of silently generating a different identity.
 
 ## Existing Ownership
 
-- `scripts/benchmark_cluster_state.py` owns the staged cluster-state benchmark
-  fixtures and `RoleState.allows` workload.
+- `scripts/benchmark_cluster_state.py` owns staged cluster-state benchmark
+  fixtures, role-authorization workloads, and scale correctness preflight.
 - `scripts/benchmark_coverage.py` and `scripts/benchmark_release_wheels.py`
   own workload inventory and release-wheel benchmark orchestration.
 - `NodeIdentity.create` in `src/expra_connect/identity/__init__.py` owns
@@ -19,12 +20,18 @@ instead of silently generating a different identity.
 
 ## Design
 
-Add 200,000 to the dedicated role-authorization supplement command, canonical
-release workload inventory, and tests as `200000:role authorization`. Keep the
-ordinary all-operation cluster benchmark matrix and its defaults unchanged.
-Preserve existing 1k, 30k, and 100k cases, fixture semantics, and output schema.
-Verify benchmark fixture consistency and run the 200k authorization workload;
-report measurements as workload evidence, not as a speedup claim.
+Exercise all four scales (1k, 30k, 100k, 200k) against an explicit cluster
+correctness matrix: coordinator allow, worker denial, subcoordinator allow with
+a live grant, denial without a grant, denial for an expired grant, paused/revoked
+membership denial, invalid-clock denial, role/cluster serialization round trips,
+and cluster hydration membership/epoch invariants. Add distinct timed auth cases
+to the targeted supplement command and canonical inventory, preserving the
+legacy coordinator-allow case ID. The existing `role authorization` selector
+selects the full auth-case group. Keep ordinary all-operation matrix defaults
+unchanged. YAML round trips remain capped at the existing supported size and
+are never counted as covered at larger scales. Preserve output schema. Report
+timings as workload evidence, not as a speedup claim, and describe coverage as
+cluster-subsystem coverage rather than full-package coverage.
 
 Change `NodeIdentity.create` to distinguish `None` from invalid values. `None`
 continues to generate a fresh ID; a `NodeId` is used unchanged; any other
