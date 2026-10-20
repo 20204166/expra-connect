@@ -6,6 +6,7 @@
 - **2.2.0.3 native/universal rerun:** 19 October 2026
 - **2.2.1.0 native/universal full benchmark matrix:** 19 October 2026
 - **2.2.1.0 supplemental feature workloads:** 20 October 2026
+- **2.2.3.0 native/universal full benchmark matrix:** 20 October 2026
 - **Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39
 - **Historical comparison anchor:** 1.8.0.0 universal. This long-range view is
   retained for history, not as the sole reference for incremental performance
@@ -15,7 +16,8 @@
   `docs/performance-build-comparison-results/`.
 - **Compared results:** 1.8.0.0, 1.9.0.1, 2.0.0.0, 2.0.0.2, 2.2.0.0,
   2.2.0.1, 2.2.0.3 native/universal, 2.2.0.4 native/universal,
-  2.2.0.5 native/universal, and 2.2.1.0 native/universal.
+  2.2.0.5 native/universal, 2.2.1.0 native/universal, and 2.2.3.0
+  native/universal.
 
 ## What the diagram shows
 
@@ -101,12 +103,10 @@
   keep the 2.2.1.0 record as historical context.
 
 <!-- performance-summary:start -->
-- **Current weighted winner:** 2.2.0.5 native — 64.905p of 1.8.0.0; 40 matched positive-p50 cases.
+- **Current weighted winner:** 2.2.3.0 native — 62.429p of 1.8.0.0; 40 matched positive-p50 cases.
   - Applies only to this workload set and weighting; it is not a universal claim.
 - **Distinct-workload coverage:** 110 unique cases; reported separately from latency scoring.
   - 1.8.0.0: 91/110
-  - 2.2.0.3 universal: 69/110
-  - 2.2.0.4 native: 68/110
   - 2.2.0.4 universal: 68/110
   - 2.2.0.5 native: 69/110
   - 2.2.0.5 universal: 69/110
@@ -114,6 +114,8 @@
   - 2.2.1.0 universal: 105/110
   - 2.2.1.1 native: 105/110
   - 2.2.1.1 universal: 105/110
+  - 2.2.3.0 native: 105/110
+  - 2.2.3.0 universal: 105/110
   - Missing or unsupported cases receive no invented latency penalty.
 - **100.000p = 1.8.0.0 historical reference** (historical scores above use this denominator).
 - **Latest comparisons matrix:** latest native and universal builds use their matching 2.2.1.0 flavor baselines; weighted and full-workload scores appear with the per-case breakdown. Cross-flavor comparisons are shown per case.

@@ -147,12 +147,21 @@ def _save_json_document(
 
 def _json_maps_have_string_keys(value: Any) -> bool:
     if isinstance(value, dict):
-        return all(
-            isinstance(key, str) and _json_maps_have_string_keys(item)
-            for key, item in value.items()
-        )
+        for key, item in value.items():
+            if not isinstance(key, str):
+                return False
+            if isinstance(item, (dict, list, tuple)) and not (
+                _json_maps_have_string_keys(item)
+            ):
+                return False
+        return True
     if isinstance(value, (list, tuple)):
-        return all(_json_maps_have_string_keys(item) for item in value)
+        for item in value:
+            if isinstance(item, (dict, list, tuple)) and not (
+                _json_maps_have_string_keys(item)
+            ):
+                return False
+        return True
     return True
 
 
