@@ -52,7 +52,9 @@ class ClusterStatePerformanceBenchmarkTests(unittest.TestCase):
                 "100000:role authorization",
             ],
         )
-        self.assertEqual([item["fixture"]["assignments"] for item in outcomes], [1000, 30000, 100000])
+        self.assertEqual(
+            [item["fixture"]["assignments"] for item in outcomes], [1000, 30000, 100000]
+        )
         self.assertTrue(all(item["status"] == "measured" for item in outcomes))
 
 
