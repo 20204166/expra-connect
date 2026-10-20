@@ -12,6 +12,13 @@ from expra_connect.identity import NodeId, NodeIdentity
 
 
 class IdentityTests(unittest.TestCase):
+    def test_create_rejects_falsey_non_node_id(self) -> None:
+        with self.assertRaisesRegex(ValueError, "node id"):
+            NodeIdentity.create(0)  # type: ignore[arg-type]
+
+        explicit = NodeId("peer-a")
+        self.assertIs(NodeIdentity.create(explicit).node_id, explicit)
+
     def test_node_id_rejects_empty_and_local_placeholder(self) -> None:
         with self.assertRaises(ValueError):
             NodeId("")

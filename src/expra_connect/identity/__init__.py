@@ -123,7 +123,11 @@ class NodeIdentity:
 
     @classmethod
     def create(cls, node_id: NodeId | None = None) -> NodeIdentity:
-        return cls(node_id or NodeId(secrets.token_hex(16)), secrets.token_hex(32))
+        if node_id is None:
+            node_id = NodeId(secrets.token_hex(16))
+        elif not isinstance(node_id, NodeId):
+            raise ValueError("node id must be a NodeId or None")
+        return cls(node_id, secrets.token_hex(32))
 
     def to_json(self) -> str:
         """Serialize the legacy full-JSON identity shape for compatibility.
