@@ -561,7 +561,7 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertIn("Candidate/reference 80.000p", svg)
         self.assertIn("80.000p", svg)
         self.assertNotIn("2.2.0.6", svg)
-        self.assertIn("unweighted", svg)
+        self.assertIn("per-case results", svg)
         self.assertIn("Blue is faster; red is slower", svg)
 
     def test_latest_pairwise_diagram_handles_unsupported_and_missing_cases(
@@ -848,8 +848,8 @@ class BaselineTests(unittest.TestCase):
         self.assertIn("receive equal suite weight", source)
         normalized = " ".join(source.split())
         self.assertIn("2.2.1.0 native and universal, with saved full-suite", normalized)
-        self.assertIn("Recent-reference p-point scores against", normalized)
-        self.assertIn("Scores below `100.000p` favor the candidate", normalized)
+        self.assertIn("Latest comparisons matrix", normalized)
+        self.assertIn("use their matching 2.2.1.0 flavor baselines", normalized)
         self.assertIn(
             "same machine, runtime, workload, and measurement configuration",
             normalized,
@@ -1400,9 +1400,8 @@ class DiagramTests(unittest.TestCase):
 
         self.assertTrue(summary.startswith("- **Current weighted winner:**"))
         self.assertIn("100.000p = 1.8.0.0 historical reference", summary)
-        self.assertIn("Recent reference: 2.2.1.0", summary)
-        self.assertIn("2.2.0.5 native", summary)
-        self.assertIn("98.803p", summary)
+        self.assertIn("Latest comparisons matrix", summary)
+        self.assertNotIn("2.2.0.5 native vs 2.2.1.0 native", summary)
         self.assertIn("\n- **Distinct-workload coverage:**", summary)
         self.assertIn("2.2.1.1 native:", summary)
         self.assertIn("2.2.1.1 universal:", summary)
@@ -1417,13 +1416,15 @@ class DiagramTests(unittest.TestCase):
         )
 
         diagrams = render_diagrams(groups, build_history=history)
-        svg = diagrams["performance-recent-reference.svg"]
+        svg = diagrams["performance-latest-build-comparison.svg"]
 
-        self.assertIn("Performance points vs 2.2.1.0 flavor baselines", svg)
-        self.assertIn("Native is normalized against 2.2.1.0 native", svg)
-        self.assertIn("universal against 2.2.1.0 universal", svg)
-        self.assertIn("2.2.0.5 native", svg)
-        self.assertIn("98.803p", svg)
+        self.assertIn("Latest comparisons", svg)
+        self.assertIn("Reference: 2.2.1.0 native", svg)
+        self.assertIn("Reference: 2.2.1.0 universal", svg)
+        self.assertIn("Weighted 101.109p", svg)
+        self.assertIn("Full workload 104.745p", svg)
+        self.assertIn("Weighted 86.430p", svg)
+        self.assertNotIn("performance-recent-reference.svg", diagrams)
         self.assertIn(
             "Performance points vs 1.8.0.0", diagrams["performance-comparison.svg"]
         )
@@ -1438,12 +1439,13 @@ class DiagramTests(unittest.TestCase):
             build_history=history,
         )
 
-        recent_svg = diagrams["performance-recent-reference.svg"]
-        self.assertIn("2.2.1.1 native", recent_svg)
-        self.assertIn("2.2.1.1 universal", recent_svg)
-        self.assertIn("2.2.1.0 native", recent_svg)
-        self.assertIn("2.2.1.0 universal", recent_svg)
-        self.assertIn("runtime or measurement configuration differs", recent_svg)
+        latest_svg = diagrams["performance-latest-build-comparison.svg"]
+        self.assertIn("2.2.1.1 native", latest_svg)
+        self.assertIn("2.2.1.1 universal", latest_svg)
+        self.assertIn("2.2.1.0 native", latest_svg)
+        self.assertIn("2.2.1.0 universal", latest_svg)
+        self.assertIn("Weighted 101.109p", latest_svg)
+        self.assertIn("Weighted 86.430p", latest_svg)
 
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1573,8 +1575,11 @@ class DiagramTests(unittest.TestCase):
             output = Path(directory)
             obsolete = output / "performance-overview.svg"
             obsolete.write_text("obsolete", encoding="utf-8")
+            old_recent_section = output / "performance-recent-reference.svg"
+            old_recent_section.write_text("obsolete", encoding="utf-8")
             self.assertEqual(sync_diagrams(diagrams, output, check=False), ())
             self.assertFalse(obsolete.exists())
+            self.assertFalse(old_recent_section.exists())
             self.assertEqual(sync_diagrams(diagrams, output, check=True), ())
             stale_path = output / "performance-comparison.svg"
             stale_path.write_text("stale", encoding="utf-8")

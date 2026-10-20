@@ -116,33 +116,14 @@
   - 2.2.1.1 universal: 105/110
   - Missing or unsupported cases receive no invented latency penalty.
 - **100.000p = 1.8.0.0 historical reference** (historical scores above use this denominator).
-- **Recent reference: 2.2.1.0** — each flavor is normalized independently; 100.000p is its own reference and lower is faster.
-  - 2.2.0.4 native vs 2.2.1.0 native: unavailable (runtime or measurement configuration differs).
-  - 2.2.0.5 native vs 2.2.1.0 native: weighted 98.803p; full workload 103.512p (43 weighted matched cases).
-  - 2.2.1.0 native vs 2.2.1.0 native: weighted 100.000p; full workload 100.000p (76 weighted matched cases).
-  - 2.2.1.1 native vs 2.2.1.0 native: weighted 101.109p; full workload 104.745p (49 weighted matched cases).
-  - 2.2.0.3 universal vs 2.2.1.0 universal: weighted 116.516p; full workload 134.124p (43 weighted matched cases).
-  - 2.2.0.4 universal vs 2.2.1.0 universal: unavailable (runtime or measurement configuration differs).
-  - 2.2.0.5 universal vs 2.2.1.0 universal: weighted 97.773p; full workload 98.672p (43 weighted matched cases).
-  - 2.2.1.0 universal vs 2.2.1.0 universal: weighted 100.000p; full workload 100.000p (76 weighted matched cases).
-  - 2.2.1.1 universal vs 2.2.1.0 universal: weighted 86.430p; full workload 86.804p (49 weighted matched cases).
+- **Latest comparisons matrix:** latest native and universal builds use their matching 2.2.1.0 flavor baselines; weighted and full-workload scores appear with the per-case breakdown. Cross-flavor comparisons are shown per case.
 <!-- performance-summary:end -->
 
 ## Diagram and size-specific plots
 
 ![Unified across-release, native/universal, and composite performance comparison.](images/performance-comparison.svg)
 
-![Recent-reference p-point scores against the matching 2.2.1.0 native and universal baselines.](images/performance-recent-reference.svg)
-
-- The latest-build diagram below compares every matched case across the two
-  newest complete native/universal versions. It shows candidate/reference p50s
-  and p-point scores, is unweighted, and does not affect the weighted winner above.
-- Each direction is shown explicitly: latest native against previous native and
-  latest universal; latest universal against previous universal and latest
-  native. Scores below `100.000p` favor the candidate. Configuration differences are
-  called out because they can limit version-to-version comparability.
-
-![Unweighted per-case comparisons between the newest native and universal builds and their previous versions.](images/performance-latest-build-comparison.svg)
+![Latest comparisons matrix: native and universal builds against their matching 2.2.1.0 baselines and against each other, with weighted scores and per-case detail.](images/performance-latest-build-comparison.svg)
 
 - The composite uses cluster-state 1k and 30k/100k cases, connect cases, and
   200k JSON-persistence cases.

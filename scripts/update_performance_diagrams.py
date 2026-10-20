@@ -887,7 +887,7 @@ def _validate_supplement_pair(
 def render_latest_build_pairwise_diagram(
     history: dict[str, tuple[BenchmarkRun, ...]],
 ) -> str:
-    """Render unweighted per-case comparisons for the newest two paired versions."""
+    """Render one latest-build matrix with baseline indexes and case details."""
 
     runs_by_suite: dict[str, dict[tuple[str, str], BenchmarkRun]] = {}
     for suite in BUILD_COMPARISON_SUITES:
@@ -915,39 +915,61 @@ def render_latest_build_pairwise_diagram(
         raise ValueError(
             "latest-build pairwise diagram requires two complete native/universal versions"
         )
-    previous_version, latest_version = versions[-2:]
+    latest_version = versions[-1]
+    reference_version = (
+        RECENT_REFERENCE_VERSION
+        if RECENT_REFERENCE_VERSION in complete_pairs
+        else versions[-2]
+    )
+
+    recent_scores: dict[str, RecentReferenceScore] = {}
+    if all(
+        (RECENT_REFERENCE_VERSION, flavor) in runs_by_suite[suite]
+        for suite in BUILD_COMPARISON_SUITES
+        for flavor in ("native", "universal")
+    ):
+        all_recent_scores = _recent_reference_scores(history)
+        recent_scores = {
+            flavor: next(
+                score
+                for score in flavor_scores
+                if score.candidate_version == latest_version
+            )
+            for flavor, flavor_scores in all_recent_scores.items()
+        }
 
     comparisons: list[tuple[BenchmarkRun, BenchmarkRun]] = []
     for suite in BUILD_COMPARISON_SUITES:
         runs = runs_by_suite[suite]
         comparisons.extend(
             (
-                (runs[(latest_version, "native")], runs[(previous_version, "native")]),
+                (runs[(latest_version, "native")], runs[(reference_version, "native")]),
                 (runs[(latest_version, "native")], runs[(latest_version, "universal")]),
                 (
                     runs[(latest_version, "universal")],
-                    runs[(previous_version, "universal")],
+                    runs[(reference_version, "universal")],
                 ),
                 (runs[(latest_version, "universal")], runs[(latest_version, "native")]),
             )
         )
 
     return _render_latest_build_pairwise_svg(
-        previous_version, latest_version, comparisons
+        reference_version, latest_version, comparisons, recent_scores
     )
 
 
 def _render_latest_build_pairwise_svg(
-    previous_version: str,
+    reference_version: str,
     latest_version: str,
     comparisons: list[tuple[BenchmarkRun, BenchmarkRun]],
+    recent_scores: dict[str, RecentReferenceScore],
 ) -> str:
     width = 2200
     row_height = 32
     label_x = 18
     column_x = (510, 930, 1350, 1770)
     column_width = 400
-    top = 188
+    top = 216
     case_maps: list[
         tuple[dict[str, tuple[BenchmarkOutcome, BenchmarkOutcome]], ...]
     ] = []
@@ -994,46 +1016,71 @@ def _render_latest_build_pairwise_svg(
         else []
     )
     height = content_bottom + 18 + 14 * len(warning_lines) + 8
-    title = "Latest native and universal · unweighted per-case comparison"
+    title = "Latest comparisons · native/universal performance matrix"
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}">',
         f"<title>{escape(title)}</title>",
         f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
         _text(18, 32, title, size=22, weight="bold"),
         _text(
-            18, 61, f"Builds compared: {previous_version} → {latest_version}", size=13
+            18,
+            61,
+            f"Latest build: {latest_version} · same-flavor reference: {reference_version}",
+            size=13,
         ),
         _text(
             18,
             84,
-            "Unweighted case comparisons only; excluded from the historical weighted score. Scores below 100.000p favor the candidate.",
+            "One matrix: same-flavor weighted/full-workload scores and per-case results, plus latest native vs universal. Scores below 100.000p favor the candidate.",
             size=13,
         ),
         _text(
             18,
             112,
-            "Each cell: candidate p50 · reference p50 · candidate/reference points. Blue is faster; red is slower.",
+            "Each case cell: candidate p50 · reference p50 · candidate/reference points. Blue is faster; red is slower.",
             size=11,
         ),
-        _text(label_x, 174, "Suite · size · operation · case", size=12, weight="bold"),
+        _text(label_x, 204, "Suite · size · operation · case", size=12, weight="bold"),
     ]
     comparison_builds = (
-        (f"{latest_version} native", f"{previous_version} native"),
+        (f"{latest_version} native", f"{reference_version} native"),
         (f"{latest_version} native", f"{latest_version} universal"),
-        (f"{latest_version} universal", f"{previous_version} universal"),
+        (f"{latest_version} universal", f"{reference_version} universal"),
         (f"{latest_version} universal", f"{latest_version} native"),
     )
     for x, (candidate_build, reference_build) in zip(
         column_x, comparison_builds, strict=True
     ):
         parts.append(
-            f'<rect x="{x}" y="128" width="{column_width}" height="48" rx="3" fill="#edf2f5"/>'
+            f'<rect x="{x}" y="128" width="{column_width}" height="66" rx="3" fill="#edf2f5"/>'
         )
         parts.append(
             _text(x + 8, 147, f"Candidate: {candidate_build}", size=12, weight="bold")
         )
         parts.append(
             _text(x + 8, 166, f"Reference: {reference_build}", size=12, weight="bold")
+        )
+        score = (
+            recent_scores.get("native")
+            if x == column_x[0]
+            else recent_scores.get("universal")
+            if x == column_x[2]
+            else None
+        )
+        if score is None:
+            score_label = "Per-case only · cross-flavor comparison"
+        elif (
+            score.candidate_weighted_ratio is None
+            or score.candidate_full_workload_ratio is None
+        ):
+            score_label = "Weighted/full-workload index unavailable"
+        else:
+            score_label = (
+                f"Weighted {_format_performance_points(score.candidate_weighted_ratio)}"
+                f" · Full workload {_format_performance_points(score.candidate_full_workload_ratio)}"
+            )
+        parts.append(
+            _text(x + 8, 187, score_label, size=11, weight="bold", color="#17252a")
         )
 
     y = top
@@ -1363,7 +1410,7 @@ def render_diagrams(
     *,
     build_history: dict[str, tuple[BenchmarkRun, ...]] | None = None,
 ) -> dict[str, str]:
-    """Render historical and, when available, recent-reference comparisons."""
+    """Render historical performance and one consolidated latest-comparison matrix."""
 
     shared_results = (
         Path(__file__).resolve().parents[1] / "tools" / "shared-benchmark-results"
@@ -1402,69 +1449,7 @@ def render_diagrams(
         diagrams["performance-latest-build-comparison.svg"] = (
             render_latest_build_pairwise_diagram(build_history)
         )
-        if all(
-            any(
-                run.metadata.package_version == RECENT_REFERENCE_VERSION
-                for run in build_history.get(suite, ())
-            )
-            for suite in BUILD_COMPARISON_SUITES
-        ):
-            diagrams["performance-recent-reference.svg"] = _render_recent_reference_svg(
-                _recent_reference_scores(build_history)
-            )
     return diagrams
-
-
-def _render_recent_reference_svg(
-    scores: dict[str, tuple[RecentReferenceScore, ...]],
-) -> str:
-    """Render build history against flavor-matched recent-reference builds."""
-
-    rows = tuple(
-        score for flavor in ("native", "universal") for score in scores[flavor]
-    )
-    width, height = 1160, 96 + len(rows) * 24
-    title = f"Performance points vs {RECENT_REFERENCE_VERSION} flavor baselines"
-    parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}">',
-        f"<title>{escape(title)}</title>",
-        f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
-        _text(16, 29, title, size=20, weight="bold"),
-        _text(
-            16,
-            52,
-            f"Native is normalized against {RECENT_REFERENCE_VERSION} native; universal against {RECENT_REFERENCE_VERSION} universal. 100.000p is baseline; lower is faster.",
-            size=12,
-        ),
-        _text(16, 80, "Build / flavor / denominator", size=12, weight="bold"),
-        _text(780, 80, "Weighted", size=12, anchor="middle", weight="bold"),
-        _text(940, 80, "Full workload", size=12, anchor="middle", weight="bold"),
-    ]
-    for row_index, score in enumerate(rows):
-        y = 102 + row_index * 24
-        denominator = f"{score.reference_version} {score.flavor}"
-        label = f"{score.candidate_version} {score.flavor} vs {denominator}"
-        weighted = (
-            "N/A"
-            if score.candidate_weighted_ratio is None
-            else _format_performance_points(score.candidate_weighted_ratio)
-        )
-        full_workload = (
-            "N/A"
-            if score.candidate_full_workload_ratio is None
-            else _format_performance_points(score.candidate_full_workload_ratio)
-        )
-        detail = (
-            score.unavailable_reason
-            if score.unavailable_reason is not None
-            else f"{score.weighted_case_count} weighted / {score.full_workload_case_count} full-workload matched cases"
-        )
-        parts.append(_text(16, y + 14, label, size=11))
-        parts.append(_text(780, y + 14, weighted, size=11, anchor="middle"))
-        parts.append(_text(940, y + 14, full_workload, size=11, anchor="middle"))
-        parts.append(_text(1000, y + 14, detail, size=9, color="#454545"))
-    parts.append("</svg>")
-    return "\n".join(parts)
 
 
 def size_specific_indices(
@@ -1934,22 +1919,8 @@ def render_performance_summary(
     ]
     if build_history is not None:
         recent_lines.append(
-            f"- **Recent reference: {RECENT_REFERENCE_VERSION}** — each flavor is normalized independently; 100.000p is its own reference and lower is faster."
+            f"- **Latest comparisons matrix:** latest native and universal builds use their matching {RECENT_REFERENCE_VERSION} flavor baselines; weighted and full-workload scores appear with the per-case breakdown. Cross-flavor comparisons are shown per case."
         )
-        recent_scores = _recent_reference_scores(build_history)
-        for flavor, scores in recent_scores.items():
-            for score in scores:
-                if (
-                    score.candidate_weighted_ratio is None
-                    or score.candidate_full_workload_ratio is None
-                ):
-                    recent_lines.append(
-                        f"  - {score.candidate_version} {flavor} vs {score.reference_version} {flavor}: unavailable ({score.unavailable_reason})."
-                    )
-                    continue
-                recent_lines.append(
-                    f"  - {score.candidate_version} {flavor} vs {score.reference_version} {flavor}: weighted {_format_performance_points(score.candidate_weighted_ratio)}; full workload {_format_performance_points(score.candidate_full_workload_ratio)} ({score.weighted_case_count} weighted matched cases)."
-                )
     return "\n".join(
         [
             (
@@ -2666,6 +2637,7 @@ def sync_diagrams(
         "performance-build-comparison-cluster_state.svg",
         "performance-build-comparison-persistence.svg",
         "performance-build-comparison-connect.svg",
+        "performance-recent-reference.svg",
     )
     stale: list[Path] = []
     for filename, content in sorted(diagrams.items()):

@@ -1,0 +1,13 @@
+{
+  "surface": "Generated latest performance-comparisons SVG",
+  "owner": "scripts/update_performance_diagrams.py",
+  "outputs": [
+    "docs/images/performance-latest-build-comparison.svg",
+    "docs/native-wheel-performance-baseline.md"
+  ],
+  "related_output_removed": "docs/images/performance-recent-reference.svg",
+  "rendered_evidence": [
+    "evidence/screenshots/before/desktop.png",
+    "evidence/screenshots/after/desktop.png"
+  ]
+}
