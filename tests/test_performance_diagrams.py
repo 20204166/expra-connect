@@ -44,6 +44,51 @@ DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 
 class BuildComparisonTests(unittest.TestCase):
+    def test_recent_reference_scores_are_flavor_specific(self) -> None:
+        history: dict[str, tuple[BenchmarkRun, ...]] = {}
+        for suite in performance_diagrams.BUILD_COMPARISON_SUITES:
+            runs: list[BenchmarkRun] = []
+            sizes = {
+                "cluster_state": (1_000, 30_000, 100_000),
+                "persistence": (200_000,),
+                "connect": (1,),
+            }[suite]
+            for flavor in ("native", "universal"):
+                for version in ("2.2.0.5", "2.2.1.0"):
+                    p50 = (
+                        100.0
+                        if version == "2.2.1.0"
+                        else 110.0
+                        if flavor == "native"
+                        else 120.0
+                    )
+                    outcomes = []
+                    for size in sizes:
+                        case_id = f"{suite}-{size}"
+                        run = self._pairwise_run(
+                            version, flavor, suite, p50, case_id=case_id
+                        )
+                        outcomes.append(
+                            replace(
+                                run.outcomes[0],
+                                operation=f"operation-{case_id}",
+                                size=size,
+                                fixture={"shape": case_id},
+                            )
+                        )
+                    runs.append(BenchmarkRun(run.metadata, tuple(outcomes)))
+            history[suite] = tuple(runs)
+
+        scores = performance_diagrams._recent_reference_scores(history)
+
+        self.assertEqual(scores["native"].candidate_version, "2.2.0.5")
+        self.assertEqual(scores["native"].reference_version, "2.2.1.0")
+        self.assertAlmostEqual(scores["native"].reference_weighted_percent, 100.0)
+        self.assertAlmostEqual(scores["native"].candidate_weighted_percent, 110.0)
+        self.assertAlmostEqual(scores["universal"].candidate_weighted_percent, 120.0)
+        self.assertEqual(scores["native"].weighted_case_count, 5)
+        self.assertEqual(scores["native"].full_workload_case_count, 5)
+
     def test_build_history_accepts_either_flavor_or_both_flavors(self) -> None:
         for flavors in (("native",), ("universal",), ("native", "universal")):
             with (

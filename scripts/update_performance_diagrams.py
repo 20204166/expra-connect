@@ -28,6 +28,7 @@ FULL_VERSIONS = (
 )
 SHARED_HARNESS_VERSIONS = FULL_VERSIONS[:-1]
 REFERENCE_VERSION = "1.8.0.0"
+RECENT_REFERENCE_VERSION = "2.2.1.0"
 FOCUSED_VERSIONS = FULL_VERSIONS[:-1]
 MAX_VISIBLE_COLUMNS = 10
 FULL_METRICS = (
@@ -314,6 +315,19 @@ class MatchedIndexPanel:
     label: str
     case_count: int
     indices: tuple[float, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RecentReferenceScore:
+    flavor: str
+    reference_version: str
+    candidate_version: str
+    reference_weighted_percent: float
+    reference_full_workload_percent: float
+    candidate_weighted_percent: float
+    candidate_full_workload_percent: float
+    weighted_case_count: int
+    full_workload_case_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -1547,6 +1561,144 @@ def _weighted_overall_index_panel(
         for index in range(len(category_logs[0][1]))
     )
     return MatchedIndexPanel("Five weighted workload categories", case_count, values)
+
+
+def _recent_reference_scores(
+    history: dict[str, tuple[BenchmarkRun, ...]],
+) -> dict[str, RecentReferenceScore]:
+    """Compare the nearest prior complete build with the recent flavor baseline."""
+
+    def sized_pair(
+        pair: tuple[BenchmarkRun, BenchmarkRun], sizes: tuple[int, ...] | None
+    ) -> tuple[BenchmarkRun, BenchmarkRun]:
+        if sizes is None:
+            return pair
+        return tuple(
+            BenchmarkRun(
+                run.metadata,
+                tuple(outcome for outcome in run.outcomes if outcome.size in sizes),
+            )
+            for run in pair
+        )
+
+    runs_by_suite = {
+        suite: {
+            (run.metadata.package_version, flavor): run
+            for run in history.get(suite, ())
+            if (flavor := _run_build_flavor(run)) is not None
+        }
+        for suite in BUILD_COMPARISON_SUITES
+    }
+    reference_version_key = tuple(
+        int(part) for part in RECENT_REFERENCE_VERSION.split(".")
+    )
+    scores: dict[str, RecentReferenceScore] = {}
+
+    for flavor in ("native", "universal"):
+        available_versions = [
+            {
+                version
+                for version, run_flavor in suite_runs
+                if run_flavor == flavor
+                and tuple(int(part) for part in version.split("."))
+                < reference_version_key
+            }
+            for suite_runs in runs_by_suite.values()
+        ]
+        candidate_versions = set.intersection(*available_versions)
+        if not candidate_versions:
+            raise ValueError(f"no complete prior {flavor} build for recent reference")
+        candidate_version = max(
+            candidate_versions,
+            key=lambda version: tuple(int(part) for part in version.split(".")),
+        )
+
+        paired_runs: dict[str, tuple[BenchmarkRun, BenchmarkRun]] = {}
+        for suite, suite_runs in runs_by_suite.items():
+            reference = suite_runs.get((RECENT_REFERENCE_VERSION, flavor))
+            candidate = suite_runs.get((candidate_version, flavor))
+            if reference is None or candidate is None:
+                raise ValueError(
+                    f"{suite}: missing {flavor} run for recent reference comparison"
+                )
+            if (
+                reference.metadata.config != candidate.metadata.config
+                or reference.metadata.python_version
+                != candidate.metadata.python_version
+                or reference.metadata.platform != candidate.metadata.platform
+            ):
+                raise ValueError(
+                    f"{suite}: {candidate_version} and {RECENT_REFERENCE_VERSION} "
+                    f"{flavor} run configuration differs"
+                )
+
+            reference_cases = {
+                outcome.case_id: outcome for outcome in reference.outcomes
+            }
+            candidate_cases = {
+                outcome.case_id: outcome for outcome in candidate.outcomes
+            }
+            if len(reference_cases) != len(reference.outcomes) or len(
+                candidate_cases
+            ) != len(candidate.outcomes):
+                raise ValueError(f"{suite}: duplicate case ID in recent comparison")
+
+            matched_ids = {
+                case_id
+                for case_id in reference_cases.keys() & candidate_cases.keys()
+                if (
+                    reference_cases[case_id].operation
+                    == candidate_cases[case_id].operation
+                    and reference_cases[case_id].fixture
+                    == candidate_cases[case_id].fixture
+                    and reference_cases[case_id].size == candidate_cases[case_id].size
+                    and reference_cases[case_id].config
+                    == candidate_cases[case_id].config
+                    and reference_cases[case_id].result is not None
+                    and reference_cases[case_id].result.p50 > 0
+                    and candidate_cases[case_id].result is not None
+                    and candidate_cases[case_id].result.p50 > 0
+                )
+            }
+            if not matched_ids:
+                raise ValueError(
+                    f"{suite}: no matched positive-p50 {flavor} cases for "
+                    f"{candidate_version}/{RECENT_REFERENCE_VERSION}"
+                )
+            paired_runs[suite] = tuple(
+                BenchmarkRun(
+                    run.metadata,
+                    tuple(
+                        outcome
+                        for outcome in run.outcomes
+                        if outcome.case_id in matched_ids
+                    ),
+                )
+                for run in (reference, candidate)
+            )
+
+        groups = {
+            "cluster-1k": sized_pair(paired_runs["cluster_state"], (1_000,)),
+            "cluster-large": sized_pair(
+                paired_runs["cluster_state"], (30_000, 100_000)
+            ),
+            "connect": sized_pair(paired_runs["connect"], None),
+            "persistence-200k": sized_pair(paired_runs["persistence"], (200_000,)),
+        }
+        weighted = _weighted_overall_index_panel(groups)
+        full_workload = _full_workload_index_panel(groups)
+        scores[flavor] = RecentReferenceScore(
+            flavor=flavor,
+            reference_version=RECENT_REFERENCE_VERSION,
+            candidate_version=candidate_version,
+            reference_weighted_percent=100.0,
+            reference_full_workload_percent=100.0,
+            candidate_weighted_percent=weighted.indices[1] * 100,
+            candidate_full_workload_percent=full_workload.indices[1] * 100,
+            weighted_case_count=weighted.case_count,
+            full_workload_case_count=full_workload.case_count,
+        )
+    return scores
 
 
 def _weighted_overall_index_row(panel: MatchedIndexPanel) -> HeatmapRow:
