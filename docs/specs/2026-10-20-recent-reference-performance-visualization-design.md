@@ -12,15 +12,19 @@ native/universal as the recent reference pair.
 - Preserve the existing across-release chart and its scores relative to 1.8.0.0.
 - Add a generated recent-reference summary and SVG panel based on the saved
   2.2.1.0 native and universal benchmark results.
-- Mark each 2.2.1.0 reference flavor as index `1.000`. Compare the nearest
-  prior native build with the native reference and the nearest prior universal
-  build with the universal reference. Compute each comparison only from the
-  positive-p50 cases matched between the relevant pair; report case counts and
-  configuration differences instead of silently mixing incompatible runs.
-- Display normalized scores as percentages of the reference: `100%` is the
-  2.2.1.0 reference, below `100%` is faster, and above `100%` is slower. Keep
-  enough precision to show meaningful differences, without scientific notation
-  or long raw decimals.
+- Normalize both views as percentages of their own reference: mark the
+  historical 1.8.0.0 anchor as `100%`, and each 2.2.1.0 native/universal
+  reference as `100%` in the recent view. Preserve the separate reference
+  identities; never compare percentages from the two views as if they share a
+  denominator.
+- Compare the nearest prior native build with the native reference and the
+  nearest prior universal build with the universal reference. Compute each
+  comparison only from the positive-p50 cases matched between the relevant
+  pair; report case counts and configuration differences instead of silently
+  mixing incompatible runs.
+- Below `100%` is faster and above `100%` is slower. Keep enough precision to
+  show meaningful differences, without scientific notation or long raw
+  decimals.
 - Label the reference version/flavor and index basis directly in the generated
   Markdown and SVG. Keep historical and recent scores separate, not on one
   unlabeled scale.
@@ -38,9 +42,9 @@ benchmark rerun, or manual SVG edits are in scope.
 
 ## Validation
 
-- Add tests for matched-case scoring, 100% reference values, flavor-specific
-  comparisons, missing/unsupported cases, and explicit labels in generated
-  Markdown/SVG.
+- Add tests for historical and recent 100% reference values, matched-case
+  scoring, flavor-specific comparisons, missing/unsupported cases, and explicit
+  labels in generated Markdown/SVG.
 - Regenerate the report and diagrams from tracked JSON, then run the focused
   performance-diagram test suite, Ruff, the updater's `--check`, SVG parsing,
   and `git diff --check`.
