@@ -1,6 +1,8 @@
 # Native and shared-harness performance baselines
 
 - **Historical shared-harness measurements:** 18 October 2026
+- **1.8.0.0 universal baseline rerun:** 20 October 2026, using the existing
+  wheel without rebuilding it
 - **2.2.0.3 native/universal rerun:** 19 October 2026
 - **2.2.1.0 native/universal full benchmark matrix:** 19 October 2026
 - **2.2.1.0 supplemental feature workloads:** 20 October 2026
@@ -32,13 +34,18 @@
   - 100k cluster: 25%
   - Connect: 20%
   - 200k JSON persistence: 35%
-- **Full-workload index:** equal-case geometric mean across the 37 positive-p50
+- **Full-workload index:** equal-case geometric mean across the 35 positive-p50
   cases shared by every displayed result. It includes cluster state at 1k,
   30k, and 100k; matched connect cases; and 200k JSON persistence. It differs
   from the composite, which gives equal weight to the three suites.
 - Only positive p50 results present in every compared column contribute to
   latency scores. Coverage is reported separately; missing cases receive no
   invented latency penalty.
+- A historical run is comparable when its operation, fixture shape, size, and
+  sampling configuration match. Payload byte counts are measured outputs and
+  may legitimately differ between package versions. If a case's semantic
+  fixture changed, the updater keeps that historical result under a
+  version-specific workload ID instead of scoring it as the same case.
 - **Workload support / coverage:** the newest native/universal runs define the
   case inventory for each suite and size. Older results are measured against
   that inventory: new cases appear as unmeasured, and historical-only cases do
@@ -71,11 +78,11 @@
   normal refreshes and current scoring.
 
 <!-- performance-summary:start -->
-- **Current weighted winner:** 2.2.1.0 native — 0.768 index; 37 matched positive-p50 cases.
+- **Current weighted winner:** 2.2.1.0 native — 0.730 index; 35 matched positive-p50 cases.
   - Applies only to this workload set and weighting; it is not a universal claim.
 - **Distinct-workload coverage:** 110 unique cases; reported separately from latency scoring.
-  - 1.8.0.0: 63/110
-  - 2.2.0.1: 65/110
+  - 1.8.0.0: 91/110
+  - 2.2.0.1: 63/110
   - 2.2.0.3 native: 69/110
   - 2.2.0.3 universal: 69/110
   - 2.2.0.4 native: 68/110
@@ -152,6 +159,13 @@
   measured against the 110-case inventory; new cases remain unmeasured rather
   than receiving fabricated timings. Supplement shards remain separate files;
   the updater validates and merges them in memory.
+- The 1.8.0.0 baseline was measured from the existing universal wheel. It is a
+  flavor-independent reference: current native and universal results are
+  compared with it independently, and a release with only one complete flavor
+  remains comparable. When both flavors exist, same-version native/universal
+  results are still fixture-validated as a pair. The old wheel lacks profile
+  migration, YAML StateStore, and newer feature benchmark APIs; those cases are
+  explicitly unavailable rather than borrowed from another build.
 - Versioned build JSON is stored in
   `docs/performance-build-comparison-results/`. Shared-harness JSON is tracked
   in `tools/shared-benchmark-results/` for reproducible refreshes.

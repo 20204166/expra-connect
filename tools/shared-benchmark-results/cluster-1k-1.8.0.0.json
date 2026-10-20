@@ -7,10 +7,11 @@
       "warmups": 2
     },
     "modules": {
-      "expra_connect.cluster.models": "/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/models.py",
-      "expra_connect.cluster.operations": "/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/operations.py",
-      "expra_connect.cluster.roles": "/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/roles.py",
-      "expra_connect.cluster.state": "/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/state.py"
+      "expra_connect.cluster.models": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/cluster/models.py",
+      "expra_connect.cluster.operations": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/cluster/operations.py",
+      "expra_connect.cluster.roles": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/cluster/roles.py",
+      "expra_connect.cluster.state": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/cluster/state.py",
+      "expra_connect.persistence": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/persistence.py"
     },
     "package_version": "1.8.0.0",
     "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
@@ -34,29 +35,29 @@
       "operation": "role encode",
       "payload_bytes": 227032,
       "result": {
-        "maximum": 2712.637,
-        "mean_us": 2302.3275555555556,
-        "minimum": 2194.71,
-        "ops_per_second": 434.34306191010177,
+        "maximum": 3666.562,
+        "mean_us": 2638.621777777778,
+        "minimum": 2151.336,
+        "ops_per_second": 378.98572975555084,
         "outliers": 1,
-        "p25": 2207.825,
-        "p50": 2239.695,
-        "p75": 2301.492,
-        "p95": 2573.5666,
-        "p99": 2684.82292,
+        "p25": 2294.215,
+        "p50": 2629.076,
+        "p75": 2788.817,
+        "p95": 3328.8171999999995,
+        "p99": 3599.01304,
         "peak_bytes": null,
         "samples_us": [
-          2229.506,
-          2194.71,
-          2301.492,
-          2198.066,
-          2239.695,
-          2364.961,
-          2207.825,
-          2712.637,
-          2272.056
+          2788.817,
+          2629.076,
+          2294.215,
+          2705.83,
+          3666.562,
+          2398.481,
+          2151.336,
+          2291.079,
+          2822.2
         ],
-        "spread": 517.9270000000001
+        "spread": 1515.226
       },
       "size": 1000,
       "status": "measured"
@@ -77,29 +78,29 @@
       "operation": "role decode",
       "payload_bytes": 227032,
       "result": {
-        "maximum": 29574.628,
-        "mean_us": 15095.290555555555,
-        "minimum": 12722.039,
-        "ops_per_second": 66.24582655893083,
+        "maximum": 30647.971,
+        "mean_us": 15011.654444444444,
+        "minimum": 12429.339,
+        "ops_per_second": 66.61490934932111,
         "outliers": 1,
-        "p25": 13016.684,
-        "p50": 13329.364,
-        "p75": 13846.92,
-        "p95": 23329.747599999995,
-        "p99": 28325.65192,
+        "p25": 12964.157,
+        "p50": 13233.085,
+        "p75": 13329.105,
+        "p95": 23782.064999999995,
+        "p99": 29274.7898,
         "peak_bytes": null,
         "samples_us": [
-          12722.039,
-          13846.92,
-          13016.684,
-          13425.435,
-          29574.628,
-          12875.839,
-          13104.279,
-          13329.364,
-          13962.427
+          13483.206,
+          13329.105,
+          13030.121,
+          13299.479,
+          30647.971,
+          12429.339,
+          12964.157,
+          13233.085,
+          12688.427
         ],
-        "spread": 16852.589
+        "spread": 18218.632
       },
       "size": 1000,
       "status": "measured"
@@ -120,29 +121,29 @@
       "operation": "cluster encode",
       "payload_bytes": 227032,
       "result": {
-        "maximum": 4057.133,
-        "mean_us": 3549.307333333333,
-        "minimum": 3163.828,
-        "ops_per_second": 281.745114211017,
+        "maximum": 3802.007,
+        "mean_us": 3449.487666666667,
+        "minimum": 3045.01,
+        "ops_per_second": 289.89812303527583,
         "outliers": 0,
-        "p25": 3380.016,
-        "p50": 3511.644,
-        "p75": 3671.436,
-        "p95": 3934.6738,
-        "p99": 4032.6411599999997,
+        "p25": 3371.044,
+        "p50": 3461.414,
+        "p75": 3571.252,
+        "p95": 3736.9042,
+        "p99": 3788.98644,
         "peak_bytes": null,
         "samples_us": [
-          3671.436,
-          3163.828,
-          3272.042,
-          3467.681,
-          3669.001,
-          3380.016,
-          4057.133,
-          3750.985,
-          3511.644
+          3461.414,
+          3802.007,
+          3639.25,
+          3045.01,
+          3454.181,
+          3506.489,
+          3571.252,
+          3371.044,
+          3194.742
         ],
-        "spread": 893.3049999999998
+        "spread": 756.9969999999998
       },
       "size": 1000,
       "status": "measured"
@@ -163,29 +164,29 @@
       "operation": "cluster decode",
       "payload_bytes": 227032,
       "result": {
-        "maximum": 14345.391,
-        "mean_us": 13131.19,
-        "minimum": 12554.191,
-        "ops_per_second": 76.15456024929956,
-        "outliers": 1,
-        "p25": 12829.752,
-        "p50": 13073.481,
-        "p75": 13265.083,
-        "p95": 13938.6674,
-        "p99": 14264.046279999999,
+        "maximum": 13675.008,
+        "mean_us": 12770.413222222222,
+        "minimum": 11556.053,
+        "ops_per_second": 78.30600174001157,
+        "outliers": 0,
+        "p25": 12571.507,
+        "p50": 12670.263,
+        "p75": 13510.367,
+        "p95": 13625.9992,
+        "p99": 13665.20624,
         "peak_bytes": null,
         "samples_us": [
-          12554.191,
-          12677.214,
-          12829.752,
-          13073.481,
-          13328.582,
-          13265.083,
-          12954.126,
-          13152.89,
-          14345.391
+          13510.367,
+          13552.486,
+          12748.431,
+          11556.053,
+          13675.008,
+          12034.465,
+          12571.507,
+          12615.139,
+          12670.263
         ],
-        "spread": 1791.199999999999
+        "spread": 2118.955
       },
       "size": 1000,
       "status": "measured"
@@ -206,29 +207,29 @@
       "operation": "cluster document round-trip",
       "payload_bytes": 227032,
       "result": {
-        "maximum": 31632.219,
-        "mean_us": 19696.57788888889,
-        "minimum": 16120.369,
-        "ops_per_second": 50.770240680443976,
+        "maximum": 37773.983,
+        "mean_us": 21409.25511111111,
+        "minimum": 16039.374,
+        "ops_per_second": 46.708771267852924,
         "outliers": 2,
-        "p25": 16383.505,
-        "p50": 16525.623,
-        "p75": 16749.926,
-        "p95": 31108.0866,
-        "p99": 31527.39252,
+        "p25": 16518.267,
+        "p50": 16884.798,
+        "p75": 19089.253,
+        "p95": 36882.903399999996,
+        "p99": 37595.76708,
         "peak_bytes": null,
         "samples_us": [
-          30321.888,
-          16749.926,
-          16120.369,
-          16383.505,
-          16517.287,
-          16749.565,
-          16525.623,
-          16268.819,
-          31632.219
+          37773.983,
+          18083.908,
+          19089.253,
+          16039.374,
+          16884.798,
+          16656.658,
+          16090.771,
+          16518.267,
+          35546.284
         ],
-        "spread": 15511.85
+        "spread": 21734.609
       },
       "size": 1000,
       "status": "measured"
@@ -249,29 +250,29 @@
       "operation": "cluster round-trip",
       "payload_bytes": 227032,
       "result": {
-        "maximum": 30134.915,
-        "mean_us": 16712.900777777777,
-        "minimum": 13965.233,
-        "ops_per_second": 59.8340176428047,
-        "outliers": 2,
-        "p25": 14047.218,
-        "p50": 14897.872,
-        "p75": 15112.267,
-        "p95": 25505.109399999998,
-        "p99": 29208.95388,
+        "maximum": 35924.186,
+        "mean_us": 19405.18611111111,
+        "minimum": 15174.323,
+        "ops_per_second": 51.53261577983091,
+        "outliers": 1,
+        "p25": 17213.928,
+        "p50": 17235.358,
+        "p75": 18342.646,
+        "p95": 29278.575199999996,
+        "p99": 34595.06384,
         "peak_bytes": null,
         "samples_us": [
-          13965.233,
-          13993.497,
-          14897.872,
-          14047.218,
-          15112.267,
-          30134.915,
-          15087.08,
-          14617.624,
-          18560.401
+          17213.928,
+          16263.436,
+          17216.453,
+          17235.358,
+          15174.323,
+          35924.186,
+          18342.646,
+          19310.159,
+          17966.186
         ],
-        "spread": 16169.682
+        "spread": 20749.863
       },
       "size": 1000,
       "status": "measured"
@@ -292,29 +293,29 @@
       "operation": "YAML encode",
       "payload_bytes": 206987,
       "result": {
-        "maximum": 484496.141,
-        "mean_us": 447970.74433333334,
-        "minimum": 426482.366,
-        "ops_per_second": 2.2322886319020507,
+        "maximum": 586407.291,
+        "mean_us": 509944.1581111111,
+        "minimum": 467582.238,
+        "ops_per_second": 1.9609990311568806,
         "outliers": 0,
-        "p25": 430195.493,
-        "p50": 440439.276,
-        "p75": 456180.412,
-        "p95": 478527.36579999997,
-        "p99": 483302.38596,
+        "p25": 487967.442,
+        "p50": 496106.787,
+        "p75": 531072.496,
+        "p95": 567162.647,
+        "p99": 582558.3622,
         "peak_bytes": null,
         "samples_us": [
-          456180.412,
-          439686.268,
-          455438.661,
-          429243.879,
-          440439.276,
-          430195.493,
-          484496.141,
-          469574.203,
-          426482.366
+          487967.442,
+          538295.681,
+          586407.291,
+          531072.496,
+          508685.446,
+          478068.104,
+          467582.238,
+          496106.787,
+          495311.938
         ],
-        "spread": 58013.77500000002
+        "spread": 118825.05299999996
       },
       "size": 1000,
       "status": "measured"
@@ -335,29 +336,29 @@
       "operation": "YAML parse",
       "payload_bytes": 206987,
       "result": {
-        "maximum": 959660.243,
-        "mean_us": 905468.0248888889,
-        "minimum": 884302.466,
-        "ops_per_second": 1.104401229543927,
+        "maximum": 1032495.369,
+        "mean_us": 954454.0138888889,
+        "minimum": 923941.013,
+        "ops_per_second": 1.047719413872582,
         "outliers": 1,
-        "p25": 895402.578,
-        "p50": 899514.658,
-        "p75": 907870.506,
-        "p95": 943902.6522,
-        "p99": 956508.72484,
+        "p25": 929137.664,
+        "p50": 937800.922,
+        "p75": 967973.418,
+        "p95": 1012146.0294,
+        "p99": 1028425.50108,
         "peak_bytes": null,
         "samples_us": [
-          895402.578,
-          920266.266,
-          959660.243,
-          897415.818,
-          907870.506,
-          885103.589,
-          884302.466,
-          899514.658,
-          899676.1
+          923941.013,
+          926451.496,
+          1032495.369,
+          937800.922,
+          967973.418,
+          958352.354,
+          929137.664,
+          932311.869,
+          981622.02
         ],
-        "spread": 75357.777
+        "spread": 108554.35599999991
       },
       "size": 1000,
       "status": "measured"
@@ -378,29 +379,325 @@
       "operation": "YAML cluster round-trip",
       "payload_bytes": 206987,
       "result": {
-        "maximum": 1636095.699,
-        "mean_us": 1552972.1947777777,
-        "minimum": 1486086.089,
-        "ops_per_second": 0.6439265322088364,
-        "outliers": 0,
-        "p25": 1501639.058,
-        "p50": 1536812.587,
-        "p75": 1605579.352,
-        "p95": 1625152.1618,
-        "p99": 1633906.99156,
+        "maximum": 1633157.092,
+        "mean_us": 1537280.232,
+        "minimum": 1484460.897,
+        "ops_per_second": 0.6504994855095488,
+        "outliers": 1,
+        "p25": 1519368.98,
+        "p50": 1529022.642,
+        "p75": 1548599.963,
+        "p95": 1599596.4648,
+        "p99": 1626444.9665599999,
         "peak_bytes": null,
         "samples_us": [
-          1520945.17,
-          1486086.089,
-          1536812.587,
-          1605579.352,
-          1581837.532,
-          1636095.699,
-          1608736.856,
-          1499017.41,
-          1501639.058
+          1633157.092,
+          1538260.525,
+          1528673.725,
+          1504722.74,
+          1519368.98,
+          1548599.963,
+          1529022.642,
+          1549255.524,
+          1484460.897
         ],
-        "spread": 150009.6100000001
+        "spread": 148696.19499999983
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 5.671,
+        "mean_us": 4.859333333333334,
+        "minimum": 4.258,
+        "ops_per_second": 205789.54589106873,
+        "outliers": 0,
+        "p25": 4.4535,
+        "p50": 4.649,
+        "p75": 5.16,
+        "p95": 5.5688,
+        "p99": 5.6505600000000005,
+        "peak_bytes": null,
+        "samples_us": [
+          5.671,
+          4.649,
+          4.258
+        ],
+        "spread": 1.4130000000000003
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization worker denied",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization worker denied",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 299.254,
+        "mean_us": 289.539,
+        "minimum": 271.582,
+        "ops_per_second": 3453.766159308418,
+        "outliers": 0,
+        "p25": 284.6815,
+        "p50": 297.781,
+        "p75": 298.51750000000004,
+        "p95": 299.1067,
+        "p99": 299.22454000000005,
+        "peak_bytes": null,
+        "samples_us": [
+          297.781,
+          299.254,
+          271.582
+        ],
+        "spread": 27.672000000000025
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization subcoordinator grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 280.739,
+        "mean_us": 274.541,
+        "minimum": 264.85,
+        "ops_per_second": 3642.443205204323,
+        "outliers": 0,
+        "p25": 271.442,
+        "p50": 278.034,
+        "p75": 279.38649999999996,
+        "p95": 280.46849999999995,
+        "p99": 280.68489999999997,
+        "peak_bytes": null,
+        "samples_us": [
+          278.034,
+          264.85,
+          280.739
+        ],
+        "spread": 15.888999999999953
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization subcoordinator missing grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator missing grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 280.188,
+        "mean_us": 271.15066666666667,
+        "minimum": 265.46,
+        "ops_per_second": 3687.9865068867,
+        "outliers": 0,
+        "p25": 266.63199999999995,
+        "p50": 267.804,
+        "p75": 273.996,
+        "p95": 278.9496,
+        "p99": 279.94032,
+        "peak_bytes": null,
+        "samples_us": [
+          265.46,
+          280.188,
+          267.804
+        ],
+        "spread": 14.728000000000009
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization subcoordinator expired grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator expired grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 480.937,
+        "mean_us": 431.1926666666667,
+        "minimum": 390.516,
+        "ops_per_second": 2319.1489032744835,
+        "outliers": 0,
+        "p25": 406.32050000000004,
+        "p50": 422.125,
+        "p75": 451.531,
+        "p95": 475.0558,
+        "p99": 479.76076,
+        "peak_bytes": null,
+        "samples_us": [
+          390.516,
+          422.125,
+          480.937
+        ],
+        "spread": 90.42099999999999
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization paused source",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization paused source",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.537,
+        "mean_us": 3.273,
+        "minimum": 3.106,
+        "ops_per_second": 305530.09471432935,
+        "outliers": 0,
+        "p25": 3.141,
+        "p50": 3.176,
+        "p75": 3.3565,
+        "p95": 3.5008999999999997,
+        "p99": 3.5297799999999997,
+        "peak_bytes": null,
+        "samples_us": [
+          3.537,
+          3.176,
+          3.106
+        ],
+        "spread": 0.43100000000000005
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization revoked destination",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization revoked destination",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.317,
+        "mean_us": 3.1926666666666668,
+        "minimum": 3.045,
+        "ops_per_second": 313217.79077051574,
+        "outliers": 0,
+        "p25": 3.1305,
+        "p50": 3.216,
+        "p75": 3.2665,
+        "p95": 3.3069,
+        "p99": 3.3149800000000003,
+        "peak_bytes": null,
+        "samples_us": [
+          3.317,
+          3.216,
+          3.045
+        ],
+        "spread": 0.27200000000000024
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization invalid clock",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization invalid clock",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 1.052,
+        "mean_us": 0.9786666666666667,
+        "minimum": 0.902,
+        "ops_per_second": 1021798.3651226158,
+        "outliers": 0,
+        "p25": 0.942,
+        "p50": 0.982,
+        "p75": 1.017,
+        "p95": 1.045,
+        "p99": 1.0506,
+        "peak_bytes": null,
+        "samples_us": [
+          1.052,
+          0.982,
+          0.902
+        ],
+        "spread": 0.15000000000000002
       },
       "size": 1000,
       "status": "measured"

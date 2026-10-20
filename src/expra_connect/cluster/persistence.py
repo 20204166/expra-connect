@@ -33,4 +33,7 @@ class ClusterStore:
             value = YamlStateStore(self.path).load()
         except StateDataError as error:
             raise ClusterDataError("persisted cluster state is invalid") from error
-        return ClusterState.from_dict(value)
+        try:
+            return ClusterState.from_dict(value)
+        except (KeyError, TypeError, ValueError, OverflowError) as error:
+            raise ClusterDataError("persisted cluster state is invalid") from error

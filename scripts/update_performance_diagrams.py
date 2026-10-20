@@ -10,7 +10,7 @@ import sys
 import textwrap
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from html import escape
 from pathlib import Path
 
@@ -396,6 +396,26 @@ def _load_all_shared_harness_runs(
                 raise ValueError(
                     f"{group}: run metadata is not comparable for {version}"
                 )
+        reference_cases = {outcome.case_id: outcome for outcome in reference.outcomes}
+        runs = tuple(
+            BenchmarkRun(
+                run.metadata,
+                tuple(
+                    replace(outcome, case_id=f"{outcome.case_id} [{version} workload]")
+                    if (reference_outcome := reference_cases.get(outcome.case_id))
+                    is not None
+                    and (
+                        outcome.operation != reference_outcome.operation
+                        or outcome.fixture != reference_outcome.fixture
+                        or outcome.size != reference_outcome.size
+                        or outcome.config != reference_outcome.config
+                    )
+                    else outcome
+                    for outcome in run.outcomes
+                ),
+            )
+            for version, run in zip(versions, runs, strict=True)
+        )
         case_ids = {outcome.case_id for run in runs for outcome in run.outcomes}
         reference_cases = {outcome.case_id: outcome for outcome in reference.outcomes}
         for version, run in zip(versions, runs, strict=True):
@@ -404,21 +424,10 @@ def _load_all_shared_harness_runs(
                 reference_outcome = reference_cases.get(case_id)
                 if reference_outcome is None:
                     continue
-                payload_size_mismatch = (
-                    outcome.payload_bytes != reference_outcome.payload_bytes
-                    and (
-                        group != "connect"
-                        or (
-                            outcome.result is not None
-                            and reference_outcome.result is not None
-                        )
-                    )
-                )
                 if (
                     outcome.operation != reference_outcome.operation
                     or outcome.fixture != reference_outcome.fixture
                     or outcome.size != reference_outcome.size
-                    or payload_size_mismatch
                     or outcome.config != reference_outcome.config
                 ):
                     raise ValueError(
@@ -687,18 +696,22 @@ def _load_build_comparison_history(
 
     supplement_versions = {version for version, _, _ in supplemental}
     for version in supplement_versions:
-        for flavor in ("native", "universal"):
-            key = (version, flavor)
+        flavors = tuple(
+            flavor
+            for flavor in ("native", "universal")
+            if (version, flavor) in discovered
+        )
+        if not flavors:
+            raise ValueError(f"{version}: supplements have no matching base results")
+        for flavor in flavors:
             suite_shards = {
                 suite: supplemental.get((version, flavor, suite))
                 for suite in BUILD_COMPARISON_SUITES
             }
-            base_runs = discovered.get(key)
+            base_runs = discovered[(version, flavor)]
             if any(not shards for shards in suite_shards.values()):
-                raise ValueError(
-                    f"{version}: native/universal supplements are incomplete"
-                )
-            if base_runs is None or set(base_runs) != set(BUILD_COMPARISON_SUITES):
+                raise ValueError(f"{version} {flavor}: supplements are incomplete")
+            if set(base_runs) != set(BUILD_COMPARISON_SUITES):
                 raise ValueError(f"{version} {flavor}: base results are incomplete")
             for suite, shards in suite_shards.items():
                 assert shards is not None
@@ -712,44 +725,37 @@ def _load_build_comparison_history(
                         expected_cases={outcome.case_id for outcome in run.outcomes},
                     )
         for suite in BUILD_COMPARISON_SUITES:
-            native_shards = supplemental[(version, "native", suite)]
-            universal_shards = supplemental[(version, "universal", suite)]
-            if set(native_shards) != set(universal_shards):
-                raise ValueError(
-                    f"{version}/{suite}: paired supplement shards are incomplete"
-                )
-            combined: dict[str, set[str]] = {"native": set(), "universal": set()}
-            for shard in sorted(native_shards):
-                native_run, universal_run = (
-                    native_shards[shard],
-                    universal_shards[shard],
-                )
-                _validate_supplement_pair(suite, native_run, universal_run)
-                for flavor, run in (
-                    ("native", native_run),
-                    ("universal", universal_run),
-                ):
+            if len(flavors) == 2:
+                native_shards = supplemental[(version, "native", suite)]
+                universal_shards = supplemental[(version, "universal", suite)]
+                if set(native_shards) != set(universal_shards):
+                    raise ValueError(
+                        f"{version}/{suite}: paired supplement shards are incomplete"
+                    )
+                for shard in sorted(native_shards):
+                    _validate_supplement_pair(
+                        suite, native_shards[shard], universal_shards[shard]
+                    )
+            for flavor in flavors:
+                flavor_shards = supplemental[(version, flavor, suite)]
+                combined_ids: set[str] = set()
+                for run in flavor_shards.values():
                     ids = {outcome.case_id for outcome in run.outcomes}
-                    if combined[flavor].intersection(ids):
+                    if combined_ids.intersection(ids):
                         raise ValueError(
                             f"{version}/{flavor}/{suite}: duplicate supplemental case ID"
                         )
-                    combined[flavor].update(ids)
-            if not combined["native"].issubset(SUPPLEMENT_CASES[suite]) or not combined[
-                "universal"
-            ].issubset(SUPPLEMENT_CASES[suite]):
-                raise ValueError(
-                    f"{version}/{suite}: supplemental case inventory differs"
-                )
-            for flavor in ("native", "universal"):
+                    combined_ids.update(ids)
+                if not combined_ids.issubset(SUPPLEMENT_CASES[suite]):
+                    raise ValueError(
+                        f"{version}/{flavor}/{suite}: supplemental case inventory differs"
+                    )
                 base = discovered[(version, flavor)][suite]
                 base_ids = [outcome.case_id for outcome in base.outcomes]
                 merged = tuple(
                     outcome
-                    for shard in sorted(supplemental[(version, flavor, suite)])
-                    for outcome in supplemental[(version, flavor, suite)][
-                        shard
-                    ].outcomes
+                    for shard in sorted(flavor_shards)
+                    for outcome in flavor_shards[shard].outcomes
                 )
                 if len(base_ids) != len(set(base_ids)) or set(base_ids).intersection(
                     outcome.case_id for outcome in merged

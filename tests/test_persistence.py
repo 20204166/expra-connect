@@ -4,9 +4,10 @@ import tempfile
 import unittest
 from collections.abc import Callable
 from pathlib import Path
-from typing import NoReturn, TextIO
+from typing import NoReturn, TextIO, cast
 from unittest.mock import patch
 
+import msgpack
 import yaml
 
 from expra_connect.persistence import (
@@ -71,6 +72,34 @@ class PersistenceTests(unittest.TestCase):
             with self.assertRaises(StateDataError):
                 store.save({1: "invalid"})  # type: ignore[dict-item]
 
+    def test_messagepack_save_rejects_values_its_loader_cannot_read(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.msgpack"
+            store = MessagePackStateStore(path)
+            store.save({"valid": True})
+            original = path.read_bytes()
+            invalid_documents = (
+                {"nested": {1: "non-string key"}},
+                {"items": [None] * 100_001},
+                {"extension": msgpack.ExtType(1, b"x")},
+            )
+
+            for document in invalid_documents:
+                with self.subTest(document=document):
+                    with self.assertRaises(StateDataError):
+                        store.save(document)
+                    self.assertEqual(path.read_bytes(), original)
+                    self.assertEqual(store.load(), {"valid": True})
+
+    def test_messagepack_load_rejects_non_map_root(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.msgpack"
+            payload = cast(bytes, msgpack.packb(["not", "a map"], use_bin_type=True))
+            path.write_bytes(payload)
+
+            with self.assertRaises(StateDataError):
+                MessagePackStateStore(path).load()
+
     def test_persisted_secret_must_decode_to_256_bits(self) -> None:
         with self.assertRaises(ValueError):
             peer_grant_from_json(
@@ -125,6 +154,37 @@ class PersistenceTests(unittest.TestCase):
             path = Path(directory) / "state.json"
             JsonStateStore(path).save({"z": 1, "a": 2})
             self.assertEqual(path.read_text(encoding="utf-8"), '{"a":2,"z":1}')
+
+    def test_json_state_save_rejects_non_object_roots_and_non_string_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            store = JsonStateStore(path)
+            store.save({"valid": True})
+            original = path.read_bytes()
+
+            invalid_documents = (
+                ["not", "an", "object"],
+                {1: "numeric key"},
+                {"nested": {1: "numeric key"}},
+            )
+            for document in invalid_documents:
+                with self.subTest(document=document):
+                    with self.assertRaises(StateDataError):
+                        store.save(document)  # type: ignore[arg-type]
+                    self.assertEqual(path.read_bytes(), original)
+
+    def test_json_state_rejects_non_finite_numbers_on_save_and_load(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            store = JsonStateStore(path)
+
+            with self.assertRaises(StateDataError):
+                store.save({"value": float("nan")})
+            self.assertFalse(path.exists())
+
+            path.write_text('{"value": NaN}', encoding="utf-8")
+            with self.assertRaises(StateDataError):
+                store.load()
 
     def test_corrupt_or_non_object_state_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -296,6 +356,21 @@ class YamlStateStoreTests(unittest.TestCase):
             self.assertFalse(
                 yaml_path.exists(), "yaml created despite failed migration"
             )
+
+    def test_non_standard_json_number_during_migration_preserves_legacy_source(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            json_path = Path(directory) / "state.json"
+            yaml_path = Path(directory) / "state.yaml"
+            original = b'{"value": Infinity}'
+            json_path.write_bytes(original)
+
+            with self.assertRaises(StateDataError):
+                YamlStateStore(yaml_path).load()
+
+            self.assertEqual(json_path.read_bytes(), original)
+            self.assertFalse(yaml_path.exists())
 
     def test_string_values_survive_round_trip_without_boolean_coercion(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -7,10 +7,11 @@
       "warmups": 1
     },
     "modules": {
-      "expra_connect.cluster.models": "/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/models.py",
-      "expra_connect.cluster.operations": "/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/operations.py",
-      "expra_connect.cluster.roles": "/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/roles.py",
-      "expra_connect.cluster.state": "/tmp/opencode/bench-comparison-2.2.0.1/1.8.0.0/expra_connect/cluster/state.py"
+      "expra_connect.cluster.models": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/cluster/models.py",
+      "expra_connect.cluster.operations": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/cluster/operations.py",
+      "expra_connect.cluster.roles": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/cluster/roles.py",
+      "expra_connect.cluster.state": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/cluster/state.py",
+      "expra_connect.persistence": "/tmp/opencode/expra-connect-1.8-wheel/expra_connect/persistence.py"
     },
     "package_version": "1.8.0.0",
     "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
@@ -32,25 +33,25 @@
         "name": "staged_role_cluster"
       },
       "operation": "cluster round-trip",
-      "payload_bytes": 7497059,
+      "payload_bytes": 6957032,
       "result": {
-        "maximum": 906942.003,
-        "mean_us": 826512.9106666667,
-        "minimum": 709769.342,
-        "ops_per_second": 1.2099024553571684,
+        "maximum": 1041780.993,
+        "mean_us": 1022878.3150000001,
+        "minimum": 1005567.0,
+        "ops_per_second": 0.9776333952294217,
         "outliers": 0,
-        "p25": 786298.3644999999,
-        "p50": 862827.387,
-        "p75": 884884.6950000001,
-        "p95": 902530.5414,
-        "p99": 906059.71068,
+        "p25": 1013426.976,
+        "p50": 1021286.952,
+        "p75": 1031533.9725,
+        "p95": 1039731.5889,
+        "p99": 1041371.11218,
         "peak_bytes": null,
         "samples_us": [
-          709769.342,
-          906942.003,
-          862827.387
+          1041780.993,
+          1021286.952,
+          1005567.0
         ],
-        "spread": 197172.66100000008
+        "spread": 36213.99300000002
       },
       "size": 30000,
       "status": "measured"
@@ -69,25 +70,25 @@
         "name": "staged_role_cluster"
       },
       "operation": "cluster round-trip",
-      "payload_bytes": 25067059,
+      "payload_bytes": 23267032,
       "result": {
-        "maximum": 2832248.555,
-        "mean_us": 2829824.1443333332,
-        "minimum": 2826922.087,
-        "ops_per_second": 0.3533788493544661,
+        "maximum": 2722457.435,
+        "mean_us": 2617103.4116666666,
+        "minimum": 2530729.844,
+        "ops_per_second": 0.3821018288930217,
         "outliers": 0,
-        "p25": 2828611.9390000002,
-        "p50": 2830301.791,
-        "p75": 2831275.1730000004,
-        "p95": 2832053.8786,
-        "p99": 2832209.6197200003,
+        "p25": 2564426.4,
+        "p50": 2598122.956,
+        "p75": 2660290.1955,
+        "p95": 2710023.9871,
+        "p99": 2719970.74542,
         "peak_bytes": null,
         "samples_us": [
-          2832248.555,
-          2826922.087,
-          2830301.791
+          2722457.435,
+          2530729.844,
+          2598122.956
         ],
-        "spread": 5326.468000000343
+        "spread": 191727.59100000001
       },
       "size": 100000,
       "status": "measured"

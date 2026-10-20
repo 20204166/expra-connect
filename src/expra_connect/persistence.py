@@ -128,12 +128,52 @@ def _save_json_document(
     sync_directory: bool = True,
 ) -> None:
     """Write deterministic JSON through the configured atomic boundary."""
+    if not isinstance(value, dict):
+        raise StateDataError("state root must be an object")
+    try:
+        encoded = json.dumps(
+            value, sort_keys=True, separators=(",", ":"), allow_nan=False
+        )
+    except (TypeError, ValueError, RecursionError) as error:
+        raise StateDataError("state cannot be encoded as JSON") from error
+    if not _json_maps_have_string_keys(value):
+        raise StateDataError("JSON state object keys must be strings")
     atomic_write(
         path,
-        lambda file: file.write(
-            json.dumps(value, sort_keys=True, separators=(",", ":"))
-        ),
+        lambda file: file.write(encoded),
         sync_directory=sync_directory,
+    )
+
+
+def _json_maps_have_string_keys(value: Any) -> bool:
+    if isinstance(value, dict):
+        return all(
+            isinstance(key, str) and _json_maps_have_string_keys(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, (list, tuple)):
+        return all(_json_maps_have_string_keys(item) for item in value)
+    return True
+
+
+def _reject_json_constant(value: str) -> Any:
+    raise ValueError(f"non-standard JSON constant: {value}")
+
+
+def _json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON object key")
+        result[key] = value
+    return result
+
+
+def _load_json(text: str) -> Any:
+    return json.loads(
+        text,
+        parse_constant=_reject_json_constant,
+        object_pairs_hook=_json_object,
     )
 
 
@@ -267,8 +307,8 @@ class JsonStateStore:
 
     def load(self) -> dict[str, Any]:
         try:
-            value = json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            value = _load_json(self.path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, ValueError, RecursionError) as error:
             raise StateDataError("persisted state cannot be decoded") from error
         if not isinstance(value, dict):
             raise StateDataError("state root must be an object")
@@ -320,8 +360,8 @@ class YamlStateStore:
         if not json_path.exists():
             return
         try:
-            raw: Any = json.loads(json_path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raw: Any = _load_json(json_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, ValueError, RecursionError) as error:
             raise StateDataError("persisted state cannot be decoded") from error
         if not isinstance(raw, dict):
             raise StateDataError("state root must be an object")
@@ -346,12 +386,27 @@ class MessagePackStateStore:
             raise StateDataError("MessagePack state must be a string-keyed map")
         try:
             payload = msgpack.packb(value, use_bin_type=True)
-        except (TypeError, ValueError) as error:
+            if not isinstance(payload, bytes):
+                raise StateDataError("MessagePack encoder returned invalid data")
+            if len(payload) > self.MAX_BYTES:
+                raise StateDataError("MessagePack state exceeds size limit")
+            # Keep save acceptance aligned with the bounded decoder contract.
+            decoded = msgpack.unpackb(
+                payload,
+                raw=False,
+                strict_map_key=True,
+                max_str_len=self.MAX_BYTES,
+                max_bin_len=self.MAX_BYTES,
+                max_array_len=100_000,
+                max_map_len=100_000,
+                max_ext_len=0,
+            )
+        except (TypeError, ValueError, msgpack.UnpackException) as error:
             raise StateDataError("state cannot be encoded as MessagePack") from error
-        if not isinstance(payload, bytes):
-            raise StateDataError("MessagePack encoder returned invalid data")
-        if len(payload) > self.MAX_BYTES:
-            raise StateDataError("MessagePack state exceeds size limit")
+        if not isinstance(decoded, dict) or not all(
+            isinstance(key, str) for key in decoded
+        ):
+            raise StateDataError("MessagePack state must be a string-keyed map")
         _atomic_write_bytes(self.path, payload)
 
     def load(self) -> dict[str, Any]:

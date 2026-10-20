@@ -329,6 +329,15 @@ class SurfaceOperationProtocolTests(unittest.TestCase):
                 secret=TEST_SECRET,
                 payload={"value": math.nan},
             )
+        with self.assertRaises(ValueError):
+            sign_response(
+                node_id="peer",
+                request_id="request",
+                status="ok",
+                timestamp=TEST_TIMESTAMP,
+                secret=TEST_SECRET,
+                payload=["not", "an", "object"],  # type: ignore[arg-type]
+            )
         response = sign_response(
             node_id="peer",
             request_id="request",

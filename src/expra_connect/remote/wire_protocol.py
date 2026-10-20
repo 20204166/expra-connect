@@ -411,6 +411,8 @@ def sign_response(
     session_id: str | None = None,
     connection_generation: str | None = None,
 ) -> dict[str, Any]:
+    if payload is not None and not isinstance(payload, dict):
+        raise ValueError("response payload must be an object or None")
     fields: dict[str, Any] = {
         "v": REMOTE_PROTOCOL_VERSION,
         "node_id": node_id,
@@ -424,9 +426,7 @@ def sign_response(
         fields["session_id"] = session_id
     if connection_generation is not None:
         fields["connection_generation"] = connection_generation
-    envelope = dict(fields)
-    envelope["sig"] = _signature(secret, fields)
-    return envelope
+    return {**fields, "sig": _signature(secret, fields)}
 
 
 class ReplayCache:

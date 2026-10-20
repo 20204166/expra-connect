@@ -44,6 +44,35 @@ DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 
 class BuildComparisonTests(unittest.TestCase):
+    def test_build_history_accepts_either_flavor_or_both_flavors(self) -> None:
+        for flavors in (("native",), ("universal",), ("native", "universal")):
+            with (
+                self.subTest(flavors=flavors),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                results_dir = Path(directory)
+                for flavor in flavors:
+                    for suite in ("cluster_state", "persistence", "connect"):
+                        run = self._pairwise_run("2.2.2.0", flavor, suite, 10.0)
+                        write_results(
+                            results_dir / f"2.2.2.0-{flavor}-{suite}.json",
+                            run.metadata,
+                            run.outcomes,
+                        )
+
+                history = performance_diagrams._load_build_comparison_history(
+                    results_dir
+                )
+
+            self.assertEqual(
+                {
+                    performance_diagrams._run_build_flavor(run)
+                    for run in history["connect"]
+                    if run.metadata.package_version == "2.2.2.0"
+                },
+                set(flavors),
+            )
+
     def test_supplemental_cases_extend_coverage_without_scoring_old_builds(
         self,
     ) -> None:
@@ -104,6 +133,39 @@ class BuildComparisonTests(unittest.TestCase):
                 )
             self.assertEqual(
                 tuple(path.read_bytes() for path in original_paths), original_bytes
+            )
+
+    def test_supplemental_history_accepts_either_single_build_flavor(self) -> None:
+        for retained_flavor in ("native", "universal"):
+            with (
+                self.subTest(flavor=retained_flavor),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                results_dir = Path(directory)
+                self._write_supplement_history(results_dir)
+                omitted_flavor = (
+                    "universal" if retained_flavor == "native" else "native"
+                )
+                for path in results_dir.glob(f"2.2.1.0-{omitted_flavor}-*.json"):
+                    path.unlink()
+
+                history = performance_diagrams._load_build_comparison_history(
+                    results_dir
+                )
+
+            runs = [
+                run
+                for run in history["connect"]
+                if run.metadata.package_version == "2.2.1.0"
+            ]
+            self.assertEqual(
+                {performance_diagrams._run_build_flavor(run) for run in runs},
+                {retained_flavor},
+            )
+            self.assertTrue(
+                SUPPLEMENT_CASES["connect"].issubset(
+                    {outcome.case_id for outcome in runs[0].outcomes}
+                )
             )
 
     def test_numbered_cluster_shard_merges_with_immutable_initial_supplement(
@@ -501,7 +563,7 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertIn("2.2.0.4 native", svg)
         self.assertIn("2.2.0.4 universal", svg)
         self.assertIn("Composite index · equal-suite geometric mean", svg)
-        self.assertIn("Full-workload index · equal-case · 37 cases", svg)
+        self.assertIn("Full-workload index · equal-case · 35 cases", svg)
         self.assertIn("cluster state", svg)
         self.assertIn("persistence", svg)
         self.assertIn("connect", svg)
@@ -720,18 +782,40 @@ class BaselineTests(unittest.TestCase):
             any(line.lstrip().startswith("|") for line in source.splitlines())
         )
 
-    def test_shared_runs_reject_fixture_mismatch(self) -> None:
+    def test_shared_runs_keep_different_historical_fixtures_out_of_comparisons(
+        self,
+    ) -> None:
         source = ROOT / "tools" / "shared-benchmark-results"
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "runs"
             shutil.copytree(source, target)
-            run_path = next(target.glob("connect-*.json"))
+            run_path = target / "connect-2.2.0.1.json"
             document = json.loads(run_path.read_text(encoding="utf-8"))
             document["outcomes"][0]["fixture"]["shape"] = "other-fixture"
             run_path.write_text(json.dumps(document), encoding="utf-8")
 
-            with self.assertRaisesRegex(ValueError, "fixture or config differs"):
-                load_shared_harness_runs(target)
+            runs = load_shared_harness_runs(target)
+
+        historical = next(
+            run for run in runs["connect"] if run.metadata.package_version == "2.2.0.1"
+        )
+        self.assertTrue(
+            any("[2.2.0.1 workload]" in item.case_id for item in historical.outcomes)
+        )
+
+    def test_shared_runs_allow_payload_size_to_change_between_releases(self) -> None:
+        source = ROOT / "tools" / "shared-benchmark-results"
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "runs"
+            shutil.copytree(source, target)
+            run_path = target / "cluster-scaling-1.8.0.0.json"
+            document = json.loads(run_path.read_text(encoding="utf-8"))
+            document["outcomes"][0]["payload_bytes"] = 6_957_032
+            run_path.write_text(json.dumps(document), encoding="utf-8")
+
+            runs = load_shared_harness_runs(target)
+
+        self.assertEqual(runs["cluster-scaling"][0].metadata.package_version, "1.8.0.0")
 
     def test_shared_runs_keep_the_visible_window_and_preserve_approved_gaps(
         self,
@@ -753,27 +837,47 @@ class BaselineTests(unittest.TestCase):
             )
         for run in runs["cluster-large"][:2]:
             operations = {item.operation for item in run.outcomes}
+            expected_operations = {
+                "role encode",
+                "role decode",
+                "cluster encode",
+                "cluster decode",
+                "cluster document round-trip",
+                "cluster round-trip",
+                "YAML encode",
+                "YAML parse",
+                "YAML cluster round-trip",
+            }
+            if run.metadata.package_version == "1.8.0.0":
+                expected_operations.update(
+                    {
+                        "role authorization",
+                        "role authorization worker denied",
+                        "role authorization subcoordinator grant",
+                        "role authorization subcoordinator missing grant",
+                        "role authorization subcoordinator expired grant",
+                        "role authorization paused source",
+                        "role authorization revoked destination",
+                        "role authorization invalid clock",
+                    }
+                )
             self.assertEqual(
                 operations,
-                {
-                    "role encode",
-                    "role decode",
-                    "cluster encode",
-                    "cluster decode",
-                    "cluster document round-trip",
-                    "cluster round-trip",
-                    "YAML encode",
-                    "YAML parse",
-                    "YAML cluster round-trip",
-                },
+                expected_operations,
             )
             self.assertTrue(
                 all(
                     item.result is None
                     for item in run.outcomes
-                    if item.operation.startswith("YAML")
+                    if item.operation.startswith("YAML") and item.size == 100_000
                 )
             )
+        baseline_yaml_30k = tuple(
+            item
+            for item in runs["cluster-large"][0].outcomes
+            if item.operation.startswith("YAML") and item.size == 30_000
+        )
+        self.assertTrue(all(item.result is not None for item in baseline_yaml_30k))
         self.assertFalse(
             (
                 ROOT / "tools/shared-benchmark-results/persistence-30k-2.2.0.3.json"
@@ -1046,7 +1150,7 @@ class DiagramTests(unittest.TestCase):
             coverage = _full_workload_coverage_rows(groups)
 
         self.assertEqual(labels[-1], "99.99.99.99 native")
-        self.assertEqual(len(groups["cluster-1k"][0].outcomes), 9)
+        self.assertEqual(len(groups["cluster-1k"][0].outcomes), 17)
         self.assertEqual(len(groups["cluster-1k"]), len(labels))
         self.assertIn("99.99.99.99 native", svg)
         self.assertIn("future cluster operation", svg)
@@ -1104,7 +1208,7 @@ class DiagramTests(unittest.TestCase):
 
         for label in (
             "Full-workload index plot",
-            "All included suites and sizes · 37 matched cases",
+            "All included suites and sizes · 35 matched cases",
             "Size-specific matched-workload index",
             "1k · cluster state · 9 matched cases",
             "30k · cluster state · 6 matched cases",
@@ -1114,9 +1218,9 @@ class DiagramTests(unittest.TestCase):
         ):
             with self.subTest(label=label):
                 self.assertIn(label, text)
-        self.assertIn("0.764", svg)
-        self.assertIn("0.783", svg)
-        self.assertIn("0.777", svg)
+        self.assertIn("0.728", svg)
+        self.assertIn("0.687", svg)
+        self.assertIn("0.830", svg)
         self.assertIn("1.000", svg)
         appended = svg[svg.index("Size-specific matched-workload index") :]
         labels = shared_harness_labels(
@@ -1150,10 +1254,10 @@ class DiagramTests(unittest.TestCase):
             ),
         )
         native_index = shared_harness_labels(groups).index("2.2.0.4 native")
-        self.assertAlmostEqual(panels[0].indices[native_index], 0.7638, places=4)
-        self.assertAlmostEqual(panels[1].indices[native_index], 0.7831, places=4)
-        self.assertAlmostEqual(panels[2].indices[native_index], 0.7771, places=4)
-        self.assertAlmostEqual(panels[3].indices[native_index], 1.103909, places=6)
+        self.assertAlmostEqual(panels[0].indices[native_index], 0.728151, places=6)
+        self.assertAlmostEqual(panels[1].indices[native_index], 0.687017, places=6)
+        self.assertAlmostEqual(panels[2].indices[native_index], 0.830477, places=6)
+        self.assertAlmostEqual(panels[3].indices[native_index], 0.905026, places=6)
         for panel in panels:
             self.assertEqual(panel.indices[0], 1.0)
             self.assertEqual(len(panel.indices), len(groups["cluster-1k"]))
@@ -1164,17 +1268,17 @@ class DiagramTests(unittest.TestCase):
         panel = _full_workload_index_panel(groups)
         row = _full_workload_index_row(panel)
 
-        self.assertEqual(panel.case_count, 37)
+        self.assertEqual(panel.case_count, 35)
         self.assertEqual(panel.label, "All included suites and sizes")
-        self.assertEqual(row.label, "Full-workload index · equal-case · 37 cases")
+        self.assertEqual(row.label, "Full-workload index · equal-case · 35 cases")
         self.assertEqual(row.values[0], 1.0)
         labels = shared_harness_labels(groups)
         native_index = row.values[labels.index("2.2.0.4 native")]
         universal_index = row.values[labels.index("2.2.0.4 universal")]
         if native_index is None or universal_index is None:
             self.fail("full-workload index is unavailable for a 2.2.0.4 build")
-        self.assertAlmostEqual(native_index, 0.942746, places=6)
-        self.assertAlmostEqual(universal_index, 1.003027, places=6)
+        self.assertAlmostEqual(native_index, 0.888690, places=6)
+        self.assertAlmostEqual(universal_index, 0.968770, places=6)
 
     def test_weighted_overall_index_uses_declared_size_biased_categories(self) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
@@ -1182,14 +1286,14 @@ class DiagramTests(unittest.TestCase):
         panel = _weighted_overall_index_panel(groups)
         svg = render_diagrams()["performance-comparison.svg"]
 
-        self.assertEqual(panel.case_count, 37)
+        self.assertEqual(panel.case_count, 35)
         self.assertAlmostEqual(panel.indices[0], 1.0)
         labels = shared_harness_labels(groups)
         self.assertAlmostEqual(
-            panel.indices[labels.index("2.2.0.4 native")], 0.9744, places=4
+            panel.indices[labels.index("2.2.0.4 native")], 0.917345, places=6
         )
         self.assertAlmostEqual(
-            panel.indices[labels.index("2.2.0.4 universal")], 0.9919, places=4
+            panel.indices[labels.index("2.2.0.4 universal")], 0.937294, places=6
         )
         self.assertIn("Weighted overall index", svg)
         self.assertIn("1k cluster: 5%", svg)
@@ -1209,7 +1313,7 @@ class DiagramTests(unittest.TestCase):
         self.assertIn("\n- **Distinct-workload coverage:**", summary)
         self.assertIn("2.2.0.3 native:", summary)
         self.assertIn("2.2.0.3 universal:", summary)
-        self.assertIn("37 matched positive-p50 cases", summary)
+        self.assertIn("35 matched positive-p50 cases", summary)
         self.assertIn("110 unique cases", summary)
         self.assertIn("2.2.0.4 native: 68/110", summary)
 
@@ -1277,7 +1381,7 @@ class DiagramTests(unittest.TestCase):
             ),
             (6, 17),
         )
-        self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (10, 22))
+        self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (11, 22))
         self.assertEqual(
             (rows[4].cells[native_index].measured, rows[4].cells[native_index].total),
             (13, 13),
@@ -1326,7 +1430,7 @@ class DiagramTests(unittest.TestCase):
 
         rows = _full_workload_coverage_rows(groups)
 
-        self.assertEqual((rows[0].cells[0].measured, rows[0].cells[0].total), (9, 18))
+        self.assertEqual((rows[0].cells[0].measured, rows[0].cells[0].total), (17, 18))
         self.assertEqual(
             (rows[0].cells[-2].measured, rows[0].cells[-2].total), (18, 18)
         )

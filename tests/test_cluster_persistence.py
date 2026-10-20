@@ -265,3 +265,19 @@ class ClusterPersistenceTests(unittest.TestCase):
             epoch[field] = value
             with self.assertRaises((ValueError, ClusterDataError)):
                 ClusterState.from_dict(malformed)
+
+    def test_cluster_store_normalizes_malformed_state_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "cluster.yaml"
+            YamlStateStore(path).save(
+                {
+                    "schema_version": 2,
+                    "cluster_id": "cluster",
+                    "local_node_id": "coord",
+                    "assignments": [{"node_id": "coord", "roles": ["unknown"]}],
+                    "epoch": None,
+                }
+            )
+
+            with self.assertRaises(ClusterDataError):
+                ClusterStore(path).load()
