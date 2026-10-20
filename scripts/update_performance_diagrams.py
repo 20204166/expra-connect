@@ -1108,6 +1108,11 @@ def _render_latest_build_pairwise_svg(
     return "\n".join(parts)
 
 
+def _format_performance_points(ratio: float) -> str:
+    """Format a normalized performance ratio as points from a 100-point baseline."""
+    return f"{ratio * 100:.3f}p"
+
+
 def _pairwise_case_cell(
     candidate: BenchmarkOutcome, reference: BenchmarkOutcome
 ) -> tuple[str, str, str]:

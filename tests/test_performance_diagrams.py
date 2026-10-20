@@ -44,6 +44,18 @@ DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 
 class BuildComparisonTests(unittest.TestCase):
+    def test_performance_points_format_normalized_ratios(self) -> None:
+        formatter = getattr(
+            performance_diagrams, "_format_performance_points", None
+        )
+        self.assertTrue(callable(formatter))
+        if not callable(formatter):
+            return
+
+        self.assertEqual(formatter(1.0), "100.000p")
+        self.assertEqual(formatter(0.8), "80.000p")
+        self.assertEqual(formatter(1.34), "134.000p")
+
     def test_recent_reference_scores_are_flavor_specific(self) -> None:
         history: dict[str, tuple[BenchmarkRun, ...]] = {}
         for suite in performance_diagrams.BUILD_COMPARISON_SUITES:
