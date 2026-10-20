@@ -45,9 +45,7 @@ DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 class BuildComparisonTests(unittest.TestCase):
     def test_performance_points_format_normalized_ratios(self) -> None:
-        formatter = getattr(
-            performance_diagrams, "_format_performance_points", None
-        )
+        formatter = getattr(performance_diagrams, "_format_performance_points", None)
         self.assertTrue(callable(formatter))
         if not callable(formatter):
             return
@@ -100,9 +98,9 @@ class BuildComparisonTests(unittest.TestCase):
 
         self.assertEqual(scores["native"].candidate_version, "2.2.0.5")
         self.assertEqual(scores["native"].reference_version, "2.2.1.0")
-        self.assertAlmostEqual(scores["native"].reference_weighted_percent, 100.0)
-        self.assertAlmostEqual(scores["native"].candidate_weighted_percent, 110.0)
-        self.assertAlmostEqual(scores["universal"].candidate_weighted_percent, 120.0)
+        self.assertAlmostEqual(scores["native"].reference_weighted_ratio, 1.0)
+        self.assertAlmostEqual(scores["native"].candidate_weighted_ratio, 1.1)
+        self.assertAlmostEqual(scores["universal"].candidate_weighted_ratio, 1.2)
         self.assertEqual(scores["native"].weighted_case_count, 5)
         self.assertEqual(scores["native"].full_workload_case_count, 5)
 
@@ -554,8 +552,8 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertIn("Reference: 2.2.0.5 native", svg)
         self.assertIn("Candidate p50 80.000 µs", svg)
         self.assertIn("Reference p50 100.000 µs", svg)
-        self.assertIn("Candidate/reference 80.0%", svg)
-        self.assertIn("80.0%", svg)
+        self.assertIn("Candidate/reference 80.000p", svg)
+        self.assertIn("80.000p", svg)
         self.assertNotIn("2.2.0.6", svg)
         self.assertIn("unweighted", svg)
         self.assertIn("Blue is faster; red is slower", svg)
@@ -592,7 +590,7 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertEqual(
             performance_diagrams._pairwise_case_cell(candidate, reference),
             (
-                "Candidate p50 40.000 µs · Reference p50 100.000 µs · Candidate/reference 40.0%",
+                "Candidate p50 40.000 µs · Reference p50 100.000 µs · Candidate/reference 40.000p",
                 "#2166ac",
                 "#ffffff",
             ),
@@ -624,8 +622,8 @@ class BuildComparisonTests(unittest.TestCase):
 
         self.assertIn("2.2.0.4 native", svg)
         self.assertIn("2.2.0.4 universal", svg)
-        self.assertIn("Percent vs 1.8.0.0", svg)
-        self.assertIn("≤50%", svg)
+        self.assertIn("Performance points vs 1.8.0.0", svg)
+        self.assertIn("≤50.000p", svg)
         self.assertIn("Composite index · equal-suite geometric mean", svg)
         self.assertIn("Full-workload index · equal-case · 40 cases", svg)
         self.assertIn("cluster state", svg)
@@ -1272,7 +1270,10 @@ class DiagramTests(unittest.TestCase):
         if first_role.result is None or last_role.result is None:
             self.fail("shared cluster role-encode result is unavailable")
         self.assertIn(
-            f"{last_role.result.p50 / first_role.result.p50 * 100:.1f}%", shared_svg
+            performance_diagrams._format_performance_points(
+                last_role.result.p50 / first_role.result.p50
+            ),
+            shared_svg,
         )
         self.assertIn(f"{last_role.result.p50:,.3f} µs", shared_svg)
 
@@ -1295,10 +1296,10 @@ class DiagramTests(unittest.TestCase):
         ):
             with self.subTest(label=label):
                 self.assertIn(label, text)
-        self.assertIn("72.8%", svg)
-        self.assertIn("68.7%", svg)
-        self.assertIn("83.0%", svg)
-        self.assertIn("100.0%", svg)
+        self.assertIn("72.815p", svg)
+        self.assertIn("40.881p", svg)
+        self.assertIn("83.048p", svg)
+        self.assertIn("100.000p", svg)
         appended = svg[svg.index("Size-specific matched-workload index") :]
         labels = shared_harness_labels(
             load_shared_harness_runs(ROOT / "tools/shared-benchmark-results")
@@ -1390,10 +1391,10 @@ class DiagramTests(unittest.TestCase):
         summary = render_performance_summary(groups, build_history=history)
 
         self.assertTrue(summary.startswith("- **Current weighted winner:**"))
-        self.assertIn("100% = 1.8.0.0 historical reference", summary)
+        self.assertIn("100.000p = 1.8.0.0 historical reference", summary)
         self.assertIn("Recent reference: 2.2.1.0", summary)
         self.assertIn("2.2.0.5 native", summary)
-        self.assertIn("98.8%", summary)
+        self.assertIn("98.803p", summary)
         self.assertIn("\n- **Distinct-workload coverage:**", summary)
         self.assertIn("2.2.1.1 native:", summary)
         self.assertIn("2.2.1.1 universal:", summary)
@@ -1411,10 +1412,12 @@ class DiagramTests(unittest.TestCase):
         svg = diagrams["performance-recent-reference.svg"]
 
         self.assertIn("Recent reference: 2.2.1.0 native/universal", svg)
-        self.assertIn("Each flavor has its own 2.2.1.0 baseline: 100%", svg)
+        self.assertIn("Each flavor has its own 2.2.1.0 baseline: 100.000p", svg)
         self.assertIn("2.2.0.5 native", svg)
-        self.assertIn("98.8%", svg)
-        self.assertIn("Percent vs 1.8.0.0", diagrams["performance-comparison.svg"])
+        self.assertIn("98.803p", svg)
+        self.assertIn(
+            "Performance points vs 1.8.0.0", diagrams["performance-comparison.svg"]
+        )
 
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

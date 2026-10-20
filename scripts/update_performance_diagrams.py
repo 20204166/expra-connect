@@ -322,10 +322,10 @@ class RecentReferenceScore:
     flavor: str
     reference_version: str
     candidate_version: str
-    reference_weighted_percent: float
-    reference_full_workload_percent: float
-    candidate_weighted_percent: float
-    candidate_full_workload_percent: float
+    reference_weighted_ratio: float
+    reference_full_workload_ratio: float
+    candidate_weighted_ratio: float
+    candidate_full_workload_ratio: float
     weighted_case_count: int
     full_workload_case_count: int
 
@@ -1005,13 +1005,13 @@ def _render_latest_build_pairwise_svg(
         _text(
             18,
             84,
-            "Unweighted case comparisons only; excluded from the historical weighted score. Percentages below 100% favor the candidate.",
+            "Unweighted case comparisons only; excluded from the historical weighted score. Scores below 100.000p favor the candidate.",
             size=13,
         ),
         _text(
             18,
             112,
-            "Each cell: candidate p50 · reference p50 · candidate/reference percentage. Blue is faster; red is slower.",
+            "Each cell: candidate p50 · reference p50 · candidate/reference points. Blue is faster; red is slower.",
             size=11,
         ),
         _text(label_x, 174, "Suite · size · operation · case", size=12, weight="bold"),
@@ -1146,7 +1146,7 @@ def _pairwise_case_cell(
     color = PALETTE[bucket]
     text_color = "#ffffff" if bucket in (0, len(PALETTE) - 1) else "#142323"
     return (
-        f"Candidate p50 {candidate_p50:.3f} µs · Reference p50 {reference_p50:.3f} µs · Candidate/reference {ratio * 100:.1f}%",
+        f"Candidate p50 {candidate_p50:.3f} µs · Reference p50 {reference_p50:.3f} µs · Candidate/reference {_format_performance_points(ratio)}",
         color,
         text_color,
     )
@@ -1429,7 +1429,7 @@ def _render_recent_reference_svg(
         _text(
             16,
             52,
-            "Each flavor has its own 2.2.1.0 baseline: 100%; lower is faster.",
+            "Each flavor has its own 2.2.1.0 baseline: 100.000p; lower is faster.",
             size=12,
         ),
         _text(16, 80, "Build / reference", size=12, weight="bold"),
@@ -1444,8 +1444,8 @@ def _render_recent_reference_svg(
                 16, y + 14, f"{score.reference_version} {flavor} · reference", size=12
             )
         )
-        parts.append(_text(590, y + 14, "100%", size=12, anchor="middle"))
-        parts.append(_text(760, y + 14, "100%", size=12, anchor="middle"))
+        parts.append(_text(590, y + 14, "100.000p", size=12, anchor="middle"))
+        parts.append(_text(760, y + 14, "100.000p", size=12, anchor="middle"))
         parts.append(
             _text(
                 16,
@@ -1459,7 +1459,7 @@ def _render_recent_reference_svg(
             _text(
                 590,
                 y + 30,
-                f"{score.candidate_weighted_percent:.1f}%",
+                _format_performance_points(score.candidate_weighted_ratio),
                 size=12,
                 anchor="middle",
             )
@@ -1468,7 +1468,7 @@ def _render_recent_reference_svg(
             _text(
                 760,
                 y + 30,
-                f"{score.candidate_full_workload_percent:.1f}%",
+                _format_performance_points(score.candidate_full_workload_ratio),
                 size=12,
                 anchor="middle",
             )
@@ -1777,10 +1777,10 @@ def _recent_reference_scores(
             flavor=flavor,
             reference_version=RECENT_REFERENCE_VERSION,
             candidate_version=candidate_version,
-            reference_weighted_percent=100.0,
-            reference_full_workload_percent=100.0,
-            candidate_weighted_percent=weighted.indices[1] * 100,
-            candidate_full_workload_percent=full_workload.indices[1] * 100,
+            reference_weighted_ratio=1.0,
+            reference_full_workload_ratio=1.0,
+            candidate_weighted_ratio=weighted.indices[1],
+            candidate_full_workload_ratio=full_workload.indices[1],
             weighted_case_count=weighted.case_count,
             full_workload_case_count=full_workload.case_count,
         )
@@ -1920,23 +1920,23 @@ def render_performance_summary(
         for label, cell in zip(labels, coverage.cells, strict=True)
     ]
     recent_lines = [
-        f"- **100% = {REFERENCE_VERSION} historical reference** (historical scores above use this denominator)."
+        f"- **100.000p = {REFERENCE_VERSION} historical reference** (historical scores above use this denominator)."
     ]
     if build_history is not None:
         recent_lines.append(
-            f"- **Recent reference: {RECENT_REFERENCE_VERSION}** — each flavor is normalized independently; 100% is its own reference and lower is faster."
+            f"- **Recent reference: {RECENT_REFERENCE_VERSION}** — each flavor is normalized independently; 100.000p is its own reference and lower is faster."
         )
         for flavor, score in _recent_reference_scores(build_history).items():
             recent_lines.extend(
                 (
-                    f"  - {score.reference_version} {flavor} reference: weighted 100.0%; full workload 100.0%.",
-                    f"  - {score.candidate_version} {flavor}: weighted {score.candidate_weighted_percent:.1f}%; full workload {score.candidate_full_workload_percent:.1f}% ({score.weighted_case_count} matched cases).",
+                    f"  - {score.reference_version} {flavor} reference: weighted 100.000p; full workload 100.000p.",
+                    f"  - {score.candidate_version} {flavor}: weighted {_format_performance_points(score.candidate_weighted_ratio)}; full workload {_format_performance_points(score.candidate_full_workload_ratio)} ({score.weighted_case_count} matched cases).",
                 )
             )
     return "\n".join(
         [
             (
-                f"- **Current weighted winner:** {', '.join(winners)} — {best * 100:.1f}% of 1.8.0.0; "
+                f"- **Current weighted winner:** {', '.join(winners)} — {_format_performance_points(best)} of 1.8.0.0; "
                 f"{weighted.case_count} matched positive-p50 cases."
             ),
             "  - Applies only to this workload set and weighting; it is not a universal claim.",
@@ -2214,10 +2214,10 @@ def _render_heatmap_svg(
                         ratio = value / reference_value
                         bucket = _ratio_bucket(ratio)
                         color = PALETTE[bucket]
-                        label = f"{ratio * 100:.1f}%"
+                        label = _format_performance_points(ratio)
                         detail = (
                             f"{row.label}, {versions[index]}: {value:,.3f} {row.value_unit}; "
-                            f"{ratio * 100:.6g}% versus {REFERENCE_VERSION}"
+                            f"{_format_performance_points(ratio)} versus {REFERENCE_VERSION}"
                         )
                         text_color = (
                             "#ffffff" if bucket in (0, len(PALETTE) - 1) else "#142323"
@@ -2240,7 +2240,9 @@ def _render_heatmap_svg(
         y += 25
     legend_y = heatmap_height - 38
     parts.append(
-        _text(16, legend_y + 15, "Percent vs 1.8.0.0:", size=12, weight="bold")
+        _text(
+            16, legend_y + 15, "Performance points vs 1.8.0.0:", size=12, weight="bold"
+        )
     )
     for index, color in enumerate(PALETTE):
         x = 112 + index * 98
@@ -2248,13 +2250,13 @@ def _render_heatmap_svg(
             f'<rect x="{x}" y="{legend_y}" width="22" height="18" fill="{color}"/>'
         )
         label = (
-            "≤50%",
-            "50–75%",
-            "75–95%",
-            "≈100%",
-            "105–150%",
-            "150–200%",
-            ">200%",
+            "≤50.000p",
+            "50.000–75.000p",
+            "75.000–95.000p",
+            "≈100.000p",
+            "105.000–150.000p",
+            "150.000–200.000p",
+            ">200.000p",
         )[index]
         parts.append(_text(x + 28, legend_y + 14, label, size=11))
     if weighted_overall_index is not None:
@@ -2305,7 +2307,7 @@ def _render_size_index_panels(
         _text(
             16,
             top + 21,
-            "Geometric mean as percent of matched p50 baseline 1.8.0.0; 100% is baseline, lower is faster. Points are not connected across sizes.",
+            "Geometric mean in points relative to matched p50 baseline 1.8.0.0; 100.000p is baseline, lower is faster. Points are not connected across sizes.",
             size=11,
             color="#454545",
         )
@@ -2325,7 +2327,7 @@ def _render_full_workload_index_plot(
         _text(
             16,
             top + 21,
-            "Geometric mean as percent of the 1.8.0.0 reference across common positive-p50 cases; 100% is baseline, lower is faster.",
+            "Geometric mean in points relative to the 1.8.0.0 reference across common positive-p50 cases; 100.000p is baseline, lower is faster.",
             size=11,
             color="#454545",
         )
@@ -2341,7 +2343,7 @@ def _render_weighted_overall_index_plot(
         _text(
             16,
             top + 21,
-            "Weighted geometric mean as percent of the 1.8.0.0 reference; cases are equally weighted within each category.",
+            "Weighted geometric mean in points relative to the 1.8.0.0 reference; cases are equally weighted within each category.",
             size=11,
             color="#454545",
         )
@@ -2460,7 +2462,7 @@ def _render_index_panel(
         _text(
             1085,
             top + 15,
-            f"lowest observed: {', '.join(best_versions)} ({best * 100:.1f}%)",
+            f"lowest observed: {', '.join(best_versions)} ({_format_performance_points(best)})",
             size=10,
             color="#454545",
         )
@@ -2478,7 +2480,13 @@ def _render_index_panel(
             f'stroke="{stroke}" stroke-dasharray="{dash}"/>'
         )
         parts.append(
-            _text(x, rows_top - 3, f"{tick * 100:.0f}%", size=9, anchor="middle")
+            _text(
+                x,
+                rows_top - 3,
+                _format_performance_points(tick),
+                size=9,
+                anchor="middle",
+            )
         )
     for version_index, (version, value) in enumerate(
         zip(versions, panel.indices, strict=True)
@@ -2493,9 +2501,9 @@ def _render_index_panel(
         parts.append(
             f'<circle cx="{x:.1f}" cy="{y}" r="{point_radius}" fill="{color}">'
             f"<title>{escape(version)} · {escape(panel.label)} · "
-            f"{value * 100:.3f}% of reference; {panel.case_count} matched cases</title></circle>"
+            f"{_format_performance_points(value)} of reference; {panel.case_count} matched cases</title></circle>"
         )
-        parts.append(_text(1085, y + 4, f"{value * 100:.1f}%", size=10))
+        parts.append(_text(1085, y + 4, _format_performance_points(value), size=10))
 
 
 def _svg_header(width: int, height: int, title: str) -> list[str]:
@@ -2508,7 +2516,7 @@ def _svg_header(width: int, height: int, title: str) -> list[str]:
         _text(
             16,
             51,
-            "Cells are percentages of the 1.8.0.0 baseline; 100% is baseline and lower is faster. Composite weights cluster, persistence, and connect equally.",
+            "Cells are performance points relative to the 1.8.0.0 baseline; 100.000p is baseline and lower is faster. Composite weights cluster, persistence, and connect equally.",
             size=12,
             color="#454545",
         ),
