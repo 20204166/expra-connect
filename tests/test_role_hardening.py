@@ -698,7 +698,14 @@ class LeaseTests(unittest.TestCase):
             )
 
     def test_invalid_now_is_rejected(self) -> None:
-        for bad in (float("nan"), float("inf"), float("-inf"), True, "1"):
+        for bad in (
+            float("nan"),
+            float("inf"),
+            float("-inf"),
+            True,
+            "1",
+            10**10000,
+        ):
             with self.assertRaises((FencingError, ValueError, TypeError)):
                 renew_lease(
                     self.epoch,
@@ -706,6 +713,19 @@ class LeaseTests(unittest.TestCase):
                     fencing_token="token",
                     now=bad,
                 )
+
+    def test_unrepresentably_large_promotion_time_is_not_promotable(self) -> None:
+        state = RoleState(
+            assignments=(coordinator(), subcoordinator()), epoch=self.epoch
+        )
+
+        self.assertFalse(
+            can_promote(
+                state,
+                subcoordinator_id=NodeId("sub"),
+                now=10**10000,
+            )
+        )
 
     def test_invalid_lease_duration_is_rejected(self) -> None:
         for bad in (float("nan"), float("inf"), float("-inf"), 0.0, -1.0, True):

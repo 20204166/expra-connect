@@ -28,11 +28,12 @@ _ROLE_STATE_INDEX_LOCK = Lock()
 
 
 def _finite(value: object) -> TypeGuard[int | float]:
-    return (
-        not isinstance(value, bool)
-        and isinstance(value, (int, float))
-        and math.isfinite(float(value))
-    )
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(float(value))
+    except OverflowError:
+        return False
 
 
 class RoleAuthorizationError(ValueError):
@@ -409,11 +410,7 @@ def hash_invite(token: str) -> str:
 
 
 def _valid_time(value: object, field: str) -> float:
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, (int, float))
-        or not math.isfinite(float(value))
-    ):
+    if not _finite(value):
         raise FencingError(f"{field} is invalid")
     return float(value)
 
