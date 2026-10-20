@@ -2,20 +2,20 @@
 <title>Recent reference: 2.2.1.0 native/universal</title>
 <rect width="980" height="190" fill="#ffffff"/>
 <text x="16.0" y="29.0" font-family="Arial, sans-serif" font-size="20px" text-anchor="start" fill="#17252a" font-weight="bold">Recent reference: 2.2.1.0 native/universal</text>
-<text x="16.0" y="52.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="normal">Each flavor has its own 2.2.1.0 baseline: 100%; lower is faster.</text>
+<text x="16.0" y="52.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="normal">Each flavor has its own 2.2.1.0 baseline: 100.000p; lower is faster.</text>
 <text x="16.0" y="80.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="bold">Build / reference</text>
 <text x="590.0" y="80.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">Weighted</text>
 <text x="760.0" y="80.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="bold">Full workload</text>
 <text x="16.0" y="122.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="normal">2.2.1.0 native · reference</text>
-<text x="590.0" y="122.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100%</text>
-<text x="760.0" y="122.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100%</text>
+<text x="590.0" y="122.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100.000p</text>
+<text x="760.0" y="122.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100.000p</text>
 <text x="16.0" y="138.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#454545" font-weight="normal">2.2.0.5 native · 43 matched cases</text>
-<text x="590.0" y="138.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">98.8%</text>
-<text x="760.0" y="138.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">103.5%</text>
+<text x="590.0" y="138.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">98.803p</text>
+<text x="760.0" y="138.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">103.512p</text>
 <text x="16.0" y="156.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="start" fill="#17252a" font-weight="normal">2.2.1.0 universal · reference</text>
-<text x="590.0" y="156.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100%</text>
-<text x="760.0" y="156.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100%</text>
+<text x="590.0" y="156.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100.000p</text>
+<text x="760.0" y="156.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">100.000p</text>
 <text x="16.0" y="172.0" font-family="Arial, sans-serif" font-size="11px" text-anchor="start" fill="#454545" font-weight="normal">2.2.0.5 universal · 43 matched cases</text>
-<text x="590.0" y="172.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">97.8%</text>
-<text x="760.0" y="172.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">98.7%</text>
+<text x="590.0" y="172.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">97.773p</text>
+<text x="760.0" y="172.0" font-family="Arial, sans-serif" font-size="12px" text-anchor="middle" fill="#17252a" font-weight="normal">98.672p</text>
 </svg>

@@ -842,6 +842,8 @@ class BaselineTests(unittest.TestCase):
         self.assertIn("receive equal suite weight", source)
         normalized = " ".join(source.split())
         self.assertIn("2.2.1.0 native and universal, with saved full-suite", normalized)
+        self.assertIn("Recent-reference p-point scores against", normalized)
+        self.assertIn("Scores below `100.000p` favor the candidate", normalized)
         self.assertIn(
             "same machine, runtime, workload, and measurement configuration",
             normalized,
