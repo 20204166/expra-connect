@@ -15,6 +15,48 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PersistenceBenchmarkTests(unittest.TestCase):
+    def test_migration_benchmark_emits_all_three_coverage_cases(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "migration.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "scripts.benchmark_persistence",
+                    "--migration-file-counts",
+                    "1",
+                    "16",
+                    "64",
+                    "--operation",
+                    "Profile migration",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=30,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            outcomes = json.loads(output_path.read_text(encoding="utf-8"))["outcomes"]
+
+        self.assertEqual(
+            [item["case_id"] for item in outcomes],
+            [
+                "1:ProfileMigration:Profile migration",
+                "16:ProfileMigration:Profile migration",
+                "64:ProfileMigration:Profile migration",
+            ],
+        )
+        self.assertEqual([item["fixture"]["files"] for item in outcomes], [1, 16, 64])
+        self.assertTrue(all(item["status"] == "measured" for item in outcomes))
+
     def test_migration_fixture_and_option_selection(self) -> None:
         fixture = benchmark_persistence._migration_fixture(2)
         self.assertEqual(

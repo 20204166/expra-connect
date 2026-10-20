@@ -155,6 +155,7 @@ def main() -> None:
         choices=(
             "role encode",
             "role decode",
+            "role authorization",
             "cluster encode",
             "cluster decode",
             "cluster round-trip",
@@ -286,6 +287,19 @@ def main() -> None:
         operations: list[tuple[str, Callable[[], Any]]] = []
         if role_state is not None:
             operations.append(("role encode", partial(role_state_to_dict, role_state)))
+            if args.operation in (None, "role authorization"):
+                operations.append(
+                    (
+                        "role authorization",
+                        partial(
+                            role_state.allows,
+                            subject=NodeId("node-0"),
+                            target=NodeId("node-1"),
+                            permission=NodePermission.READ_STATE,
+                            now=110.0,
+                        ),
+                    )
+                )
         if role_document is not None:
             operations.append(
                 (

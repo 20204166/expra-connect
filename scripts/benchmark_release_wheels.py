@@ -15,7 +15,12 @@ from pathlib import Path, PurePosixPath
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.benchmark_support import BenchmarkRun, load_results, write_results
+from scripts.benchmark_support import (
+    BenchmarkRun,
+    RunMetadata,
+    load_results,
+    write_results,
+)
 
 _WHEEL_NAME = re.compile(
     r"^expra_connect-(?P<version>\d+\.\d+\.\d+\.\d+)-"
@@ -117,6 +122,7 @@ def _benchmark_wheel(
         extracted.mkdir()
         _extract_package(wheel, extracted)
         raw_paths = {suite: temporary_root / f"{suite}.json" for suite in _SUITES}
+        migration_path = temporary_root / "persistence-migration.json"
         commands = (
             (
                 "cluster_state",
@@ -166,6 +172,28 @@ def _benchmark_wheel(
             _validate_saved_run(run, suite, version)
             _validate_module_provenance(run, extracted)
             runs.append(run)
+
+        subprocess.run(
+            (
+                python_bin,
+                str(repository_root / "scripts" / "benchmark_persistence.py"),
+                "--migration-file-counts",
+                "1",
+                "16",
+                "64",
+                "--operation",
+                "Profile migration",
+                "--json-output",
+                str(migration_path),
+            ),
+            cwd=repository_root,
+            env=environment,
+            check=True,
+        )
+        migration_run = load_results(migration_path)
+        _validate_saved_run(migration_run, "persistence", version)
+        _validate_module_provenance(migration_run, extracted)
+        runs[1] = _merge_persistence_runs(runs[1], migration_run)
 
         with tempfile.TemporaryDirectory(
             prefix=".release-benchmark-stage-", dir=results_dir
@@ -226,6 +254,40 @@ def _validate_module_provenance(run: BenchmarkRun, extracted: Path) -> None:
             module_path
         ).resolve().is_relative_to(wheel_root):
             raise ValueError(f"benchmark imported {name} outside the built wheel")
+
+
+def _merge_persistence_runs(
+    base: BenchmarkRun, supplement: BenchmarkRun
+) -> BenchmarkRun:
+    """Add profile-migration outcomes to the ordinary persistence run."""
+
+    first, second = base.metadata, supplement.metadata
+    if (
+        first.suite != "persistence"
+        or second.suite != "persistence"
+        or first.package_version != second.package_version
+        or first.python_version != second.python_version
+        or first.platform != second.platform
+        or first.config != second.config
+        or any(
+            second.modules.get(name) != path
+            for name, path in first.modules.items()
+        )
+    ):
+        raise ValueError("persistence benchmark metadata differs")
+    case_ids = {outcome.case_id for outcome in base.outcomes}
+    if any(outcome.case_id in case_ids for outcome in supplement.outcomes):
+        raise ValueError("persistence benchmark case IDs overlap")
+    metadata = RunMetadata(
+        schema_version=first.schema_version,
+        suite=first.suite,
+        package_version=first.package_version,
+        python_version=first.python_version,
+        platform=first.platform,
+        modules={**first.modules, **second.modules},
+        config=first.config,
+    )
+    return BenchmarkRun(metadata, base.outcomes + supplement.outcomes)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

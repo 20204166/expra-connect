@@ -14,6 +14,7 @@ from scripts.benchmark_support import (
     MeasurementConfig,
     RunMetadata,
     measure,
+    load_results,
     write_results,
 )
 
@@ -68,6 +69,40 @@ class ReleasePerformanceTests(unittest.TestCase):
                 )
                 output = Path(command[command.index("--json-output") + 1])
                 package_root = Path(env["PYTHONPATH"].split(":")[0])
+                outcomes = (
+                    tuple(
+                        BenchmarkOutcome(
+                            f"{size}:ProfileMigration:Profile migration",
+                            "Profile migration",
+                            {"shape": "flat_files", "files": size},
+                            size,
+                            size * 256,
+                            config,
+                            measure(
+                                lambda: None,
+                                config,
+                                clock_ns=iter((0, 1000)).__next__,
+                            ),
+                        )
+                        for size in (1, 16, 64)
+                    )
+                    if "--migration-file-counts" in command
+                    else (
+                        BenchmarkOutcome(
+                            f"{suite}-case",
+                            "case",
+                            {"shape": "small"},
+                            1,
+                            1,
+                            config,
+                            measure(
+                                lambda: None,
+                                config,
+                                clock_ns=iter((0, 1000)).__next__,
+                            ),
+                        ),
+                    )
+                )
                 write_results(
                     output,
                     RunMetadata(
@@ -83,19 +118,7 @@ class ReleasePerformanceTests(unittest.TestCase):
                         },
                         config,
                     ),
-                    (
-                        BenchmarkOutcome(
-                            f"{suite}-case",
-                            "case",
-                            {"shape": "small"},
-                            1,
-                            1,
-                            config,
-                            measure(
-                                lambda: None, config, clock_ns=iter((0, 1000)).__next__
-                            ),
-                        ),
-                    ),
+                    outcomes,
                 )
 
             with patch(
@@ -104,14 +127,33 @@ class ReleasePerformanceTests(unittest.TestCase):
                 produced = run_release_benchmarks(wheels, results, "python3", root)
             self.assertEqual(len(produced), 3)
             self.assertTrue(all(path.is_file() for path in produced))
+            persisted_case_ids = {
+                outcome.case_id
+                for outcome in load_results(
+                    results / "3.4.5.6-native-persistence.json"
+                ).outcomes
+            }
 
-        self.assertEqual(len(calls), 3)
+        self.assertEqual(len(calls), 4)
         self.assertEqual(
             {Path(command[1]).name for command in calls},
             {
                 "benchmark_cluster_state.py",
                 "benchmark_persistence.py",
                 "connect_performance_benchmark.py",
+            },
+        )
+        self.assertIn("--migration-file-counts", calls[3])
+        self.assertEqual(
+            persisted_case_ids & {
+                "1:ProfileMigration:Profile migration",
+                "16:ProfileMigration:Profile migration",
+                "64:ProfileMigration:Profile migration",
+            },
+            {
+                "1:ProfileMigration:Profile migration",
+                "16:ProfileMigration:Profile migration",
+                "64:ProfileMigration:Profile migration",
             },
         )
 
