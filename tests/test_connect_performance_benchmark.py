@@ -12,6 +12,48 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ConnectPerformanceBenchmarkTests(unittest.TestCase):
+    def test_cli_measures_deterministic_feature_workloads(self) -> None:
+        expected = {
+            "discovery candidate validation",
+            "discovery preferred endpoint",
+            "discovery registry add + expire",
+            "pairing relationship projection",
+            "pairing trusted-candidate classification",
+            "pairing next-generation proof classification",
+            "capability authorized dispatch",
+            "surface peer-granted dispatch",
+            "surface cluster-granted dispatch",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "connect.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "tools.connect_performance_benchmark",
+                    "--warmups",
+                    "0",
+                    "--repetitions",
+                    "1",
+                    "--json-output",
+                    str(output_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=30,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+
+        outcomes = {item["case_id"]: item for item in result["outcomes"]}
+        self.assertTrue(expected <= outcomes.keys())
+        for case_id in expected:
+            self.assertEqual(outcomes[case_id]["status"], "measured", case_id)
+            self.assertEqual(outcomes[case_id]["config"]["repetitions"], 1)
+
     def test_cli_measures_session_open_at_high_occupancy(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output_path = Path(directory) / "connect.json"
