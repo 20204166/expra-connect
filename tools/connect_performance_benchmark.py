@@ -19,6 +19,7 @@ Statistics: min, p50, p95, mean (all in microseconds), and throughput (ops/s).
 from __future__ import annotations
 
 import argparse
+import base64
 import importlib
 import platform
 import secrets
@@ -103,7 +104,6 @@ def _feature_operations() -> list[OperationSpec]:
     from expra_connect.discovery.candidates import (
         DiscoveryCandidate,
         DiscoveryRegistry,
-        endpoint_rank,
         preferred_endpoint,
         validate_candidate,
     )
@@ -114,8 +114,8 @@ def _feature_operations() -> list[OperationSpec]:
     from expra_connect.surfaces.registry import SurfaceAccess, SurfaceRegistry
 
     peer = NodeId("benchmark-peer")
-    root = NodeIdentity.create(peer)
-    trusted = PairingManager(NODE_A)
+    root = NodeIdentity(peer, "0" * 64, base64.b64encode(bytes(range(32))).decode())
+    trusted = PairingManager(NodeId("benchmark-local-peer"))
     trusted.trusted[peer] = TrustedPeer(
         peer,
         "0" * 64,
@@ -496,8 +496,15 @@ def main() -> None:
     parser.add_argument("--repetitions", type=int)
     parser.add_argument("--batch-count", type=int, default=1)
     parser.add_argument("--track-allocations", action="store_true")
+    parser.add_argument(
+        "--feature-workloads-only",
+        action="store_true",
+        help="run only the deterministic feature-coverage cases",
+    )
     parser.add_argument("--json-output", type=Path)
     args = parser.parse_args()
+    if args.feature_workloads_only and args.operation is not None:
+        parser.error("--feature-workloads-only cannot be combined with --operation")
     try:
         base_config = MeasurementConfig(
             warmups=WARMUP if args.warmups is None else args.warmups,
@@ -515,14 +522,18 @@ def main() -> None:
         "open_or_resume + assert_current (900 active sessions)",
         "discovery registry add + expire",
     }
+    feature_names = operation_names[-9:]
     selected_names = (
-        {args.operation} if args.operation is not None else set(operation_names)
+        {args.operation}
+        if args.operation is not None
+        else set(feature_names)
+        if args.feature_workloads_only
+        else set(operation_names)
     )
     if args.batch_count > 1 and selected_names & stateful_operations:
         parser.error("stateful operation cannot be batched")
     from expra_connect import __version__
 
-    feature_names = operation_names[-9:]
     feature_operations: list[OperationSpec] = []
     feature_modules_available = True
     try:
@@ -544,9 +555,7 @@ def main() -> None:
                 "expra_connect.surfaces.registry",
             )
         )
-    modules = collect_modules(
-        tuple(module_names)
-    )
+    modules = collect_modules(tuple(module_names))
     print(
         f"version={__version__} python={sys.version.split()[0]} "
         f"platform={platform.platform()} operation={args.operation or 'all'}"
@@ -765,6 +774,8 @@ def main() -> None:
                 )
         for spec in operations:
             if args.operation is not None and spec.name != args.operation:
+                continue
+            if args.feature_workloads_only and spec.name not in feature_names:
                 continue
             config = MeasurementConfig(
                 warmups=(spec.warmups if args.warmups is None else args.warmups),

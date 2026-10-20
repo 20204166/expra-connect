@@ -35,6 +35,7 @@ class ConnectPerformanceBenchmarkTests(unittest.TestCase):
                     "0",
                     "--repetitions",
                     "1",
+                    "--feature-workloads-only",
                     "--json-output",
                     str(output_path),
                 ],
@@ -49,7 +50,7 @@ class ConnectPerformanceBenchmarkTests(unittest.TestCase):
             result = json.loads(output_path.read_text(encoding="utf-8"))
 
         outcomes = {item["case_id"]: item for item in result["outcomes"]}
-        self.assertTrue(expected <= outcomes.keys())
+        self.assertEqual(expected, outcomes.keys())
         for case_id in expected:
             self.assertEqual(outcomes[case_id]["status"], "measured", case_id)
             self.assertEqual(outcomes[case_id]["config"]["repetitions"], 1)

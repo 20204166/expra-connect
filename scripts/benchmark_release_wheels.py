@@ -15,6 +15,7 @@ from pathlib import Path, PurePosixPath
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from scripts.benchmark_coverage import SUPPLEMENT_CASES
 from scripts.benchmark_support import (
     BenchmarkRun,
     RunMetadata,
@@ -68,6 +69,242 @@ def run_release_benchmarks(
         _benchmark_wheel(wheel, version, flavor, paths, python_bin, repository_root)
         produced.extend(paths)
     return tuple(produced)
+
+
+def run_release_supplement_benchmarks(
+    wheel_dir: Path,
+    results_dir: Path,
+    python_bin: str,
+    repository_root: Path,
+    *,
+    target_version: str | None = None,
+) -> tuple[Path, ...]:
+    """Create paired, append-only supplemental workload measurements."""
+
+    wheels = tuple(sorted(wheel_dir.glob("expra_connect-*.whl")))
+    if target_version is not None:
+        wheels = tuple(
+            wheel for wheel in wheels if _wheel_identity(wheel)[0] == target_version
+        )
+    if not wheels:
+        raise ValueError(f"no release wheels found in {wheel_dir}")
+    identities = tuple(_wheel_identity(wheel) for wheel in wheels)
+    if len(set(identities)) != len(identities):
+        raise ValueError("wheel directory contains duplicate version/flavor artifacts")
+    by_version: dict[str, dict[str, Path]] = {}
+    for wheel, (version, flavor) in zip(wheels, identities, strict=True):
+        by_version.setdefault(version, {})[flavor] = wheel
+    if any(set(flavors) != {"native", "universal"} for flavors in by_version.values()):
+        raise ValueError(
+            "supplement benchmarking requires paired native/universal wheels"
+        )
+
+    targets = tuple(
+        results_dir / f"{version}-{flavor}-{suite}-supplement.json"
+        for version in sorted(by_version)
+        for flavor in ("native", "universal")
+        for suite in _SUITES
+    )
+    present = tuple(path.is_file() for path in targets)
+    if any(present):
+        if not all(present):
+            raise ValueError("partial supplement results exist; refusing overwrite")
+        _validate_saved_supplement_pairs(targets)
+        return targets
+
+    results_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(
+        prefix=".release-supplement-stage-", dir=results_dir
+    ) as staging:
+        stage_root = Path(staging)
+        staged_runs: dict[tuple[str, str, str], BenchmarkRun] = {}
+        for version, flavors in sorted(by_version.items()):
+            for flavor in ("native", "universal"):
+                runs = _benchmark_supplement_wheel(
+                    flavors[flavor], version, flavor, python_bin, repository_root
+                )
+                for suite, run in zip(_SUITES, runs, strict=True):
+                    staged_runs[(version, flavor, suite)] = run
+            for suite in _SUITES:
+                _validate_supplement_pair(
+                    suite,
+                    staged_runs[(version, "native", suite)],
+                    staged_runs[(version, "universal", suite)],
+                    version,
+                )
+
+        staged_paths: list[tuple[Path, Path]] = []
+        for version, flavor, suite in (
+            (version, flavor, suite)
+            for version in sorted(by_version)
+            for flavor in ("native", "universal")
+            for suite in _SUITES
+        ):
+            run = staged_runs[(version, flavor, suite)]
+            staged_path = stage_root / f"{version}-{flavor}-{suite}-supplement.json"
+            write_results(staged_path, run.metadata, run.outcomes)
+            staged_paths.append(
+                (
+                    staged_path,
+                    results_dir / staged_path.name,
+                )
+            )
+        if any(destination.exists() for _, destination in staged_paths):
+            raise FileExistsError("supplement result already exists")
+        published: list[tuple[Path, Path]] = []
+        try:
+            for staged_path, destination in staged_paths:
+                os.link(staged_path, destination)
+                published.append((staged_path, destination))
+        except OSError:
+            for staged_path, destination in reversed(published):
+                if destination.exists() and os.path.samefile(staged_path, destination):
+                    destination.unlink()
+            raise
+    return tuple(destination for _, destination in staged_paths)
+
+
+def _benchmark_supplement_wheel(
+    wheel: Path,
+    version: str,
+    flavor: str,
+    python_bin: str,
+    repository_root: Path,
+) -> tuple[BenchmarkRun, ...]:
+    with tempfile.TemporaryDirectory(prefix="expra-connect-supplement-") as temporary:
+        temporary_root = Path(temporary)
+        extracted = temporary_root / "wheel"
+        extracted.mkdir()
+        _extract_package(wheel, extracted)
+        outputs = {suite: temporary_root / f"{suite}.json" for suite in _SUITES}
+        commands = (
+            (
+                "cluster_state",
+                repository_root / "scripts" / "benchmark_cluster_state.py",
+                (
+                    "--sizes",
+                    "1000",
+                    "30000",
+                    "100000",
+                    "--operation",
+                    "role authorization",
+                    "--skip-allocation-tracking",
+                    "--json-output",
+                    str(outputs["cluster_state"]),
+                ),
+            ),
+            (
+                "persistence",
+                repository_root / "scripts" / "benchmark_persistence.py",
+                (
+                    "--migration-file-counts",
+                    "1",
+                    "16",
+                    "64",
+                    "--operation",
+                    "Profile migration",
+                    "--json-output",
+                    str(outputs["persistence"]),
+                ),
+            ),
+            (
+                "connect",
+                repository_root / "tools" / "connect_performance_benchmark.py",
+                (
+                    "--feature-workloads-only",
+                    "--json-output",
+                    str(outputs["connect"]),
+                ),
+            ),
+        )
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = os.pathsep.join(
+            (str(extracted), str(repository_root))
+        )
+        environment["PYTHONNOUSERSITE"] = "1"
+        runs: list[BenchmarkRun] = []
+        for suite, script, options in commands:
+            subprocess.run(
+                (python_bin, str(script), *options),
+                cwd=repository_root,
+                env=environment,
+                check=True,
+            )
+            run = load_results(outputs[suite])
+            _validate_saved_run(run, suite, version)
+            _validate_module_provenance(run, extracted)
+            case_ids = {outcome.case_id for outcome in run.outcomes}
+            if case_ids != SUPPLEMENT_CASES[suite]:
+                raise ValueError(f"supplement {suite} case inventory differs")
+            if _run_flavor(run) != flavor:
+                raise ValueError(f"supplement module provenance differs for {flavor}")
+            runs.append(run)
+        return tuple(runs)
+
+
+def _run_flavor(run: BenchmarkRun) -> str | None:
+    module_paths = tuple(
+        Path(path).suffix.lower()
+        for name, path in run.metadata.modules.items()
+        if name.startswith("expra_connect.")
+    )
+    if any(suffix in {".so", ".pyd", ".dll"} for suffix in module_paths):
+        return "native"
+    return "universal" if module_paths else None
+
+
+def _validate_supplement_pair(
+    suite: str,
+    native: BenchmarkRun,
+    universal: BenchmarkRun,
+    version: str,
+) -> None:
+    for flavor, run in (("native", native), ("universal", universal)):
+        if (
+            run.metadata.suite != suite
+            or run.metadata.package_version != version
+            or _run_flavor(run) != flavor
+            or {outcome.case_id for outcome in run.outcomes} != SUPPLEMENT_CASES[suite]
+        ):
+            raise ValueError(f"{suite}: invalid {version} {flavor} supplement")
+    first, second = native.metadata, universal.metadata
+    if (
+        first.python_version != second.python_version
+        or first.platform != second.platform
+        or first.config != second.config
+    ):
+        raise ValueError(f"{suite}: native and universal supplement metadata differs")
+    native_outcomes = {outcome.case_id: outcome for outcome in native.outcomes}
+    universal_outcomes = {outcome.case_id: outcome for outcome in universal.outcomes}
+    for case_id in SUPPLEMENT_CASES[suite]:
+        left, right = native_outcomes[case_id], universal_outcomes[case_id]
+        if (
+            left.operation != right.operation
+            or left.fixture != right.fixture
+            or left.size != right.size
+            or left.payload_bytes != right.payload_bytes
+            or left.config != right.config
+        ):
+            raise ValueError(f"{suite}: supplement fixture differs for {case_id}")
+
+
+def _validate_saved_supplement_pairs(paths: tuple[Path, ...]) -> None:
+    by_identity: dict[tuple[str, str, str], BenchmarkRun] = {}
+    for path in paths:
+        stem = path.name.removesuffix("-supplement.json")
+        version, flavor, suite = stem.split("-", 2)
+        run = load_results(path)
+        key = (version, flavor, suite)
+        by_identity[key] = run
+    versions = {version for version, _, _ in by_identity}
+    for version in versions:
+        for suite in _SUITES:
+            _validate_supplement_pair(
+                suite,
+                by_identity[(version, "native", suite)],
+                by_identity[(version, "universal", suite)],
+                version,
+            )
 
 
 def _wheel_identity(wheel: Path) -> tuple[str, str]:
@@ -269,10 +506,7 @@ def _merge_persistence_runs(
         or first.python_version != second.python_version
         or first.platform != second.platform
         or first.config != second.config
-        or any(
-            second.modules.get(name) != path
-            for name, path in first.modules.items()
-        )
+        or any(second.modules.get(name) != path for name, path in first.modules.items())
     ):
         raise ValueError("persistence benchmark metadata differs")
     case_ids = {outcome.case_id for outcome in base.outcomes}
@@ -296,13 +530,33 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--results-dir", type=Path, required=True)
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument(
+        "--supplements-only",
+        action="store_true",
+        help="measure append-only supplemental feature coverage cases",
+    )
+    parser.add_argument(
+        "--version",
+        help="limit supplemental measurement to one four-part package version",
+    )
+    parser.add_argument(
         "--repository-root", type=Path, default=Path(__file__).resolve().parents[1]
     )
     args = parser.parse_args(argv)
     try:
-        paths = run_release_benchmarks(
-            args.wheel_dir, args.results_dir, args.python, args.repository_root
-        )
+        if args.supplements_only:
+            paths = run_release_supplement_benchmarks(
+                args.wheel_dir,
+                args.results_dir,
+                args.python,
+                args.repository_root,
+                target_version=args.version,
+            )
+        else:
+            if args.version is not None:
+                parser.error("--version requires --supplements-only")
+            paths = run_release_benchmarks(
+                args.wheel_dir, args.results_dir, args.python, args.repository_root
+            )
     except (
         OSError,
         ValueError,
