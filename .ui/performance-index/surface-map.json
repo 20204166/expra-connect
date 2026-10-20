@@ -1,0 +1,9 @@
+{
+  "surface": "Across-release benchmark comparison SVG index plots",
+  "owner": "scripts/update_performance_diagrams.py::_render_index_panel",
+  "output": "docs/images/performance-comparison.svg",
+  "rendered_evidence": [
+    "evidence/screenshots/before/desktop.png",
+    "evidence/screenshots/after/desktop.png"
+  ]
+}

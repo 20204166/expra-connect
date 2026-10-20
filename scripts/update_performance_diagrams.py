@@ -2440,7 +2440,9 @@ def _render_index_panel(
     parts: list[str], panel: MatchedIndexPanel, versions: tuple[str, ...], top: int
 ) -> None:
     plot_left, plot_right = 490, 1070
-    axis_min, axis_max = 0.70, 1.15
+    best = min(panel.indices)
+    axis_min_tenths = min(5, math.floor(best * 10))
+    axis_min, axis_max = axis_min_tenths / 10, 1.15
     parts.append(
         _text(
             16,
@@ -2450,7 +2452,6 @@ def _render_index_panel(
             weight="bold",
         )
     )
-    best = min(panel.indices)
     best_versions = [
         version
         for version, value in zip(versions, panel.indices, strict=True)
@@ -2467,7 +2468,8 @@ def _render_index_panel(
     )
     rows_top = top + _INDEX_PANEL_ROWS_OFFSET
     rows_bottom = rows_top + len(versions) * _INDEX_ROW_PITCH
-    for tick in (0.7, 0.8, 0.9, 1.0, 1.1):
+    for tick_tenths in range(axis_min_tenths, 12):
+        tick = tick_tenths / 10
         x = plot_left + (tick - axis_min) / (axis_max - axis_min) * (
             plot_right - plot_left
         )
