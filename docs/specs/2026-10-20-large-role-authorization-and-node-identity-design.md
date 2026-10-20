@@ -19,8 +19,9 @@ instead of silently generating a different identity.
 
 ## Design
 
-Add 200,000 to the existing benchmark size choices/defaults and make the
-release workload inventory and tests include `200000:role authorization`.
+Add 200,000 to the dedicated role-authorization supplement command, canonical
+release workload inventory, and tests as `200000:role authorization`. Keep the
+ordinary all-operation cluster benchmark matrix and its defaults unchanged.
 Preserve existing 1k, 30k, and 100k cases, fixture semantics, and output schema.
 Verify benchmark fixture consistency and run the 200k authorization workload;
 report measurements as workload evidence, not as a speedup claim.
