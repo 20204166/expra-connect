@@ -1037,7 +1037,7 @@ def _render_latest_build_pairwise_svg(
         _text(
             18,
             112,
-            "Each case cell: candidate p50 · reference p50 · candidate/reference points. Blue is faster; red is slower.",
+            "Case cells emphasize candidate/reference points; hover a score for both p50 timings. Blue is faster; red is slower.",
             size=11,
         ),
         _text(label_x, 204, "Suite · size · operation · case", size=12, weight="bold"),
@@ -1136,9 +1136,19 @@ def _render_latest_build_pairwise_svg(
                 else:
                     text, color, text_color = _pairwise_case_cell(*pair)
                 parts.append(
-                    f'<rect x="{x}" y="{y + 2}" width="{column_width}" height="{row_height - 4}" rx="3" fill="{color}"/>'
+                    f'<rect x="{x}" y="{y + 2}" width="{column_width}" height="{row_height - 4}" rx="3" fill="{color}"><title>{escape(text)}</title></rect>'
                 )
-                parts.append(_text(x + 8, y + 21, text, size=10, color=text_color))
+                display_text = text.rsplit("Candidate/reference ", maxsplit=1)[-1]
+                parts.append(
+                    _text(
+                        x + 8,
+                        y + 22,
+                        display_text,
+                        size=12,
+                        color=text_color,
+                        weight="bold",
+                    )
+                )
             y += row_height
             row_index += 1
 

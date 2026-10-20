@@ -560,9 +560,18 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertIn("Reference p50 100.000 µs", svg)
         self.assertIn("Candidate/reference 80.000p", svg)
         self.assertIn("80.000p", svg)
+        self.assertIn(
+            "<title>Candidate p50 80.000 µs · Reference p50 100.000 µs · Candidate/reference 80.000p</title>",
+            svg,
+        )
+        self.assertIn(
+            'font-size="12px" text-anchor="start" fill="#142323" font-weight="bold">80.000p</text>',
+            svg,
+        )
         self.assertNotIn("2.2.0.6", svg)
         self.assertIn("per-case results", svg)
         self.assertIn("Blue is faster; red is slower", svg)
+        self.assertIn("hover a score for both p50 timings", svg)
 
     def test_latest_pairwise_diagram_handles_unsupported_and_missing_cases(
         self,
