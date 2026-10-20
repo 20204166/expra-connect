@@ -17,6 +17,10 @@ native/universal as the recent reference pair.
   build with the universal reference. Compute each comparison only from the
   positive-p50 cases matched between the relevant pair; report case counts and
   configuration differences instead of silently mixing incompatible runs.
+- Display normalized scores as percentages of the reference: `100%` is the
+  2.2.1.0 reference, below `100%` is faster, and above `100%` is slower. Keep
+  enough precision to show meaningful differences, without scientific notation
+  or long raw decimals.
 - Label the reference version/flavor and index basis directly in the generated
   Markdown and SVG. Keep historical and recent scores separate, not on one
   unlabeled scale.
@@ -34,7 +38,7 @@ benchmark rerun, or manual SVG edits are in scope.
 
 ## Validation
 
-- Add tests for matched-case scoring, 1.000 reference values, flavor-specific
+- Add tests for matched-case scoring, 100% reference values, flavor-specific
   comparisons, missing/unsupported cases, and explicit labels in generated
   Markdown/SVG.
 - Regenerate the report and diagrams from tracked JSON, then run the focused
