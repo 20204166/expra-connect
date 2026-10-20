@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
+from scripts.benchmark_coverage import SUPPLEMENT_CASES
 from scripts.benchmark_support import BenchmarkOutcome, BenchmarkRun, load_results
 
 FULL_VERSIONS = (
@@ -443,6 +444,11 @@ def _load_all_shared_harness_runs(
             sizes: set[int] = known_sizes,
             scaling: set[tuple[int, str]] = scaling_cases,
         ) -> bool:
+            if (
+                group_name == "persistence-30k"
+                and outcome.case_id in SUPPLEMENT_CASES["persistence"]
+            ):
+                return True
             if group_name == "cluster-scaling":
                 return (outcome.size, outcome.operation) in scaling
             if group_name.startswith(("cluster-", "persistence-")):
@@ -572,6 +578,11 @@ _VERSIONED_BUILD_RESULT_RE = re.compile(
     r"(?P<version>\d+\.\d+\.\d+\.\d+)-(?P<flavor>native|universal)-"
     r"(?P<suite>cluster_state|persistence|connect)\.json"
 )
+_SUPPLEMENT_RESULT_RE = re.compile(
+    r"(?P<version>\d+\.\d+\.\d+\.\d+)-"
+    r"(?P<flavor>native|universal)-"
+    r"(?P<suite>cluster_state|persistence|connect)-supplement\.json"
+)
 
 
 def _load_legacy_build_runs(
@@ -654,6 +665,67 @@ def _load_build_comparison_history(
             raise ValueError(f"result metadata does not match filename: {path.name}")
         suite_runs[suite] = run
 
+    supplemental: dict[tuple[str, str], dict[str, BenchmarkRun]] = {}
+    for path in sorted(results_dir.glob("*-supplement.json")):
+        match = _SUPPLEMENT_RESULT_RE.fullmatch(path.name)
+        if match is None:
+            raise ValueError(f"invalid supplemental result filename: {path.name}")
+        version, flavor, suite = (
+            match.group("version"),
+            match.group("flavor"),
+            match.group("suite"),
+        )
+        suite_runs = supplemental.setdefault((version, flavor), {})
+        if suite in suite_runs:
+            raise ValueError(f"duplicate supplemental result: {path.name}")
+        suite_runs[suite] = load_results(path)
+
+    supplement_versions = {version for version, _ in supplemental}
+    for version in supplement_versions:
+        for flavor in ("native", "universal"):
+            key = (version, flavor)
+            supplement_runs = supplemental.get(key)
+            base_runs = discovered.get(key)
+            if supplement_runs is None or set(supplement_runs) != set(
+                BUILD_COMPARISON_SUITES
+            ):
+                raise ValueError(
+                    f"{version}: native/universal supplements are incomplete"
+                )
+            if base_runs is None or set(base_runs) != set(BUILD_COMPARISON_SUITES):
+                raise ValueError(f"{version} {flavor}: base results are incomplete")
+            for suite in BUILD_COMPARISON_SUITES:
+                _validate_supplement_run(
+                    suite,
+                    flavor,
+                    version,
+                    base_runs[suite],
+                    supplement_runs[suite],
+                )
+
+    for version in supplement_versions:
+        for suite in BUILD_COMPARISON_SUITES:
+            native_supplement = supplemental[(version, "native")][suite]
+            universal_supplement = supplemental[(version, "universal")][suite]
+            _validate_supplement_pair(suite, native_supplement, universal_supplement)
+            for flavor in ("native", "universal"):
+                base = discovered[(version, flavor)][suite]
+                supplement = supplemental[(version, flavor)][suite]
+                base_ids = [outcome.case_id for outcome in base.outcomes]
+                if len(base_ids) != len(set(base_ids)):
+                    raise ValueError(
+                        f"{version} {flavor}/{suite}: duplicate base case ID"
+                    )
+                if set(base_ids).intersection(
+                    outcome.case_id for outcome in supplement.outcomes
+                ):
+                    raise ValueError(
+                        f"{version} {flavor}/{suite}: duplicate supplemental case ID"
+                    )
+                discovered[(version, flavor)][suite] = BenchmarkRun(
+                    base.metadata, base.outcomes + supplement.outcomes
+                )
+
     for flavor in legacy_flavors:
         if (BUILD_COMPARISON_VERSION, flavor) in discovered:
             raise ValueError(
@@ -697,6 +769,59 @@ def _load_build_comparison_history(
             )
         )
     return {suite: tuple(runs) for suite, runs in by_suite.items()}
+
+
+def _validate_supplement_run(
+    suite: str,
+    flavor: str,
+    version: str,
+    base: BenchmarkRun,
+    supplement: BenchmarkRun,
+) -> None:
+    metadata = supplement.metadata
+    if (
+        metadata.suite != suite
+        or metadata.package_version != version
+        or metadata.python_version != base.metadata.python_version
+        or metadata.platform != base.metadata.platform
+        or metadata.config != base.metadata.config
+        or _run_build_flavor(supplement) != flavor
+    ):
+        raise ValueError(f"{version} {flavor}/{suite}: supplement provenance differs")
+    case_ids = [outcome.case_id for outcome in supplement.outcomes]
+    if len(case_ids) != len(set(case_ids)) or set(case_ids) != SUPPLEMENT_CASES[suite]:
+        raise ValueError(
+            f"{version} {flavor}/{suite}: supplemental case inventory differs"
+        )
+    if any(outcome.result is None for outcome in supplement.outcomes):
+        raise ValueError(
+            f"{version} {flavor}/{suite}: supplemental case is unavailable"
+        )
+    if not any(name.startswith("expra_connect.") for name in metadata.modules):
+        raise ValueError(f"{version} {flavor}/{suite}: module provenance is missing")
+
+
+def _validate_supplement_pair(
+    suite: str, native: BenchmarkRun, universal: BenchmarkRun
+) -> None:
+    if (
+        native.metadata.python_version != universal.metadata.python_version
+        or native.metadata.platform != universal.metadata.platform
+        or native.metadata.config != universal.metadata.config
+    ):
+        raise ValueError(f"{suite}: native/universal supplement metadata differs")
+    native_outcomes = {outcome.case_id: outcome for outcome in native.outcomes}
+    universal_outcomes = {outcome.case_id: outcome for outcome in universal.outcomes}
+    for case_id in SUPPLEMENT_CASES[suite]:
+        left, right = native_outcomes[case_id], universal_outcomes[case_id]
+        if (
+            left.operation != right.operation
+            or left.fixture != right.fixture
+            or left.size != right.size
+            or left.payload_bytes != right.payload_bytes
+            or left.config != right.config
+        ):
+            raise ValueError(f"{suite}: native/universal fixture differs for {case_id}")
 
 
 def render_latest_build_pairwise_diagram(
@@ -1411,15 +1536,27 @@ def _full_workload_coverage_rows(
         ("persistence-100k", 100_000, "Persistence · 100k"),
         ("persistence-200k", 200_000, "JSON persistence · 200k"),
     )
+    migration_runs = groups["persistence-30k"]
+    if any(
+        outcome.case_id in SUPPLEMENT_CASES["persistence"]
+        for run in migration_runs
+        for outcome in run.outcomes
+    ):
+        group_labels += (("persistence-migration", None, "Profile migration"),)
     rows: list[CoverageRow] = []
     labels = shared_harness_labels(groups)
     for group_name, selected_size, label in group_labels:
-        runs = groups[group_name]
+        migration_group = group_name == "persistence-migration"
+        runs = groups["persistence-30k"] if migration_group else groups[group_name]
         cases_by_run = [
             {
                 outcome.case_id: outcome
                 for outcome in run.outcomes
-                if selected_size is None or outcome.size == selected_size
+                if (
+                    outcome.case_id in SUPPLEMENT_CASES["persistence"]
+                    if migration_group
+                    else selected_size is None or outcome.size == selected_size
+                )
             }
             for run in runs
         ]

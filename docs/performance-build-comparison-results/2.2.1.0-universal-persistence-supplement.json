@@ -1,0 +1,152 @@
+{
+  "metadata": {
+    "config": {
+      "batch_count": 1,
+      "repetitions": 9,
+      "track_allocations": false,
+      "warmups": 2
+    },
+    "modules": {
+      "expra_connect.persistence": "/tmp/expra-connect-supplement-_o3hc_sk/wheel/expra_connect/persistence.py",
+      "expra_connect.profile_migration": "/tmp/expra-connect-supplement-_o3hc_sk/wheel/expra_connect/profile_migration.py",
+      "json": "/usr/lib/python3.12/json/__init__.py",
+      "msgpack": "/home/btn17/Downloads/expra-connect/.venv/lib/python3.12/site-packages/msgpack/__init__.py"
+    },
+    "package_version": "2.2.1.0",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "suite": "persistence"
+  },
+  "outcomes": [
+    {
+      "case_id": "1:ProfileMigration:Profile migration",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "bytes_per_file": 256,
+        "files": 1,
+        "shape": "flat_files"
+      },
+      "operation": "Profile migration",
+      "payload_bytes": 256,
+      "result": {
+        "maximum": 9602.114,
+        "mean_us": 5917.706666666667,
+        "minimum": 4377.552,
+        "ops_per_second": 168.98438133691428,
+        "outliers": 1,
+        "p25": 4726.026,
+        "p50": 5823.406,
+        "p75": 6265.915,
+        "p95": 8364.460399999998,
+        "p99": 9354.583279999999,
+        "peak_bytes": null,
+        "samples_us": [
+          4417.839,
+          5823.406,
+          4377.552,
+          5839.796,
+          4726.026,
+          9602.114,
+          5698.732,
+          6265.915,
+          6507.98
+        ],
+        "spread": 5224.562
+      },
+      "size": 1,
+      "status": "measured"
+    },
+    {
+      "case_id": "16:ProfileMigration:Profile migration",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "bytes_per_file": 256,
+        "files": 16,
+        "shape": "flat_files"
+      },
+      "operation": "Profile migration",
+      "payload_bytes": 4096,
+      "result": {
+        "maximum": 112581.885,
+        "mean_us": 102535.362,
+        "minimum": 95034.294,
+        "ops_per_second": 9.752732915694002,
+        "outliers": 0,
+        "p25": 100473.499,
+        "p50": 101821.136,
+        "p75": 105744.367,
+        "p95": 110086.1906,
+        "p99": 112082.74612,
+        "peak_bytes": null,
+        "samples_us": [
+          106342.649,
+          112581.885,
+          102790.044,
+          101821.136,
+          96239.545,
+          95034.294,
+          101790.839,
+          100473.499,
+          105744.367
+        ],
+        "spread": 17547.591
+      },
+      "size": 16,
+      "status": "measured"
+    },
+    {
+      "case_id": "64:ProfileMigration:Profile migration",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "bytes_per_file": 256,
+        "files": 64,
+        "shape": "flat_files"
+      },
+      "operation": "Profile migration",
+      "payload_bytes": 16384,
+      "result": {
+        "maximum": 495917.16,
+        "mean_us": 417802.877,
+        "minimum": 386601.485,
+        "ops_per_second": 2.3934732263703395,
+        "outliers": 1,
+        "p25": 392202.343,
+        "p50": 409530.001,
+        "p75": 430770.991,
+        "p95": 472784.5452,
+        "p99": 491290.63703999994,
+        "peak_bytes": null,
+        "samples_us": [
+          495917.16,
+          438085.623,
+          430770.991,
+          421181.379,
+          409530.001,
+          399135.811,
+          386801.1,
+          386601.485,
+          392202.343
+        ],
+        "spread": 109315.67499999999
+      },
+      "size": 64,
+      "status": "measured"
+    }
+  ],
+  "schema_version": 1
+}

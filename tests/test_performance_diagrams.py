@@ -10,12 +10,14 @@ from xml.etree import ElementTree
 
 import scripts.update_performance_diagrams as performance_diagrams
 from expra_connect import __version__
+from scripts.benchmark_coverage import SUPPLEMENT_CASES
 from scripts.benchmark_support import (
     BenchmarkOutcome,
     BenchmarkRun,
     MeasurementConfig,
     RunMetadata,
     measure,
+    write_results,
 )
 from scripts.update_performance_diagrams import (
     _full_workload_coverage_rows,
@@ -41,6 +43,228 @@ DATA_PATH = ROOT / "docs" / "performance-baseline-data.json"
 
 
 class BuildComparisonTests(unittest.TestCase):
+    def test_supplemental_cases_extend_coverage_without_scoring_old_builds(
+        self,
+    ) -> None:
+        groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
+
+        rows = _full_workload_coverage_rows(groups)
+        totals = rows[-1]
+        labels = shared_harness_labels(groups)
+        latest_native = labels.index("2.2.1.0 native")
+        latest_universal = labels.index("2.2.1.0 universal")
+        migration = next(row for row in rows if row.label == "Profile migration")
+
+        self.assertEqual(totals.cells[0].total, 89)
+        self.assertEqual(
+            (totals.cells[latest_native].measured, totals.cells[latest_native].total),
+            (84, 89),
+        )
+        self.assertEqual(
+            (
+                totals.cells[latest_universal].measured,
+                totals.cells[latest_universal].total,
+            ),
+            (84, 89),
+        )
+        self.assertEqual(
+            (
+                migration.cells[latest_native].measured,
+                migration.cells[latest_native].total,
+            ),
+            (3, 3),
+        )
+        self.assertEqual(
+            (
+                migration.cells[latest_universal].measured,
+                migration.cells[latest_universal].total,
+            ),
+            (3, 3),
+        )
+
+    def test_supplemental_runs_merge_without_changing_original_results(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results_dir = Path(directory)
+            original_paths = self._write_supplement_history(results_dir)
+            original_bytes = tuple(path.read_bytes() for path in original_paths)
+
+            history = performance_diagrams._load_build_comparison_history(results_dir)
+
+            for suite in SUPPLEMENT_CASES:
+                native = next(
+                    run
+                    for run in history[suite]
+                    if run.metadata.package_version == "2.2.1.0"
+                    and performance_diagrams._run_build_flavor(run) == "native"
+                )
+                self.assertEqual(
+                    {outcome.case_id for outcome in native.outcomes},
+                    {f"base-{suite}", *SUPPLEMENT_CASES[suite]},
+                )
+            self.assertEqual(
+                tuple(path.read_bytes() for path in original_paths), original_bytes
+            )
+
+    def test_incomplete_supplement_pair_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results_dir = Path(directory)
+            self._write_supplement_history(results_dir)
+            (results_dir / "2.2.1.0-native-connect-supplement.json").unlink()
+
+            with self.assertRaisesRegex(ValueError, "supplements are incomplete"):
+                performance_diagrams._load_build_comparison_history(results_dir)
+
+    def test_supplement_case_conflicting_with_base_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results_dir = Path(directory)
+            self._write_supplement_history(results_dir, duplicate_base_case=True)
+
+            with self.assertRaisesRegex(ValueError, "duplicate supplemental case ID"):
+                performance_diagrams._load_build_comparison_history(results_dir)
+
+    def test_native_universal_supplement_fixture_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results_dir = Path(directory)
+            self._write_supplement_history(results_dir, fixture_mismatch=True)
+
+            with self.assertRaisesRegex(ValueError, "fixture differs"):
+                performance_diagrams._load_build_comparison_history(results_dir)
+
+    def test_supplement_runtime_or_config_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results_dir = Path(directory)
+            self._write_supplement_history(results_dir, metadata_mismatch=True)
+
+            with self.assertRaisesRegex(ValueError, "provenance differs"):
+                performance_diagrams._load_build_comparison_history(results_dir)
+
+    def test_supplement_module_flavor_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results_dir = Path(directory)
+            self._write_supplement_history(results_dir, module_mismatch=True)
+
+            with self.assertRaisesRegex(ValueError, "provenance differs"):
+                performance_diagrams._load_build_comparison_history(results_dir)
+
+    def test_evicted_build_archives_supplements_with_original_results(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            shared_results = root / "shared"
+            build_results = root / "build"
+            shared_results.mkdir()
+            build_results.mkdir()
+            base = self._pairwise_run(
+                "2.2.1.0", "native", "connect", 10.0, case_id="base"
+            )
+            base_path = build_results / "2.2.1.0-native-connect.json"
+            supplement_path = build_results / "2.2.1.0-native-connect-supplement.json"
+            base_path.write_text("base", encoding="utf-8")
+            supplement_path.write_text("supplement", encoding="utf-8")
+
+            archived = performance_diagrams._archive_evicted_results(
+                (base,), shared_results, build_results
+            )
+
+            self.assertEqual(
+                {path.name for path in archived},
+                {base_path.name, supplement_path.name},
+            )
+            self.assertTrue((build_results / "history" / base_path.name).is_file())
+            self.assertTrue(
+                (build_results / "history" / supplement_path.name).is_file()
+            )
+
+    @classmethod
+    def _write_supplement_history(
+        cls,
+        results_dir: Path,
+        *,
+        duplicate_base_case: bool = False,
+        fixture_mismatch: bool = False,
+        metadata_mismatch: bool = False,
+        module_mismatch: bool = False,
+    ) -> tuple[Path, ...]:
+        original_paths: list[Path] = []
+        for flavor in ("native", "universal"):
+            for suite, case_ids in SUPPLEMENT_CASES.items():
+                base_case_id = (
+                    min(case_ids)
+                    if duplicate_base_case and suite == "connect"
+                    else f"base-{suite}"
+                )
+                base = cls._pairwise_run(
+                    "2.2.1.0", flavor, suite, 10.0, case_id=base_case_id
+                )
+                base_path = results_dir / f"2.2.1.0-{flavor}-{suite}.json"
+                write_results(base_path, base.metadata, base.outcomes)
+                original_paths.append(base_path)
+                supplement = cls._supplement_run(
+                    "2.2.1.0", flavor, suite, tuple(sorted(case_ids))
+                )
+                if metadata_mismatch and flavor == "native" and suite == "connect":
+                    supplement = replace(
+                        supplement,
+                        metadata=replace(
+                            supplement.metadata,
+                            config=MeasurementConfig(
+                                warmups=0, repetitions=2, track_allocations=False
+                            ),
+                        ),
+                    )
+                if module_mismatch and flavor == "native" and suite == "connect":
+                    supplement = replace(
+                        supplement,
+                        metadata=replace(
+                            supplement.metadata,
+                            modules={
+                                "expra_connect.test.module": "/wheel/native/module.py"
+                            },
+                        ),
+                    )
+                outcomes = supplement.outcomes
+                if fixture_mismatch and flavor == "universal" and suite == "connect":
+                    outcomes = (
+                        replace(outcomes[0], fixture={"shape": "different"}),
+                        *outcomes[1:],
+                    )
+                write_results(
+                    results_dir / f"2.2.1.0-{flavor}-{suite}-supplement.json",
+                    supplement.metadata,
+                    outcomes,
+                )
+        return tuple(original_paths)
+
+    @staticmethod
+    def _supplement_run(
+        version: str, flavor: str, suite: str, case_ids: tuple[str, ...]
+    ) -> BenchmarkRun:
+        config = MeasurementConfig(warmups=0, repetitions=1, track_allocations=False)
+        suffix = ".so" if flavor == "native" else ".py"
+        outcomes = tuple(
+            BenchmarkOutcome(
+                case_id=case_id,
+                operation=case_id,
+                fixture={"shape": case_id},
+                size=index + 1,
+                payload_bytes=64,
+                config=config,
+                result=measure(lambda: None, config, clock_ns=iter((0, 1000)).__next__),
+            )
+            for index, case_id in enumerate(case_ids)
+        )
+        return BenchmarkRun(
+            RunMetadata(
+                1,
+                suite,
+                version,
+                "3.12.3",
+                "Linux test",
+                {"expra_connect.test.module": f"/wheel/{flavor}/module{suffix}"},
+                config,
+            ),
+            outcomes,
+        )
+
     @staticmethod
     def _pairwise_run(
         version: str,
@@ -938,8 +1162,8 @@ class DiagramTests(unittest.TestCase):
         self.assertIn("2.2.0.3 native:", summary)
         self.assertIn("2.2.0.3 universal:", summary)
         self.assertIn("37 matched positive-p50 cases", summary)
-        self.assertIn("74 unique cases", summary)
-        self.assertIn("2.2.0.4 native: 68/74", summary)
+        self.assertIn("89 unique cases", summary)
+        self.assertIn("2.2.0.4 native: 68/89", summary)
 
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -976,6 +1200,7 @@ class DiagramTests(unittest.TestCase):
                 "Persistence · 30k",
                 "Persistence · 100k",
                 "JSON persistence · 200k",
+                "Profile migration",
                 "Total unique measured cases",
             ),
         )
@@ -1018,18 +1243,18 @@ class DiagramTests(unittest.TestCase):
         )
         self.assertEqual(
             (rows[-1].cells[native_index].measured, rows[-1].cells[native_index].total),
-            (69, 74),
+            (69, 89),
         )
         self.assertEqual(
             (
                 rows[-1].cells[universal_index].measured,
                 rows[-1].cells[universal_index].total,
             ),
-            (69, 74),
+            (69, 89),
         )
         self.assertIn("Workload support / coverage", svg)
         self.assertIn("6/9", svg)
-        self.assertIn("69/74", svg)
+        self.assertIn("69/89", svg)
         self.assertIn("Exceeds configured YAML maximum size 30,000", svg)
         self.assertNotIn(
             "Cluster round-trip scaling",

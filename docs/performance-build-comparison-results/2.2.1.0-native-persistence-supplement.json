@@ -1,0 +1,152 @@
+{
+  "metadata": {
+    "config": {
+      "batch_count": 1,
+      "repetitions": 9,
+      "track_allocations": false,
+      "warmups": 2
+    },
+    "modules": {
+      "expra_connect.persistence": "/tmp/expra-connect-supplement-1lo1h7yv/wheel/expra_connect/persistence.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.profile_migration": "/tmp/expra-connect-supplement-1lo1h7yv/wheel/expra_connect/profile_migration.cpython-312-x86_64-linux-gnu.so",
+      "json": "/usr/lib/python3.12/json/__init__.py",
+      "msgpack": "/home/btn17/Downloads/expra-connect/.venv/lib/python3.12/site-packages/msgpack/__init__.py"
+    },
+    "package_version": "2.2.1.0",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "suite": "persistence"
+  },
+  "outcomes": [
+    {
+      "case_id": "1:ProfileMigration:Profile migration",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "bytes_per_file": 256,
+        "files": 1,
+        "shape": "flat_files"
+      },
+      "operation": "Profile migration",
+      "payload_bytes": 256,
+      "result": {
+        "maximum": 7102.245,
+        "mean_us": 6578.134444444445,
+        "minimum": 6181.537,
+        "ops_per_second": 152.01878411660448,
+        "outliers": 0,
+        "p25": 6209.92,
+        "p50": 6483.314,
+        "p75": 6886.75,
+        "p95": 7038.441,
+        "p99": 7089.4842,
+        "peak_bytes": null,
+        "samples_us": [
+          7102.245,
+          6886.75,
+          6209.92,
+          6181.537,
+          6712.964,
+          6942.735,
+          6483.314,
+          6209.429,
+          6474.316
+        ],
+        "spread": 920.7079999999996
+      },
+      "size": 1,
+      "status": "measured"
+    },
+    {
+      "case_id": "16:ProfileMigration:Profile migration",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "bytes_per_file": 256,
+        "files": 16,
+        "shape": "flat_files"
+      },
+      "operation": "Profile migration",
+      "payload_bytes": 4096,
+      "result": {
+        "maximum": 116695.901,
+        "mean_us": 106348.93777777777,
+        "minimum": 96892.688,
+        "ops_per_second": 9.403008820732724,
+        "outliers": 1,
+        "p25": 104754.427,
+        "p50": 106664.13,
+        "p75": 107611.237,
+        "p95": 113156.58099999999,
+        "p99": 115988.037,
+        "peak_bytes": null,
+        "samples_us": [
+          104754.427,
+          106664.13,
+          107847.601,
+          116695.901,
+          104349.668,
+          106805.616,
+          107611.237,
+          105519.172,
+          96892.688
+        ],
+        "spread": 19803.213000000003
+      },
+      "size": 16,
+      "status": "measured"
+    },
+    {
+      "case_id": "64:ProfileMigration:Profile migration",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 9,
+        "track_allocations": false,
+        "warmups": 2
+      },
+      "fixture": {
+        "bytes_per_file": 256,
+        "files": 64,
+        "shape": "flat_files"
+      },
+      "operation": "Profile migration",
+      "payload_bytes": 16384,
+      "result": {
+        "maximum": 444079.071,
+        "mean_us": 428085.28055555554,
+        "minimum": 407833.503,
+        "ops_per_second": 2.335983144999126,
+        "outliers": 0,
+        "p25": 421516.691,
+        "p50": 430627.132,
+        "p75": 432538.249,
+        "p95": 441254.3798,
+        "p99": 443514.13276,
+        "peak_bytes": null,
+        "samples_us": [
+          430627.132,
+          420314.796,
+          421516.691,
+          427488.876,
+          431351.864,
+          444079.071,
+          432538.249,
+          437017.343,
+          407833.503
+        ],
+        "spread": 36245.56799999997
+      },
+      "size": 64,
+      "status": "measured"
+    }
+  ],
+  "schema_version": 1
+}

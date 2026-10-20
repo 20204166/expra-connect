@@ -19,6 +19,7 @@ Statistics: min, p50, p95, mean (all in microseconds), and throughput (ops/s).
 from __future__ import annotations
 
 import argparse
+import base64
 import importlib
 import platform
 import secrets
@@ -95,6 +96,138 @@ class OperationSpec:
     warmups: int = WARMUP
     repetitions: int = MEASURE
     setup: Callable[[], None] | None = None
+
+
+def _feature_operations() -> list[OperationSpec]:
+    """Build deterministic feature fixtures using the imported package APIs."""
+
+    from expra_connect.discovery.candidates import (
+        DiscoveryCandidate,
+        DiscoveryRegistry,
+        preferred_endpoint,
+        validate_candidate,
+    )
+    from expra_connect.discovery.models import EndpointCandidate, EndpointSource
+    from expra_connect.identity import NodeIdentity
+    from expra_connect.pairing.manager import PairingManager, TrustedPeer
+    from expra_connect.sharing.capabilities import CapabilityShare
+    from expra_connect.surfaces.registry import SurfaceAccess, SurfaceRegistry
+
+    peer = NodeId("benchmark-peer")
+    root = NodeIdentity(peer, "0" * 64, base64.b64encode(bytes(range(32))).decode())
+    trusted = PairingManager(NodeId("benchmark-local-peer"))
+    trusted.trusted[peer] = TrustedPeer(
+        peer,
+        "0" * 64,
+        frozenset({"read_state"}),
+        transport_fingerprint="transport-1",
+        root_public_key=root.root_public_key,
+        transport_generation=1,
+    )
+    next_fingerprint = "transport-2"
+    next_proof = root.sign_transport_proof(2, next_fingerprint)
+
+    registry_now = [10.0]
+    registry = DiscoveryRegistry(clock=lambda: registry_now[0], ttl=1.0)
+    candidate = DiscoveryCandidate("benchmark-discovered-peer", ("10.0.0.2",), 4312)
+    endpoints = (
+        EndpointCandidate("10.0.0.3", 4312, source=EndpointSource.IPV4),
+        EndpointCandidate("192.168.1.8", 4312, source=EndpointSource.CONFIGURED),
+    )
+    capability = CapabilityShare()
+    capability.register("benchmark.read", lambda _peer, _params: True)
+    capability.allow(peer, "benchmark.read")
+    surfaces = SurfaceRegistry(clock=lambda: 10.0)
+    surfaces.register("benchmark.surface", read=lambda _peer, _params: True)
+    surfaces.grant_peer(peer, "benchmark.surface", access=SurfaceAccess.READ)
+    cluster_source = "benchmark-cluster"
+    surfaces.grant_cluster(
+        cluster_source, "benchmark.surface", access=SurfaceAccess.READ
+    )
+
+    def registry_add_expire() -> tuple[str, ...]:
+        registry.add(candidate)
+        return registry.expire(now=registry_now[0] + 2.0)
+
+    return [
+        OperationSpec(
+            "discovery candidate validation",
+            lambda: validate_candidate(candidate),
+            {"shape": "one_valid_candidate"},
+            1,
+        ),
+        OperationSpec(
+            "discovery preferred endpoint",
+            lambda: preferred_endpoint(endpoints),
+            {"shape": "two_fixed_routes"},
+            2,
+        ),
+        OperationSpec(
+            "discovery registry add + expire",
+            registry_add_expire,
+            {"shape": "one_candidate_ttl_expiry", "ttl_seconds": 1},
+            1,
+            stateful=True,
+            setup=lambda: registry.remove(candidate.stable_id),
+        ),
+        OperationSpec(
+            "pairing relationship projection",
+            lambda: trusted.relationship(peer),
+            {"shape": "one_outbound_trusted_peer"},
+            1,
+        ),
+        OperationSpec(
+            "pairing trusted-candidate classification",
+            lambda: trusted.classify_trusted_candidate(
+                peer,
+                candidate_root_public_key=root.root_public_key,
+                candidate_transport_fingerprint="transport-1",
+                candidate_transport_generation=1,
+                candidate_transport_proof=None,
+            ),
+            {"shape": "unchanged_trusted_transport"},
+            1,
+        ),
+        OperationSpec(
+            "pairing next-generation proof classification",
+            lambda: trusted.classify_trusted_candidate(
+                peer,
+                candidate_root_public_key=root.root_public_key,
+                candidate_transport_fingerprint=next_fingerprint,
+                candidate_transport_generation=2,
+                candidate_transport_proof=next_proof,
+            ),
+            {"shape": "valid_next_generation_transport_proof"},
+            1,
+        ),
+        OperationSpec(
+            "capability authorized dispatch",
+            lambda: capability.request(peer, "benchmark.read"),
+            {"shape": "one_peer_capability_grant"},
+            1,
+        ),
+        OperationSpec(
+            "surface peer-granted dispatch",
+            lambda: surfaces.dispatch(
+                peer,
+                "benchmark.surface",
+                access=SurfaceAccess.READ,
+            ),
+            {"shape": "one_peer_surface_grant"},
+            1,
+        ),
+        OperationSpec(
+            "surface cluster-granted dispatch",
+            lambda: surfaces.dispatch(
+                peer,
+                "benchmark.surface",
+                access=SurfaceAccess.READ,
+                cluster_sources=(cluster_source,),
+            ),
+            {"shape": "one_cluster_surface_grant"},
+            1,
+        ),
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -348,14 +481,30 @@ def main() -> None:
         "open_or_resume + assert_current",
         "open_or_resume + assert_current (900 active sessions)",
         "NodeIdentity.create() [Ed25519 keygen]",
+        "discovery candidate validation",
+        "discovery preferred endpoint",
+        "discovery registry add + expire",
+        "pairing relationship projection",
+        "pairing trusted-candidate classification",
+        "pairing next-generation proof classification",
+        "capability authorized dispatch",
+        "surface peer-granted dispatch",
+        "surface cluster-granted dispatch",
     )
     parser.add_argument("--operation", choices=operation_names)
     parser.add_argument("--warmups", type=int)
     parser.add_argument("--repetitions", type=int)
     parser.add_argument("--batch-count", type=int, default=1)
     parser.add_argument("--track-allocations", action="store_true")
+    parser.add_argument(
+        "--feature-workloads-only",
+        action="store_true",
+        help="run only the deterministic feature-coverage cases",
+    )
     parser.add_argument("--json-output", type=Path)
     args = parser.parse_args()
+    if args.feature_workloads_only and args.operation is not None:
+        parser.error("--feature-workloads-only cannot be combined with --operation")
     try:
         base_config = MeasurementConfig(
             warmups=WARMUP if args.warmups is None else args.warmups,
@@ -371,22 +520,42 @@ def main() -> None:
         "replay cache check_and_record",
         "open_or_resume + assert_current",
         "open_or_resume + assert_current (900 active sessions)",
+        "discovery registry add + expire",
     }
+    feature_names = operation_names[-9:]
     selected_names = (
-        {args.operation} if args.operation is not None else set(operation_names)
+        {args.operation}
+        if args.operation is not None
+        else set(feature_names)
+        if args.feature_workloads_only
+        else set(operation_names)
     )
     if args.batch_count > 1 and selected_names & stateful_operations:
         parser.error("stateful operation cannot be batched")
     from expra_connect import __version__
 
-    modules = collect_modules(
-        (
-            "expra_connect.identity",
-            "expra_connect.persistence",
-            _session.__name__,
-            _wire_protocol.__name__,
+    feature_operations: list[OperationSpec] = []
+    feature_modules_available = True
+    try:
+        feature_operations = _feature_operations()
+    except ModuleNotFoundError:
+        feature_modules_available = False
+    module_names = [
+        "expra_connect.identity",
+        "expra_connect.persistence",
+        _session.__name__,
+        _wire_protocol.__name__,
+    ]
+    if feature_modules_available:
+        module_names.extend(
+            (
+                "expra_connect.discovery.candidates",
+                "expra_connect.pairing.manager",
+                "expra_connect.sharing.capabilities",
+                "expra_connect.surfaces.registry",
+            )
         )
-    )
+    modules = collect_modules(tuple(module_names))
     print(
         f"version={__version__} python={sys.version.split()[0]} "
         f"platform={platform.platform()} operation={args.operation or 'all'}"
@@ -474,6 +643,7 @@ def main() -> None:
                 repetitions=200,
             ),
         ]
+        operations.extend(feature_operations)
         if yaml_store is not None:
             operations.extend(
                 (
@@ -580,8 +750,32 @@ def main() -> None:
                     )
                 )
                 print(f"{name}: unavailable (MessagePackStateStore API not present)")
+        if not feature_modules_available:
+            unavailable_features = (
+                feature_names
+                if args.operation is None
+                else (args.operation,)
+                if args.operation in feature_names
+                else ()
+            )
+            for name in unavailable_features:
+                outcomes.append(
+                    BenchmarkOutcome(
+                        case_id=name,
+                        operation=name,
+                        fixture={"shape": "feature_api_not_present"},
+                        size=1,
+                        payload_bytes=None,
+                        config=base_config,
+                        unavailable_reason=(
+                            f"feature benchmark API is not available in package {__version__}"
+                        ),
+                    )
+                )
         for spec in operations:
             if args.operation is not None and spec.name != args.operation:
+                continue
+            if args.feature_workloads_only and spec.name not in feature_names:
                 continue
             config = MeasurementConfig(
                 warmups=(spec.warmups if args.warmups is None else args.warmups),

@@ -1,0 +1,135 @@
+{
+  "metadata": {
+    "config": {
+      "batch_count": 1,
+      "repetitions": 3,
+      "track_allocations": false,
+      "warmups": 1
+    },
+    "modules": {
+      "expra_connect.cluster.models": "/tmp/expra-connect-supplement-1lo1h7yv/wheel/expra_connect/cluster/models.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.operations": "/tmp/expra-connect-supplement-1lo1h7yv/wheel/expra_connect/cluster/operations.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.roles": "/tmp/expra-connect-supplement-1lo1h7yv/wheel/expra_connect/cluster/roles.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.state": "/tmp/expra-connect-supplement-1lo1h7yv/wheel/expra_connect/cluster/state.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.persistence": "/tmp/expra-connect-supplement-1lo1h7yv/wheel/expra_connect/persistence.cpython-312-x86_64-linux-gnu.so"
+    },
+    "package_version": "2.2.1.0",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "suite": "cluster_state"
+  },
+  "outcomes": [
+    {
+      "case_id": "1000:role authorization",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 7.284,
+        "mean_us": 5.731,
+        "minimum": 4.348,
+        "ops_per_second": 174489.61786773687,
+        "outliers": 0,
+        "p25": 4.9544999999999995,
+        "p50": 5.561,
+        "p75": 6.422499999999999,
+        "p95": 7.1117,
+        "p99": 7.24954,
+        "peak_bytes": null,
+        "samples_us": [
+          7.284,
+          5.561,
+          4.348
+        ],
+        "spread": 2.936
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role authorization",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 9.738,
+        "mean_us": 5.103,
+        "minimum": 2.555,
+        "ops_per_second": 195963.1589261219,
+        "outliers": 0,
+        "p25": 2.7855,
+        "p50": 3.016,
+        "p75": 6.377,
+        "p95": 9.0658,
+        "p99": 9.60356,
+        "peak_bytes": null,
+        "samples_us": [
+          9.738,
+          3.016,
+          2.555
+        ],
+        "spread": 7.183
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role authorization",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100000,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 25.668,
+        "mean_us": 10.977333333333334,
+        "minimum": 3.507,
+        "ops_per_second": 91096.80553868577,
+        "outliers": 0,
+        "p25": 3.632,
+        "p50": 3.757,
+        "p75": 14.712499999999999,
+        "p95": 23.476899999999997,
+        "p99": 25.229779999999998,
+        "peak_bytes": null,
+        "samples_us": [
+          25.668,
+          3.507,
+          3.757
+        ],
+        "spread": 22.160999999999998
+      },
+      "size": 100000,
+      "status": "measured"
+    }
+  ],
+  "schema_version": 1
+}
