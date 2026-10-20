@@ -1421,6 +1421,22 @@ class DiagramTests(unittest.TestCase):
             "Performance points vs 1.8.0.0", diagrams["performance-comparison.svg"]
         )
 
+    def test_recent_reference_diagram_includes_newer_builds(self) -> None:
+        history = performance_diagrams._load_build_comparison_history(
+            ROOT / "docs" / "performance-build-comparison-results"
+        )
+
+        diagrams = render_diagrams(
+            load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results"),
+            build_history=history,
+        )
+
+        recent_svg = diagrams["performance-recent-reference.svg"]
+        self.assertIn("2.2.1.1 native", recent_svg)
+        self.assertIn("2.2.1.1 universal", recent_svg)
+        self.assertIn("2.2.1.0 native baseline", recent_svg)
+        self.assertIn("2.2.1.0 universal baseline", recent_svg)
+
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "baseline.md"
