@@ -3,6 +3,7 @@
 - **Historical shared-harness measurements:** 18 October 2026
 - **2.2.0.3 native/universal rerun:** 19 October 2026
 - **2.2.1.0 native/universal full benchmark matrix:** 19 October 2026
+- **2.2.1.0 supplemental feature workloads:** 20 October 2026
 - **Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39
 - **Compared results:** 1.8.0.0, 1.9.0.1, 2.0.0.0, 2.0.0.2, 2.2.0.0,
   2.2.0.1, 2.2.0.3 native/universal, 2.2.0.4 native/universal,
@@ -43,8 +44,12 @@
   that inventory: new cases appear as unmeasured, and historical-only cases do
   not increase the denominator.
 - Coverage includes cluster state at 1k, 30k, and 100k; connect; and persistence
-  at 30k, 100k, and 200k. Cluster round-trip scaling reuses cases and is not
-  counted twice.
+  at 30k, 100k, and 200k. Profile migration is reported separately by 1/16/64
+  files. Cluster round-trip scaling reuses cases and is not counted twice.
+- The added deterministic feature slices are discovery (3 cases), pairing/trust
+  (3), capability and surface authorization (3), cluster role authorization
+  (3), and profile migration (3). These measure in-process APIs, not live LAN
+  discovery or network transport.
 - YAML size limits, unavailable connect operations, and the two unsupported
   200k MessagePack StateStore cases are explained in chart tooltips.
 
@@ -61,17 +66,17 @@
 <!-- performance-summary:start -->
 - **Current weighted winner:** 2.2.1.0 native — 0.768 index; 37 matched positive-p50 cases.
   - Applies only to this workload set and weighting; it is not a universal claim.
-- **Distinct-workload coverage:** 74 unique cases; reported separately from latency scoring.
-  - 1.8.0.0: 63/74
-  - 2.2.0.1: 65/74
-  - 2.2.0.3 native: 69/74
-  - 2.2.0.3 universal: 69/74
-  - 2.2.0.4 native: 68/74
-  - 2.2.0.4 universal: 68/74
-  - 2.2.0.5 native: 69/74
-  - 2.2.0.5 universal: 69/74
-  - 2.2.1.0 native: 69/74
-  - 2.2.1.0 universal: 69/74
+- **Distinct-workload coverage:** 89 unique cases; reported separately from latency scoring.
+  - 1.8.0.0: 63/89
+  - 2.2.0.1: 65/89
+  - 2.2.0.3 native: 69/89
+  - 2.2.0.3 universal: 69/89
+  - 2.2.0.4 native: 68/89
+  - 2.2.0.4 universal: 68/89
+  - 2.2.0.5 native: 69/89
+  - 2.2.0.5 universal: 69/89
+  - 2.2.1.0 native: 84/89
+  - 2.2.1.0 universal: 84/89
   - Missing or unsupported cases receive no invented latency penalty.
 <!-- performance-summary:end -->
 
@@ -124,6 +129,15 @@
   `docs/performance-build-comparison-results/2.2.1.0-<flavor>-*.json`. The
   configured limits leave the three 100k YAML cluster operations and two 200k
   MessagePack StateStore operations explicitly unavailable, not omitted runs.
+- Separate append-only 2.2.1.0 native and universal supplement files add 15
+  deterministic cases (9 connect, 3 cluster policy, and 3 profile migration)
+  without rewriting the original suite JSON. Both wheel flavors were measured
+  with CPython 3.12.3 on Linux x86_64/glibc 2.39 on 20 October 2026. The
+  updater validates paired fixtures, runtime/configuration, and wheel-module
+  provenance before merging supplements in memory.
+- The resulting 2.2.1.0 coverage is 84/89 per flavor: 69 prior cases plus 15
+  supplemental cases. Older builds are measured against the 89-case inventory;
+  their new cases remain unmeasured, not assigned fabricated timings.
 - Versioned build JSON is stored in
   `docs/performance-build-comparison-results/`. Shared-harness JSON is tracked
   in `tools/shared-benchmark-results/` for reproducible refreshes.
@@ -166,6 +180,14 @@
 The committed SVG is embedded above. Refresh and verify it with:
 
 ```sh
-.venv/bin/python -m scripts.update_performance_diagrams
-.venv/bin/python -m scripts.update_performance_diagrams --check
+python -m scripts.benchmark_release_wheels --supplements-only \
+  --version 2.2.1.0 --wheel-dir dist \
+  --results-dir docs/performance-build-comparison-results \
+  --python .venv/bin/python
+python -m scripts.update_performance_diagrams
+python -m scripts.update_performance_diagrams --check
 ```
+
+The supplement command requires matched native and universal wheel artifacts.
+It writes separate `*-supplement.json` files and refuses partial or existing
+supplement sets rather than overwriting them.

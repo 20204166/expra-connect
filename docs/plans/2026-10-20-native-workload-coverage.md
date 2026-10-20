@@ -45,36 +45,36 @@
 
 **Files:** Modify `scripts/benchmark_release_wheels.py`; add tests in `tests/test_release_performance_benchmarks.py`.
 
-- [ ] **Step 1: Test supplement naming, immutability, and provenance.** Cover an existing complete result set plus missing supplements, already-complete supplements, partial supplements, and refusal to overwrite any existing target. Snapshot existing file bytes and assert unchanged.
-- [ ] **Step 2: Verify failure.** Run the focused release benchmark tests and confirm supplement flow is not implemented.
-- [ ] **Step 3: Add a dedicated supplement command path.** For each wheel, extract the package as the normal runner does, run the nine connect cases, three role-policy cases, and the existing three profile-migration cases under that wheel's code, validate package version and module paths, and write separate `<version>-<flavor>-<suite>-supplement.json` outputs using atomic/no-overwrite publication. Persist the same metadata/config across flavors. Keep normal release benchmark paths and schema compatible.
-- [ ] **Step 4: Verify with synthetic wheels/results.** Run focused tests; malformed provenance, missing peer suites, partial supplements, and conflicts fail closed while regular result bytes stay identical.
+- [x] **Step 1: Test supplement naming, immutability, and provenance.** Tests cover paired artifacts, separate supplements, immutable originals, rerun reuse, and refusal of partial sets.
+- [x] **Step 2: Verify failure.** The `--feature-workloads-only` CLI test first failed because the option was not recognized.
+- [x] **Step 3: Add a dedicated supplement command path.** Added `--supplements-only` and optional `--version`; the runner executes the added cases from each wheel, validates package/module provenance and exact case inventory, and publishes separate result files atomically without overwrite.
+- [x] **Step 4: Verify with synthetic wheels/results.** Focused release tests pass, including intact original bytes and paired native/universal reuse; actual artifacts were run and generated six supplements.
 
 ## Task 4: Validate and merge supplements in the updater
 
 **Files:** Modify `scripts/update_performance_diagrams.py`; add tests in `tests/test_performance_diagrams.py`.
 
-- [ ] **Step 1: Add fixture-based tests** for valid in-memory merge; duplicate and conflicting IDs; wrong suite/version/flavor/runtime/config; imported module outside the recorded wheel flavor; missing native/universal pair; operation/fixture parity; unchanged original result bytes; and supplement archive association.
-- [ ] **Step 2: Verify tests fail** with `.venv/bin/python -m unittest tests.test_performance_diagrams -v`.
-- [ ] **Step 3: Implement supplemental loading.** Require exactly paired native/universal supplements for a version; validate against regular metadata and each other; reject duplicate IDs rather than choosing either. Merge outcomes only in memory. When normal history eviction archives a run, move its supplement to the same `history/` location policy; never delete or rewrite raw JSON.
-- [ ] **Step 4: Verify updater behavior.** Run focused tests and confirm workload coverage sees each new case once, latency scoring remains matched-positive-p50 only, and originals are unchanged.
+- [x] **Step 1: Add fixture-based tests** for valid merge, duplicates/conflicts, incomplete pairs, metadata/module flavor mismatch, fixture parity, original-byte preservation, and archive association.
+- [x] **Step 2: Verify tests fail** with a regression test first: before loader support, the valid-merge test failed because cluster policy cases were missing from the loaded inventory.
+- [x] **Step 3: Implement supplemental loading.** The updater requires paired complete suites, exact case inventory, matching runtime/config/fixtures and correct flavor provenance. It merges in memory; archived build JSON globs include supplements alongside original results.
+- [x] **Step 4: Verify updater behavior.** Focused tests pass; actual history reports 89 cases, 84/89 for each 2.2.1.0 flavor, and three measured profile-migration cases. Existing result bytes remain unchanged.
 
 ## Task 5: Measure 2.2.1.0 artifacts and publish baseline
 
 **Files:** Add six raw supplement JSON files under `docs/performance-build-comparison-results/`; update `docs/native-wheel-performance-baseline.md` and generated SVGs.
 
-- [ ] **Step 1: Capture original checksums and wheel provenance.** Record hashes for the six existing 2.2.1.0 suite JSON files and both wheel artifacts before running anything.
-- [ ] **Step 2: Run supplements from the existing artifacts.** Use the matching CPython 3.12.3 interpreter/platform and identical warmups, repetitions, and allocation settings for both flavors. Use the existing profile-migration benchmark mode for its three cases; do not recreate its fixture or migration callbacks. Do not rebuild wheels or overwrite existing benchmark files. Retain raw samples and module provenance.
-- [ ] **Step 3: Validate the complete pair and exact inventory.** Require 15 new unique cases and 89 total distinct workload IDs. Verify both flavors' case IDs, operation labels, fixtures, config, interpreter, and platform agree; existing suite files still match their pre-run hashes.
-- [ ] **Step 4: Refresh charts and summary.** Run `.venv/bin/python -m scripts.update_performance_diagrams`; update baseline coverage counts and add feature-slice/provenance notes. Do not state that broader case coverage is a speedup. Preserve the existing matched-workload score rules.
-- [ ] **Step 5: Verify generated output.** Run updater `--check`; parse generated SVGs with `xml.etree.ElementTree`; inspect updated summary counts and coverage denominator for every displayed build.
+- [x] **Step 1: Capture original checksums and wheel provenance.** Verified wheel hashes match the baseline and original 2.2.1.0 JSON is unchanged in the worktree.
+- [x] **Step 2: Run supplements from the existing artifacts.** Ran both existing wheels on CPython 3.12.3/Linux x86_64; migration cases used the existing benchmark mode. No wheels were rebuilt and no original JSON was overwritten.
+- [x] **Step 3: Validate the complete pair and exact inventory.** Updater and runner validate all 15 unique cases, flavor parity, fixture/config/runtime parity, and module provenance; actual union is 89 and each flavor measures 84.
+- [x] **Step 4: Refresh charts and summary.** Refreshed SVGs and the baseline; scores remain based only on matched positive-p50 cases, with no performance-improvement claim from coverage growth.
+- [x] **Step 5: Verify generated output.** Updater `--check` passes and both generated SVGs parse as XML.
 
 ## Task 6: Full verification and review
 
-- [ ] **Step 1: Run focused suites** for all touched benchmark and updater code.
-- [ ] **Step 2: Run repository validation** per `AGENTS.md` using the available venv at `/home/btn17/Downloads/expra-connect/.venv` and `PYTHONPATH=src:.` for Python commands: unittest discovery, `ruff check .`, `ruff format --check .`, `pyright`, and mypy. Ruff is not installed in the available venv; report unavailable checks rather than changing repository dependencies.
-- [ ] **Step 3: Review diff and integrity.** Run `git diff --check`; verify existing wheel and result hashes; inspect changed files for accidental unrelated edits, unstable benchmark setup, unsupported claims, or secret-bearing output.
-- [ ] **Step 4: Report exact outcomes.** State any checks unavailable in this worktree rather than claiming they passed; keep the unrelated roles/test changes untouched.
+- [x] **Step 1: Run focused suites** for all touched benchmark and updater code.
+- [x] **Step 2: Run repository validation** per `AGENTS.md`: unittest discovery passed (955 tests, 26 skipped); `ruff check .` and `ruff format --check .` passed; `pyright --venvpath /home/btn17/Downloads/expra-connect` passed (0 errors); and Mypy passed with `PYTHONPATH=src:.`.
+- [x] **Step 3: Review diff and integrity.** `git diff --check` passed; the two wheel SHA-256 values match the baseline and all six original 2.2.1.0 suite JSON files are unchanged.
+- [x] **Step 4: Report exact outcomes.** No unrelated role/test edits are in this worktree; note the 26 existing skipped tests due absent optional benchmark source artifacts.
 
 ## Constraints
 
