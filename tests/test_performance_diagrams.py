@@ -96,13 +96,19 @@ class BuildComparisonTests(unittest.TestCase):
 
         scores = performance_diagrams._recent_reference_scores(history)
 
-        self.assertEqual(scores["native"].candidate_version, "2.2.0.5")
-        self.assertEqual(scores["native"].reference_version, "2.2.1.0")
-        self.assertAlmostEqual(scores["native"].reference_weighted_ratio, 1.0)
-        self.assertAlmostEqual(scores["native"].candidate_weighted_ratio, 1.1)
-        self.assertAlmostEqual(scores["universal"].candidate_weighted_ratio, 1.2)
-        self.assertEqual(scores["native"].weighted_case_count, 5)
-        self.assertEqual(scores["native"].full_workload_case_count, 5)
+        native = {score.candidate_version: score for score in scores["native"]}
+        universal = {score.candidate_version: score for score in scores["universal"]}
+        self.assertEqual(set(native), {"2.2.0.5", "2.2.1.0"})
+        self.assertEqual(native["2.2.1.0"].reference_version, "2.2.1.0")
+        self.assertEqual(native["2.2.1.0"].candidate_weighted_ratio, 1.0)
+        native_prior_ratio = native["2.2.0.5"].candidate_weighted_ratio
+        universal_prior_ratio = universal["2.2.0.5"].candidate_weighted_ratio
+        self.assertIsNotNone(native_prior_ratio)
+        self.assertIsNotNone(universal_prior_ratio)
+        self.assertAlmostEqual(native_prior_ratio, 1.1)
+        self.assertAlmostEqual(universal_prior_ratio, 1.2)
+        self.assertEqual(native["2.2.0.5"].weighted_case_count, 5)
+        self.assertEqual(native["2.2.0.5"].full_workload_case_count, 5)
 
     def test_build_history_accepts_either_flavor_or_both_flavors(self) -> None:
         for flavors in (("native",), ("universal",), ("native", "universal")):
@@ -1413,8 +1419,9 @@ class DiagramTests(unittest.TestCase):
         diagrams = render_diagrams(groups, build_history=history)
         svg = diagrams["performance-recent-reference.svg"]
 
-        self.assertIn("Recent reference: 2.2.1.0 native/universal", svg)
-        self.assertIn("Each flavor has its own 2.2.1.0 baseline: 100.000p", svg)
+        self.assertIn("Performance points vs 2.2.1.0 flavor baselines", svg)
+        self.assertIn("Native is normalized against 2.2.1.0 native", svg)
+        self.assertIn("universal against 2.2.1.0 universal", svg)
         self.assertIn("2.2.0.5 native", svg)
         self.assertIn("98.803p", svg)
         self.assertIn(
@@ -1434,8 +1441,9 @@ class DiagramTests(unittest.TestCase):
         recent_svg = diagrams["performance-recent-reference.svg"]
         self.assertIn("2.2.1.1 native", recent_svg)
         self.assertIn("2.2.1.1 universal", recent_svg)
-        self.assertIn("2.2.1.0 native baseline", recent_svg)
-        self.assertIn("2.2.1.0 universal baseline", recent_svg)
+        self.assertIn("2.2.1.0 native", recent_svg)
+        self.assertIn("2.2.1.0 universal", recent_svg)
+        self.assertIn("runtime or measurement configuration differs", recent_svg)
 
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

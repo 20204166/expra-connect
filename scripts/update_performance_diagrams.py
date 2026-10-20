@@ -322,12 +322,13 @@ class RecentReferenceScore:
     flavor: str
     reference_version: str
     candidate_version: str
-    reference_weighted_ratio: float
-    reference_full_workload_ratio: float
-    candidate_weighted_ratio: float
-    candidate_full_workload_ratio: float
+    reference_weighted_ratio: float | None
+    reference_full_workload_ratio: float | None
+    candidate_weighted_ratio: float | None
+    candidate_full_workload_ratio: float | None
     weighted_case_count: int
     full_workload_case_count: int
+    unavailable_reason: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1415,12 +1416,15 @@ def render_diagrams(
 
 
 def _render_recent_reference_svg(
-    scores: dict[str, RecentReferenceScore],
+    scores: dict[str, tuple[RecentReferenceScore, ...]],
 ) -> str:
-    """Render flavor-specific scores without mixing their denominators."""
+    """Render build history against flavor-matched recent-reference builds."""
 
-    width, height = 980, 190
-    title = f"Recent reference: {RECENT_REFERENCE_VERSION} native/universal"
+    rows = tuple(
+        score for flavor in ("native", "universal") for score in scores[flavor]
+    )
+    width, height = 1160, 96 + len(rows) * 24
+    title = f"Performance points vs {RECENT_REFERENCE_VERSION} flavor baselines"
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="{escape(title)}">',
         f"<title>{escape(title)}</title>",
@@ -1429,50 +1433,36 @@ def _render_recent_reference_svg(
         _text(
             16,
             52,
-            "Each flavor has its own 2.2.1.0 baseline: 100.000p; lower is faster.",
+            f"Native is normalized against {RECENT_REFERENCE_VERSION} native; universal against {RECENT_REFERENCE_VERSION} universal. 100.000p is baseline; lower is faster.",
             size=12,
         ),
-        _text(16, 80, "Build / reference", size=12, weight="bold"),
-        _text(590, 80, "Weighted", size=12, anchor="middle", weight="bold"),
-        _text(760, 80, "Full workload", size=12, anchor="middle", weight="bold"),
+        _text(16, 80, "Build / flavor / denominator", size=12, weight="bold"),
+        _text(780, 80, "Weighted", size=12, anchor="middle", weight="bold"),
+        _text(940, 80, "Full workload", size=12, anchor="middle", weight="bold"),
     ]
-    for row_index, flavor in enumerate(("native", "universal")):
-        score = scores[flavor]
-        y = 108 + row_index * 34
-        parts.append(
-            _text(
-                16, y + 14, f"{score.reference_version} {flavor} · reference", size=12
-            )
+    for row_index, score in enumerate(rows):
+        y = 102 + row_index * 24
+        denominator = f"{score.reference_version} {score.flavor}"
+        label = f"{score.candidate_version} {score.flavor} vs {denominator}"
+        weighted = (
+            "N/A"
+            if score.candidate_weighted_ratio is None
+            else _format_performance_points(score.candidate_weighted_ratio)
         )
-        parts.append(_text(590, y + 14, "100.000p", size=12, anchor="middle"))
-        parts.append(_text(760, y + 14, "100.000p", size=12, anchor="middle"))
-        parts.append(
-            _text(
-                16,
-                y + 30,
-                f"{score.candidate_version} {flavor} · {score.weighted_case_count} matched cases",
-                size=11,
-                color="#454545",
-            )
+        full_workload = (
+            "N/A"
+            if score.candidate_full_workload_ratio is None
+            else _format_performance_points(score.candidate_full_workload_ratio)
         )
-        parts.append(
-            _text(
-                590,
-                y + 30,
-                _format_performance_points(score.candidate_weighted_ratio),
-                size=12,
-                anchor="middle",
-            )
+        detail = (
+            score.unavailable_reason
+            if score.unavailable_reason is not None
+            else f"{score.weighted_case_count} weighted / {score.full_workload_case_count} full-workload matched cases"
         )
-        parts.append(
-            _text(
-                760,
-                y + 30,
-                _format_performance_points(score.candidate_full_workload_ratio),
-                size=12,
-                anchor="middle",
-            )
-        )
+        parts.append(_text(16, y + 14, label, size=11))
+        parts.append(_text(780, y + 14, weighted, size=11, anchor="middle"))
+        parts.append(_text(940, y + 14, full_workload, size=11, anchor="middle"))
+        parts.append(_text(1000, y + 14, detail, size=9, color="#454545"))
     parts.append("</svg>")
     return "\n".join(parts)
 
@@ -1643,8 +1633,8 @@ def _weighted_overall_index_panel(
 
 def _recent_reference_scores(
     history: dict[str, tuple[BenchmarkRun, ...]],
-) -> dict[str, RecentReferenceScore]:
-    """Compare the nearest prior complete build with the recent flavor baseline."""
+) -> dict[str, tuple[RecentReferenceScore, ...]]:
+    """Compare complete builds against their flavor-matched recent baseline."""
 
     def sized_pair(
         pair: tuple[BenchmarkRun, BenchmarkRun], sizes: tuple[int, ...] | None
@@ -1668,122 +1658,143 @@ def _recent_reference_scores(
         }
         for suite in BUILD_COMPARISON_SUITES
     }
-    reference_version_key = tuple(
-        int(part) for part in RECENT_REFERENCE_VERSION.split(".")
-    )
-    scores: dict[str, RecentReferenceScore] = {}
+    scores: dict[str, tuple[RecentReferenceScore, ...]] = {}
 
     for flavor in ("native", "universal"):
-        available_versions = [
-            {
-                version
-                for version, run_flavor in suite_runs
-                if run_flavor == flavor
-                and tuple(int(part) for part in version.split("."))
-                < reference_version_key
-            }
+        versions_by_suite = [
+            {version for version, run_flavor in suite_runs if run_flavor == flavor}
             for suite_runs in runs_by_suite.values()
         ]
-        candidate_versions = set.intersection(*available_versions)
-        if not candidate_versions:
-            raise ValueError(f"no complete prior {flavor} build for recent reference")
-        candidate_version = max(
-            candidate_versions,
-            key=lambda version: tuple(int(part) for part in version.split(".")),
-        )
-
-        paired_runs: dict[str, tuple[BenchmarkRun, BenchmarkRun]] = {}
-        for suite, suite_runs in runs_by_suite.items():
-            reference = suite_runs.get((RECENT_REFERENCE_VERSION, flavor))
-            candidate = suite_runs.get((candidate_version, flavor))
-            if reference is None or candidate is None:
-                raise ValueError(
-                    f"{suite}: missing {flavor} run for recent reference comparison"
-                )
-            if (
-                reference.metadata.config != candidate.metadata.config
-                or reference.metadata.python_version
-                != candidate.metadata.python_version
-                or reference.metadata.platform != candidate.metadata.platform
-            ):
-                raise ValueError(
-                    f"{suite}: {candidate_version} and {RECENT_REFERENCE_VERSION} "
-                    f"{flavor} run configuration differs"
-                )
-
-            reference_cases = {
-                outcome.case_id: outcome for outcome in reference.outcomes
-            }
-            candidate_cases = {
-                outcome.case_id: outcome for outcome in candidate.outcomes
-            }
-            if len(reference_cases) != len(reference.outcomes) or len(
-                candidate_cases
-            ) != len(candidate.outcomes):
-                raise ValueError(f"{suite}: duplicate case ID in recent comparison")
-
-            matched_ids: set[str] = set()
-            for case_id in reference_cases.keys() & candidate_cases.keys():
-                reference_outcome = reference_cases[case_id]
-                candidate_outcome = candidate_cases[case_id]
-                reference_result = reference_outcome.result
-                candidate_result = candidate_outcome.result
+        candidate_versions = set.intersection(*versions_by_suite)
+        if RECENT_REFERENCE_VERSION not in candidate_versions:
+            raise ValueError(f"missing complete {flavor} recent reference build")
+        flavor_scores: list[RecentReferenceScore] = []
+        for candidate_version in sorted(
+            candidate_versions, key=lambda version: tuple(map(int, version.split(".")))
+        ):
+            paired_runs: dict[str, tuple[BenchmarkRun, BenchmarkRun]] = {}
+            unavailable_reason: str | None = None
+            for suite, suite_runs in runs_by_suite.items():
+                reference = suite_runs[(RECENT_REFERENCE_VERSION, flavor)]
+                candidate = suite_runs[(candidate_version, flavor)]
                 if (
-                    reference_outcome.operation == candidate_outcome.operation
-                    and reference_outcome.fixture == candidate_outcome.fixture
-                    and reference_outcome.size == candidate_outcome.size
-                    and reference_outcome.config == candidate_outcome.config
-                    and reference_result is not None
-                    and reference_result.p50 > 0
-                    and candidate_result is not None
-                    and candidate_result.p50 > 0
+                    reference.metadata.config != candidate.metadata.config
+                    or reference.metadata.python_version
+                    != candidate.metadata.python_version
+                    or reference.metadata.platform != candidate.metadata.platform
                 ):
-                    matched_ids.add(case_id)
-            if not matched_ids:
-                raise ValueError(
-                    f"{suite}: no matched positive-p50 {flavor} cases for "
-                    f"{candidate_version}/{RECENT_REFERENCE_VERSION}"
-                )
-            paired_runs[suite] = (
-                BenchmarkRun(
-                    reference.metadata,
-                    tuple(
-                        outcome
-                        for outcome in reference.outcomes
-                        if outcome.case_id in matched_ids
-                    ),
-                ),
-                BenchmarkRun(
-                    candidate.metadata,
-                    tuple(
-                        outcome
-                        for outcome in candidate.outcomes
-                        if outcome.case_id in matched_ids
-                    ),
-                ),
-            )
+                    unavailable_reason = "runtime or measurement configuration differs"
+                    break
 
-        groups: dict[str, tuple[BenchmarkRun, ...]] = {
-            "cluster-1k": sized_pair(paired_runs["cluster_state"], (1_000,)),
-            "cluster-large": sized_pair(
-                paired_runs["cluster_state"], (30_000, 100_000)
-            ),
-            "connect": sized_pair(paired_runs["connect"], None),
-            "persistence-200k": sized_pair(paired_runs["persistence"], (200_000,)),
-        }
-        weighted = _weighted_overall_index_panel(groups)
-        full_workload = _full_workload_index_panel(groups)
-        scores[flavor] = RecentReferenceScore(
-            flavor=flavor,
-            reference_version=RECENT_REFERENCE_VERSION,
-            candidate_version=candidate_version,
-            reference_weighted_ratio=1.0,
-            reference_full_workload_ratio=1.0,
-            candidate_weighted_ratio=weighted.indices[1],
-            candidate_full_workload_ratio=full_workload.indices[1],
-            weighted_case_count=weighted.case_count,
-            full_workload_case_count=full_workload.case_count,
-        )
+                reference_cases = {
+                    outcome.case_id: outcome for outcome in reference.outcomes
+                }
+                candidate_cases = {
+                    outcome.case_id: outcome for outcome in candidate.outcomes
+                }
+                if len(reference_cases) != len(reference.outcomes) or len(
+                    candidate_cases
+                ) != len(candidate.outcomes):
+                    raise ValueError(f"{suite}: duplicate case ID in recent comparison")
+
+                matched_ids = {
+                    case_id
+                    for case_id in reference_cases.keys() & candidate_cases.keys()
+                    if (
+                        reference_cases[case_id].operation
+                        == candidate_cases[case_id].operation
+                        and reference_cases[case_id].fixture
+                        == candidate_cases[case_id].fixture
+                        and reference_cases[case_id].size
+                        == candidate_cases[case_id].size
+                        and reference_cases[case_id].config
+                        == candidate_cases[case_id].config
+                        and reference_cases[case_id].result is not None
+                        and reference_cases[case_id].result.p50 > 0
+                        and candidate_cases[case_id].result is not None
+                        and candidate_cases[case_id].result.p50 > 0
+                    )
+                }
+                if not matched_ids:
+                    unavailable_reason = f"no matched positive-p50 {suite} cases"
+                    break
+                paired_runs[suite] = (
+                    BenchmarkRun(
+                        reference.metadata,
+                        tuple(
+                            outcome
+                            for outcome in reference.outcomes
+                            if outcome.case_id in matched_ids
+                        ),
+                    ),
+                    BenchmarkRun(
+                        candidate.metadata,
+                        tuple(
+                            outcome
+                            for outcome in candidate.outcomes
+                            if outcome.case_id in matched_ids
+                        ),
+                    ),
+                )
+
+            if unavailable_reason is not None:
+                flavor_scores.append(
+                    RecentReferenceScore(
+                        flavor=flavor,
+                        reference_version=RECENT_REFERENCE_VERSION,
+                        candidate_version=candidate_version,
+                        reference_weighted_ratio=None,
+                        reference_full_workload_ratio=None,
+                        candidate_weighted_ratio=None,
+                        candidate_full_workload_ratio=None,
+                        weighted_case_count=0,
+                        full_workload_case_count=0,
+                        unavailable_reason=unavailable_reason,
+                    )
+                )
+                continue
+
+            groups: dict[str, tuple[BenchmarkRun, ...]] = {
+                "cluster-1k": sized_pair(paired_runs["cluster_state"], (1_000,)),
+                "cluster-large": sized_pair(
+                    paired_runs["cluster_state"], (30_000, 100_000)
+                ),
+                "connect": sized_pair(paired_runs["connect"], None),
+                "persistence-200k": sized_pair(paired_runs["persistence"], (200_000,)),
+            }
+            try:
+                weighted = _weighted_overall_index_panel(groups)
+                full_workload = _full_workload_index_panel(groups)
+            except ValueError as error:
+                flavor_scores.append(
+                    RecentReferenceScore(
+                        flavor=flavor,
+                        reference_version=RECENT_REFERENCE_VERSION,
+                        candidate_version=candidate_version,
+                        reference_weighted_ratio=None,
+                        reference_full_workload_ratio=None,
+                        candidate_weighted_ratio=None,
+                        candidate_full_workload_ratio=None,
+                        weighted_case_count=0,
+                        full_workload_case_count=0,
+                        unavailable_reason=str(error),
+                    )
+                )
+                continue
+            flavor_scores.append(
+                RecentReferenceScore(
+                    flavor=flavor,
+                    reference_version=RECENT_REFERENCE_VERSION,
+                    candidate_version=candidate_version,
+                    reference_weighted_ratio=1.0,
+                    reference_full_workload_ratio=1.0,
+                    candidate_weighted_ratio=weighted.indices[1],
+                    candidate_full_workload_ratio=full_workload.indices[1],
+                    weighted_case_count=weighted.case_count,
+                    full_workload_case_count=full_workload.case_count,
+                )
+            )
+        scores[flavor] = tuple(flavor_scores)
     return scores
 
 
@@ -1926,13 +1937,20 @@ def render_performance_summary(
         recent_lines.append(
             f"- **Recent reference: {RECENT_REFERENCE_VERSION}** — each flavor is normalized independently; 100.000p is its own reference and lower is faster."
         )
-        for flavor, score in _recent_reference_scores(build_history).items():
-            recent_lines.extend(
-                (
-                    f"  - {score.reference_version} {flavor} reference: weighted 100.000p; full workload 100.000p.",
-                    f"  - {score.candidate_version} {flavor}: weighted {_format_performance_points(score.candidate_weighted_ratio)}; full workload {_format_performance_points(score.candidate_full_workload_ratio)} ({score.weighted_case_count} matched cases).",
+        recent_scores = _recent_reference_scores(build_history)
+        for flavor, scores in recent_scores.items():
+            for score in scores:
+                if (
+                    score.candidate_weighted_ratio is None
+                    or score.candidate_full_workload_ratio is None
+                ):
+                    recent_lines.append(
+                        f"  - {score.candidate_version} {flavor} vs {score.reference_version} {flavor}: unavailable ({score.unavailable_reason})."
+                    )
+                    continue
+                recent_lines.append(
+                    f"  - {score.candidate_version} {flavor} vs {score.reference_version} {flavor}: weighted {_format_performance_points(score.candidate_weighted_ratio)}; full workload {_format_performance_points(score.candidate_full_workload_ratio)} ({score.weighted_case_count} weighted matched cases)."
                 )
-            )
     return "\n".join(
         [
             (
