@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
@@ -8,7 +9,9 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
+from scripts.benchmark_coverage import SUPPLEMENT_CASES
 from scripts.benchmark_release_wheels import (
+    run_cluster_authorization_shard,
     run_release_benchmarks,
     run_release_supplement_benchmarks,
 )
@@ -23,6 +26,135 @@ from scripts.benchmark_support import (
 
 
 class ReleasePerformanceTests(unittest.TestCase):
+    def test_cluster_auth_shard_appends_only_new_cases(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheels = root / "wheels"
+            wheels.mkdir()
+            for filename, native in (
+                ("expra_connect-3.4.5.6-cp312-cp312-linux_x86_64.whl", True),
+                ("expra_connect-3.4.5.6-py3-none-any.whl", False),
+            ):
+                with zipfile.ZipFile(wheels / filename, "w") as archive:
+                    archive.writestr(
+                        "expra_connect/__init__.py", "__version__ = '3.4.5.6'\n"
+                    )
+                    if native:
+                        archive.writestr("expra_connect/native.so", b"native")
+            results = root / "results"
+            results.mkdir()
+            config = MeasurementConfig(
+                warmups=1, repetitions=3, track_allocations=False
+            )
+            legacy_ids = {
+                "1000:role authorization",
+                "30000:role authorization",
+                "100000:role authorization",
+            }
+            existing_paths = []
+            for flavor in ("native", "universal"):
+                suffix = ".so" if flavor == "native" else ".py"
+                existing = results / f"3.4.5.6-{flavor}-cluster_state-supplement.json"
+                write_results(
+                    existing,
+                    RunMetadata(
+                        1,
+                        "cluster_state",
+                        "3.4.5.6",
+                        "3.12.3",
+                        "Linux test",
+                        {"expra_connect.test": f"/wheel/{flavor}/module{suffix}"},
+                        config,
+                    ),
+                    tuple(
+                        BenchmarkOutcome(
+                            case_id,
+                            "role authorization",
+                            {"shape": "old"},
+                            int(case_id.split(":")[0]),
+                            64,
+                            config,
+                            measure(
+                                lambda: None,
+                                config,
+                                clock_ns=iter((0, 1000) * 4).__next__,
+                            ),
+                        )
+                        for case_id in sorted(legacy_ids)
+                    ),
+                )
+                existing_paths.append(existing)
+            original_bytes = tuple(path.read_bytes() for path in existing_paths)
+
+            def fake_subprocess(
+                command: tuple[str, ...],
+                *,
+                cwd: Path,
+                env: dict[str, str],
+                check: bool,
+            ) -> None:
+                output = Path(command[command.index("--json-output") + 1])
+                package_root = Path(env["PYTHONPATH"].split(os.pathsep)[0])
+                native = (package_root / "expra_connect/native.so").exists()
+                suffix = ".so" if native else ".py"
+                outcomes = []
+                for index, case_id in enumerate(
+                    sorted(SUPPLEMENT_CASES["cluster_state"])
+                ):
+                    size, operation = case_id.split(":", 1)
+                    outcomes.append(
+                        BenchmarkOutcome(
+                            case_id,
+                            operation,
+                            {"assignments": int(size), "grants": int(size) + 1},
+                            int(size),
+                            64,
+                            config,
+                            measure(
+                                lambda: None,
+                                config,
+                                clock_ns=iter((0, 1000) * 4).__next__,
+                            ),
+                        )
+                    )
+                write_results(
+                    output,
+                    RunMetadata(
+                        1,
+                        "cluster_state",
+                        "3.4.5.6",
+                        "3.12.3",
+                        "Linux test",
+                        {
+                            "expra_connect.test": str(
+                                package_root / "expra_connect" / f"module{suffix}"
+                            )
+                        },
+                        config,
+                    ),
+                    outcomes,
+                )
+
+            with patch(
+                "scripts.benchmark_release_wheels.subprocess.run", fake_subprocess
+            ):
+                produced = run_cluster_authorization_shard(
+                    wheels, results, "python3", root, target_version="3.4.5.6"
+                )
+
+            self.assertEqual(len(produced), 2)
+            self.assertTrue(
+                all(path.name.endswith("supplement-001.json") for path in produced)
+            )
+            self.assertEqual(
+                tuple(path.read_bytes() for path in existing_paths), original_bytes
+            )
+            for path in produced:
+                self.assertEqual(
+                    {item.case_id for item in load_results(path).outcomes},
+                    SUPPLEMENT_CASES["cluster_state"] - legacy_ids,
+                )
+
     def test_supplements_are_paired_separate_and_immutable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -47,11 +179,7 @@ class ReleasePerformanceTests(unittest.TestCase):
                 warmups=0, repetitions=1, track_allocations=False
             )
             suite_cases = {
-                "cluster_state": (
-                    "1000:role authorization",
-                    "30000:role authorization",
-                    "100000:role authorization",
-                ),
+                "cluster_state": tuple(sorted(SUPPLEMENT_CASES["cluster_state"])),
                 "persistence": tuple(
                     f"{size}:ProfileMigration:Profile migration" for size in (1, 16, 64)
                 ),
@@ -130,6 +258,13 @@ class ReleasePerformanceTests(unittest.TestCase):
                 )
                 self.assertEqual(len(produced), 6)
                 self.assertEqual(len(calls), 6)
+                cluster_command = next(
+                    call
+                    for call in calls
+                    if call[1].endswith("benchmark_cluster_state.py")
+                )
+                self.assertIn("200000", cluster_command)
+                self.assertIn("role authorization", cluster_command)
                 self.assertEqual(original.read_bytes(), before)
                 saved = tuple(path.read_bytes() for path in produced)
                 self.assertEqual(

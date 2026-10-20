@@ -5,9 +5,11 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import math
 import platform
 import sys
 from collections.abc import Callable
+from dataclasses import replace
 from functools import partial
 from pathlib import Path
 from typing import Any, cast
@@ -17,6 +19,7 @@ import yaml
 from expra_connect import __version__, persistence
 from expra_connect.cluster import (
     CapabilityGrant,
+    Cluster,
     ClusterRole,
     ClusterState,
     CoordinatorEpoch,
@@ -71,6 +74,8 @@ def _records(
             frozenset(
                 {ClusterRole.COORDINATOR, ClusterRole.WORKER}
                 if index == 0
+                else {ClusterRole.SUBCOORDINATOR, ClusterRole.WORKER}
+                if index == 1 and size >= 3
                 else {ClusterRole.WORKER}
             ),
             node_id,
@@ -87,6 +92,16 @@ def _records(
         )
         for index, node_id in enumerate(node_ids)
     )
+    if size >= 4:
+        grants += (
+            CapabilityGrant(
+                node_ids[1],
+                node_ids[2],
+                frozenset({NodePermission.READ_STATE}),
+                100.0,
+                200.0,
+            ),
+        )
     epoch = CoordinatorEpoch(23, node_ids[0], "benchmark-token", 100.0, 220.0)
     return assignments, grants, epoch
 
@@ -131,6 +146,12 @@ def _select_operations(
 ) -> list[tuple[str, Callable[[], Any]]]:
     if selected is None:
         return operations
+    if selected == "role authorization":
+        authorization = [
+            item for item in operations if item[0].startswith("role authorization")
+        ]
+        if authorization:
+            return authorization
     for name, operation in operations:
         if name == selected:
             return [(name, operation)]
@@ -156,6 +177,13 @@ def main() -> None:
             "role encode",
             "role decode",
             "role authorization",
+            "role authorization worker denied",
+            "role authorization subcoordinator grant",
+            "role authorization subcoordinator missing grant",
+            "role authorization subcoordinator expired grant",
+            "role authorization paused source",
+            "role authorization revoked destination",
+            "role authorization invalid clock",
             "cluster encode",
             "cluster decode",
             "cluster round-trip",
@@ -236,6 +264,45 @@ def main() -> None:
             if needs_role_state
             else None
         )
+        if role_state is not None:
+            checks = 0
+            role_round_trip = role_state_from_dict(role_state_to_dict(role_state))
+            if role_state_to_dict(role_round_trip) != role_state_to_dict(role_state):
+                raise RuntimeError("cluster benchmark role-state round trip failed")
+            checks += 1
+            cluster_for_check = ClusterState(
+                local_node_id="node-0",
+                cluster_id="benchmark-cluster",
+                role_assignments=assignments,
+                coordinator_epoch=epoch,
+                promotion_epochs=role_state.promotion_epochs,
+                capability_grants=grants,
+            )
+            cluster_restored = ClusterState.from_dict(cluster_for_check.to_dict())
+            if cluster_restored.to_dict() != cluster_for_check.to_dict():
+                raise RuntimeError("cluster benchmark state round trip failed")
+            checks += 1
+            hydrate = getattr(Cluster, "from_state", None)
+            if callable(hydrate):
+                runtime = hydrate(
+                    NodeId("node-0"), cluster_restored, clock=lambda: 110.0
+                )
+                if len(runtime.assignments) != size or runtime.epoch != epoch:
+                    raise RuntimeError("cluster benchmark hydration invariant failed")
+                checks += 1
+                try:
+                    hydrate(NodeId("benchmark-other-node"), cluster_restored)
+                except ValueError:
+                    checks += 1
+                else:
+                    raise RuntimeError(
+                        "cluster benchmark accepted mismatched local node"
+                    )
+            if args.operation is None or args.operation.startswith(
+                "role authorization"
+            ):
+                checks += 8 if size >= 4 else 1
+                print(f"correctness=passed size={size} checks={checks}")
         cluster_state = (
             ClusterState(
                 local_node_id="node-0",
@@ -287,19 +354,125 @@ def main() -> None:
         operations: list[tuple[str, Callable[[], Any]]] = []
         if role_state is not None:
             operations.append(("role encode", partial(role_state_to_dict, role_state)))
-            if args.operation in (None, "role authorization"):
-                operations.append(
+            if args.operation is None or args.operation.startswith(
+                "role authorization"
+            ):
+                paused_state = RoleState(
+                    tuple(
+                        replace(item, paused=True)
+                        if item.node_id == NodeId("node-1")
+                        else item
+                        for item in assignments
+                    ),
+                    epoch,
+                    capability_grants=grants,
+                )
+                revoked_state = RoleState(
+                    tuple(
+                        replace(item, revoked=True)
+                        if item.node_id == NodeId("node-2")
+                        else item
+                        for item in assignments
+                    ),
+                    epoch,
+                    capability_grants=grants,
+                )
+                auth_cases: list[
+                    tuple[str, RoleState, NodeId, NodeId, object, bool]
+                ] = [
                     (
                         "role authorization",
-                        partial(
-                            role_state.allows,
-                            subject=NodeId("node-0"),
-                            target=NodeId("node-1"),
-                            permission=NodePermission.READ_STATE,
-                            now=110.0,
-                        ),
+                        role_state,
+                        NodeId("node-0"),
+                        NodeId(f"node-{2 if size >= 3 else 1 if size >= 2 else 0}"),
+                        110.0,
+                        True,
                     )
-                )
+                ]
+                if size >= 4:
+                    auth_cases.extend(
+                        (
+                            (
+                                "role authorization worker denied",
+                                role_state,
+                                NodeId("node-2"),
+                                NodeId("node-3"),
+                                110.0,
+                                False,
+                            ),
+                            (
+                                "role authorization subcoordinator grant",
+                                role_state,
+                                NodeId("node-1"),
+                                NodeId("node-2"),
+                                110.0,
+                                True,
+                            ),
+                            (
+                                "role authorization subcoordinator missing grant",
+                                role_state,
+                                NodeId("node-1"),
+                                NodeId("node-3"),
+                                110.0,
+                                False,
+                            ),
+                            (
+                                "role authorization subcoordinator expired grant",
+                                role_state,
+                                NodeId("node-1"),
+                                NodeId("node-2"),
+                                201.0,
+                                False,
+                            ),
+                            (
+                                "role authorization paused source",
+                                paused_state,
+                                NodeId("node-1"),
+                                NodeId("node-2"),
+                                110.0,
+                                False,
+                            ),
+                            (
+                                "role authorization revoked destination",
+                                revoked_state,
+                                NodeId("node-1"),
+                                NodeId("node-2"),
+                                110.0,
+                                False,
+                            ),
+                            (
+                                "role authorization invalid clock",
+                                role_state,
+                                NodeId("node-1"),
+                                NodeId("node-2"),
+                                math.nan,
+                                False,
+                            ),
+                        )
+                    )
+                for label, auth_state, subject, target, now, expected in auth_cases:
+                    decision = auth_state.allows(
+                        subject=subject,
+                        target=target,
+                        permission=NodePermission.READ_STATE,
+                        now=now,
+                    )
+                    if decision is not expected:
+                        raise RuntimeError(
+                            f"benchmark fixture authorization mismatch: {label}"
+                        )
+                    operations.append(
+                        (
+                            label,
+                            partial(
+                                auth_state.allows,
+                                subject=subject,
+                                target=target,
+                                permission=NodePermission.READ_STATE,
+                                now=now,
+                            ),
+                        )
+                    )
         if role_document is not None:
             operations.append(
                 (

@@ -581,7 +581,8 @@ _VERSIONED_BUILD_RESULT_RE = re.compile(
 _SUPPLEMENT_RESULT_RE = re.compile(
     r"(?P<version>\d+\.\d+\.\d+\.\d+)-"
     r"(?P<flavor>native|universal)-"
-    r"(?P<suite>cluster_state|persistence|connect)-supplement\.json"
+    r"(?P<suite>cluster_state|persistence|connect)-supplement"
+    r"(?:-(?P<shard>\d{3}))?\.json"
 )
 
 
@@ -665,8 +666,8 @@ def _load_build_comparison_history(
             raise ValueError(f"result metadata does not match filename: {path.name}")
         suite_runs[suite] = run
 
-    supplemental: dict[tuple[str, str], dict[str, BenchmarkRun]] = {}
-    for path in sorted(results_dir.glob("*-supplement.json")):
+    supplemental: dict[tuple[str, str, str], dict[str, BenchmarkRun]] = {}
+    for path in sorted(results_dir.glob("*-supplement*.json")):
         match = _SUPPLEMENT_RESULT_RE.fullmatch(path.name)
         if match is None:
             raise ValueError(f"invalid supplemental result filename: {path.name}")
@@ -675,55 +676,89 @@ def _load_build_comparison_history(
             match.group("flavor"),
             match.group("suite"),
         )
-        suite_runs = supplemental.setdefault((version, flavor), {})
-        if suite in suite_runs:
+        shard = match.group("shard") or "000"
+        suite_runs = supplemental.setdefault((version, flavor, suite), {})
+        if shard in suite_runs:
             raise ValueError(f"duplicate supplemental result: {path.name}")
-        suite_runs[suite] = load_results(path)
+        run = load_results(path)
+        if run.metadata.package_version != version or run.metadata.suite != suite:
+            raise ValueError(f"result metadata does not match filename: {path.name}")
+        suite_runs[shard] = run
 
-    supplement_versions = {version for version, _ in supplemental}
+    supplement_versions = {version for version, _, _ in supplemental}
     for version in supplement_versions:
         for flavor in ("native", "universal"):
             key = (version, flavor)
-            supplement_runs = supplemental.get(key)
+            suite_shards = {
+                suite: supplemental.get((version, flavor, suite))
+                for suite in BUILD_COMPARISON_SUITES
+            }
             base_runs = discovered.get(key)
-            if supplement_runs is None or set(supplement_runs) != set(
-                BUILD_COMPARISON_SUITES
-            ):
+            if any(not shards for shards in suite_shards.values()):
                 raise ValueError(
                     f"{version}: native/universal supplements are incomplete"
                 )
             if base_runs is None or set(base_runs) != set(BUILD_COMPARISON_SUITES):
                 raise ValueError(f"{version} {flavor}: base results are incomplete")
-            for suite in BUILD_COMPARISON_SUITES:
-                _validate_supplement_run(
-                    suite,
-                    flavor,
-                    version,
-                    base_runs[suite],
-                    supplement_runs[suite],
-                )
-
-    for version in supplement_versions:
+            for suite, shards in suite_shards.items():
+                assert shards is not None
+                for run in shards.values():
+                    _validate_supplement_run(
+                        suite,
+                        flavor,
+                        version,
+                        base_runs[suite],
+                        run,
+                        expected_cases={outcome.case_id for outcome in run.outcomes},
+                    )
         for suite in BUILD_COMPARISON_SUITES:
-            native_supplement = supplemental[(version, "native")][suite]
-            universal_supplement = supplemental[(version, "universal")][suite]
-            _validate_supplement_pair(suite, native_supplement, universal_supplement)
+            native_shards = supplemental[(version, "native", suite)]
+            universal_shards = supplemental[(version, "universal", suite)]
+            if set(native_shards) != set(universal_shards):
+                raise ValueError(
+                    f"{version}/{suite}: paired supplement shards are incomplete"
+                )
+            combined: dict[str, set[str]] = {"native": set(), "universal": set()}
+            for shard in sorted(native_shards):
+                native_run, universal_run = (
+                    native_shards[shard],
+                    universal_shards[shard],
+                )
+                _validate_supplement_pair(suite, native_run, universal_run)
+                for flavor, run in (
+                    ("native", native_run),
+                    ("universal", universal_run),
+                ):
+                    ids = {outcome.case_id for outcome in run.outcomes}
+                    if combined[flavor].intersection(ids):
+                        raise ValueError(
+                            f"{version}/{flavor}/{suite}: duplicate supplemental case ID"
+                        )
+                    combined[flavor].update(ids)
+            if not combined["native"].issubset(SUPPLEMENT_CASES[suite]) or not combined[
+                "universal"
+            ].issubset(SUPPLEMENT_CASES[suite]):
+                raise ValueError(
+                    f"{version}/{suite}: supplemental case inventory differs"
+                )
             for flavor in ("native", "universal"):
                 base = discovered[(version, flavor)][suite]
-                supplement = supplemental[(version, flavor)][suite]
                 base_ids = [outcome.case_id for outcome in base.outcomes]
-                if len(base_ids) != len(set(base_ids)):
-                    raise ValueError(
-                        f"{version} {flavor}/{suite}: duplicate base case ID"
-                    )
-                if set(base_ids).intersection(
-                    outcome.case_id for outcome in supplement.outcomes
+                merged = tuple(
+                    outcome
+                    for shard in sorted(supplemental[(version, flavor, suite)])
+                    for outcome in supplemental[(version, flavor, suite)][
+                        shard
+                    ].outcomes
+                )
+                if len(base_ids) != len(set(base_ids)) or set(base_ids).intersection(
+                    outcome.case_id for outcome in merged
                 ):
                     raise ValueError(
                         f"{version} {flavor}/{suite}: duplicate supplemental case ID"
                     )
                 discovered[(version, flavor)][suite] = BenchmarkRun(
-                    base.metadata, base.outcomes + supplement.outcomes
+                    base.metadata, base.outcomes + merged
                 )
 
     for flavor in legacy_flavors:
@@ -777,6 +812,8 @@ def _validate_supplement_run(
     version: str,
     base: BenchmarkRun,
     supplement: BenchmarkRun,
+    *,
+    expected_cases: set[str],
 ) -> None:
     metadata = supplement.metadata
     if (
@@ -789,7 +826,7 @@ def _validate_supplement_run(
     ):
         raise ValueError(f"{version} {flavor}/{suite}: supplement provenance differs")
     case_ids = [outcome.case_id for outcome in supplement.outcomes]
-    if len(case_ids) != len(set(case_ids)) or set(case_ids) != SUPPLEMENT_CASES[suite]:
+    if len(case_ids) != len(set(case_ids)) or set(case_ids) != expected_cases:
         raise ValueError(
             f"{version} {flavor}/{suite}: supplemental case inventory differs"
         )
@@ -812,8 +849,10 @@ def _validate_supplement_pair(
         raise ValueError(f"{suite}: native/universal supplement metadata differs")
     native_outcomes = {outcome.case_id: outcome for outcome in native.outcomes}
     universal_outcomes = {outcome.case_id: outcome for outcome in universal.outcomes}
-    for case_id in SUPPLEMENT_CASES[suite]:
-        left, right = native_outcomes[case_id], universal_outcomes[case_id]
+    if set(native_outcomes) != set(universal_outcomes):
+        raise ValueError(f"{suite}: native/universal supplement case sets differ")
+    for case_id, left in native_outcomes.items():
+        right = universal_outcomes[case_id]
         if (
             left.operation != right.operation
             or left.fixture != right.fixture
@@ -1527,7 +1566,7 @@ def _full_workload_coverage_rows(
 ) -> tuple[CoverageRow, ...]:
     """Measure coverage against the newest suite/build workload inventory."""
 
-    group_labels = (
+    group_labels: tuple[tuple[str, int | None, str], ...] = (
         ("cluster-1k", 1_000, "Cluster state · 1k"),
         ("cluster-large", 30_000, "Cluster state · 30k"),
         ("cluster-large", 100_000, "Cluster state · 100k"),

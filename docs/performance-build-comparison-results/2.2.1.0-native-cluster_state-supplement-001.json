@@ -1,0 +1,1097 @@
+{
+  "metadata": {
+    "config": {
+      "batch_count": 1,
+      "repetitions": 3,
+      "track_allocations": false,
+      "warmups": 1
+    },
+    "modules": {
+      "expra_connect.cluster.models": "/tmp/expra-connect-auth-shard-a4aj_j5q/native/expra_connect/cluster/models.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.operations": "/tmp/expra-connect-auth-shard-a4aj_j5q/native/expra_connect/cluster/operations.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.roles": "/tmp/expra-connect-auth-shard-a4aj_j5q/native/expra_connect/cluster/roles.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.cluster.state": "/tmp/expra-connect-auth-shard-a4aj_j5q/native/expra_connect/cluster/state.cpython-312-x86_64-linux-gnu.so",
+      "expra_connect.persistence": "/tmp/expra-connect-auth-shard-a4aj_j5q/native/expra_connect/persistence.cpython-312-x86_64-linux-gnu.so"
+    },
+    "package_version": "2.2.1.0",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "suite": "cluster_state"
+  },
+  "outcomes": [
+    {
+      "case_id": "1000:role authorization worker denied",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization worker denied",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.616,
+        "mean_us": 3.279333333333333,
+        "minimum": 3.036,
+        "ops_per_second": 304940.02846106933,
+        "outliers": 0,
+        "p25": 3.1109999999999998,
+        "p50": 3.186,
+        "p75": 3.401,
+        "p95": 3.573,
+        "p99": 3.6074,
+        "peak_bytes": null,
+        "samples_us": [
+          3.616,
+          3.186,
+          3.036
+        ],
+        "spread": 0.5800000000000001
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization subcoordinator grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.838,
+        "mean_us": 3.623666666666667,
+        "minimum": 3.506,
+        "ops_per_second": 275963.57280838926,
+        "outliers": 0,
+        "p25": 3.5164999999999997,
+        "p50": 3.527,
+        "p75": 3.6825,
+        "p95": 3.8069,
+        "p99": 3.83178,
+        "peak_bytes": null,
+        "samples_us": [
+          3.838,
+          3.527,
+          3.506
+        ],
+        "spread": 0.3320000000000003
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization subcoordinator missing grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator missing grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.357,
+        "mean_us": 3.1093333333333333,
+        "minimum": 2.955,
+        "ops_per_second": 321612.3499142367,
+        "outliers": 0,
+        "p25": 2.9855,
+        "p50": 3.016,
+        "p75": 3.1865,
+        "p95": 3.3229,
+        "p99": 3.3501800000000004,
+        "peak_bytes": null,
+        "samples_us": [
+          3.357,
+          3.016,
+          2.955
+        ],
+        "spread": 0.40200000000000014
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization subcoordinator expired grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator expired grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.536,
+        "mean_us": 3.4393333333333334,
+        "minimum": 3.366,
+        "ops_per_second": 290754.0220973057,
+        "outliers": 0,
+        "p25": 3.391,
+        "p50": 3.416,
+        "p75": 3.476,
+        "p95": 3.524,
+        "p99": 3.5336,
+        "peak_bytes": null,
+        "samples_us": [
+          3.536,
+          3.416,
+          3.366
+        ],
+        "spread": 0.16999999999999993
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization paused source",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization paused source",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 2.114,
+        "mean_us": 1.9503333333333333,
+        "minimum": 1.833,
+        "ops_per_second": 512732.86617672193,
+        "outliers": 0,
+        "p25": 1.8685,
+        "p50": 1.904,
+        "p75": 2.009,
+        "p95": 2.093,
+        "p99": 2.1098,
+        "peak_bytes": null,
+        "samples_us": [
+          2.114,
+          1.904,
+          1.833
+        ],
+        "spread": 0.2809999999999999
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization revoked destination",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization revoked destination",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 2.094,
+        "mean_us": 1.9736666666666667,
+        "minimum": 1.823,
+        "ops_per_second": 506671.17041040363,
+        "outliers": 0,
+        "p25": 1.9135,
+        "p50": 2.004,
+        "p75": 2.049,
+        "p95": 2.085,
+        "p99": 2.0922,
+        "peak_bytes": null,
+        "samples_us": [
+          2.094,
+          2.004,
+          1.823
+        ],
+        "spread": 0.2709999999999999
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "1000:role authorization invalid clock",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 1000,
+        "grants": 1001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization invalid clock",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 0.821,
+        "mean_us": 0.708,
+        "minimum": 0.622,
+        "ops_per_second": 1412429.3785310735,
+        "outliers": 0,
+        "p25": 0.6515,
+        "p50": 0.681,
+        "p75": 0.751,
+        "p95": 0.8069999999999999,
+        "p99": 0.8181999999999999,
+        "peak_bytes": null,
+        "samples_us": [
+          0.821,
+          0.681,
+          0.622
+        ],
+        "spread": 0.19899999999999995
+      },
+      "size": 1000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role authorization worker denied",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization worker denied",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.386,
+        "mean_us": 3.1123333333333334,
+        "minimum": 2.886,
+        "ops_per_second": 321302.34550712217,
+        "outliers": 0,
+        "p25": 2.9755000000000003,
+        "p50": 3.065,
+        "p75": 3.2255000000000003,
+        "p95": 3.3539,
+        "p99": 3.3795800000000003,
+        "peak_bytes": null,
+        "samples_us": [
+          3.386,
+          3.065,
+          2.886
+        ],
+        "spread": 0.5
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role authorization subcoordinator grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.787,
+        "mean_us": 3.5566666666666666,
+        "minimum": 3.356,
+        "ops_per_second": 281162.1368322399,
+        "outliers": 0,
+        "p25": 3.4415,
+        "p50": 3.527,
+        "p75": 3.657,
+        "p95": 3.761,
+        "p99": 3.7818,
+        "peak_bytes": null,
+        "samples_us": [
+          3.787,
+          3.527,
+          3.356
+        ],
+        "spread": 0.43100000000000005
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role authorization subcoordinator missing grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator missing grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.155,
+        "mean_us": 2.9819999999999998,
+        "minimum": 2.886,
+        "ops_per_second": 335345.40576794103,
+        "outliers": 0,
+        "p25": 2.8955,
+        "p50": 2.905,
+        "p75": 3.03,
+        "p95": 3.13,
+        "p99": 3.15,
+        "peak_bytes": null,
+        "samples_us": [
+          3.155,
+          2.905,
+          2.886
+        ],
+        "spread": 0.2689999999999997
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role authorization subcoordinator expired grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator expired grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.557,
+        "mean_us": 3.396333333333333,
+        "minimum": 3.256,
+        "ops_per_second": 294435.17518892925,
+        "outliers": 0,
+        "p25": 3.316,
+        "p50": 3.376,
+        "p75": 3.4665,
+        "p95": 3.5389,
+        "p99": 3.5533799999999998,
+        "peak_bytes": null,
+        "samples_us": [
+          3.557,
+          3.376,
+          3.256
+        ],
+        "spread": 0.30100000000000016
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role authorization paused source",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization paused source",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 2.034,
+        "mean_us": 1.9336666666666666,
+        "minimum": 1.833,
+        "ops_per_second": 517152.2151353215,
+        "outliers": 0,
+        "p25": 1.8835,
+        "p50": 1.934,
+        "p75": 1.984,
+        "p95": 2.024,
+        "p99": 2.032,
+        "peak_bytes": null,
+        "samples_us": [
+          2.034,
+          1.934,
+          1.833
+        ],
+        "spread": 0.20099999999999985
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role authorization revoked destination",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization revoked destination",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 2.164,
+        "mean_us": 1.964,
+        "minimum": 1.824,
+        "ops_per_second": 509164.96945010184,
+        "outliers": 0,
+        "p25": 1.8639999999999999,
+        "p50": 1.904,
+        "p75": 2.034,
+        "p95": 2.138,
+        "p99": 2.1588000000000003,
+        "peak_bytes": null,
+        "samples_us": [
+          2.164,
+          1.904,
+          1.824
+        ],
+        "spread": 0.3400000000000001
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "30000:role authorization invalid clock",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 30000,
+        "grants": 30001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization invalid clock",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 0.752,
+        "mean_us": 0.708,
+        "minimum": 0.671,
+        "ops_per_second": 1412429.3785310735,
+        "outliers": 0,
+        "p25": 0.6859999999999999,
+        "p50": 0.701,
+        "p75": 0.7264999999999999,
+        "p95": 0.7469,
+        "p99": 0.75098,
+        "peak_bytes": null,
+        "samples_us": [
+          0.752,
+          0.701,
+          0.671
+        ],
+        "spread": 0.08099999999999996
+      },
+      "size": 30000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role authorization worker denied",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization worker denied",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.376,
+        "mean_us": 3.095666666666667,
+        "minimum": 2.855,
+        "ops_per_second": 323032.1955421557,
+        "outliers": 0,
+        "p25": 2.9555,
+        "p50": 3.056,
+        "p75": 3.216,
+        "p95": 3.344,
+        "p99": 3.3695999999999997,
+        "peak_bytes": null,
+        "samples_us": [
+          3.376,
+          3.056,
+          2.855
+        ],
+        "spread": 0.5209999999999999
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role authorization subcoordinator grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.657,
+        "mean_us": 3.46,
+        "minimum": 3.256,
+        "ops_per_second": 289017.34104046243,
+        "outliers": 0,
+        "p25": 3.3615,
+        "p50": 3.467,
+        "p75": 3.5620000000000003,
+        "p95": 3.638,
+        "p99": 3.6532,
+        "peak_bytes": null,
+        "samples_us": [
+          3.657,
+          3.467,
+          3.256
+        ],
+        "spread": 0.40100000000000025
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role authorization subcoordinator missing grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator missing grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.025,
+        "mean_us": 2.8716666666666666,
+        "minimum": 2.725,
+        "ops_per_second": 348229.8316889147,
+        "outliers": 0,
+        "p25": 2.795,
+        "p50": 2.865,
+        "p75": 2.9450000000000003,
+        "p95": 3.009,
+        "p99": 3.0218,
+        "peak_bytes": null,
+        "samples_us": [
+          3.025,
+          2.865,
+          2.725
+        ],
+        "spread": 0.2999999999999998
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role authorization subcoordinator expired grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator expired grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.326,
+        "mean_us": 3.259666666666667,
+        "minimum": 3.156,
+        "ops_per_second": 306779.83433888946,
+        "outliers": 0,
+        "p25": 3.2265,
+        "p50": 3.297,
+        "p75": 3.3115,
+        "p95": 3.3231,
+        "p99": 3.3254200000000003,
+        "peak_bytes": null,
+        "samples_us": [
+          3.326,
+          3.297,
+          3.156
+        ],
+        "spread": 0.16999999999999993
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role authorization paused source",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization paused source",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 1.914,
+        "mean_us": 1.8466666666666667,
+        "minimum": 1.773,
+        "ops_per_second": 541516.2454873646,
+        "outliers": 0,
+        "p25": 1.813,
+        "p50": 1.853,
+        "p75": 1.8835,
+        "p95": 1.9079,
+        "p99": 1.91278,
+        "peak_bytes": null,
+        "samples_us": [
+          1.914,
+          1.853,
+          1.773
+        ],
+        "spread": 0.14100000000000001
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role authorization revoked destination",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization revoked destination",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 1.964,
+        "mean_us": 1.8566666666666667,
+        "minimum": 1.753,
+        "ops_per_second": 538599.6409335727,
+        "outliers": 0,
+        "p25": 1.803,
+        "p50": 1.853,
+        "p75": 1.9085,
+        "p95": 1.9528999999999999,
+        "p99": 1.96178,
+        "peak_bytes": null,
+        "samples_us": [
+          1.964,
+          1.853,
+          1.753
+        ],
+        "spread": 0.21100000000000008
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "100000:role authorization invalid clock",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 100000,
+        "grants": 100001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization invalid clock",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 0.691,
+        "mean_us": 0.6413333333333333,
+        "minimum": 0.611,
+        "ops_per_second": 1559251.5592515592,
+        "outliers": 0,
+        "p25": 0.6165,
+        "p50": 0.622,
+        "p75": 0.6565,
+        "p95": 0.6840999999999999,
+        "p99": 0.6896199999999999,
+        "peak_bytes": null,
+        "samples_us": [
+          0.691,
+          0.622,
+          0.611
+        ],
+        "spread": 0.07999999999999996
+      },
+      "size": 100000,
+      "status": "measured"
+    },
+    {
+      "case_id": "200000:role authorization",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 200000,
+        "grants": 200001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 4.028,
+        "mean_us": 2.922333333333333,
+        "minimum": 2.255,
+        "ops_per_second": 342192.31207938865,
+        "outliers": 0,
+        "p25": 2.3695,
+        "p50": 2.484,
+        "p75": 3.256,
+        "p95": 3.8735999999999997,
+        "p99": 3.99712,
+        "peak_bytes": null,
+        "samples_us": [
+          4.028,
+          2.484,
+          2.255
+        ],
+        "spread": 1.7729999999999997
+      },
+      "size": 200000,
+      "status": "measured"
+    },
+    {
+      "case_id": "200000:role authorization worker denied",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 200000,
+        "grants": 200001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization worker denied",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.707,
+        "mean_us": 3.243,
+        "minimum": 2.916,
+        "ops_per_second": 308356.46006783843,
+        "outliers": 0,
+        "p25": 3.011,
+        "p50": 3.106,
+        "p75": 3.4065,
+        "p95": 3.6468999999999996,
+        "p99": 3.6949799999999997,
+        "peak_bytes": null,
+        "samples_us": [
+          3.707,
+          3.106,
+          2.916
+        ],
+        "spread": 0.7909999999999999
+      },
+      "size": 200000,
+      "status": "measured"
+    },
+    {
+      "case_id": "200000:role authorization subcoordinator grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 200000,
+        "grants": 200001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.808,
+        "mean_us": 3.5869999999999997,
+        "minimum": 3.376,
+        "ops_per_second": 278784.49958182324,
+        "outliers": 0,
+        "p25": 3.4764999999999997,
+        "p50": 3.577,
+        "p75": 3.6925,
+        "p95": 3.7849,
+        "p99": 3.8033799999999998,
+        "peak_bytes": null,
+        "samples_us": [
+          3.808,
+          3.577,
+          3.376
+        ],
+        "spread": 0.43199999999999994
+      },
+      "size": 200000,
+      "status": "measured"
+    },
+    {
+      "case_id": "200000:role authorization subcoordinator missing grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 200000,
+        "grants": 200001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator missing grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 2.965,
+        "mean_us": 2.8583333333333334,
+        "minimum": 2.745,
+        "ops_per_second": 349854.2274052478,
+        "outliers": 0,
+        "p25": 2.805,
+        "p50": 2.865,
+        "p75": 2.915,
+        "p95": 2.955,
+        "p99": 2.963,
+        "peak_bytes": null,
+        "samples_us": [
+          2.965,
+          2.865,
+          2.745
+        ],
+        "spread": 0.21999999999999975
+      },
+      "size": 200000,
+      "status": "measured"
+    },
+    {
+      "case_id": "200000:role authorization subcoordinator expired grant",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 200000,
+        "grants": 200001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization subcoordinator expired grant",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 3.497,
+        "mean_us": 3.356333333333333,
+        "minimum": 3.266,
+        "ops_per_second": 297944.1851226537,
+        "outliers": 0,
+        "p25": 3.286,
+        "p50": 3.306,
+        "p75": 3.4015,
+        "p95": 3.4779,
+        "p99": 3.4931799999999997,
+        "peak_bytes": null,
+        "samples_us": [
+          3.497,
+          3.306,
+          3.266
+        ],
+        "spread": 0.23099999999999987
+      },
+      "size": 200000,
+      "status": "measured"
+    },
+    {
+      "case_id": "200000:role authorization paused source",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 200000,
+        "grants": 200001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization paused source",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 2.134,
+        "mean_us": 1.9136666666666666,
+        "minimum": 1.743,
+        "ops_per_second": 522557.0458108344,
+        "outliers": 0,
+        "p25": 1.8035,
+        "p50": 1.864,
+        "p75": 1.999,
+        "p95": 2.1069999999999998,
+        "p99": 2.1286,
+        "peak_bytes": null,
+        "samples_us": [
+          2.134,
+          1.864,
+          1.743
+        ],
+        "spread": 0.3909999999999998
+      },
+      "size": 200000,
+      "status": "measured"
+    },
+    {
+      "case_id": "200000:role authorization revoked destination",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 200000,
+        "grants": 200001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization revoked destination",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 2.445,
+        "mean_us": 2.074,
+        "minimum": 1.843,
+        "ops_per_second": 482160.0771456124,
+        "outliers": 0,
+        "p25": 1.8885,
+        "p50": 1.934,
+        "p75": 2.1895,
+        "p95": 2.3939,
+        "p99": 2.43478,
+        "peak_bytes": null,
+        "samples_us": [
+          2.445,
+          1.934,
+          1.843
+        ],
+        "spread": 0.6019999999999999
+      },
+      "size": 200000,
+      "status": "measured"
+    },
+    {
+      "case_id": "200000:role authorization invalid clock",
+      "config": {
+        "batch_count": 1,
+        "repetitions": 3,
+        "track_allocations": false,
+        "warmups": 1
+      },
+      "fixture": {
+        "assignments": 200000,
+        "grants": 200001,
+        "name": "staged_role_cluster"
+      },
+      "operation": "role authorization invalid clock",
+      "payload_bytes": 0,
+      "result": {
+        "maximum": 0.831,
+        "mean_us": 0.725,
+        "minimum": 0.652,
+        "ops_per_second": 1379310.3448275863,
+        "outliers": 0,
+        "p25": 0.6719999999999999,
+        "p50": 0.692,
+        "p75": 0.7615,
+        "p95": 0.8170999999999999,
+        "p99": 0.82822,
+        "peak_bytes": null,
+        "samples_us": [
+          0.831,
+          0.692,
+          0.652
+        ],
+        "spread": 0.17899999999999994
+      },
+      "size": 200000,
+      "status": "measured"
+    }
+  ],
+  "schema_version": 1
+}

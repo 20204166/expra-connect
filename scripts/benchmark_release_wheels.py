@@ -164,6 +164,137 @@ def run_release_supplement_benchmarks(
     return tuple(destination for _, destination in staged_paths)
 
 
+def run_cluster_authorization_shard(
+    wheel_dir: Path,
+    results_dir: Path,
+    python_bin: str,
+    repository_root: Path,
+    *,
+    target_version: str,
+) -> tuple[Path, ...]:
+    """Append paired authorization outcomes without rewriting prior results."""
+    wheels = tuple(sorted(wheel_dir.glob(f"expra_connect-{target_version}-*.whl")))
+    by_flavor = {_wheel_identity(wheel)[1]: wheel for wheel in wheels}
+    if set(by_flavor) != {"native", "universal"}:
+        raise ValueError("cluster shard requires paired native/universal wheels")
+    existing_by_flavor: dict[str, set[str]] = {"native": set(), "universal": set()}
+    shard_pairs: dict[str, dict[str, set[str]]] = {}
+    for path in results_dir.glob(f"{target_version}-*-cluster_state-supplement*.json"):
+        match = re.fullmatch(
+            rf"{re.escape(target_version)}-(native|universal)-cluster_state-supplement(?:-(\d{{3}}))?\.json",
+            path.name,
+        )
+        if match is None:
+            raise ValueError(
+                f"invalid existing cluster supplement filename: {path.name}"
+            )
+        flavor, shard_id = match.group(1), match.group(2) or "000"
+        run = load_results(path)
+        ids = {outcome.case_id for outcome in run.outcomes}
+        if not ids.issubset(SUPPLEMENT_CASES["cluster_state"]):
+            raise ValueError("existing cluster supplement contains unknown cases")
+        shard_flavors = shard_pairs.setdefault(shard_id, {})
+        if flavor in shard_flavors:
+            raise ValueError("duplicate existing cluster supplement shard")
+        shard_flavors[flavor] = ids
+        if existing_by_flavor[flavor].intersection(ids):
+            raise ValueError("existing cluster supplement shards overlap")
+        existing_by_flavor[flavor].update(ids)
+    if any(set(flavors) != {"native", "universal"} for flavors in shard_pairs.values()):
+        raise ValueError("partial paired cluster supplement shard exists")
+    if existing_by_flavor["native"] != existing_by_flavor["universal"]:
+        raise ValueError("native and universal existing cluster cases differ")
+    existing_ids = existing_by_flavor["native"]
+    new_ids = SUPPLEMENT_CASES["cluster_state"] - existing_ids
+    if not new_ids:
+        raise ValueError("cluster authorization inventory has no unmeasured cases")
+    shard_numbers = [
+        int(match.group(1))
+        for path in results_dir.glob(
+            f"{target_version}-*-cluster_state-supplement-*.json"
+        )
+        if (match := re.search(r"-supplement-(\d{3})\.json$", path.name))
+    ]
+    shard = max(shard_numbers, default=0) + 1
+    staged: dict[str, BenchmarkRun] = {}
+    with tempfile.TemporaryDirectory(prefix="expra-connect-auth-shard-") as temporary:
+        temp = Path(temporary)
+        for flavor in ("native", "universal"):
+            extracted = temp / flavor
+            extracted.mkdir()
+            _extract_package(by_flavor[flavor], extracted)
+            output = temp / f"{flavor}.json"
+            environment = os.environ.copy()
+            environment["PYTHONPATH"] = os.pathsep.join(
+                (str(extracted), str(repository_root))
+            )
+            environment["PYTHONNOUSERSITE"] = "1"
+            subprocess.run(
+                (
+                    python_bin,
+                    str(repository_root / "scripts" / "benchmark_cluster_state.py"),
+                    "--sizes",
+                    "1000",
+                    "30000",
+                    "100000",
+                    "200000",
+                    "--operation",
+                    "role authorization",
+                    "--skip-allocation-tracking",
+                    "--json-output",
+                    str(output),
+                ),
+                cwd=repository_root,
+                env=environment,
+                check=True,
+            )
+            run = load_results(output)
+            _validate_saved_run(run, "cluster_state", target_version)
+            _validate_module_provenance(run, extracted)
+            outcomes = tuple(item for item in run.outcomes if item.case_id in new_ids)
+            if {item.case_id for item in outcomes} != new_ids:
+                raise ValueError("cluster authorization shard output is incomplete")
+            staged[flavor] = BenchmarkRun(run.metadata, outcomes)
+    _validate_supplement_pair(
+        "cluster_state",
+        staged["native"],
+        staged["universal"],
+        target_version,
+        expected_cases=new_ids,
+    )
+    results_dir.mkdir(parents=True, exist_ok=True)
+    destinations = tuple(
+        results_dir
+        / f"{target_version}-{flavor}-cluster_state-supplement-{shard:03}.json"
+        for flavor in ("native", "universal")
+    )
+    if any(path.exists() for path in destinations):
+        raise FileExistsError("cluster authorization shard already exists")
+    with tempfile.TemporaryDirectory(
+        prefix=".cluster-auth-stage-", dir=results_dir
+    ) as staging_directory:
+        stage = Path(staging_directory)
+        staged_paths = []
+        for flavor, destination in zip(
+            ("native", "universal"), destinations, strict=True
+        ):
+            path = stage / destination.name
+            run = staged[flavor]
+            write_results(path, run.metadata, run.outcomes)
+            staged_paths.append((path, destination))
+        published: list[tuple[Path, Path]] = []
+        try:
+            for source, destination in staged_paths:
+                os.link(source, destination)
+                published.append((source, destination))
+        except OSError:
+            for source, destination in reversed(published):
+                if destination.exists() and os.path.samefile(source, destination):
+                    destination.unlink()
+            raise
+    return destinations
+
+
 def _benchmark_supplement_wheel(
     wheel: Path,
     version: str,
@@ -186,6 +317,7 @@ def _benchmark_supplement_wheel(
                     "1000",
                     "30000",
                     "100000",
+                    "200000",
                     "--operation",
                     "role authorization",
                     "--skip-allocation-tracking",
@@ -258,13 +390,16 @@ def _validate_supplement_pair(
     native: BenchmarkRun,
     universal: BenchmarkRun,
     version: str,
+    *,
+    expected_cases: frozenset[str] | set[str] | None = None,
 ) -> None:
+    cases = SUPPLEMENT_CASES[suite] if expected_cases is None else expected_cases
     for flavor, run in (("native", native), ("universal", universal)):
         if (
             run.metadata.suite != suite
             or run.metadata.package_version != version
             or _run_flavor(run) != flavor
-            or {outcome.case_id for outcome in run.outcomes} != SUPPLEMENT_CASES[suite]
+            or {outcome.case_id for outcome in run.outcomes} != cases
         ):
             raise ValueError(f"{suite}: invalid {version} {flavor} supplement")
     first, second = native.metadata, universal.metadata
@@ -276,7 +411,7 @@ def _validate_supplement_pair(
         raise ValueError(f"{suite}: native and universal supplement metadata differs")
     native_outcomes = {outcome.case_id: outcome for outcome in native.outcomes}
     universal_outcomes = {outcome.case_id: outcome for outcome in universal.outcomes}
-    for case_id in SUPPLEMENT_CASES[suite]:
+    for case_id in cases:
         left, right = native_outcomes[case_id], universal_outcomes[case_id]
         if (
             left.operation != right.operation
@@ -299,11 +434,19 @@ def _validate_saved_supplement_pairs(paths: tuple[Path, ...]) -> None:
     versions = {version for version, _, _ in by_identity}
     for version in versions:
         for suite in _SUITES:
+            native = by_identity[(version, "native", suite)]
+            universal = by_identity[(version, "universal", suite)]
+            ids = {outcome.case_id for outcome in native.outcomes}
+            if ids != {
+                outcome.case_id for outcome in universal.outcomes
+            } or not ids.issubset(SUPPLEMENT_CASES[suite]):
+                raise ValueError(f"{suite}: saved supplement inventory differs")
             _validate_supplement_pair(
                 suite,
-                by_identity[(version, "native", suite)],
-                by_identity[(version, "universal", suite)],
+                native,
+                universal,
                 version,
+                expected_cases=ids,
             )
 
 
@@ -535,6 +678,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="measure append-only supplemental feature coverage cases",
     )
     parser.add_argument(
+        "--cluster-auth-shard",
+        action="store_true",
+        help="append only previously unmeasured cluster authorization cases",
+    )
+    parser.add_argument(
         "--version",
         help="limit supplemental measurement to one four-part package version",
     )
@@ -543,7 +691,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
-        if args.supplements_only:
+        if args.cluster_auth_shard:
+            if args.version is None:
+                parser.error("--cluster-auth-shard requires --version")
+            paths = run_cluster_authorization_shard(
+                args.wheel_dir,
+                args.results_dir,
+                args.python,
+                args.repository_root,
+                target_version=args.version,
+            )
+        elif args.supplements_only:
             paths = run_release_supplement_benchmarks(
                 args.wheel_dir,
                 args.results_dir,
@@ -553,7 +711,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         else:
             if args.version is not None:
-                parser.error("--version requires --supplements-only")
+                parser.error("--version requires a supplement mode")
             paths = run_release_benchmarks(
                 args.wheel_dir, args.results_dir, args.python, args.repository_root
             )

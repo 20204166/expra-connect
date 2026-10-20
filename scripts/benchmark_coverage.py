@@ -4,11 +4,18 @@ from __future__ import annotations
 
 SUPPLEMENT_CASES: dict[str, frozenset[str]] = {
     "cluster_state": frozenset(
-        {
-            "1000:role authorization",
-            "30000:role authorization",
-            "100000:role authorization",
-        }
+        f"{size}:{label}"
+        for size in (1_000, 30_000, 100_000, 200_000)
+        for label in (
+            "role authorization",
+            "role authorization worker denied",
+            "role authorization subcoordinator grant",
+            "role authorization subcoordinator missing grant",
+            "role authorization subcoordinator expired grant",
+            "role authorization paused source",
+            "role authorization revoked destination",
+            "role authorization invalid clock",
+        )
     ),
     "persistence": frozenset(
         f"{size}:ProfileMigration:Profile migration" for size in (1, 16, 64)

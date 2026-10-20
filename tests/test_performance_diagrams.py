@@ -16,6 +16,7 @@ from scripts.benchmark_support import (
     BenchmarkRun,
     MeasurementConfig,
     RunMetadata,
+    load_results,
     measure,
     write_results,
 )
@@ -55,17 +56,17 @@ class BuildComparisonTests(unittest.TestCase):
         latest_universal = labels.index("2.2.1.0 universal")
         migration = next(row for row in rows if row.label == "Profile migration")
 
-        self.assertEqual(totals.cells[0].total, 89)
+        self.assertEqual(totals.cells[0].total, 110)
         self.assertEqual(
             (totals.cells[latest_native].measured, totals.cells[latest_native].total),
-            (84, 89),
+            (105, 110),
         )
         self.assertEqual(
             (
                 totals.cells[latest_universal].measured,
                 totals.cells[latest_universal].total,
             ),
-            (84, 89),
+            (105, 110),
         )
         self.assertEqual(
             (
@@ -103,6 +104,53 @@ class BuildComparisonTests(unittest.TestCase):
                 )
             self.assertEqual(
                 tuple(path.read_bytes() for path in original_paths), original_bytes
+            )
+
+    def test_numbered_cluster_shard_merges_with_immutable_initial_supplement(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results_dir = Path(directory)
+            self._write_supplement_history(results_dir)
+            legacy_ids = {
+                "1000:role authorization",
+                "30000:role authorization",
+                "100000:role authorization",
+            }
+            remaining_ids = SUPPLEMENT_CASES["cluster_state"] - legacy_ids
+            for flavor in ("native", "universal"):
+                initial_path = (
+                    results_dir / f"2.2.1.0-{flavor}-cluster_state-supplement.json"
+                )
+                initial = load_results(initial_path)
+                initial_path.write_text("", encoding="utf-8")
+                write_results(
+                    initial_path,
+                    initial.metadata,
+                    tuple(
+                        item for item in initial.outcomes if item.case_id in legacy_ids
+                    ),
+                )
+                shard = self._supplement_run(
+                    "2.2.1.0", flavor, "cluster_state", tuple(sorted(remaining_ids))
+                )
+                write_results(
+                    results_dir / f"2.2.1.0-{flavor}-cluster_state-supplement-001.json",
+                    shard.metadata,
+                    shard.outcomes,
+                )
+
+            history = performance_diagrams._load_build_comparison_history(results_dir)
+            native = next(
+                run
+                for run in history["cluster_state"]
+                if run.metadata.package_version == "2.2.1.0"
+                and performance_diagrams._run_build_flavor(run) == "native"
+            )
+            self.assertTrue(
+                SUPPLEMENT_CASES["cluster_state"].issubset(
+                    {item.case_id for item in native.outcomes}
+                )
             )
 
     def test_incomplete_supplement_pair_is_rejected(self) -> None:
@@ -1162,8 +1210,8 @@ class DiagramTests(unittest.TestCase):
         self.assertIn("2.2.0.3 native:", summary)
         self.assertIn("2.2.0.3 universal:", summary)
         self.assertIn("37 matched positive-p50 cases", summary)
-        self.assertIn("89 unique cases", summary)
-        self.assertIn("2.2.0.4 native: 68/89", summary)
+        self.assertIn("110 unique cases", summary)
+        self.assertIn("2.2.0.4 native: 68/110", summary)
 
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1209,27 +1257,27 @@ class DiagramTests(unittest.TestCase):
         universal_index = labels.index("2.2.0.3 universal")
         self.assertEqual(
             (rows[1].cells[native_index].measured, rows[1].cells[native_index].total),
-            (9, 9),
+            (9, 17),
         )
         self.assertEqual(
             (
                 rows[1].cells[universal_index].measured,
                 rows[1].cells[universal_index].total,
             ),
-            (9, 9),
+            (9, 17),
         )
         self.assertEqual(
             (rows[2].cells[native_index].measured, rows[2].cells[native_index].total),
-            (6, 9),
+            (6, 17),
         )
         self.assertEqual(
             (
                 rows[2].cells[universal_index].measured,
                 rows[2].cells[universal_index].total,
             ),
-            (6, 9),
+            (6, 17),
         )
-        self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (10, 13))
+        self.assertEqual((rows[3].cells[0].measured, rows[3].cells[0].total), (10, 22))
         self.assertEqual(
             (rows[4].cells[native_index].measured, rows[4].cells[native_index].total),
             (13, 13),
@@ -1243,18 +1291,18 @@ class DiagramTests(unittest.TestCase):
         )
         self.assertEqual(
             (rows[-1].cells[native_index].measured, rows[-1].cells[native_index].total),
-            (69, 89),
+            (69, 110),
         )
         self.assertEqual(
             (
                 rows[-1].cells[universal_index].measured,
                 rows[-1].cells[universal_index].total,
             ),
-            (69, 89),
+            (69, 110),
         )
         self.assertIn("Workload support / coverage", svg)
-        self.assertIn("6/9", svg)
-        self.assertIn("69/89", svg)
+        self.assertIn("6/17", svg)
+        self.assertIn("69/110", svg)
         self.assertIn("Exceeds configured YAML maximum size 30,000", svg)
         self.assertNotIn(
             "Cluster round-trip scaling",
@@ -1278,12 +1326,12 @@ class DiagramTests(unittest.TestCase):
 
         rows = _full_workload_coverage_rows(groups)
 
-        self.assertEqual((rows[0].cells[0].measured, rows[0].cells[0].total), (9, 10))
+        self.assertEqual((rows[0].cells[0].measured, rows[0].cells[0].total), (9, 18))
         self.assertEqual(
-            (rows[0].cells[-2].measured, rows[0].cells[-2].total), (10, 10)
+            (rows[0].cells[-2].measured, rows[0].cells[-2].total), (18, 18)
         )
         self.assertEqual(
-            (rows[0].cells[-1].measured, rows[0].cells[-1].total), (10, 10)
+            (rows[0].cells[-1].measured, rows[0].cells[-1].total), (18, 18)
         )
 
     def test_sync_writes_and_detects_stale_svg_files(self) -> None:
