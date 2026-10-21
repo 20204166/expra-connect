@@ -87,6 +87,18 @@ The distribution name is `expra-connect`; the Python import name is
 import expra_connect
 ```
 
+Linux online installation from Bash:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/20204166/expra-connect/main/install/install-online.sh | bash
+```
+
+The installer selects the newest universal wheel listed in `dist/SHA256SUMS`,
+verifies its SHA-256 digest, and installs it into an isolated virtual
+environment at `$HOME/.venvs/expra-connect`. Set `EXPRA_CONNECT_VENV` to choose
+a different destination. It does not modify the system Python; run the CLI from
+`$HOME/.venvs/expra-connect/bin/expra-peer`.
+
 Windows online installation from any PowerShell directory:
 
 ```powershell
