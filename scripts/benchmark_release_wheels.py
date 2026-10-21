@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -29,6 +30,12 @@ _WHEEL_NAME = re.compile(
 )
 _SUITES = ("cluster_state", "persistence", "connect")
 _LEGACY_BUILD_VERSION = "2.2.0.4"
+_PYPY_CONNECT_OPERATIONS = (
+    "discovery candidate validation",
+    "discovery preferred endpoint",
+    "discovery registry add + expire",
+    "pairing relationship projection",
+)
 
 
 def run_release_benchmarks(
@@ -36,6 +43,9 @@ def run_release_benchmarks(
     results_dir: Path,
     python_bin: str,
     repository_root: Path,
+    *,
+    pypy_python: str | None = None,
+    pypy_results_dir: Path | None = None,
 ) -> tuple[Path, ...]:
     """Benchmark each wheel once, reusing complete immutable result sets."""
 
@@ -50,6 +60,10 @@ def run_release_benchmarks(
         (wheel, version, flavor, _result_paths(results_dir, version, flavor))
         for wheel, (version, flavor) in zip(wheels, identities, strict=True)
     )
+    if pypy_python is not None and not any(
+        flavor == "universal" for _, _, flavor, _ in result_sets
+    ):
+        raise ValueError("PyPy benchmarks require a universal wheel in the build")
     for _, version, flavor, paths in result_sets:
         present = tuple(path.exists() for path in paths)
         if any(present) and not all(present):
@@ -68,7 +82,178 @@ def run_release_benchmarks(
             continue
         _benchmark_wheel(wheel, version, flavor, paths, python_bin, repository_root)
         produced.extend(paths)
+    if pypy_python is not None:
+        target_results_dir = (
+            results_dir.parent / "pypy-performance-results"
+            if pypy_results_dir is None
+            else pypy_results_dir
+        )
+        for wheel, _, flavor, _ in result_sets:
+            if flavor == "universal":
+                produced.extend(
+                    run_pypy_universal_benchmarks(
+                        wheel,
+                        target_results_dir,
+                        pypy_python,
+                        repository_root,
+                    )
+                )
     return tuple(produced)
+
+
+def run_pypy_universal_benchmarks(
+    wheel: Path,
+    results_dir: Path,
+    python_bin: str,
+    repository_root: Path,
+    *,
+    warmups: int = 3_000,
+    repetitions: int = 10_000,
+) -> tuple[Path, ...]:
+    """Benchmark selected pure-Python feature cases under PyPy."""
+    version, flavor = _wheel_identity(wheel)
+    if flavor != "universal":
+        raise ValueError("PyPy benchmarks require a universal wheel")
+    result_path = results_dir / f"{version}-pypy-universal-connect.json"
+    if result_path.exists():
+        raise FileExistsError(f"PyPy benchmark result already exists: {result_path}")
+    if warmups < 0 or repetitions < 1:
+        raise ValueError("warmups must be non-negative and repetitions positive")
+
+    results_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="expra-connect-pypy-benchmark-") as raw:
+        temporary_root = Path(raw)
+        package_target = temporary_root / "site"
+        package_target.mkdir()
+        environment = _pypy_benchmark_environment(
+            python_bin, package_target, repository_root
+        )
+        implementation = subprocess.run(
+            (
+                python_bin,
+                "-c",
+                "import sys; print(sys.implementation.name, sys.version.split()[0])",
+            ),
+            cwd=repository_root,
+            env=environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        if not implementation.startswith("pypy "):
+            raise ValueError(f"PyPy interpreter required, got {implementation!r}")
+
+        subprocess.run(
+            (
+                python_bin,
+                "-m",
+                "pip",
+                "install",
+                "--no-deps",
+                "--target",
+                str(package_target),
+                str(wheel.resolve()),
+            ),
+            cwd=repository_root,
+            env=environment,
+            check=True,
+        )
+
+        raw_runs: list[BenchmarkRun] = []
+        for index, operation in enumerate(_PYPY_CONNECT_OPERATIONS):
+            output = temporary_root / f"connect-{index}.json"
+            subprocess.run(
+                (
+                    python_bin,
+                    str(repository_root / "tools" / "connect_performance_benchmark.py"),
+                    "--operation",
+                    operation,
+                    "--warmups",
+                    str(warmups),
+                    "--repetitions",
+                    str(repetitions),
+                    "--json-output",
+                    str(output),
+                ),
+                cwd=repository_root,
+                env=environment,
+                check=True,
+            )
+            run = load_results(output)
+            _validate_saved_run(run, "connect", version)
+            if len(run.outcomes) != 1 or run.outcomes[0].case_id != operation:
+                raise ValueError(
+                    f"PyPy benchmark produced an unexpected case: {operation}"
+                )
+            if (
+                run.metadata.python_version not in implementation
+                or run.metadata.config.warmups != warmups
+                or run.metadata.config.repetitions != repetitions
+                or run.metadata.config.track_allocations
+            ):
+                raise ValueError(f"PyPy benchmark metadata differs for {operation}")
+            _validate_module_provenance(run, package_target)
+            if _run_flavor(run) != "universal":
+                raise ValueError("PyPy benchmark did not load universal Python sources")
+            raw_runs.append(run)
+
+        first = raw_runs[0].metadata
+        if any(
+            run.metadata.config != first.config
+            or run.metadata.python_version != first.python_version
+            or run.metadata.platform != first.platform
+            or run.metadata.modules != first.modules
+            for run in raw_runs[1:]
+        ):
+            raise ValueError(
+                "PyPy benchmark metadata differs across selected operations"
+            )
+        metadata = RunMetadata(
+            schema_version=first.schema_version,
+            suite=first.suite,
+            package_version=first.package_version,
+            python_version=f"PyPy {first.python_version}",
+            platform=first.platform,
+            modules=first.modules,
+            config=first.config,
+        )
+        staged = temporary_root / result_path.name
+        write_results(
+            staged,
+            metadata,
+            tuple(outcome for run in raw_runs for outcome in run.outcomes),
+        )
+
+        if result_path.exists():
+            raise FileExistsError(
+                f"PyPy benchmark result already exists: {result_path}"
+            )
+        os.link(staged, result_path)
+    return (result_path,)
+
+
+def _pypy_benchmark_environment(
+    python_bin: str, package_target: Path, repository_root: Path
+) -> dict[str, str]:
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = os.pathsep.join(
+        (str(package_target), str(repository_root))
+    )
+    environment["PYTHONNOUSERSITE"] = "1"
+
+    executable = shutil.which(python_bin)
+    if executable is None:
+        executable = python_bin
+    resolved = Path(executable).resolve()
+    library_paths = [str(resolved.parent)]
+    if len(resolved.parents) > 1:
+        runtime_root = resolved.parents[1]
+        library_paths.extend((str(runtime_root / "lib"), str(runtime_root / "bin")))
+    existing = environment.get("LD_LIBRARY_PATH")
+    if existing:
+        library_paths.append(existing)
+    environment["LD_LIBRARY_PATH"] = os.pathsep.join(library_paths)
+    return environment
 
 
 def run_release_supplement_benchmarks(
@@ -673,6 +858,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--results-dir", type=Path, required=True)
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument(
+        "--pypy-python",
+        help="also benchmark the universal wheel with this PyPy interpreter",
+    )
+    parser.add_argument(
+        "--pypy-results-dir",
+        type=Path,
+        help="separate append-only directory for PyPy measurements",
+    )
+    parser.add_argument(
         "--supplements-only",
         action="store_true",
         help="measure append-only supplemental feature coverage cases",
@@ -691,6 +885,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
+        if args.pypy_results_dir is not None and args.pypy_python is None:
+            parser.error("--pypy-results-dir requires --pypy-python")
+        if args.pypy_python is not None and (
+            args.supplements_only or args.cluster_auth_shard
+        ):
+            parser.error("--pypy-python is supported only for the full release matrix")
         if args.cluster_auth_shard:
             if args.version is None:
                 parser.error("--cluster-auth-shard requires --version")
@@ -713,7 +913,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.version is not None:
                 parser.error("--version requires a supplement mode")
             paths = run_release_benchmarks(
-                args.wheel_dir, args.results_dir, args.python, args.repository_root
+                args.wheel_dir,
+                args.results_dir,
+                args.python,
+                args.repository_root,
+                pypy_python=args.pypy_python,
+                pypy_results_dir=args.pypy_results_dir,
             )
     except (
         OSError,

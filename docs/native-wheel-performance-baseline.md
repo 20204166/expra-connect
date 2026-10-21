@@ -7,6 +7,7 @@
 - **2.2.1.0 native/universal full benchmark matrix:** 19 October 2026
 - **2.2.1.0 supplemental feature workloads:** 20 October 2026
 - **2.2.3.0 native/universal full benchmark matrix:** 20 October 2026
+- **2.2.3.1 native/universal matrix + PyPy universal feature lane:** 21 October 2026
 - **Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39
 - **Historical comparison anchor:** 1.8.0.0 universal. This long-range view is
   retained for history, not as the sole reference for incremental performance
@@ -16,8 +17,44 @@
   `docs/performance-build-comparison-results/`.
 - **Compared results:** 1.8.0.0, 1.9.0.1, 2.0.0.0, 2.0.0.2, 2.2.0.0,
   2.2.0.1, 2.2.0.3 native/universal, 2.2.0.4 native/universal,
-  2.2.0.5 native/universal, 2.2.1.0 native/universal, and 2.2.3.0
-  native/universal.
+  2.2.0.5 native/universal, 2.2.1.0 native/universal, 2.2.3.0
+  native/universal, and 2.2.3.1 native/universal.
+
+## Separate PyPy + universal-wheel measurements
+
+- PyPy used the `2.2.3.1` `py3-none-any` universal wheel, installed into an
+  isolated PyPy 3.11.17 environment. The four cases below each used 3,000
+  warmups and 10,000 timed repetitions with allocation tracking disabled
+  (PyPy does not provide `tracemalloc`). The saved record is
+  `docs/pypy-performance-results/2.2.3.1-pypy-universal-connect.json`; module
+  provenance resolves inside the installed wheel.
+- The CPython measurements shown for context come from the same release's
+  native and universal connect benchmark records (CPython 3.12.3, 5,000
+  repetitions). The runtime versions and sampling configurations differ, so
+  cross-runtime ratios are descriptive only, not controlled speedup claims.
+- PyPy values are deliberately excluded from the CPython comparison diagrams,
+  aggregate indices, and winner scores.
+
+- **Discovery candidate validation:** CPython native `1.423 / 1.453 / 1.533`;
+  CPython universal `1.353 / 1.392 / 1.453`; PyPy universal
+  `0.140 / 4.919 / 5.080`.
+- **Discovery preferred endpoint:** CPython native `2.224 / 2.295 / 3.316`;
+  CPython universal `2.204 / 2.284 / 3.486`; PyPy universal
+  `0.320 / 3.777 / 6.743`.
+- **Discovery registry add + expire:** CPython native `5.330 / 5.610 / 8.066`;
+  CPython universal `5.350 / 5.490 / 6.693`; PyPy universal
+  `0.661 / 11.792 / 12.143`.
+- **Pairing relationship projection:** CPython native `0.822 / 0.842 / 1.042`;
+  CPython universal `0.862 / 0.892 / 0.922`; PyPy universal
+  `0.100 / 2.695 / 2.785`.
+
+All triplets are p50 / p95 / p99 in microseconds.
+
+- PyPy's observed p50 values are lower in this run, but p95/p99 are higher for
+  all four selected operations. In particular, registry add/expire and pairing
+  projection have heavier PyPy tails. This single run does not identify a
+  cause; production optimizations remain deferred pending review and further
+  controlled measurements.
 
 ## What the diagram shows
 
@@ -43,7 +80,7 @@
   - 100k cluster: 25%
   - Connect: 20%
   - 200k JSON persistence: 35%
-- **Full-workload index:** equal-case geometric mean across the 35 positive-p50
+- **Full-workload index:** equal-case geometric mean across the 41 positive-p50
   cases shared by every displayed result. It includes cluster state at 1k,
   30k, and 100k; matched connect cases; and 200k JSON persistence. It differs
   from the composite, which gives equal weight to the three suites.
@@ -103,12 +140,10 @@
   keep the 2.2.1.0 record as historical context.
 
 <!-- performance-summary:start -->
-- **Current weighted winner:** 2.2.3.0 native — 62.429p of 1.8.0.0; 40 matched positive-p50 cases.
+- **Current weighted winner:** 2.2.3.0 native — 61.773p of 1.8.0.0; 41 matched positive-p50 cases.
   - Applies only to this workload set and weighting; it is not a universal claim.
 - **Distinct-workload coverage:** 110 unique cases; reported separately from latency scoring.
   - 1.8.0.0: 91/110
-  - 2.2.0.4 universal: 68/110
-  - 2.2.0.5 native: 69/110
   - 2.2.0.5 universal: 69/110
   - 2.2.1.0 native: 105/110
   - 2.2.1.0 universal: 105/110
@@ -116,6 +151,8 @@
   - 2.2.1.1 universal: 105/110
   - 2.2.3.0 native: 105/110
   - 2.2.3.0 universal: 105/110
+  - 2.2.3.1 native: 105/110
+  - 2.2.3.1 universal: 105/110
   - Missing or unsupported cases receive no invented latency penalty.
 - **100.000p = 1.8.0.0 historical reference** (historical scores above use this denominator).
 - **Latest comparisons matrix:** latest native and universal builds use their matching 2.2.1.0 flavor baselines; weighted and full-workload scores appear with the per-case breakdown. Cross-flavor comparisons are shown per case.

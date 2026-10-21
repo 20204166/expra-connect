@@ -53,6 +53,48 @@ def _stage_wheels(root: Path, version: str, tags: tuple[str, ...]) -> None:
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_build_release_accepts_explicit_pypy_interpreter(self) -> None:
+        root = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            fake_python = temporary / "fake-python"
+            fake_pypy = temporary / "fake-pypy"
+            marker = temporary / "python-arguments"
+            fake_python.write_text(
+                '#!/bin/sh\nprintf "%s\\n" "$*" >> "$INVOCATION_MARKER"\n'
+                'case "$*" in *"scripts/release.py prepare-build"*) exit 37;; esac\n',
+                encoding="utf-8",
+            )
+            fake_python.chmod(0o755)
+            fake_pypy.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            fake_pypy.chmod(0o755)
+            environment = os.environ.copy()
+            environment.update(
+                {
+                    "PYTHON": str(fake_python),
+                    "INVOCATION_MARKER": str(marker),
+                }
+            )
+
+            completed = subprocess.run(
+                [
+                    "bash",
+                    str(root / "scripts" / "build_release.sh"),
+                    "--universal",
+                    "--pypy-python",
+                    str(fake_pypy),
+                    "--bump",
+                    "none",
+                ],
+                capture_output=True,
+                check=False,
+                env=environment,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 37, completed.stderr)
+            self.assertIn("scripts/release.py prepare-build", marker.read_text())
+
     def test_build_release_rejects_unknown_option_before_running_python(self) -> None:
         root = Path(__file__).parents[1]
         with tempfile.TemporaryDirectory() as directory:
@@ -180,7 +222,10 @@ class ReleaseTests(unittest.TestCase):
             )
 
             completed = subprocess.run(
-                ["bash", str(root / "scripts" / "build_release.sh"), "--bump", "none"],
+                [
+                    "bash",
+                    str(root / "scripts" / "build_release.sh"),
+                ],
                 capture_output=True,
                 check=False,
                 env=environment,

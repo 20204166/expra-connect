@@ -11,7 +11,11 @@ from unittest.mock import patch
 
 from scripts.benchmark_coverage import SUPPLEMENT_CASES
 from scripts.benchmark_release_wheels import (
+    main as release_benchmark_main,
+)
+from scripts.benchmark_release_wheels import (
     run_cluster_authorization_shard,
+    run_pypy_universal_benchmarks,
     run_release_benchmarks,
     run_release_supplement_benchmarks,
 )
@@ -26,6 +30,217 @@ from scripts.benchmark_support import (
 
 
 class ReleasePerformanceTests(unittest.TestCase):
+    def test_pypy_lane_refuses_to_overwrite_existing_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheel = root / "expra_connect-3.4.5.6-py3-none-any.whl"
+            wheel.touch()
+            results = root / "results"
+            results.mkdir()
+            existing = results / "3.4.5.6-pypy-universal-connect.json"
+            existing.write_bytes(b"historical record\n")
+
+            with self.assertRaises(FileExistsError):
+                run_pypy_universal_benchmarks(wheel, results, "pypy-python", root)
+
+            self.assertEqual(existing.read_bytes(), b"historical record\n")
+
+    def test_cli_forwards_optional_pypy_universal_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheel_dir = root / "wheels"
+            results_dir = root / "cp-results"
+            pypy_results_dir = root / "pypy-results"
+            with patch(
+                "scripts.benchmark_release_wheels.run_release_benchmarks",
+                return_value=(),
+            ) as runner:
+                status = release_benchmark_main(
+                    (
+                        "--wheel-dir",
+                        str(wheel_dir),
+                        "--results-dir",
+                        str(results_dir),
+                        "--pypy-python",
+                        "pypy",
+                        "--pypy-results-dir",
+                        str(pypy_results_dir),
+                        "--repository-root",
+                        str(root),
+                    )
+                )
+
+            self.assertEqual(status, 0)
+            runner.assert_called_once_with(
+                wheel_dir,
+                results_dir,
+                sys.executable,
+                root,
+                pypy_python="pypy",
+                pypy_results_dir=pypy_results_dir,
+            )
+
+    def test_release_benchmarks_invokes_separate_pypy_universal_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheels = root / "wheels"
+            wheels.mkdir()
+            wheel = wheels / "expra_connect-3.4.5.6-py3-none-any.whl"
+            with zipfile.ZipFile(wheel, "w") as archive:
+                archive.writestr(
+                    "expra_connect/__init__.py", "__version__ = '3.4.5.6'\n"
+                )
+            results = root / "cp-results"
+            pypy_results = root / "pypy-results"
+            pypy_output = pypy_results / "3.4.5.6-pypy-universal-connect.json"
+
+            with (
+                patch("scripts.benchmark_release_wheels._benchmark_wheel"),
+                patch(
+                    "scripts.benchmark_release_wheels.run_pypy_universal_benchmarks",
+                    return_value=(pypy_output,),
+                ) as pypy_runner,
+            ):
+                produced = run_release_benchmarks(
+                    wheels,
+                    results,
+                    "cpython",
+                    root,
+                    pypy_python="pypy",
+                    pypy_results_dir=pypy_results,
+                )
+
+            pypy_runner.assert_called_once_with(wheel, pypy_results, "pypy", root)
+            self.assertIn(pypy_output, produced)
+
+    def test_pypy_lane_benchmarks_only_selected_operations_from_universal_wheel(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheel = root / "expra_connect-3.4.5.6-py3-none-any.whl"
+            with zipfile.ZipFile(wheel, "w") as archive:
+                archive.writestr(
+                    "expra_connect/__init__.py", "__version__ = '3.4.5.6'\n"
+                )
+            results = root / "pypy-results"
+            expected_operations = (
+                "discovery candidate validation",
+                "discovery preferred endpoint",
+                "discovery registry add + expire",
+                "pairing relationship projection",
+            )
+            config = MeasurementConfig(
+                warmups=0, repetitions=1, track_allocations=False
+            )
+            commands: list[tuple[str, ...]] = []
+            installed_roots: list[Path] = []
+
+            def fake_subprocess(
+                command: tuple[str, ...],
+                *,
+                cwd: Path,
+                env: dict[str, str],
+                check: bool,
+                **kwargs: object,
+            ) -> subprocess.CompletedProcess[str] | None:
+                commands.append(command)
+                if "-c" in command:
+                    return subprocess.CompletedProcess(
+                        command, 0, stdout="pypy 3.11.17\n", stderr=""
+                    )
+                if "--target" in command:
+                    package_root = Path(command[command.index("--target") + 1])
+                    installed_roots.append(package_root)
+                    package = package_root / "expra_connect"
+                    package.mkdir(parents=True)
+                    (package / "__init__.py").write_text("", encoding="utf-8")
+                    for module in (
+                        "discovery/candidates.py",
+                        "pairing/manager.py",
+                        "sharing/capabilities.py",
+                    ):
+                        path = package / module
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text("", encoding="utf-8")
+                    return subprocess.CompletedProcess(command, 0)
+
+                operation = command[command.index("--operation") + 1]
+                output = Path(command[command.index("--json-output") + 1])
+                package_root = Path(env["PYTHONPATH"].split(os.pathsep)[0])
+                write_results(
+                    output,
+                    RunMetadata(
+                        1,
+                        "connect",
+                        "3.4.5.6",
+                        "3.11.17",
+                        "Linux test",
+                        {
+                            "expra_connect.discovery.candidates": str(
+                                package_root / "expra_connect/discovery/candidates.py"
+                            ),
+                            "expra_connect.pairing.manager": str(
+                                package_root / "expra_connect/pairing/manager.py"
+                            ),
+                        },
+                        config,
+                    ),
+                    (
+                        BenchmarkOutcome(
+                            operation,
+                            operation,
+                            {"selected": operation},
+                            1,
+                            None,
+                            config,
+                            measure(lambda: None, config),
+                        ),
+                    ),
+                )
+                return subprocess.CompletedProcess(command, 0)
+
+            with patch(
+                "scripts.benchmark_release_wheels.subprocess.run", fake_subprocess
+            ):
+                produced = run_pypy_universal_benchmarks(
+                    wheel,
+                    results,
+                    "pypy-python",
+                    root,
+                    warmups=0,
+                    repetitions=1,
+                )
+
+            self.assertEqual(len(commands), 2 + len(expected_operations))
+            self.assertEqual(commands[0][1], "-c")
+            self.assertEqual(commands[1][0:3], ("pypy-python", "-m", "pip"))
+            self.assertEqual(
+                tuple(
+                    command[command.index("--operation") + 1]
+                    for command in commands[2:]
+                ),
+                expected_operations,
+            )
+            self.assertEqual(len(produced), 1)
+            self.assertEqual(
+                produced[0].name,
+                "3.4.5.6-pypy-universal-connect.json",
+            )
+            saved = load_results(produced[0])
+            self.assertEqual(saved.metadata.python_version, "PyPy 3.11.17")
+            self.assertEqual(
+                tuple(outcome.case_id for outcome in saved.outcomes),
+                expected_operations,
+            )
+            self.assertEqual(len(installed_roots), 1)
+            self.assertTrue(
+                all(
+                    Path(path).is_relative_to(installed_roots[0])
+                    for path in saved.metadata.modules.values()
+                )
+            )
+
     def test_cluster_auth_shard_appends_only_new_cases(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

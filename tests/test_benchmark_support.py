@@ -7,6 +7,7 @@ import unittest
 from collections.abc import Callable
 from pathlib import Path
 from typing import cast
+from unittest.mock import patch
 
 from expra_connect.observability import summarize_samples
 from scripts.benchmark_support import (
@@ -20,6 +21,16 @@ from scripts.benchmark_support import (
 
 
 class MeasurementTests(unittest.TestCase):
+    def test_allocation_tracking_fails_clearly_when_tracemalloc_is_unavailable(
+        self,
+    ) -> None:
+        config = MeasurementConfig(warmups=0, repetitions=1, track_allocations=True)
+        with (
+            patch("scripts.benchmark_support.tracemalloc", None),
+            self.assertRaisesRegex(RuntimeError, "allocation tracking is unavailable"),
+        ):
+            measure(lambda: None, config)
+
     def test_setup_runs_outside_each_warmup_and_sample_timing(self) -> None:
         events: list[str] = []
         ticks = iter((0, 1_000, 1_000, 2_000))

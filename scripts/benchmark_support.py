@@ -7,11 +7,18 @@ import json
 import math
 import statistics
 import time
-import tracemalloc
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 from typing import Any
+
+try:
+    import tracemalloc as _tracemalloc_module
+except ModuleNotFoundError:
+    tracemalloc: ModuleType | None = None
+else:
+    tracemalloc = _tracemalloc_module
 
 
 @dataclass(frozen=True)
@@ -220,6 +227,9 @@ def measure(
     clock_ns: Callable[[], int] | None = None,
     setup: Callable[[], Any] | None = None,
 ) -> MeasurementResult:
+    if config.track_allocations and tracemalloc is None:
+        raise RuntimeError("allocation tracking is unavailable in this interpreter")
+
     clock = time.perf_counter_ns if clock_ns is None else clock_ns
 
     def run_batch() -> None:
@@ -250,6 +260,7 @@ def measure(
     mean_us = statistics.mean(sample_tuple)
     peak_bytes: int | None = None
     if config.track_allocations:
+        assert tracemalloc is not None
         if tracemalloc.is_tracing():
             raise RuntimeError("cannot track allocations while tracemalloc is active")
         tracemalloc.start()

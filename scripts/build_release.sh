@@ -8,6 +8,7 @@ PYTHON_BIN=${PYTHON:-python3}
 BUILD_UNIVERSAL=0
 BUILD_PERFORMANCE=1
 BUILD_BUMP=
+PYPY_PYTHON_BIN=
 while (($#)); do
   case "$1" in
     --universal)
@@ -23,6 +24,14 @@ while (($#)); do
         exit 2
       fi
       BUILD_PERFORMANCE=0
+      ;;
+    --pypy-python)
+      if [[ -n "$PYPY_PYTHON_BIN" || $# -lt 2 || -z "${2:-}" ]]; then
+        printf 'error: --pypy-python requires one value and may only be specified once\n' >&2
+        exit 2
+      fi
+      PYPY_PYTHON_BIN=$2
+      shift
       ;;
     --bump)
       if [[ -n "$BUILD_BUMP" || $# -lt 2 || -z "${2:-}" ]]; then
@@ -40,12 +49,17 @@ while (($#)); do
       BUILD_BUMP=${1#--bump=}
       ;;
     *)
-      printf 'usage: %s [--universal] [--skip-performance-benchmarks] [--bump auto|none|patch|feature|minor]\n' "$0" >&2
+      printf 'usage: %s [--universal] [--skip-performance-benchmarks] [--pypy-python PATH] [--bump auto|none|patch|feature|minor]\n' "$0" >&2
       exit 2
       ;;
   esac
   shift
 done
+
+if [[ -n "$PYPY_PYTHON_BIN" && "$BUILD_UNIVERSAL" -eq 0 ]]; then
+  printf 'error: --pypy-python requires --universal\n' >&2
+  exit 2
+fi
 
 mkdir -p dist
 PREPARE_ARGS=(prepare-build --package-dir .)
@@ -101,11 +115,20 @@ for wheel in "$BUILD_ROOT"/artifacts/*.whl; do
     --source-package "$BUILD_ROOT/source/src/expra_connect"
 done
 if [[ "$BUILD_PERFORMANCE" -eq 1 ]]; then
-  "$PYTHON_BIN" scripts/benchmark_release_wheels.py \
-    --wheel-dir "$BUILD_ROOT/artifacts" \
-    --results-dir "$ROOT_DIR/docs/performance-build-comparison-results" \
-    --python "$PYTHON_BIN" \
+  BENCHMARK_ARGS=(
+    --wheel-dir "$BUILD_ROOT/artifacts"
+    --results-dir "$ROOT_DIR/docs/performance-build-comparison-results"
+    --python "$PYTHON_BIN"
     --repository-root "$ROOT_DIR"
+  )
+  if [[ -n "$PYPY_PYTHON_BIN" ]]; then
+    BENCHMARK_ARGS+=(
+      --pypy-python "$PYPY_PYTHON_BIN"
+      --pypy-results-dir "$ROOT_DIR/docs/pypy-performance-results"
+    )
+  fi
+  "$PYTHON_BIN" scripts/benchmark_release_wheels.py \
+    "${BENCHMARK_ARGS[@]}"
   "$PYTHON_BIN" -m scripts.update_performance_diagrams
 else
   printf 'Skipping release wheel benchmarks and performance chart refresh.\n'

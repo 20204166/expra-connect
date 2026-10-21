@@ -58,6 +58,10 @@ Never let one substitute for another.
   artifacts are platform- and CPython-version-specific. The default release
   build remains native-only; `scripts/build_release.sh --universal` explicitly
   adds a pure-Python `py3-none-any` wheel alongside the native wheel(s).
+- `scripts/build_release.sh --universal --pypy-python PATH` optionally benchmarks
+  selected connect cases under PyPy using the universal wheel. PyPy results live
+  separately under `docs/pypy-performance-results/` and are excluded from
+  CPython charts and aggregate scores.
 - The wheel must contain only `expra_connect/` and its dist-info. The MCP server
   under `tools/expra_connect_mcp/` is a development-only diagnostic surface and
   must never enter the wheel. `scripts/verify_wheel.py` enforces the headless

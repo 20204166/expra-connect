@@ -645,7 +645,7 @@ class BuildComparisonTests(unittest.TestCase):
         self.assertIn("Performance points vs 1.8.0.0", svg)
         self.assertIn("≤50.000p", svg)
         self.assertIn("Composite index · equal-suite geometric mean", svg)
-        self.assertIn("Full-workload index · equal-case · 40 cases", svg)
+        self.assertIn("Full-workload index · equal-case · 41 cases", svg)
         self.assertIn("cluster state", svg)
         self.assertIn("persistence", svg)
         self.assertIn("connect", svg)
@@ -1167,12 +1167,10 @@ class DiagramTests(unittest.TestCase):
             shutil.copytree(
                 ROOT / "docs/performance-build-comparison-results", build_dir
             )
-            for suite in ("cluster_state", "persistence", "connect"):
-                shutil.move(
-                    build_dir / "history" / f"native-{suite}.json",
-                    build_dir / f"native-{suite}.json",
-                )
-            native_run = load_results(build_dir / "native-cluster_state.json")
+            groups = load_shared_harness_runs(results_dir)
+            native_run = groups["cluster-1k"][
+                shared_harness_labels(groups).index("2.2.3.1 native")
+            ]
             archive_evicted_results = getattr(
                 performance_diagrams, "_archive_evicted_results", None
             )
@@ -1185,11 +1183,15 @@ class DiagramTests(unittest.TestCase):
             remaining_labels = shared_harness_labels(
                 load_shared_harness_runs(results_dir)
             )
-            archived = tuple((build_dir / "history").glob("native-*.json"))
+            native_active = tuple(build_dir.glob("2.2.3.1-native-*.json"))
+            archived = tuple((build_dir / "history").glob("2.2.3.1-native-*.json"))
+            universal_active = tuple(build_dir.glob("2.2.3.1-universal-*.json"))
 
         self.assertEqual(len(archived), 3)
-        self.assertNotIn("2.2.0.4 native", remaining_labels)
-        self.assertIn("2.2.0.4 universal", remaining_labels)
+        self.assertEqual(native_active, ())
+        self.assertEqual(len(universal_active), 3)
+        self.assertNotIn("2.2.3.1 native", remaining_labels)
+        self.assertIn("2.2.3.1 universal", remaining_labels)
 
     def test_comparison_diagram_viewbox_contains_rendered_content(self) -> None:
         svg = render_diagrams()["performance-comparison.svg"]
@@ -1315,7 +1317,7 @@ class DiagramTests(unittest.TestCase):
 
         for label in (
             "Full-workload index plot",
-            "All included suites and sizes · 40 matched cases",
+            "All included suites and sizes · 41 matched cases",
             "Size-specific matched-workload index",
             "1k · cluster state · 9 matched cases",
             "30k · cluster state · 9 matched cases",
@@ -1375,17 +1377,17 @@ class DiagramTests(unittest.TestCase):
         panel = _full_workload_index_panel(groups)
         row = _full_workload_index_row(panel)
 
-        self.assertEqual(panel.case_count, 40)
+        self.assertEqual(panel.case_count, 41)
         self.assertEqual(panel.label, "All included suites and sizes")
-        self.assertEqual(row.label, "Full-workload index · equal-case · 40 cases")
+        self.assertEqual(row.label, "Full-workload index · equal-case · 41 cases")
         self.assertEqual(row.values[0], 1.0)
         labels = shared_harness_labels(groups)
         native_index = row.values[labels.index("2.2.3.0 native")]
         universal_index = row.values[labels.index("2.2.3.0 universal")]
         if native_index is None or universal_index is None:
             self.fail("full-workload index is unavailable for a 2.2.3.0 build")
-        self.assertAlmostEqual(native_index, 0.541607, places=6)
-        self.assertAlmostEqual(universal_index, 0.559779, places=6)
+        self.assertAlmostEqual(native_index, 0.536339, places=6)
+        self.assertAlmostEqual(universal_index, 0.551605, places=6)
 
     def test_weighted_overall_index_uses_declared_size_biased_categories(self) -> None:
         groups = load_shared_harness_runs(ROOT / "tools" / "shared-benchmark-results")
@@ -1393,14 +1395,14 @@ class DiagramTests(unittest.TestCase):
         panel = _weighted_overall_index_panel(groups)
         svg = render_diagrams()["performance-comparison.svg"]
 
-        self.assertEqual(panel.case_count, 40)
+        self.assertEqual(panel.case_count, 41)
         self.assertAlmostEqual(panel.indices[0], 1.0)
         labels = shared_harness_labels(groups)
         self.assertAlmostEqual(
-            panel.indices[labels.index("2.2.3.0 native")], 0.624289, places=6
+            panel.indices[labels.index("2.2.3.0 native")], 0.617725, places=6
         )
         self.assertAlmostEqual(
-            panel.indices[labels.index("2.2.3.0 universal")], 0.657796, places=6
+            panel.indices[labels.index("2.2.3.0 universal")], 0.649688, places=6
         )
         self.assertIn("Weighted overall index", svg)
         self.assertIn("1k cluster: 5%", svg)
@@ -1441,7 +1443,7 @@ class DiagramTests(unittest.TestCase):
         self.assertIn("\n- **Distinct-workload coverage:**", summary)
         self.assertIn("2.2.1.1 native:", summary)
         self.assertIn("2.2.1.1 universal:", summary)
-        self.assertIn("40 matched positive-p50 cases", summary)
+        self.assertIn("41 matched positive-p50 cases", summary)
         self.assertIn("110 unique cases", summary)
         self.assertIn("2.2.3.0 native: 105/110", summary)
 
@@ -1457,10 +1459,10 @@ class DiagramTests(unittest.TestCase):
         self.assertIn("Latest comparisons", svg)
         self.assertIn("Reference: 2.2.1.0 native", svg)
         self.assertIn("Reference: 2.2.1.0 universal", svg)
-        self.assertIn("Weighted 108.716p", svg)
-        self.assertIn("Full workload 107.899p", svg)
-        self.assertIn("Weighted 83.151p", svg)
-        self.assertIn("Full workload 82.344p", svg)
+        self.assertIn("Weighted 100.581p", svg)
+        self.assertIn("Full workload 99.943p", svg)
+        self.assertIn("Weighted 85.325p", svg)
+        self.assertIn("Full workload 87.241p", svg)
         self.assertNotIn("performance-recent-reference.svg", diagrams)
         self.assertIn(
             "Performance points vs 1.8.0.0", diagrams["performance-comparison.svg"]
@@ -1477,12 +1479,12 @@ class DiagramTests(unittest.TestCase):
         )
 
         latest_svg = diagrams["performance-latest-build-comparison.svg"]
-        self.assertIn("2.2.3.0 native", latest_svg)
-        self.assertIn("2.2.3.0 universal", latest_svg)
+        self.assertIn("2.2.3.1 native", latest_svg)
+        self.assertIn("2.2.3.1 universal", latest_svg)
         self.assertIn("2.2.1.0 native", latest_svg)
         self.assertIn("2.2.1.0 universal", latest_svg)
-        self.assertIn("Weighted 108.716p", latest_svg)
-        self.assertIn("Weighted 83.151p", latest_svg)
+        self.assertIn("Weighted 100.581p", latest_svg)
+        self.assertIn("Weighted 85.325p", latest_svg)
 
     def test_sync_performance_summary_updates_only_the_marked_region(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
