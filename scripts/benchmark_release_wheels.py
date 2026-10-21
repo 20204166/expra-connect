@@ -46,6 +46,7 @@ def run_release_benchmarks(
     *,
     pypy_python: str | None = None,
     pypy_results_dir: Path | None = None,
+    selected_flavors: tuple[str, ...] | None = None,
 ) -> tuple[Path, ...]:
     """Benchmark each wheel once, reusing complete immutable result sets."""
 
@@ -56,9 +57,23 @@ def run_release_benchmarks(
     if len(set(identities)) != len(identities):
         raise ValueError("wheel directory contains duplicate version/flavor artifacts")
 
+    if selected_flavors is not None:
+        if not selected_flavors or any(
+            flavor not in {"native", "universal"} for flavor in selected_flavors
+        ):
+            raise ValueError("selected wheel flavors must be native and/or universal")
+        if len(set(selected_flavors)) != len(selected_flavors):
+            raise ValueError("selected wheel flavors must not contain duplicates")
+        available_flavors = {flavor for _, flavor in identities}
+        missing_flavors = set(selected_flavors) - available_flavors
+        if missing_flavors:
+            requested = " and ".join(selected_flavors)
+            raise ValueError(f"benchmark selection requires {requested} wheel flavors")
+
     result_sets = tuple(
         (wheel, version, flavor, _result_paths(results_dir, version, flavor))
         for wheel, (version, flavor) in zip(wheels, identities, strict=True)
+        if selected_flavors is None or flavor in selected_flavors
     )
     if pypy_python is not None and not any(
         flavor == "universal" for _, _, flavor, _ in result_sets
@@ -866,6 +881,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=Path,
         help="separate append-only directory for PyPy measurements",
     )
+    lane_group = parser.add_mutually_exclusive_group()
+    lane_group.add_argument(
+        "--native",
+        action="store_true",
+        help="benchmark only the CPython native wheel",
+    )
+    lane_group.add_argument(
+        "--universal",
+        action="store_true",
+        help="benchmark only the CPython universal wheel",
+    )
+    lane_group.add_argument(
+        "--all",
+        action="store_true",
+        help="benchmark native, universal, and PyPy/universal lanes",
+    )
     parser.add_argument(
         "--supplements-only",
         action="store_true",
@@ -885,8 +916,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
+        has_explicit_lanes = args.native or args.universal or args.all
+        if args.all and args.pypy_python is None:
+            parser.error("--all requires --pypy-python")
+        if (args.native or args.universal) and args.pypy_python is not None:
+            parser.error(
+                "--pypy-python cannot be combined with --native or --universal"
+            )
         if args.pypy_results_dir is not None and args.pypy_python is None:
             parser.error("--pypy-results-dir requires --pypy-python")
+        if has_explicit_lanes and (args.supplements_only or args.cluster_auth_shard):
+            parser.error(
+                "benchmark lane selectors are supported only for the full release matrix"
+            )
         if args.pypy_python is not None and (
             args.supplements_only or args.cluster_auth_shard
         ):
@@ -912,6 +954,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             if args.version is not None:
                 parser.error("--version requires a supplement mode")
+            selected_flavors: tuple[str, ...] | None = None
+            if args.native:
+                selected_flavors = ("native",)
+            elif args.universal:
+                selected_flavors = ("universal",)
+            elif args.all:
+                selected_flavors = ("native", "universal")
             paths = run_release_benchmarks(
                 args.wheel_dir,
                 args.results_dir,
@@ -919,6 +968,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.repository_root,
                 pypy_python=args.pypy_python,
                 pypy_results_dir=args.pypy_results_dir,
+                selected_flavors=selected_flavors,
             )
     except (
         OSError,

@@ -30,6 +30,189 @@ from scripts.benchmark_support import (
 
 
 class ReleasePerformanceTests(unittest.TestCase):
+    def test_cli_selects_native_or_universal_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            common = (
+                "--wheel-dir",
+                str(root / "wheels"),
+                "--results-dir",
+                str(root / "results"),
+                "--repository-root",
+                str(root),
+            )
+            for flag, flavor in (("--native", "native"), ("--universal", "universal")):
+                with (
+                    self.subTest(flag=flag),
+                    patch(
+                        "scripts.benchmark_release_wheels.run_release_benchmarks",
+                        return_value=(),
+                    ) as runner,
+                ):
+                    status = release_benchmark_main((*common, flag))
+
+                    self.assertEqual(status, 0)
+                    self.assertEqual(
+                        runner.call_args.kwargs["selected_flavors"], (flavor,)
+                    )
+                    self.assertIsNone(runner.call_args.kwargs["pypy_python"])
+
+    def test_cli_all_requires_pypy_and_selects_both_cpython_flavors(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            common = (
+                "--wheel-dir",
+                str(root / "wheels"),
+                "--results-dir",
+                str(root / "results"),
+                "--repository-root",
+                str(root),
+            )
+            with self.assertRaises(SystemExit):
+                release_benchmark_main((*common, "--all"))
+
+            with patch(
+                "scripts.benchmark_release_wheels.run_release_benchmarks",
+                return_value=(),
+            ) as runner:
+                status = release_benchmark_main(
+                    (*common, "--all", "--pypy-python", "pypy3")
+                )
+
+            self.assertEqual(status, 0)
+            self.assertEqual(
+                runner.call_args.kwargs["selected_flavors"], ("native", "universal")
+            )
+            self.assertEqual(runner.call_args.kwargs["pypy_python"], "pypy3")
+
+    def test_cli_rejects_conflicting_lane_and_pypy_options(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            common = (
+                "--wheel-dir",
+                str(root / "wheels"),
+                "--results-dir",
+                str(root / "results"),
+                "--repository-root",
+                str(root),
+            )
+            for args in (
+                ("--native", "--universal"),
+                ("--native", "--pypy-python", "pypy3"),
+                ("--universal", "--pypy-python", "pypy3"),
+                ("--all", "--pypy-python", "pypy3", "--supplements-only"),
+            ):
+                with self.subTest(args=args), self.assertRaises(SystemExit):
+                    release_benchmark_main((*common, *args))
+
+    def test_runner_filters_to_selected_cpython_flavor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheels = root / "wheels"
+            wheels.mkdir()
+            native = wheels / "expra_connect-3.4.5.6-cp312-cp312-linux_x86_64.whl"
+            universal = wheels / "expra_connect-3.4.5.6-py3-none-any.whl"
+            native.touch()
+            universal.touch()
+            results = root / "results"
+            calls: list[Path] = []
+
+            with patch(
+                "scripts.benchmark_release_wheels._benchmark_wheel",
+                side_effect=lambda wheel, *args: calls.append(wheel),
+            ):
+                produced = run_release_benchmarks(
+                    wheels,
+                    results,
+                    "python3",
+                    root,
+                    selected_flavors=("native",),
+                )
+
+            self.assertEqual(calls, [native])
+            self.assertEqual(len(produced), 3)
+            self.assertTrue(all("-native-" in path.name for path in produced))
+
+    def test_runner_all_selection_requires_both_cpython_wheel_flavors(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheels = root / "wheels"
+            wheels.mkdir()
+            (wheels / "expra_connect-3.4.5.6-cp312-cp312-linux_x86_64.whl").touch()
+            results = root / "results"
+
+            with self.assertRaisesRegex(ValueError, "requires native and universal"):
+                run_release_benchmarks(
+                    wheels,
+                    results,
+                    "python3",
+                    root,
+                    selected_flavors=("native", "universal"),
+                    pypy_python="pypy3",
+                )
+
+    def test_runner_all_selection_benchmarks_both_flavors_and_pypy(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheels = root / "wheels"
+            wheels.mkdir()
+            native = wheels / "expra_connect-3.4.5.6-cp312-cp312-linux_x86_64.whl"
+            universal = wheels / "expra_connect-3.4.5.6-py3-none-any.whl"
+            native.touch()
+            universal.touch()
+            calls: list[Path] = []
+            pypy_output = root / "pypy-results" / "result.json"
+
+            with (
+                patch(
+                    "scripts.benchmark_release_wheels._benchmark_wheel",
+                    side_effect=lambda wheel, *args: calls.append(wheel),
+                ),
+                patch(
+                    "scripts.benchmark_release_wheels.run_pypy_universal_benchmarks",
+                    return_value=(pypy_output,),
+                ) as pypy_runner,
+            ):
+                produced = run_release_benchmarks(
+                    wheels,
+                    root / "results",
+                    "python3",
+                    root,
+                    selected_flavors=("native", "universal"),
+                    pypy_python="pypy3",
+                    pypy_results_dir=root / "pypy-results",
+                )
+
+            self.assertEqual(set(calls), {native, universal})
+            pypy_runner.assert_called_once_with(
+                universal, root / "pypy-results", "pypy3", root
+            )
+            self.assertIn(pypy_output, produced)
+
+    def test_runner_default_still_benchmarks_every_supplied_cpython_flavor(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wheels = root / "wheels"
+            wheels.mkdir()
+            native = wheels / "expra_connect-3.4.5.6-cp312-cp312-linux_x86_64.whl"
+            universal = wheels / "expra_connect-3.4.5.6-py3-none-any.whl"
+            native.touch()
+            universal.touch()
+            calls: list[Path] = []
+
+            with patch(
+                "scripts.benchmark_release_wheels._benchmark_wheel",
+                side_effect=lambda wheel, *args: calls.append(wheel),
+            ):
+                produced = run_release_benchmarks(
+                    wheels, root / "results", "python3", root
+                )
+
+            self.assertEqual(set(calls), {native, universal})
+            self.assertEqual(len(produced), 6)
+
     def test_pypy_lane_refuses_to_overwrite_existing_result(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -78,6 +261,7 @@ class ReleasePerformanceTests(unittest.TestCase):
                 root,
                 pypy_python="pypy",
                 pypy_results_dir=pypy_results_dir,
+                selected_flavors=None,
             )
 
     def test_release_benchmarks_invokes_separate_pypy_universal_lane(self) -> None:
