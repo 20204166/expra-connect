@@ -222,6 +222,7 @@ def sync_artifacts(
     artifact_dir: Path,
     *,
     allow_universal: bool = False,
+    allow_pypy: bool = False,
 ) -> None:
     version = read_current_version(package_dir)
     dist_dir = package_dir / "dist"
@@ -233,18 +234,45 @@ def sync_artifacts(
     )
     if not candidates:
         raise FileNotFoundError(f"no wheel artifacts found for version {version}")
-    pure_wheels = [
+    universal_wheels = [
         path for path in candidates if path.name.endswith("-py3-none-any.whl")
     ]
-    if pure_wheels:
+    pypy_wheels = [
+        path for path in candidates if re.search(r"-pp\d+-none-any\.whl$", path.name)
+    ]
+    if universal_wheels:
         if not allow_universal:
             raise FileNotFoundError(
                 f"artifact set must be native-only for {version}; found "
-                + ", ".join(path.name for path in pure_wheels)
+                + ", ".join(path.name for path in universal_wheels)
             )
-        if not any(path not in pure_wheels for path in candidates):
+        if len(universal_wheels) != 1:
+            raise FileNotFoundError(
+                f"expected one CPython universal wheel for {version}"
+            )
+        if not any(
+            path not in universal_wheels and path not in pypy_wheels
+            for path in candidates
+        ):
             raise FileNotFoundError(
                 f"universal artifact set requires a native sibling for {version}"
+            )
+    if pypy_wheels:
+        if not allow_pypy:
+            raise FileNotFoundError(
+                f"PyPy artifact requires explicit opt-in for {version}; found "
+                + ", ".join(path.name for path in pypy_wheels)
+            )
+        if len(pypy_wheels) != 1 or len(universal_wheels) != 1:
+            raise FileNotFoundError(
+                f"PyPy artifact set requires one PyPy and one CPython universal wheel for {version}"
+            )
+        if not any(
+            path not in universal_wheels and path not in pypy_wheels
+            for path in candidates
+        ):
+            raise FileNotFoundError(
+                f"PyPy artifact set requires a native sibling for {version}"
             )
 
     sums_path = dist_dir / "SHA256SUMS"
@@ -296,6 +324,7 @@ def _parser() -> argparse.ArgumentParser:
     sync.add_argument("--package-dir", required=True)
     sync.add_argument("--artifact-dir", required=True)
     sync.add_argument("--allow-universal", action="store_true")
+    sync.add_argument("--allow-pypy", action="store_true")
     return parser
 
 
@@ -311,6 +340,7 @@ def main(argv: list[str] | None = None) -> int:
             package_dir,
             Path(args.artifact_dir).resolve(),
             allow_universal=args.allow_universal,
+            allow_pypy=args.allow_pypy,
         )
     return 0
 

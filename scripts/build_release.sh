@@ -6,6 +6,8 @@ cd "$ROOT_DIR"
 PYTHON_BIN=${PYTHON:-python3}
 
 BUILD_UNIVERSAL=0
+BUILD_PYPY=0
+BUILD_ALL=0
 BUILD_PERFORMANCE=1
 BUILD_BUMP=
 PYPY_PYTHON_BIN=
@@ -17,6 +19,15 @@ while (($#)); do
         exit 2
       fi
       BUILD_UNIVERSAL=1
+      ;;
+    --all)
+      if [[ "$BUILD_ALL" -eq 1 ]]; then
+        printf 'error: --all may only be specified once\n' >&2
+        exit 2
+      fi
+      BUILD_ALL=1
+      BUILD_UNIVERSAL=1
+      BUILD_PYPY=1
       ;;
     --skip-performance-benchmarks)
       if [[ "$BUILD_PERFORMANCE" -eq 0 ]]; then
@@ -49,7 +60,7 @@ while (($#)); do
       BUILD_BUMP=${1#--bump=}
       ;;
     *)
-      printf 'usage: %s [--universal] [--skip-performance-benchmarks] [--pypy-python PATH] [--bump auto|none|patch|feature|minor]\n' "$0" >&2
+      printf 'usage: %s [--universal | --all --pypy-python PATH] [--skip-performance-benchmarks] [--pypy-python PATH] [--bump auto|none|patch|feature|minor]\n' "$0" >&2
       exit 2
       ;;
   esac
@@ -57,8 +68,15 @@ while (($#)); do
 done
 
 if [[ -n "$PYPY_PYTHON_BIN" && "$BUILD_UNIVERSAL" -eq 0 ]]; then
-  printf 'error: --pypy-python requires --universal\n' >&2
+  printf 'error: --pypy-python requires --universal or --all\n' >&2
   exit 2
+fi
+if [[ "$BUILD_PYPY" -eq 1 && -z "$PYPY_PYTHON_BIN" ]]; then
+  printf 'error: --all requires --pypy-python PATH\n' >&2
+  exit 2
+fi
+if [[ -n "$PYPY_PYTHON_BIN" ]]; then
+  BUILD_PYPY=1
 fi
 
 mkdir -p dist
@@ -88,8 +106,7 @@ if [[ "$BUILD_UNIVERSAL" -eq 1 ]] && compgen -G "dist/expra_connect-*.whl" >/dev
     'from pathlib import Path; from scripts.release import read_current_version; print(read_current_version(Path(".")))')
   LATEST_WHEEL=$("$PYTHON_BIN" scripts/release.py newest-wheel --package-dir .)
   LATEST_WHEEL_NAME=${LATEST_WHEEL##*/}
-  if [[ "$LATEST_WHEEL_NAME" == "expra_connect-${BUILD_VERSION}-"* \
-    && "$LATEST_WHEEL_NAME" != *-py3-none-any.whl ]]; then
+  if [[ "$LATEST_WHEEL_NAME" == "expra_connect-${BUILD_VERSION}-cp"* ]]; then
     cp "$LATEST_WHEEL" "$BUILD_ROOT/artifacts/"
     BUILD_NATIVE=0
     printf 'Reusing matching native wheel: %s\n' "$LATEST_WHEEL_NAME"
@@ -110,6 +127,12 @@ if [[ "$BUILD_UNIVERSAL" -eq 1 ]]; then
     --wheel-dir "$BUILD_ROOT/artifacts" "$BUILD_ROOT/universal-source"
 fi
 
+if [[ "$BUILD_PYPY" -eq 1 ]]; then
+  cp -a "$BUILD_ROOT/source" "$BUILD_ROOT/pypy-source"
+  EXPRA_CONNECT_PYPY_WHEEL=1 "$PYPY_PYTHON_BIN" -m pip wheel --no-deps \
+    --wheel-dir "$BUILD_ROOT/artifacts" "$BUILD_ROOT/pypy-source"
+fi
+
 for wheel in "$BUILD_ROOT"/artifacts/*.whl; do
   "$PYTHON_BIN" scripts/verify_wheel.py "$wheel" \
     --source-package "$BUILD_ROOT/source/src/expra_connect"
@@ -127,6 +150,9 @@ if [[ "$BUILD_PERFORMANCE" -eq 1 ]]; then
       --pypy-results-dir "$ROOT_DIR/docs/pypy-performance-results"
     )
   fi
+  if [[ "$BUILD_ALL" -eq 1 ]]; then
+    BENCHMARK_ARGS+=(--all)
+  fi
   "$PYTHON_BIN" scripts/benchmark_release_wheels.py \
     "${BENCHMARK_ARGS[@]}"
   "$PYTHON_BIN" -m scripts.update_performance_diagrams
@@ -136,6 +162,9 @@ fi
 SYNC_ARGS=(--package-dir . --artifact-dir "$BUILD_ROOT/artifacts")
 if [[ "$BUILD_UNIVERSAL" -eq 1 ]]; then
   SYNC_ARGS+=(--allow-universal)
+fi
+if [[ "$BUILD_PYPY" -eq 1 ]]; then
+  SYNC_ARGS+=(--allow-pypy)
 fi
 "$PYTHON_BIN" scripts/release.py sync-artifacts "${SYNC_ARGS[@]}"
 printf 'Built release artifacts:\n'

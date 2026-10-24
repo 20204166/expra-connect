@@ -16,6 +16,9 @@ dist/*
 !dist/expra_connect-0.7.0.1-py3-none-any.whl
 !dist/expra_connect-0.7.1.0-py3-none-any.whl
 !dist/expra_connect-0.8.0.0-py3-none-any.whl
+!dist/expra_connect-2.2.3.4-cp312-cp312-linux_x86_64.whl
+!dist/expra_connect-2.2.3.4-pp311-none-any.whl
+!dist/expra_connect-2.2.3.4-py3-none-any.whl
 !dist/expra_connect-1.0.0.0-py3-none-any.whl
 !dist/expra_connect-1.1.0.0-py3-none-any.whl
 build/

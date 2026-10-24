@@ -7,7 +7,8 @@
 - **2.2.1.0 native/universal full benchmark matrix:** 19 October 2026
 - **2.2.1.0 supplemental feature workloads:** 20 October 2026
 - **2.2.3.0 native/universal full benchmark matrix:** 20 October 2026
-- **2.2.3.3 native/universal matrix + PyPy universal feature lane:** 22 October 2026
+- **2.2.3.4 three-wheel matrix:** 22 October 2026 (CPython 3.12 native Cython,
+  CPython-built pure `py3-none-any`, and PyPy 3.11 pure `pp311-none-any`)
 - **Runtime:** CPython 3.12.3, Linux x86_64, glibc 2.39
 - **Historical comparison anchor:** 1.8.0.0 universal. This long-range view is
   retained for history, not as the sole reference for incremental performance
@@ -20,32 +21,40 @@
   2.2.0.5 native/universal, 2.2.1.0 native/universal, 2.2.3.0
   native/universal, and 2.2.3.3 native/universal.
 
-## Separate PyPy + universal-wheel measurements
+## Separate PyPy-targeted wheel measurements
 
-- PyPy used the `2.2.3.3` `py3-none-any` universal wheel, installed into an
-  isolated PyPy 3.11.17 environment. The four cases below each used 3,000
-  warmups and 10,000 timed repetitions with allocation tracking disabled
-  (PyPy does not provide `tracemalloc`). The saved record is
-  `docs/pypy-performance-results/2.2.3.3-pypy-universal-connect.json`; module
+- The 2.2.3.4 PyPy lane installs the PyPy-minor-tagged `pp311-none-any` wheel
+  with PyPy pip and benchmarks that installed artifact under PyPy 3.11.17.
+  The benchmark harness remains ordinary Python; the CPython native lane still
+  imports the Cython extensions in its native wheel. The four PyPy cases use
+  3,000 warmups and 10,000 timed repetitions, with allocation tracking
+  disabled (PyPy does not provide `tracemalloc`). The saved record is
+  `docs/pypy-performance-results/2.2.3.4-pypy-pp311-connect.json`; module
   provenance resolves inside the installed wheel.
-- The CPython measurements shown for context come from the same release's
-  native and universal connect benchmark records (CPython 3.12.3, 5,000
-  repetitions). The runtime versions and sampling configurations differ, so
-  cross-runtime ratios are descriptive only, not controlled speedup claims.
-- PyPy values are deliberately excluded from the CPython comparison diagrams,
-  aggregate indices, and winner scores.
+- PyPy pip did not accept `pp3-none-any` in the tested environment, even though
+  PyPy's tag generator listed it. The release therefore uses the supported
+  interpreter-minor tag (`pp311-none-any` for PyPy 3.11). The separate
+  CPython-built `py3-none-any` wheel remains interpreter-generic.
+- PyPy values are kept in a separate runtime-lanes chart and are not included
+  in the CPython comparison diagrams, aggregate indices, or winner scores.
+
+### Historical 2.2.3.3 universal-wheel run
+
+The following older measurements used the CPython-built `py3-none-any` wheel
+under PyPy. They are retained for history and are not results from the new
+PyPy-targeted `pp311` artifact.
 
 - **Discovery candidate validation:** CPython native `1.403 / 1.443 / 1.503`;
-  CPython universal `1.372 / 1.403 / 1.493`; PyPy universal
+  CPython universal `1.372 / 1.403 / 1.493`; historical PyPy universal
   `0.140 / 4.819 / 4.980`.
 - **Discovery preferred endpoint:** CPython native `2.114 / 2.154 / 2.264`;
-  CPython universal `2.224 / 2.484 / 3.096`; PyPy universal
+  CPython universal `2.224 / 2.484 / 3.096`; historical PyPy universal
   `0.270 / 2.705 / 2.826`.
 - **Discovery registry add + expire:** CPython native `5.250 / 5.370 / 8.055`;
-  CPython universal `7.204 / 8.377 / 10.580`; PyPy universal
+  CPython universal `7.204 / 8.377 / 10.580`; historical PyPy universal
   `0.551 / 9.949 / 10.270`.
 - **Pairing relationship projection:** CPython native `0.832 / 0.852 / 0.892`;
-  CPython universal `1.232 / 2.334 / 2.384`; PyPy universal
+  CPython universal `1.232 / 2.334 / 2.384`; historical PyPy universal
   `0.141 / 2.685 / 2.755`.
 
 All triplets are p50 / p95 / p99 in microseconds.
@@ -59,6 +68,8 @@ All triplets are p50 / p95 / p99 in microseconds.
 ## What the diagram shows
 
 - One consolidated comparison of historical releases and native/universal builds.
+- A separate three-lane latest-build view for CPython native, CPython pure, and
+  PyPy-minor-tagged pure artifacts; PyPy is not part of CPython aggregates.
 - Composite, cluster-state, persistence, and connect heatmaps.
 - Weighted and full-workload indices, workload coverage, and four size-specific
   matched-workload plots.
@@ -151,6 +162,8 @@ All triplets are p50 / p95 / p99 in microseconds.
   - 2.2.3.0 universal: 105/110
   - 2.2.3.3 native: 105/110
   - 2.2.3.3 universal: 105/110
+  - 2.2.3.4 native: 105/110
+  - 2.2.3.4 universal: 105/110
   - Missing or unsupported cases receive no invented latency penalty.
 - **100.000p = 1.8.0.0 historical reference** (historical scores above use this denominator).
 - **Latest comparisons matrix:** latest native and universal builds use their matching 2.2.1.0 flavor baselines; weighted and full-workload scores appear with the per-case breakdown. Cross-flavor comparisons are shown per case.
@@ -161,6 +174,8 @@ All triplets are p50 / p95 / p99 in microseconds.
 ![Unified across-release, native/universal, and composite performance comparison.](images/performance-comparison.svg)
 
 ![Latest comparisons matrix: native and universal builds against their matching 2.2.1.0 baselines and against each other, with weighted scores and per-case detail.](images/performance-latest-build-comparison.svg)
+
+![Three separate artifact/runtime lanes: CPython native Cython, CPython-built pure universal, and the PyPy-minor-tagged pure wheel.](images/performance-runtime-lanes.svg)
 
 - The composite uses cluster-state 1k and 30k/100k cases, connect cases, and
   200k JSON-persistence cases.

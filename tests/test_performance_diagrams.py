@@ -1050,6 +1050,48 @@ class PublishedBaselineTests(unittest.TestCase):
     "local benchmark source artifacts are not present in this checkout",
 )
 class DiagramTests(unittest.TestCase):
+    def test_runtime_lane_svg_distinguishes_three_artifact_targets(self) -> None:
+        config = MeasurementConfig(warmups=0, repetitions=1, track_allocations=False)
+
+        def make_run(label: str, python_version: str, p50: float) -> BenchmarkRun:
+            ticks = iter((0, round(p50 * 1_000)))
+            outcome = BenchmarkOutcome(
+                "discovery candidate validation",
+                "discovery candidate validation",
+                {"fixture": "runtime-lane"},
+                1,
+                None,
+                config,
+                measure(lambda: None, config, clock_ns=ticks.__next__),
+            )
+            suffix = ".so" if label == "native" else ".py"
+            return BenchmarkRun(
+                RunMetadata(
+                    1,
+                    "connect",
+                    "3.4.5.6",
+                    python_version,
+                    "Linux test",
+                    {"expra_connect.example": f"/wheel/{label}/example{suffix}"},
+                    config,
+                ),
+                (outcome,),
+            )
+
+        native = make_run("native", "3.12.3", 1.0)
+        universal = make_run("universal", "3.12.3", 2.0)
+        pypy = make_run("pypy", "PyPy 3.11.17", 0.5)
+
+        svg = performance_diagrams.render_runtime_lane_diagram(
+            {"connect": (native, universal)}, pypy
+        )
+
+        self.assertIn("CPython native · Cython", svg)
+        self.assertIn("CPython-built pure · py3-none-any", svg)
+        self.assertIn("PyPy pure · pp311-none-any", svg)
+        self.assertIn("discovery candidate validation", svg)
+        self.assertIn("not folded into PyPy scores", svg)
+
     def test_visible_history_keeps_baseline_and_nine_newest_columns(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

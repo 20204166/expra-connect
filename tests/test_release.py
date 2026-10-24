@@ -53,6 +53,34 @@ def _stage_wheels(root: Path, version: str, tags: tuple[str, ...]) -> None:
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_build_release_all_requires_pypy_interpreter_before_build(self) -> None:
+        root = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            marker = temporary / "python-was-run"
+            fake_python = temporary / "fake-python"
+            fake_python.write_text(
+                '#!/bin/sh\n: > "$INVOCATION_MARKER"\nexit 0\n',
+                encoding="utf-8",
+            )
+            fake_python.chmod(0o755)
+            environment = os.environ.copy()
+            environment.update(
+                {"PYTHON": str(fake_python), "INVOCATION_MARKER": str(marker)}
+            )
+
+            completed = subprocess.run(
+                ["bash", str(root / "scripts" / "build_release.sh"), "--all"],
+                capture_output=True,
+                check=False,
+                env=environment,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("--all requires --pypy-python", completed.stderr)
+            self.assertFalse(marker.exists())
+
     def test_build_release_accepts_explicit_pypy_interpreter(self) -> None:
         root = Path(__file__).parents[1]
         with tempfile.TemporaryDirectory() as directory:
@@ -80,7 +108,7 @@ class ReleaseTests(unittest.TestCase):
                 [
                     "bash",
                     str(root / "scripts" / "build_release.sh"),
-                    "--universal",
+                    "--all",
                     "--pypy-python",
                     str(fake_pypy),
                     "--bump",
@@ -331,6 +359,31 @@ class ReleaseTests(unittest.TestCase):
             )
             self.assertTrue((dist / "expra_connect-0.1.2.0-py3-none-any.whl").is_file())
             self.assertIn("expra_connect-0.1.2.0-py3-none-any.whl", sums)
+
+    def test_sync_artifacts_accepts_pypy_wheel_with_three_artifact_opt_in(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _make_package(root, "0.1.2.0")
+            artifacts = root / "artifacts"
+            _stage_wheels(
+                artifacts,
+                "0.1.2.0",
+                (
+                    "cp312-cp312-linux_x86_64",
+                    "py3-none-any",
+                    "pp311-none-any",
+                ),
+            )
+
+            release.sync_artifacts(
+                root, artifacts, allow_universal=True, allow_pypy=True
+            )
+
+            sums = (root / "dist" / "SHA256SUMS").read_text(encoding="utf-8")
+            self.assertEqual(len(sums.splitlines()), 3)
+            self.assertTrue(
+                (root / "dist" / "expra_connect-0.1.2.0-pp311-none-any.whl").is_file()
+            )
 
     def test_sync_artifacts_rejects_opt_in_universal_without_native_sibling(
         self,

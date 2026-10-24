@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="306" viewBox="0 0 1180 306" role="img" aria-label="Three distinct wheel runtime benchmark lanes">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="24" y="34" font-family="Arial, sans-serif" font-size="22px" font-weight="bold" fill="#17252a">Three wheel/runtime benchmark lanes</text>
+<text x="24" y="58" font-family="Arial, sans-serif" font-size="13px" fill="#52666d">Build 2.2.3.4 · matching connect cases · p50 microseconds</text>
+<text x="24" y="80" font-family="Arial, sans-serif" font-size="12px" fill="#52666d">PyPy uses its own minor-tagged wheel; py3-none-any remains interpreter-generic and is not folded into PyPy scores.</text>
+<text x="390" y="116" font-family="Arial, sans-serif" font-size="13px" font-weight="bold" fill="#17252a">CPython native · Cython</text>
+<text x="650" y="116" font-family="Arial, sans-serif" font-size="13px" font-weight="bold" fill="#17252a">CPython-built pure · py3-none-any</text>
+<text x="910" y="116" font-family="Arial, sans-serif" font-size="13px" font-weight="bold" fill="#17252a">PyPy pure · pp311-none-any</text>
+<text x="24" y="146" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">discovery candidate validation</text>
+<text x="390" y="146" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">1.403 µs</text>
+<text x="650" y="146" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">1.553 µs</text>
+<text x="910" y="146" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">0.171 µs</text>
+<line x1="24" y1="156" x2="1150" y2="156" stroke="#d7e0e2"/>
+<text x="24" y="186" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">discovery preferred endpoint</text>
+<text x="390" y="186" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">2.164 µs</text>
+<text x="650" y="186" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">2.234 µs</text>
+<text x="910" y="186" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">0.301 µs</text>
+<line x1="24" y1="196" x2="1150" y2="196" stroke="#d7e0e2"/>
+<text x="24" y="226" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">discovery registry add + expire</text>
+<text x="390" y="226" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">5.320 µs</text>
+<text x="650" y="226" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">5.240 µs</text>
+<text x="910" y="226" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">0.701 µs</text>
+<line x1="24" y1="236" x2="1150" y2="236" stroke="#d7e0e2"/>
+<text x="24" y="266" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">pairing relationship projection</text>
+<text x="390" y="266" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">0.821 µs</text>
+<text x="650" y="266" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">0.811 µs</text>
+<text x="910" y="266" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">0.100 µs</text>
+<line x1="24" y1="276" x2="1150" y2="276" stroke="#d7e0e2"/>
+</svg>

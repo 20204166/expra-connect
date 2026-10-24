@@ -28,6 +28,7 @@ CPYTHON_NATIVE_TAG = re.compile(
     r"^cp(?P<interpreter>\d+)-cp(?P<abi>\d+)-"
     r"(?:linux_[a-z0-9_]+|manylinux[a-z0-9_]+|win_(?:amd64|arm64)|win32)$"
 )
+PYPY_PURE_TAG = re.compile(r"^pp\d+-none-any$")
 EXTENSION_SUFFIXES = (".so", ".pyd")
 CYTHON_MODULES = (
     "expra_connect/cluster/models",
@@ -140,7 +141,7 @@ def verify(
             raise SystemExit("wheel tag metadata does not match its filename")
 
         extensions = [name for name in names if name.endswith(EXTENSION_SUFFIXES)]
-        if filename_tag == "py3-none-any":
+        if filename_tag == "py3-none-any" or PYPY_PURE_TAG.fullmatch(filename_tag):
             if extensions:
                 raise SystemExit("pure-Python wheel contains native extensions")
         else:

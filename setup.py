@@ -6,6 +6,7 @@ import os
 import sys
 
 from setuptools import Extension, setup
+from setuptools.command.bdist_wheel import bdist_wheel
 
 _NATIVE_MODULE_SECTIONS = {
     "cluster": (
@@ -44,4 +45,19 @@ def _native_extensions() -> list[Extension]:
     )
 
 
-setup(ext_modules=_native_extensions())
+class _PyPyWheel(bdist_wheel):
+    """Tag a pure-Python wheel for PyPy installers only."""
+
+    def get_tag(self) -> tuple[str, str, str]:
+        if sys.implementation.name != "pypy":
+            raise RuntimeError("PyPy-targeted wheels must be built with PyPy")
+        interpreter = f"pp{sys.version_info.major}{sys.version_info.minor}"
+        return interpreter, "none", "any"
+
+
+cmdclass = (
+    {"bdist_wheel": _PyPyWheel}
+    if os.environ.get("EXPRA_CONNECT_PYPY_WHEEL") == "1"
+    else {}
+)
+setup(ext_modules=_native_extensions(), cmdclass=cmdclass)

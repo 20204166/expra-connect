@@ -56,12 +56,15 @@ def run_release_benchmarks(
     identities = tuple(_wheel_identity(wheel) for wheel in wheels)
     if len(set(identities)) != len(identities):
         raise ValueError("wheel directory contains duplicate version/flavor artifacts")
+    available_flavors = {flavor for _, flavor in identities}
 
     if selected_flavors is not None:
         if not selected_flavors or any(
-            flavor not in {"native", "universal"} for flavor in selected_flavors
+            flavor not in {"native", "universal", "pypy"} for flavor in selected_flavors
         ):
-            raise ValueError("selected wheel flavors must be native and/or universal")
+            raise ValueError(
+                "selected wheel flavors must be native, universal, and/or pypy"
+            )
         if len(set(selected_flavors)) != len(selected_flavors):
             raise ValueError("selected wheel flavors must not contain duplicates")
         available_flavors = {flavor for _, flavor in identities}
@@ -70,15 +73,39 @@ def run_release_benchmarks(
             requested = " and ".join(selected_flavors)
             raise ValueError(f"benchmark selection requires {requested} wheel flavors")
 
+    requested_flavors = (
+        selected_flavors
+        if selected_flavors is not None
+        else tuple(
+            flavor
+            for flavor in ("native", "universal", "pypy")
+            if flavor in available_flavors
+            and (flavor != "pypy" or pypy_python is not None)
+        )
+    )
+    missing_flavors = set(requested_flavors) - available_flavors
+    if missing_flavors:
+        missing = ", ".join(
+            flavor
+            for flavor in ("native", "universal", "pypy")
+            if flavor in missing_flavors
+        )
+        raise ValueError(f"benchmark selection requires {missing} wheel flavor(s)")
+    if "pypy" in requested_flavors and pypy_python is None:
+        raise ValueError("PyPy wheel selection requires a PyPy interpreter")
+    if pypy_python is not None and "pypy" not in requested_flavors:
+        raise ValueError("PyPy interpreter requires the PyPy wheel selection")
+
     result_sets = tuple(
         (wheel, version, flavor, _result_paths(results_dir, version, flavor))
         for wheel, (version, flavor) in zip(wheels, identities, strict=True)
-        if selected_flavors is None or flavor in selected_flavors
+        if flavor in requested_flavors and flavor in {"native", "universal"}
     )
-    if pypy_python is not None and not any(
-        flavor == "universal" for _, _, flavor, _ in result_sets
-    ):
-        raise ValueError("PyPy benchmarks require a universal wheel in the build")
+    pypy_wheels = tuple(
+        wheel
+        for wheel, (_, flavor) in zip(wheels, identities, strict=True)
+        if flavor == "pypy" and flavor in requested_flavors
+    )
     for _, version, flavor, paths in result_sets:
         present = tuple(path.exists() for path in paths)
         if any(present) and not all(present):
@@ -103,20 +130,19 @@ def run_release_benchmarks(
             if pypy_results_dir is None
             else pypy_results_dir
         )
-        for wheel, _, flavor, _ in result_sets:
-            if flavor == "universal":
-                produced.extend(
-                    run_pypy_universal_benchmarks(
-                        wheel,
-                        target_results_dir,
-                        pypy_python,
-                        repository_root,
-                    )
+        for wheel in pypy_wheels:
+            produced.extend(
+                run_pypy_wheel_benchmarks(
+                    wheel,
+                    target_results_dir,
+                    pypy_python,
+                    repository_root,
                 )
+            )
     return tuple(produced)
 
 
-def run_pypy_universal_benchmarks(
+def run_pypy_wheel_benchmarks(
     wheel: Path,
     results_dir: Path,
     python_bin: str,
@@ -125,11 +151,15 @@ def run_pypy_universal_benchmarks(
     warmups: int = 3_000,
     repetitions: int = 10_000,
 ) -> tuple[Path, ...]:
-    """Benchmark selected pure-Python feature cases under PyPy."""
+    """Install and benchmark the PyPy-targeted pure-Python wheel under PyPy."""
     version, flavor = _wheel_identity(wheel)
-    if flavor != "universal":
-        raise ValueError("PyPy benchmarks require a universal wheel")
-    result_path = results_dir / f"{version}-pypy-universal-connect.json"
+    if flavor != "pypy":
+        raise ValueError("PyPy benchmarks require a PyPy-targeted wheel")
+    wheel_match = _WHEEL_NAME.fullmatch(wheel.name)
+    if wheel_match is None:
+        raise ValueError(f"unsupported PyPy wheel filename: {wheel.name}")
+    pypy_tag = wheel_match.group("python")
+    result_path = results_dir / f"{version}-pypy-{pypy_tag}-connect.json"
     if result_path.exists():
         raise FileExistsError(f"PyPy benchmark result already exists: {result_path}")
     if warmups < 0 or repetitions < 1:
@@ -209,7 +239,7 @@ def run_pypy_universal_benchmarks(
                 raise ValueError(f"PyPy benchmark metadata differs for {operation}")
             _validate_module_provenance(run, package_target)
             if _run_flavor(run) != "universal":
-                raise ValueError("PyPy benchmark did not load universal Python sources")
+                raise ValueError("PyPy benchmark did not load pure Python sources")
             raw_runs.append(run)
 
         first = raw_runs[0].metadata
@@ -660,6 +690,12 @@ def _wheel_identity(wheel: Path) -> tuple[str, str]:
         "any",
     ):
         return match.group("version"), "universal"
+    if (
+        re.fullmatch(r"pp\d+", match.group("python"))
+        and match.group("abi") == "none"
+        and match.group("platform") == "any"
+    ):
+        return match.group("version"), "pypy"
     if not match.group("python").startswith("cp"):
         raise ValueError(f"unsupported native wheel tag: {wheel.name}")
     return match.group("version"), "native"
@@ -874,7 +910,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument(
         "--pypy-python",
-        help="also benchmark the universal wheel with this PyPy interpreter",
+        help="install and benchmark the PyPy-targeted wheel with this interpreter",
     )
     parser.add_argument(
         "--pypy-results-dir",
@@ -893,9 +929,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="benchmark only the CPython universal wheel",
     )
     lane_group.add_argument(
+        "--pypy",
+        action="store_true",
+        help="benchmark only the PyPy-targeted pure-Python wheel",
+    )
+    lane_group.add_argument(
         "--all",
         action="store_true",
-        help="benchmark native, universal, and PyPy/universal lanes",
+        help="benchmark CPython native, CPython universal, and PyPy-targeted wheels",
     )
     parser.add_argument(
         "--supplements-only",
@@ -916,9 +957,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
-        has_explicit_lanes = args.native or args.universal or args.all
+        has_explicit_lanes = args.native or args.universal or args.pypy or args.all
         if args.all and args.pypy_python is None:
             parser.error("--all requires --pypy-python")
+        if args.pypy and args.pypy_python is None:
+            parser.error("--pypy requires --pypy-python")
         if (args.native or args.universal) and args.pypy_python is not None:
             parser.error(
                 "--pypy-python cannot be combined with --native or --universal"
@@ -959,8 +1002,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 selected_flavors = ("native",)
             elif args.universal:
                 selected_flavors = ("universal",)
+            elif args.pypy:
+                selected_flavors = ("pypy",)
             elif args.all:
-                selected_flavors = ("native", "universal")
+                selected_flavors = ("native", "universal", "pypy")
             paths = run_release_benchmarks(
                 args.wheel_dir,
                 args.results_dir,

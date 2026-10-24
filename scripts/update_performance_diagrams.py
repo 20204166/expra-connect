@@ -1419,6 +1419,7 @@ def render_diagrams(
     groups: dict[str, tuple[BenchmarkRun, ...]] | None = None,
     *,
     build_history: dict[str, tuple[BenchmarkRun, ...]] | None = None,
+    pypy_run: BenchmarkRun | None = None,
 ) -> dict[str, str]:
     """Render historical performance and one consolidated latest-comparison matrix."""
 
@@ -1459,7 +1460,97 @@ def render_diagrams(
         diagrams["performance-latest-build-comparison.svg"] = (
             render_latest_build_pairwise_diagram(build_history)
         )
+    if build_history is not None and pypy_run is not None:
+        diagrams["performance-runtime-lanes.svg"] = render_runtime_lane_diagram(
+            build_history, pypy_run
+        )
     return diagrams
+
+
+def render_runtime_lane_diagram(
+    build_history: dict[str, tuple[BenchmarkRun, ...]], pypy_run: BenchmarkRun
+) -> str:
+    """Compare matching p50 features while separating all three runtimes."""
+
+    version = pypy_run.metadata.package_version
+    connect_runs = tuple(
+        run
+        for run in build_history.get("connect", ())
+        if run.metadata.package_version == version
+    )
+    by_flavor = {_run_build_flavor(run): run for run in connect_runs}
+    if "native" not in by_flavor or "universal" not in by_flavor:
+        raise ValueError(
+            f"runtime lane diagram requires both CPython wheels for {version}"
+        )
+    if (
+        pypy_run.metadata.suite != "connect"
+        or not pypy_run.metadata.python_version.startswith("PyPy ")
+    ):
+        raise ValueError("runtime lane diagram requires a PyPy connect result")
+
+    outcomes_by_flavor = {
+        flavor: {outcome.case_id: outcome for outcome in run.outcomes}
+        for flavor, run in by_flavor.items()
+    }
+    pypy_outcomes = {outcome.case_id: outcome for outcome in pypy_run.outcomes}
+    common_cases = tuple(
+        case_id
+        for case_id in pypy_outcomes
+        if case_id in outcomes_by_flavor["native"]
+        and case_id in outcomes_by_flavor["universal"]
+    )
+    if not common_cases:
+        raise ValueError(f"runtime lane diagram has no matched cases for {version}")
+
+    pypy_version = pypy_run.metadata.python_version.removeprefix("PyPy ")
+    version_parts = pypy_version.split(".")
+    if len(version_parts) < 2 or not all(part.isdigit() for part in version_parts[:2]):
+        raise ValueError(f"invalid PyPy runtime version: {pypy_version!r}")
+    pypy_wheel_tag = f"pp{version_parts[0]}{version_parts[1]}-none-any"
+    columns = (
+        ("CPython native · Cython", "native"),
+        ("CPython-built pure · py3-none-any", "universal"),
+        (f"PyPy pure · {pypy_wheel_tag}", "pypy"),
+    )
+    width = 1180
+    row_height = 40
+    height = 146 + row_height * len(common_cases)
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="Three distinct wheel runtime benchmark lanes">',
+        '<rect width="100%" height="100%" fill="#ffffff"/>',
+        '<text x="24" y="34" font-family="Arial, sans-serif" font-size="22px" font-weight="bold" fill="#17252a">Three wheel/runtime benchmark lanes</text>',
+        f'<text x="24" y="58" font-family="Arial, sans-serif" font-size="13px" fill="#52666d">Build {escape(version)} · matching connect cases · p50 microseconds</text>',
+        '<text x="24" y="80" font-family="Arial, sans-serif" font-size="12px" fill="#52666d">PyPy uses its own minor-tagged wheel; py3-none-any remains interpreter-generic and is not folded into PyPy scores.</text>',
+    ]
+    label_x = 24
+    column_xs = (390, 650, 910)
+    for (label, _), x in zip(columns, column_xs, strict=True):
+        parts.append(
+            f'<text x="{x}" y="116" font-family="Arial, sans-serif" font-size="13px" font-weight="bold" fill="#17252a">{escape(label)}</text>'
+        )
+    for index, case_id in enumerate(common_cases):
+        y = 146 + index * row_height
+        parts.append(
+            f'<text x="{label_x}" y="{y}" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">{escape(case_id)}</text>'
+        )
+        for x, flavor in zip(
+            (390, 650, 910), ("native", "universal", "pypy"), strict=True
+        ):
+            outcome = (
+                pypy_outcomes[case_id]
+                if flavor == "pypy"
+                else outcomes_by_flavor[flavor][case_id]
+            )
+            value = "n/a" if outcome.result is None else f"{outcome.result.p50:.3f} µs"
+            parts.append(
+                f'<text x="{x}" y="{y}" font-family="Arial, sans-serif" font-size="12px" fill="#17252a">{escape(value)}</text>'
+            )
+        parts.append(
+            f'<line x1="24" y1="{y + 10}" x2="1150" y2="{y + 10}" stroke="#d7e0e2"/>'
+        )
+    parts.append("</svg>")
+    return "\n".join(parts) + "\n"
 
 
 def size_specific_indices(
@@ -2696,8 +2787,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         all_groups = _load_all_shared_harness_runs(shared_results)
         groups, evicted_runs = _select_visible_history(all_groups)
         build_history = _load_build_comparison_history(build_results)
+        latest_version = max(
+            run.metadata.package_version
+            for suite_runs in build_history.values()
+            for run in suite_runs
+        )
+        pypy_paths = sorted(
+            (repository_root / "docs" / "pypy-performance-results").glob(
+                f"{latest_version}-pypy-pp*-connect.json"
+            )
+        )
+        pypy_run = load_results(pypy_paths[-1]) if pypy_paths else None
         summary = render_performance_summary(groups, build_history=build_history)
-        diagrams = render_diagrams(groups, build_history=build_history)
+        diagrams = render_diagrams(
+            groups, build_history=build_history, pypy_run=pypy_run
+        )
         stale = sync_diagrams(diagrams, output_dir, check=args.check)
         summary_stale = sync_performance_summary(
             summary_path, summary, check=args.check

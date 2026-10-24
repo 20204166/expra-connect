@@ -23,7 +23,12 @@ def _verify_module() -> ModuleType:
 verify_wheel = _verify_module()
 
 
-def _write_pure_wheel(path: Path, *, include_extension: bool = False) -> None:
+def _write_pure_wheel(
+    path: Path,
+    *,
+    include_extension: bool = False,
+    tag: str = "py3-none-any",
+) -> None:
     with zipfile.ZipFile(path, "w") as wheel:
         wheel.writestr("expra_connect/__init__.py", "")
         wheel.writestr("expra_connect/module.py", "")
@@ -41,7 +46,7 @@ def _write_pure_wheel(path: Path, *, include_extension: bool = False) -> None:
         )
         wheel.writestr(
             "expra_connect-1.8.0.0.dist-info/WHEEL",
-            "Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
+            f"Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: {tag}\n",
         )
 
 
@@ -96,6 +101,17 @@ def _write_native_wheel(
 
 
 class VerifyWheelTests(unittest.TestCase):
+    def test_pypy_tagged_wheel_is_pure_python(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            wheel_path = Path(directory) / "expra_connect-1.8.0.0-pp311-none-any.whl"
+            _write_pure_wheel(wheel_path, tag="pp311-none-any")
+
+            verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
+
+            _write_pure_wheel(wheel_path, include_extension=True, tag="pp311-none-any")
+            with self.assertRaisesRegex(SystemExit, "pure-Python wheel"):
+                verify_wheel.verify(wheel_path, expected_version="1.8.0.0")
+
     def test_pure_wheel_requires_matching_source_and_has_no_extensions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
